@@ -164,7 +164,6 @@ export default function Dashboard() {
     }, 30000); // 30 seconds timeout (increased from 10s)
     
     return () => clearTimeout(loadingTimeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
   
   if (loading) {

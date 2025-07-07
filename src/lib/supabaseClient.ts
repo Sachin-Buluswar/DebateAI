@@ -8,7 +8,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * session is immediately visible everywhere else (dashboard, API calls, etc.)
  */
 
-// eslint-disable-next-line import/exports-last
 let supabase: SupabaseClient;
 
 if (typeof window === 'undefined') {
@@ -17,6 +16,7 @@ if (typeof window === 'undefined') {
   // If you need RLS-protected data on the server, use
   // `createServerSupabaseClient` inside the handler instead.
   // We do the `require` to avoid bundling `@supabase/supabase-js` twice.
+  // eslint-disable-next-line
   const { createClient } = require('@supabase/supabase-js');
   supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL as string,

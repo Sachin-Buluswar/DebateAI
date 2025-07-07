@@ -70,7 +70,21 @@ export default function DebatePage() {
     aiPartner: false, 
     selectedAIDebaters: [] as string[] 
   });
-  const [debateAnalysis, setDebateAnalysis] = useState<Record<string, any> | null>(null);
+  const [debateAnalysis, setDebateAnalysis] = useState<{
+    overallScore: number;
+    overallPerformance: number;
+    categories: Record<string, { score: number; feedback: string }>;
+    argumentQuality: { score: number; feedback: string };
+    deliveryClarity: { score: number; feedback: string };
+    evidenceUsage: { score: number; feedback: string };
+    rebuttalEffectiveness: { score: number; feedback: string };
+    detailedFeedback: string;
+    suggestions: string[];
+    strengthsAreas: string[];
+    improvementAreas: string[];
+    keyMoments: Array<{ timestamp: string; moment: string }>;
+    recommendedNextSteps: string[];
+  } | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
@@ -132,7 +146,21 @@ export default function DebatePage() {
       }
     });
 
-    socket.on('debateAnalysis', (analysis: Record<string, any>) => {
+    socket.on('debateAnalysis', (analysis: {
+      overallScore: number;
+      overallPerformance: number;
+      categories: Record<string, { score: number; feedback: string }>;
+      argumentQuality: { score: number; feedback: string };
+      deliveryClarity: { score: number; feedback: string };
+      evidenceUsage: { score: number; feedback: string };
+      rebuttalEffectiveness: { score: number; feedback: string };
+      detailedFeedback: string;
+      suggestions: string[];
+      strengthsAreas: string[];
+      improvementAreas: string[];
+      keyMoments: Array<{ timestamp: string; moment: string }>;
+      recommendedNextSteps: string[];
+    }) => {
       console.log('Debate analysis received:', analysis);
       setDebateAnalysis(analysis);
       setShowAnalysis(true);
@@ -696,21 +724,21 @@ export default function DebatePage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Argument Quality</span>
-                  <Badge variant="primary">{debateAnalysis.argumentQuality}/10</Badge>
+                  <Badge variant="primary">{debateAnalysis.argumentQuality.score}/10</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Delivery Clarity</span>
-                  <Badge variant="primary">{debateAnalysis.deliveryClarity}/10</Badge>
+                  <Badge variant="primary">{debateAnalysis.deliveryClarity.score}/10</Badge>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Evidence Usage</span>
-                  <Badge variant="primary">{debateAnalysis.evidenceUsage}/10</Badge>
+                  <Badge variant="primary">{debateAnalysis.evidenceUsage.score}/10</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Rebuttal Effectiveness</span>
-                  <Badge variant="primary">{debateAnalysis.rebuttalEffectiveness}/10</Badge>
+                  <Badge variant="primary">{debateAnalysis.rebuttalEffectiveness.score}/10</Badge>
                 </div>
               </div>
             </div>
@@ -774,10 +802,11 @@ export default function DebatePage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {debateAnalysis.keyMoments.map((moment: string, index: number) => (
+                    {debateAnalysis.keyMoments.map((moment: { timestamp: string; moment: string }, index: number) => (
                       <li key={index} className="text-sm flex items-start">
                         <span className="text-primary-500 mr-2">•</span>
-                        {moment}
+                        <span className="text-xs text-gray-500 mr-2">{moment.timestamp}</span>
+                        {moment.moment}
                       </li>
                     ))}
                   </ul>

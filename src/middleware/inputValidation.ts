@@ -100,16 +100,16 @@ export class InputSanitizer {
       .trim();
   }
 
-  static validateAndSanitizeJson(jsonString: string, maxDepth: number = 5): any {
+  static validateAndSanitizeJson(jsonString: string, maxDepth: number = 5): unknown {
     try {
       const parsed = JSON.parse(jsonString);
       return this.sanitizeObject(parsed, maxDepth);
-    } catch (error) {
+    } catch {
       throw new Error('Invalid JSON format');
     }
   }
 
-  static sanitizeObject(obj: any, depth: number): any {
+  static sanitizeObject(obj: unknown, depth: number): unknown {
     if (depth <= 0) {
       throw new Error('Object nesting too deep');
     }
@@ -131,10 +131,10 @@ export class InputSanitizer {
         throw new Error('Object has too many properties');
       }
 
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const key of keys) {
         const sanitizedKey = this.sanitizeHtml(key);
-        sanitized[sanitizedKey] = this.sanitizeObject(obj[key], depth - 1);
+        sanitized[sanitizedKey] = this.sanitizeObject((obj as Record<string, unknown>)[key], depth - 1);
       }
       return sanitized;
     }
@@ -152,9 +152,9 @@ export async function validateRequest<T>(
     query?: boolean;
     sanitize?: boolean;
   } = { body: true, sanitize: true }
-): Promise<{ success: true; data: T } | { success: false; error: string; details?: any }> {
+): Promise<{ success: true; data: T } | { success: false; error: string; details?: unknown }> {
   try {
-    let data: any = {};
+    let data: Record<string, unknown> = {};
 
     if (options.body) {
       const contentType = req.headers.get('content-type');
@@ -162,9 +162,9 @@ export async function validateRequest<T>(
       if (contentType?.includes('application/json')) {
         const body = await req.text();
         if (options.sanitize) {
-          data = InputSanitizer.validateAndSanitizeJson(body);
+          data = InputSanitizer.validateAndSanitizeJson(body) as Record<string, unknown>;
         } else {
-          data = JSON.parse(body);
+          data = JSON.parse(body) as Record<string, unknown>;
         }
       } else if (contentType?.includes('multipart/form-data')) {
         const formData = await req.formData();
@@ -180,14 +180,14 @@ export async function validateRequest<T>(
         const formData = await req.formData();
         data = Object.fromEntries(formData.entries());
         if (options.sanitize) {
-          data = InputSanitizer.sanitizeObject(data, 3);
+          data = InputSanitizer.sanitizeObject(data, 3) as Record<string, unknown>;
         }
       }
     }
 
     if (options.query) {
       const url = new URL(req.url);
-      const queryData: any = {};
+      const queryData: Record<string, unknown> = {};
       for (const [key, value] of url.searchParams.entries()) {
         queryData[key] = options.sanitize ? InputSanitizer.sanitizeHtml(value) : value;
       }

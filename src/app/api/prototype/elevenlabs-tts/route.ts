@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     // Stream the audio back to the client
-    return new Response(audioStream as any, {
+    return new Response(audioStream as unknown as ReadableStream<Uint8Array>, {
       headers: {
         'Content-Type': 'audio/mpeg',
       },

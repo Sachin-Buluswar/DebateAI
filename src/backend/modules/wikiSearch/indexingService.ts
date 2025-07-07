@@ -80,7 +80,7 @@ const storeChunksInVectorStore = async (
 
     let batch;
     try {
-        batch = await (openai.beta as Record<string, any>).vectorStores.fileBatches.createAndPoll(vectorStoreId, { file_ids: fileIds });
+        batch = await (openai.beta as any).vectorStores.fileBatches.createAndPoll(vectorStoreId, { file_ids: fileIds });
     } catch (batchCreateError) {
         console.error(`[storeChunks] FATAL ERROR during createAndPoll for vector store ${vectorStoreId}:`, batchCreateError);
         console.log(`[storeChunks] Attempting to delete ${uploadedFileIds.length} uploaded files due to batch creation failure...`);

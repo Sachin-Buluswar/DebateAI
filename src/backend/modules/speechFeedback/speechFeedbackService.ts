@@ -41,10 +41,19 @@ export interface SpeechFeedbackInput {
 }
 
 export interface SpeechFeedbackResult {
-  feedback: any;
+  feedback: {
+    overallScore: number;
+    categories: Record<string, { score: number; feedback: string }>;
+    detailedFeedback: string;
+    suggestions: string[];
+  };
   audioUrl: string;
   feedbackId?: string;
-  transcription?: any;
+  transcription?: {
+    text: string;
+    duration: number;
+    segments: Array<{ start: number; end: number; text: string }>;
+  };
 }
 
 /**
@@ -190,7 +199,12 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     await fs.unlink(processedAudio.filePath).catch(() => {});
     
     return {
-      feedback: { message: 'File uploaded but too large for analysis' },
+      feedback: {
+        overallScore: 0,
+        categories: {},
+        detailedFeedback: 'File uploaded but too large for analysis',
+        suggestions: []
+      },
       audioUrl,
       feedbackId: insertedRecord?.id
     };
@@ -209,7 +223,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       const audioFileStream = createReadStream(processedAudio.filePath);
       
       const whisperResponse = await openai.audio.transcriptions.create({
-        file: audioFileStream as any,
+        file: audioFileStream,
         model: 'whisper-1',
         response_format: 'verbose_json',
         timestamp_granularities: ['segment'],
@@ -319,6 +333,14 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     feedback,
     audioUrl,
     feedbackId: insertedRecord?.id,
-    transcription
+    transcription: transcription ? {
+      text: transcription.text,
+      duration: transcription.duration || 0,
+      segments: transcription.segments?.map(seg => ({
+        start: seg.start,
+        end: seg.end,
+        text: seg.text
+      })) || []
+    } : undefined
   };
 } 

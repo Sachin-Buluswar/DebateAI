@@ -82,7 +82,7 @@ export const searchVectorStore = async (
     let run = await withRetry(
       () => openai.beta.threads.runs.create(thread.id, { assistant_id: tempAssistant.id }),
       'run creation'
-    ) as any;
+    );
 
     // Poll until finished
     while (['queued', 'in_progress', 'requires_action'].includes(run.status)) {
@@ -91,13 +91,13 @@ export const searchVectorStore = async (
         run = await withRetry(
           () => (openai.beta.threads.runs as any).submitToolOutputs(thread.id, run.id, { tool_outputs: [] }),
           'submit tool outputs'
-        ) as any;
+        );
       } else {
         await new Promise((r) => setTimeout(r, 1000));
         run = await withRetry(
           () => (openai.beta.threads.runs as any).retrieve(thread.id, run.id),
           'retrieve run status'
-        ) as any;
+        );
       }
     }
 
