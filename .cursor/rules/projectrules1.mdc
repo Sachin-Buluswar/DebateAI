@@ -65,7 +65,7 @@ These documents form the foundation of this project and all code must adhere to 
 ## Core Features
 
 1. **Debate Orchestrator**:
-   - Manages the state, timing, and turn-taking of the debate according to formal structures (e.g., Public Forum).
+   - Manages the state, timing, and turn-taking of the debate according to the formal structure of Public Forum debate.
    - Switches between AI models: gpt-4o for speeches and ElevenLabs for crossfire.
 
 2. **AI Speech & Feedback Module**:
