@@ -1,0 +1,95 @@
+---
+description: Core guidelines for the DebateAI project implementation
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.html", "**/*.css"]
+alwaysApply: true
+---
+# DebateAI Project Rules
+
+## Core Documents
+These documents form the foundation of this project and all code must adhere to their specifications:
+
+- [requirements.md](mdc:instructions/requirements.md) - Defines the product requirements and system architecture
+- [techstack.md](mdc:instructions/techstack.md) - Specifies the technologies and implementation approach
+- [tasklist.md](mdc:instructions/tasklist.md) - Tracks project progress and implementation details
+
+## Technology Stack Requirements
+
+1. **Frontend**:
+   - Framework: Next.js with React (TypeScript)
+   - Styling: Tailwind CSS
+   - Real-Time Communication: Socket.IO client
+   - Deployment: Vercel
+
+2. **Backend**:
+   - Runtime & Framework: Next.js API Routes
+   - Database & Auth: Supabase (PostgreSQL)
+   - Real-Time Communication: Socket.IO on a Next.js API Route
+   - Testing: Jest
+
+3. **AI & Voice Services (Hybrid Model)**:
+   - **Argument & Analysis Generation:** OpenAI gpt-4o for structured speeches (constructives, rebuttals) and post-debate analysis.
+   - **Real-Time Conversational AI:** ElevenLabs Conversational AI for low-latency, interactive crossfire sessions.
+   - **Voice Synthesis (TTS):** ElevenLabs TTS API for generating expressive, distinct voices for all AI participants.
+   - **Voice Transcription (STT):** ElevenLabs STT API for transcribing user's speech in real-time.
+   - **Wiki Search (RAG):** OpenAI Vector Storage for document search and retrieval.
+
+4. **DevOps & Deployment**:
+   - Containerization: Docker
+   - CI/CD & Orchestration: GitHub Actions and Kubernetes
+   - Monitoring & Logging: Prometheus, Grafana, and ELK Stack
+
+## Implementation Guidelines
+
+1. **Modularity**:
+   - Maintain clear separation between frontend, backend, and AI integration components.
+   - Create well-defined APIs between components, following API-first design.
+   - Use a hybrid AI model: gpt-4o for structured text, ElevenLabs for real-time conversation.
+
+2. **Code Quality**:
+   - Include comprehensive error handling for all external API interactions.
+   - Implement proper logging throughout the application.
+   - Follow TypeScript best practices with proper typing.
+   - Maintain high test coverage for core functionality.
+
+3. **Security**:
+   - Implement authentication and authorization using Supabase.
+   - Configure row-level security in database tables where applicable.
+   - Secure API keys and environment variables on the backend.
+   - Use HTTPS/WSS for all data transmission.
+
+4. **Performance**:
+   - Target <2 second latency for real-time conversational responses during crossfire.
+   - Implement efficient context management for the debate orchestrator.
+   - Use appropriate caching strategies where possible.
+
+## Core Features
+
+1. **Debate Orchestrator**:
+   - Manages the state, timing, and turn-taking of the debate according to formal structures (e.g., Public Forum).
+   - Switches between AI models: gpt-4o for speeches and ElevenLabs for crossfire.
+
+2. **AI Speech & Feedback Module**:
+   - Generates AI speeches and post-debate analysis using gpt-4o.
+   - Provides detailed feedback on user performance based on the debate transcript.
+
+3. **Realtime AI Debate Simulator**:
+   - Uses ElevenLabs services for real-time, voice-to-voice crossfire.
+   - Handles multi-agent conversation between the user and multiple AI personas.
+   - Provides real-time transcription of user speech.
+
+4. **Wiki Search Module**:
+   - Uses OpenAI Vector Storage for semantic search over a document base to find relevant evidence.
+
+## Task Management
+
+1. **Progress Tracking**:
+   - Update task statuses in `tasklist.md` when work begins or completes.
+   - Add implementation notes to the task list.
+   - Mark blocked tasks with dependency information.
+
+2. **Documentation**:
+   - Include clear comments and documentation in code.
+   - Reference these core documents in module-level documentation.
+   - Document API endpoints with clear specifications.
+
+Always consult these documents when making implementation decisions to ensure consistency with the project requirements and design.

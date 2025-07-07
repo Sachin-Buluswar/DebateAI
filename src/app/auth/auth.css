@@ -1,0 +1,51 @@
+/* Auth page specific styles */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.auth-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.auth-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #1e40af;
+}
+
+.auth-subtitle {
+  color: #4b5563;
+  margin-top: 0.5rem;
+}
+
+/* Override any conflicting styles from globals.css */
+.auth-ui-container * {
+  color: #111827;
+}
+
+.auth-ui-container input,
+.auth-ui-container button,
+.auth-ui-container a {
+  font-family: inherit;
+}
+
+.auth-ui-container label {
+  color: #4b5563;
+} 

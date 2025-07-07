@@ -1,0 +1,9 @@
+# Default files to ignore in Cursor
+node_modules
+.git
+.next
+dist
+coverage
+
+# Explicitly allow .env.local
+!.env.local 

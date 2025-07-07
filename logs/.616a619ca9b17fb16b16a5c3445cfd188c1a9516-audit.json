@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/sachinbuluswar/Documents/debatetest2/logs/.616a619ca9b17fb16b16a5c3445cfd188c1a9516-audit.json",
+    "files": [
+        {
+            "date": 1751510671786,
+            "name": "/Users/sachinbuluswar/Documents/debatetest2/logs/mcp-puppeteer-2025-07-02.log",
+            "hash": "6da928464a39055ac284e1dd1467de3d17b3e274bd65c19d3e6b972942ae15f1"
+        }
+    ],
+    "hashType": "sha256"
+}

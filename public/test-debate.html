@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debate Test</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Debate Test</h1>
+    <button id="startDebate">Start Debate</button>
+    <div id="status"></div>
+    <div id="transcript" style="border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 10px; margin: 10px 0;"></div>
+
+    <script>
+        const status = document.getElementById('status');
+        const transcript = document.getElementById('transcript');
+        const startButton = document.getElementById('startDebate');
+
+        // Initialize socket connection
+        fetch('/api/socketio').then(() => {
+            const socket = io({
+                path: '/api/socketio',
+            });
+
+            socket.on('connect', () => {
+                status.textContent = 'Connected to server';
+                startButton.disabled = false;
+            });
+
+            socket.on('disconnect', () => {
+                status.textContent = 'Disconnected from server';
+                startButton.disabled = true;
+            });
+
+            socket.on('debateStateUpdate', (newState, mode) => {
+                console.log('Debate state:', newState, mode);
+                status.textContent = `Phase: ${newState.phase} | Speaker: ${newState.currentSpeakerId} | Time: ${newState.remainingTime}s | Mode: ${mode}`;
+            });
+
+            socket.on('aiSpeech', (data) => {
+                console.log('AI Speech:', data);
+                const speechDiv = document.createElement('div');
+                speechDiv.innerHTML = `<strong>${data.speakerName}:</strong> ${data.text}`;
+                speechDiv.style.marginBottom = '10px';
+                speechDiv.style.padding = '10px';
+                speechDiv.style.backgroundColor = '#f0f0f0';
+                speechDiv.style.borderRadius = '5px';
+                transcript.appendChild(speechDiv);
+                transcript.scrollTop = transcript.scrollHeight;
+            });
+
+            socket.on('debateError', (error) => {
+                console.error('Debate error:', error);
+                alert(`Error: ${error.message} - ${error.error}`);
+            });
+
+            startButton.addEventListener('click', () => {
+                const participants = [
+                    { id: 'human-pro-1', name: 'You (Pro 1)', isAI: false, team: 'PRO', role: 'SPEAKER_1' },
+                    { id: 'ai-pro-2', name: 'Emily Carter (Pro 2)', isAI: true, team: 'PRO', role: 'SPEAKER_2' },
+                    { id: 'ai-con-1', name: 'Marcus Johnson (Con 1)', isAI: true, team: 'CON', role: 'SPEAKER_1' },
+                    { id: 'ai-con-2', name: 'Sophia Chen (Con 2)', isAI: true, team: 'CON', role: 'SPEAKER_2' },
+                ];
+                
+                console.log('Starting debate with participants:', participants);
+                socket.emit('startDebate', participants);
+                startButton.disabled = true;
+                startButton.textContent = 'Debate Starting...';
+            });
+        });
+    </script>
+</body>
+</html> 
