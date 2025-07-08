@@ -78,7 +78,7 @@ const storeChunksInVectorStore = async (
     // 2. Add these files to the Vector Store in a batch
     console.log(`[storeChunks] Creating file batch for Vector Store ${vectorStoreId} with ${fileIds.length} files...`);
 
-    let batch: any;
+    let batch: { id: string; status: string; file_counts?: { total?: number; in_progress?: number; completed?: number; failed?: number; cancelled?: number } };
     try {
         // Use direct API call instead of beta client method
         const createResponse = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/file_batches`, {
