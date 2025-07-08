@@ -11,6 +11,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    env:
+      # Required environment variables for build process
+      NODE_ENV: development
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder_anon_key_for_ci_build
+      OPENAI_API_KEY: sk_placeholder_openai_key_for_ci_build
+      ELEVENLABS_API_KEY: sk_placeholder_elevenlabs_key_for_ci_build
+      SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key_for_ci_build
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,11 +27,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Debug environment
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
       
       - name: Run type checking
         run: npm run typecheck
@@ -32,6 +49,10 @@ jobs:
       
       - name: Run tests
         run: npm run test
+        env:
+          CI: true
       
       - name: Build application
         run: npm run build
+        env:
+          CI: true
