@@ -78,9 +78,33 @@ const storeChunksInVectorStore = async (
     // 2. Add these files to the Vector Store in a batch
     console.log(`[storeChunks] Creating file batch for Vector Store ${vectorStoreId} with ${fileIds.length} files...`);
 
-    let batch;
+    let batch: any;
     try {
-        batch = await (openai.beta as any).vectorStores.fileBatches.createAndPoll(vectorStoreId, { file_ids: fileIds });
+        // Use direct API call instead of beta client method
+        const createResponse = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/file_batches`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2'
+          },
+          body: JSON.stringify({ file_ids: fileIds })
+        });
+        
+        batch = await createResponse.json();
+        
+        // Poll for completion
+        while (batch.status === 'in_progress') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const pollResponse = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/file_batches/${batch.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'OpenAI-Beta': 'assistants=v2'
+            }
+          });
+          batch = await pollResponse.json();
+        }
     } catch (batchCreateError) {
         console.error(`[storeChunks] FATAL ERROR during createAndPoll for vector store ${vectorStoreId}:`, batchCreateError);
         console.log(`[storeChunks] Attempting to delete ${uploadedFileIds.length} uploaded files due to batch creation failure...`);
@@ -93,31 +117,35 @@ const storeChunksInVectorStore = async (
     // -----------------------------------------------
 
     // --- Detailed Logging of Batch Results --- 
-    console.log(`[storeChunks] File batch ${batch.id} processing finished. Status: ${batch.status}`);
-    console.log(`  Total files submitted: ${batch.file_counts.total}`);
-    console.log(`  In progress: ${batch.file_counts.in_progress}`);
-    console.log(`  Completed: ${batch.file_counts.completed}`);
-    console.log(`  Failed: ${batch.file_counts.failed}`);
-    console.log(`  Cancelled: ${batch.file_counts.cancelled}`);
-    // ------------------------------------------
+    if (batch) {
+      console.log(`[storeChunks] File batch ${batch.id} processing finished. Status: ${batch.status}`);
+      console.log(`  Total files submitted: ${batch.file_counts?.total || 0}`);
+      console.log(`  In progress: ${batch.file_counts?.in_progress || 0}`);
+      console.log(`  Completed: ${batch.file_counts?.completed || 0}`);
+      console.log(`  Failed: ${batch.file_counts?.failed || 0}`);
+      console.log(`  Cancelled: ${batch.file_counts?.cancelled || 0}`);
+      // ------------------------------------------
 
-    if (batch.status !== 'completed' || batch.file_counts.failed > 0 || batch.file_counts.cancelled > 0) {
-      console.error(`[storeChunks] Vector Store file batch ${batch.id} did not complete successfully for ${fileName}. Status: ${batch.status}. Failed: ${batch.file_counts.failed}, Cancelled: ${batch.file_counts.cancelled}`);
-      // If some files failed, they are likely still in the Vector Store if the batch was partially processed.
-      // If the whole batch failed/cancelled, the files might not be attached.
-      // The files we uploaded earlier are *still* in the general OpenAI Files area unless deleted.
-      // Consider logging the specific failed file IDs if the API provides them (might need listFiles method)
-      // try {
-      //     const batchFiles = await openai.beta.vectorStores.fileBatches.listFiles(vectorStoreId, batch.id);
-      //     console.error("[storeChunks] Batch file details:", JSON.stringify(batchFiles.data, null, 2));
-      // } catch (listError) {
-      //     console.error("[storeChunks] Could not list files in failed batch:", listError);
-      // }
+      if (batch.status !== 'completed' || (batch.file_counts?.failed || 0) > 0 || (batch.file_counts?.cancelled || 0) > 0) {
+        console.error(`[storeChunks] Vector Store file batch ${batch.id} did not complete successfully for ${fileName}. Status: ${batch.status}. Failed: ${batch.file_counts?.failed || 0}, Cancelled: ${batch.file_counts?.cancelled || 0}`);
+        // If some files failed, they are likely still in the Vector Store if the batch was partially processed.
+        // If the whole batch failed/cancelled, the files might not be attached.
+        // The files we uploaded earlier are *still* in the general OpenAI Files area unless deleted.
+        // Consider logging the specific failed file IDs if the API provides them (might need listFiles method)
+        // try {
+        //     const batchFiles = await openai.beta.vectorStores.fileBatches.listFiles(vectorStoreId, batch.id);
+        //     console.error("[storeChunks] Batch file details:", JSON.stringify(batchFiles.data, null, 2));
+        // } catch (listError) {
+        //     console.error("[storeChunks] Could not list files in failed batch:", listError);
+        // }
 
-      // Decide on error handling: Throw an error to signal failure back up the chain?
-      throw new Error(`Vector Store batch processing failed for ${fileName}. Status: ${batch.status}, Failed: ${batch.file_counts.failed}, Cancelled: ${batch.file_counts.cancelled}`);
+        // Decide on error handling: Throw an error to signal failure back up the chain?
+        throw new Error(`Vector Store batch processing failed for ${fileName}. Status: ${batch.status}, Failed: ${batch.file_counts?.failed || 0}, Cancelled: ${batch.file_counts?.cancelled || 0}`);
+      } else {
+        console.log(`[storeChunks] Successfully added ${batch.file_counts?.completed || 0} files from ${fileName} to Vector Store ${vectorStoreId}.`);
+      }
     } else {
-      console.log(`[storeChunks] Successfully added ${batch.file_counts.completed} files from ${fileName} to Vector Store ${vectorStoreId}.`);
+      throw new Error(`Vector Store batch processing failed for ${fileName}. Batch object was not created successfully.`);
     }
 
   } catch (error) {

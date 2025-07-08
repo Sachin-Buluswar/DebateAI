@@ -1,4 +1,4 @@
-name: Claude Code Review
+name: Build and Test
 
 on:
   pull_request:
@@ -8,27 +8,30 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 jobs:
-  claude-review:
+  build:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       
-      - name: Claude Code Review
-        uses: anthropics/claude-code-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Optional: Customize the review behavior
-          review_level: 'comprehensive' # Options: 'quick', 'standard', 'comprehensive'
-          focus_areas: 'security,performance,maintainability,best-practices'
-          # Optional: File patterns to include/exclude
-          include_patterns: '**/*.{ts,tsx,js,jsx,py,java,go,rs,cpp,c,h}'
-          exclude_patterns: '**/node_modules/**,**/dist/**,**/.next/**,**/coverage/**'
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run type checking
+        run: npm run typecheck
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm run test
+      
+      - name: Build application
+        run: npm run build

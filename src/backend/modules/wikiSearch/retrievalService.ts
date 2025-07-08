@@ -89,13 +89,33 @@ export const searchVectorStore = async (
       if (run.status === 'requires_action' && run.required_action?.type === 'submit_tool_outputs') {
         // No additional tool outputs needed for file_search – submit empty list
         run = await withRetry(
-          () => (openai.beta.threads.runs as any).submitToolOutputs(thread.id, run.id, { tool_outputs: [] }),
+          async () => {
+            const response = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}/submit_tool_outputs`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                'OpenAI-Beta': 'assistants=v2'
+              },
+              body: JSON.stringify({ tool_outputs: [] })
+            });
+            return response.json();
+          },
           'submit tool outputs'
         );
       } else {
         await new Promise((r) => setTimeout(r, 1000));
         run = await withRetry(
-          () => (openai.beta.threads.runs as any).retrieve(thread.id, run.id),
+          async () => {
+            const response = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'OpenAI-Beta': 'assistants=v2'
+              }
+            });
+            return response.json();
+          },
           'retrieve run status'
         );
       }
