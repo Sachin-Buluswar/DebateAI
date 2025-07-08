@@ -27,7 +27,10 @@ const nextConfig = {
   },
   // Configure allowed image domains if needed
   images: {
-    domains: ['dyxjebocbozvodcempdb.supabase.co'],
+    domains: [
+      // Extract domain from Supabase URL
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') || 'localhost'
+    ],
   },
   // Configure API specific settings
   api: {

@@ -87,13 +87,18 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
  * Get the system prompt for different speech types
  */
 function getSpeechTypePrompt(speechType: string, topic: string): string {
-  const basePrompt = `You are an expert speech coach analyzing a ${speechType} on the topic: "${topic}".`;
+  const basePrompt = `You are an expert debate coach analyzing a ${speechType} on the topic: "${topic}".`;
   
   const prompts: Record<string, string> = {
     debate: `${basePrompt} Focus on argumentation, evidence use, rebuttals, and persuasiveness.`,
     presentation: `${basePrompt} Focus on clarity, organization, engagement, and visual aid references.`,
     speech: `${basePrompt} Focus on delivery, rhetoric, emotional appeal, and audience connection.`,
-    default: `${basePrompt} Provide comprehensive feedback on all aspects of the delivery.`
+    constructive: `${basePrompt} This is a constructive speech. Focus on: clear framework establishment, strong evidence and warrants, logical argument structure, impact analysis, and persuasive delivery. Analyze how well they built their case from the ground up.`,
+    rebuttal: `${basePrompt} This is a rebuttal speech. Focus on: effective refutation of opponent arguments, defense of own case, clash engagement, impact comparison (outweighing), and time allocation between offense and defense.`,
+    'cross-examination': `${basePrompt} This is a cross-examination period. Focus on: strategic questioning to expose weaknesses, clarity of questions, control of the cross-ex, ability to set up future arguments, and professional demeanor under pressure.`,
+    summary: `${basePrompt} This is a summary speech. Focus on: crystallization of key voting issues, impact comparison and weighing, narrative construction, judge appeal, and strategic choice of what arguments to go for in the final speech.`,
+    'final-focus': `${basePrompt} This is a final focus speech. Focus on: final impact comparison, resolution of key clashes, persuasive conclusion, strategic voting issue selection, and ability to close the debate decisively.`,
+    default: `${basePrompt} Provide comprehensive feedback on all aspects of the delivery and argumentation.`
   };
   
   const specificPrompt = prompts[speechType] || prompts.default;

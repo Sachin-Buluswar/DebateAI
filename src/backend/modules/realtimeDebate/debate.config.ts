@@ -147,7 +147,7 @@ export const debateConfig = {
       age: 17,
       description: 'Methodical and evidence-focused debater who loves breaking down complex policy issues.',
       voicePrompt: 'Speak like a confident 17-year-old student council member - clear, organized, and slightly nerdy. Use phrases like "So basically," "Here\'s the thing," and "Let me walk you through this." Sound passionate about research and facts.',
-      voiceId: 'jsCqWAovK2LkecY7zXl4', // Freya - clear female voice
+      voiceId: 'pMsXgVXv3BLzUgSXRplE', // Serena - clear female voice
       settings: { stability: 0.75, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true },
     },
     'Cameron Torres': {
@@ -156,7 +156,7 @@ export const debateConfig = {
       age: 16,
       description: 'Charismatic speaker who excels at connecting with audiences and making compelling appeals.',
       voicePrompt: 'Speak like a charismatic 16-year-old class president - confident, engaging, and persuasive. Use phrases like "Look," "Think about it," and "We need to understand." Sound like someone who genuinely cares about making a difference.',
-      voiceId: 'pNInz6obpgDQGcFmaJgB', // Adam - confident male voice
+      voiceId: 'yoZ06aMxZJJ28mfd3POQ', // Sam - confident male voice
       settings: { stability: 0.7, similarity_boost: 0.8, style: 0.4, use_speaker_boost: true },
     },
     'Riley Park': {
@@ -174,7 +174,7 @@ export const debateConfig = {
       age: 15,
       description: 'Practical debater who focuses on real-world solutions and community impacts.',
       voicePrompt: 'Speak like a grounded 15-year-old who volunteers in their community - practical, sincere, and solution-oriented. Use phrases like "In the real world," "What this means is," and "We can actually fix this." Sound mature for your age.',
-      voiceId: 'onwK4e9ZLuTAKqWW03F9', // Daniel - steady male voice
+      voiceId: 'GBv7mTt0atIp3Br8iCZE', // Thomas - steady male voice
       settings: { stability: 0.75, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true },
     },
     'Sage Williams': {
@@ -183,7 +183,7 @@ export const debateConfig = {
       age: 17,
       description: 'Research-oriented debater who brings academic credibility and detailed source work.',
       voicePrompt: 'Speak like a studious 17-year-old debate team captain - knowledgeable, well-prepared, and academic. Use phrases like "According to," "The research shows," and "Multiple studies confirm." Sound like someone who actually reads the sources.',
-      voiceId: 'ThT5KcBeYPX3keUQqHPh', // Dorothy - thoughtful female voice
+      voiceId: '21m00Tcm4TlvDq8ikWAM', // Rachel - thoughtful female voice
       settings: { stability: 0.8, similarity_boost: 0.85, style: 0.25, use_speaker_boost: true },
     },
     'Kai Thompson': {
@@ -192,7 +192,7 @@ export const debateConfig = {
       age: 16,
       description: 'Energetic and passionate debater who brings enthusiasm and emotional appeal to arguments.',
       voicePrompt: 'Speak like an enthusiastic 16-year-old activist - energetic, passionate, and emotionally engaging. Use phrases like "This is huge," "We can\'t ignore," and "This matters because." Sound like someone who truly believes in their cause.',
-      voiceId: 'bVMeCyTHy58xNoL34h3p', // Jeremy - engaging male voice
+      voiceId: 'bIHbv24MWmeRgasZH58o', // Will - engaging male voice
       settings: { stability: 0.65, similarity_boost: 0.8, style: 0.5, use_speaker_boost: true },
     },
     'Drew Martinez': {
@@ -201,7 +201,7 @@ export const debateConfig = {
       age: 18,
       description: 'Strategic debater who excels at framework arguments and finding the key clash points.',
       voicePrompt: 'Speak like a strategic 18-year-old varsity debater - composed, tactical, and framework-focused. Use phrases like "The key question is," "This comes down to," and "We need to weigh." Sound like someone who sees the big picture.',
-      voiceId: 'XB0fDUnXU5powFXDhCwa', // Charlotte - composed female voice
+      voiceId: 'SAz9YHcvj6GT2YYXdXww', // River - composed female voice
       settings: { stability: 0.75, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true },
     },
     'Quinn Lee': {
@@ -210,7 +210,7 @@ export const debateConfig = {
       age: 15,
       description: 'Quick-witted debater who dominates crossfire and excels at rapid-fire refutation.',
       voicePrompt: 'Speak like a sharp 15-year-old debate prodigy - quick, witty, and slightly competitive. Use phrases like "Hold on," "That\'s not right," and "Let me get this straight." Sound like someone who thinks fast on their feet.',
-      voiceId: 'JBFqnCBsd6RMkjVDRZzb', // George - quick male voice
+      voiceId: '5Q0t7uMcjvnagumLfvZi', // Paul - quick male voice
       settings: { stability: 0.7, similarity_boost: 0.8, style: 0.4, use_speaker_boost: true },
     },
     'Emerson Kim': {
@@ -219,7 +219,7 @@ export const debateConfig = {
       age: 17,
       description: 'Polished speaker who excels at final focus speeches and impact calculus.',
       voicePrompt: 'Speak like a polished 17-year-old debate tournament finalist - articulate, confident, and impactful. Use phrases like "At the end of the day," "What matters most," and "The choice is clear." Sound like someone who knows how to close strong.',
-      voiceId: 'CYw3kZ02Hs0563khs1Fj', // Gigi - polished female voice
+      voiceId: 'CwhRBWXzGAHq8TQ4Fs17', // Roger - polished voice
       settings: { stability: 0.8, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true },
     },
     'River Santos': {
@@ -228,7 +228,7 @@ export const debateConfig = {
       age: 16,
       description: 'Well-rounded debater who adapts their style to each phase and maintains consistent quality.',
       voicePrompt: 'Speak like a versatile 16-year-old debate all-rounder - adaptable, consistent, and reliable. Use phrases like "Let me explain," "Here\'s why," and "The bottom line is." Sound like someone who can handle any situation thrown at them.',
-      voiceId: 'SOYHLrjzK2X1ezoPC6cr', // Harry - versatile male voice
+      voiceId: 'knrPHWnBmmDHMoiMeP3l', // Santa - versatile voice
       settings: { stability: 0.75, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true },
     }
   } as Record<string, AIPersonality>,

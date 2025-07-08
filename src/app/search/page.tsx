@@ -20,6 +20,7 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searchHistory, setSearchHistory] = useState<Array<{id: string, query: string, results_count: number, created_at: string}>>([]);
   const [generatedAnswer, setGeneratedAnswer] = useState<GeneratedAnswer | null>(null);
+  const [searchMode, setSearchMode] = useState<'assistant' | 'rag'>('assistant');
   
   useEffect(() => {
     const checkUser = async () => {
@@ -144,14 +145,16 @@ export default function SearchPage() {
         }
       }
       
-      // Call the Wiki Search API
-      const searchResponse = await fetch('/api/wiki-search', {
+      // Call the appropriate search API based on mode
+      const searchEndpoint = searchMode === 'rag' ? '/api/wiki-rag-search' : '/api/wiki-search';
+      const searchResponse = await fetch(searchEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           query: query,
+          maxResults: 10,
           userId: user?.id
         }),
       });
@@ -268,13 +271,49 @@ export default function SearchPage() {
             </div>
           </div>
 
+          {/* Search Mode Selection */}
+          <div className="mt-4 flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Search Mode:</span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setSearchMode('assistant')}
+                className={`px-3 py-2 text-sm rounded-md font-medium transition-colors ${
+                  searchMode === 'assistant'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                🤖 Assistant Search
+              </button>
+              <button
+                onClick={() => setSearchMode('rag')}
+                className={`px-3 py-2 text-sm rounded-md font-medium transition-colors ${
+                  searchMode === 'rag'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                📄 RAG Search
+              </button>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
+              {searchMode === 'assistant' 
+                ? 'AI-powered search with generated summaries and analysis'
+                : 'Direct document search with original PDF context and chunks'
+              }
+            </div>
+          </div>
+
           {/* Search Form */}
           <form onSubmit={handleSearch} className="mt-4 relative max-w-xl">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for debate evidence or facts..."
+              placeholder={searchMode === 'rag' 
+                ? "Search for specific document content..." 
+                : "Search for debate evidence or facts..."
+              }
               className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             />
             <button
@@ -360,15 +399,81 @@ export default function SearchPage() {
           {/* Results */}
           <div className="mt-6 space-y-6">
             {results.length > 0 && (
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Search Results ({results.length})
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  {searchMode === 'rag' ? 'RAG Search Results' : 'Assistant Search Results'} ({results.length})
+                </h2>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  searchMode === 'rag' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                }`}>
+                  {searchMode === 'rag' ? 'Raw Document Chunks' : 'AI-Enhanced'}
+                </span>
+              </div>
             )}
             {results.map((res, idx) => (
-              <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Source: {res.source}</h2>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{res.content}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Relevance Score: {Math.round(res.score * 100)}%</p>
+              <div key={idx} className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 ${
+                searchMode === 'rag' ? 'border-green-500' : 'border-blue-500'
+              }`}>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    📄 {res.source}
+                  </h3>
+                  <div className="flex flex-col items-end space-y-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Relevance: {Math.round((res.score || 0) * 100)}%
+                    </span>
+                    {searchMode === 'rag' && (res as any).metadata && (
+                      <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                        Chunk #{(res as any).metadata.chunk_index || 0}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="prose dark:prose-invert prose-sm max-w-none">
+                  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                    {res.content}
+                  </p>
+                </div>
+
+                {searchMode === 'rag' && (res as any).metadata && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <details className="text-sm text-gray-600 dark:text-gray-400">
+                      <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 font-medium">
+                        📋 Document Metadata
+                      </summary>
+                      <div className="mt-2 space-y-1 ml-4">
+                        <p><strong>File ID:</strong> {(res as any).metadata.file_id}</p>
+                        <p><strong>File Name:</strong> {(res as any).metadata.file_name || 'Unknown'}</p>
+                        {(res as any).metadata.page_number && (
+                          <p><strong>Page:</strong> {(res as any).metadata.page_number}</p>
+                        )}
+                        {(res as any).metadata.start_char && (
+                          <p><strong>Position:</strong> Characters {(res as any).metadata.start_char}-{(res as any).metadata.end_char}</p>
+                        )}
+                      </div>
+                    </details>
+                    <button 
+                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                      onClick={() => {
+                        // Future: Implement PDF context viewer
+                        alert('PDF context viewer coming soon! This will show the surrounding text from the original document.');
+                      }}
+                    >
+                      🔍 View in PDF Context
+                    </button>
+                  </div>
+                )}
+
+                {searchMode === 'assistant' && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                      ✨ This result was processed and potentially summarized by AI for relevance and clarity.
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

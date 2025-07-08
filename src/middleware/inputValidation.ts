@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { MAX_UPLOAD_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
 
 // Common validation schemas
 export const commonSchemas = {
@@ -21,10 +22,10 @@ export const commonSchemas = {
       /^[a-zA-Z0-9\s\-_.,!?'"()[\]{}:;@#$%&*+=<>\/\\]*$/,
       'Topic contains invalid characters'
     ),
-  speechType: z.enum(['debate', 'presentation', 'speech'], {
+  speechType: z.enum(['debate', 'presentation', 'speech', 'constructive', 'rebuttal', 'cross-examination', 'summary', 'final-focus'], {
     errorMap: () => ({ message: 'Invalid speech type' })
   }),
-  audioMimeType: z.enum(['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg'], {
+  audioMimeType: z.enum(['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a'], {
     errorMap: () => ({ message: 'Unsupported audio format' })
   }),
 };
@@ -39,7 +40,7 @@ export const validationSchemas = {
   speechFeedback: z.object({
     topic: commonSchemas.debateTopic,
     speechTypes: z.string().optional(),
-    userSide: z.enum(['affirmative', 'negative', 'neutral']).optional(),
+    userSide: z.enum(['Proposition', 'Opposition', 'None']).optional(),
     customInstructions: commonSchemas.safeString.optional(),
     userId: commonSchemas.uuid,
   }),
@@ -66,9 +67,9 @@ export const validationSchemas = {
 // File validation for uploads
 export const fileValidation = {
   audio: {
-    maxSize: 50 * 1024 * 1024, // 50MB
-    allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg'],
-    maxDuration: 70 * 60, // 70 minutes in seconds
+    maxSize: MAX_UPLOAD_SIZE_BYTES,
+    allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a'],
+    maxDuration: MAX_RECORDING_MINUTES * 60, // Convert minutes to seconds
   },
 };
 
