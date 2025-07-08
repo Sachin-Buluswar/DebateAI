@@ -101,7 +101,59 @@ cp .env.example .env.local
 npm run check-env
 
 # 4. Start development server
-npm run dev
+npm run dev  # Runs on http://localhost:3001 (or next available port)
+```
+
+## 🔄 **VERSION CONTROL & TESTING WORKFLOW**
+
+### **Branch Strategy**
+- **main** - Production-ready code (user's live website)
+- **tech-updates** - Technical fixes and backend changes
+- **ui-redesign** - Frontend and design changes
+- **feature-[name]** - Specific feature development
+
+### **Making Changes (Claude's Process)**
+```bash
+# 1. Create feature branch
+git checkout -b ui-redesign  # or tech-updates, feature-navbar, etc.
+
+# 2. Make changes and commit
+git add .
+git commit -m "Descriptive commit message"
+
+# 3. DO NOT merge without user approval
+# User tests both versions before approving
+```
+
+### **Testing Changes (User's Process)**
+```bash
+# Test NEW version (with changes)
+git checkout [branch-name]
+npm run dev  # Visit http://localhost:3001
+
+# Test OLD version (current live site)  
+git checkout main
+npm run dev  # Visit http://localhost:3001
+
+# Helper script for guidance
+./scripts/test-branch.sh
+
+# If you APPROVE changes:
+git checkout main
+git merge [branch-name]
+git push origin main
+
+# If you REJECT changes:
+git checkout main
+git branch -D [branch-name]  # Deletes test branch safely
+```
+
+### **Emergency Revert**
+```bash
+# Go back to last working version
+git checkout main
+git reset --hard HEAD~1  # Goes back 1 commit
+git push origin main --force
 ```
 
 ### **Required Environment Variables**
@@ -132,12 +184,28 @@ DEBUG_API_KEY=your_debug_key
 
 ## 🚀 **DEVELOPMENT WORKFLOWS**
 
-### **Adding New Features**
-1. **Follow existing patterns** - Use established component and service structures
-2. **Implement error handling** - All external API calls must have retry logic
-3. **Add rate limiting** - New API endpoints must include rate limiting
-4. **Update documentation** - Add to relevant instruction files
-5. **Test thoroughly** - Verify all error paths and edge cases
+### **Claude's Development Process**
+1. **Create appropriate branch** (ui-redesign, tech-updates, or feature-[name])
+2. **Follow existing patterns** - Use established component and service structures  
+3. **Implement error handling** - All external API calls must have retry logic
+4. **Add rate limiting** - New API endpoints must include rate limiting
+5. **Update documentation** - Add to relevant instruction files
+6. **Test thoroughly** - Verify all error paths and edge cases
+7. **NEVER merge to main** - Always wait for user approval
+
+### **User Approval Process**
+1. **Test both versions** - Compare new vs current
+2. **Check core functionality** - Ensure nothing is broken
+3. **Evaluate user experience** - Does it feel better?
+4. **Make decision** - Approve ✅ or Reject ❌
+5. **Communicate to Claude** - "I like it" or "I don't like it"
+
+### **Protection Rules**
+- ❌ **No direct commits to main** without user approval
+- ✅ **Always use branches** for any changes
+- ✅ **User has final say** on all changes
+- ✅ **Easy to revert** if something goes wrong
+- ✅ **Testing before deployment** is mandatory
 
 ### **API Development Pattern**
 ```typescript
