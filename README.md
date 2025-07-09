@@ -116,7 +116,44 @@ DebateAI is a **fully operational, production-ready application** that provides 
 
 ---
 
-## 📖 **Usage Guide**
+## 📖 **Documentation Structure**
+
+The project documentation is organized in the `docs/` folder for easy navigation:
+
+```
+docs/
+├── README.md               – Documentation overview
+├── architecture.md         – System design and architecture
+├── contributing.md         – Contribution guidelines
+└── apis/                   – API reference documentation
+    ├── supabase.md        – Database, auth, and RLS
+    ├── openai.md          – GPT-4o, embeddings, vector stores
+    ├── elevenlabs.md      – TTS, STT, real-time voice
+    └── socketio.md        – Real-time communication
+
+instructions/               – Legacy docs (being migrated)
+├── requirements.md        – Complete feature specifications
+├── tasklist.md           – Implementation progress tracking
+└── techstack.md          – Technology decisions
+```
+
+### **Key Documentation**
+
+- **API References**: Detailed guides for each external service in `docs/apis/`
+- **Architecture**: System design and component interactions
+- **Troubleshooting**: [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for common issues
+- **Development Guide**: [`CLAUDE.md`](CLAUDE.md) for AI agents and contributors
+
+### **Documentation Guidelines**
+
+1. **Keep it concise** – Use bullet points and code examples over long prose
+2. **Update immediately** – Documentation changes go in the same PR as code changes
+3. **Link to official docs** – Don't duplicate vendor documentation
+4. **Delete obsolete content** – Git history preserves old versions
+
+---
+
+## 📊 **Usage Guide**
 
 ### **Getting Started**
 1. **Sign Up/Sign In** - Create an account with email verification
@@ -227,22 +264,6 @@ src/
 - Efficient memory management for long-running sessions
 - Optimized bundle size and code splitting
 - Production-ready error handling and recovery
-
----
-
-## 📚 **Documentation**
-
-### **Core Documentation**
-- [`instructions/requirements.md`](instructions/requirements.md) - Complete feature specifications
-- [`instructions/tasklist.md`](instructions/tasklist.md) - Implementation progress
-- [`instructions/techstack.md`](instructions/techstack.md) - Technology decisions
-- [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) - Common issues and solutions
-- [`PRODUCTION_READINESS_PLAN.md`](PRODUCTION_READINESS_PLAN.md) - Deployment guide
-
-### **Implementation Guides**
-- [`instructions/AUTH_TESTING_SUMMARY.md`](instructions/AUTH_TESTING_SUMMARY.md) - Authentication details
-- [`instructions/IMPLEMENTATION_COMPLETE_SUMMARY.md`](instructions/IMPLEMENTATION_COMPLETE_SUMMARY.md) - Technical implementation
-- [`CLAUDE.md`](CLAUDE.md) - Development guide for contributors
 
 ---
 
