@@ -44,13 +44,13 @@ const StreamingAudioPlayer = ({ audioQueue, setAudioQueue }: StreamingAudioPlaye
       const blob = audioQueue[0];
       const buffer = await blob.arrayBuffer();
       try {
-      sourceBufferRef.current.appendBuffer(buffer);
+        sourceBufferRef.current.appendBuffer(buffer);
       } catch (err) {
         console.error('Error appending audio buffer:', err);
         // Attempt to recover by resetting the media source
         resetMediaSource();
       }
-      setAudioQueue(prev => prev.slice(1));
+      setAudioQueue((prev) => prev.slice(1));
     } else {
       isPlaying.current = false;
     }
@@ -71,17 +71,19 @@ const StreamingAudioPlayer = ({ audioQueue, setAudioQueue }: StreamingAudioPlaye
     if (audioRef.current) {
       audioRef.current.src = URL.createObjectURL(ms);
       audioRef.current.load();
-      audioRef.current.play().catch(() => {/* ignore */});
+      audioRef.current.play().catch(() => {
+        /* ignore */
+      });
     }
     ms.addEventListener('sourceopen', setupSourceBuffer);
   };
 
   return (
     <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <h3 className="text-xl font-semibold mb-2">Live Audio</h3>
-        <audio ref={audioRef} controls autoPlay />
+      <h3 className="text-xl font-semibold mb-2">Live Audio</h3>
+      <audio ref={audioRef} controls autoPlay />
     </div>
   );
 };
 
-export default StreamingAudioPlayer; 
+export default StreamingAudioPlayer;

@@ -7,7 +7,11 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
+import {
+  validateRequest,
+  validationSchemas,
+  addSecurityHeaders,
+} from '@/middleware/inputValidation';
 
 // Get environment variables
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -43,7 +47,7 @@ async function performRagSearch(
   query: string,
   maxResults: number = 10
 ): Promise<RagSearchResult[]> {
-  console.log(`[rag-search] Performing pure RAG search for: "${query}"`);
+  // Perform pure RAG search
 
   try {
     // Get embedding for the query
@@ -96,18 +100,24 @@ Return up to ${maxResults} results ordered by relevance.`,
     });
 
     // Poll for completion
-    while (['queued', 'in_progress', 'requires_action'].includes(run.status)) {
-      await new Promise(r => setTimeout(r, 1000));
-      run = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    let currentRunId = run.id;
+    let currentRunStatus = run.status;
+    while (['queued', 'in_progress', 'requires_action'].includes(currentRunStatus)) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const updatedRun = await openai.beta.threads.runs.retrieve(currentRunId, {
+        thread_id: thread.id,
+      });
+      currentRunStatus = updatedRun.status;
+      currentRunId = updatedRun.id;
     }
 
-    if (run.status !== 'completed') {
-      throw new Error(`RAG search failed with status: ${run.status}`);
+    if (currentRunStatus !== 'completed') {
+      throw new Error(`RAG search failed with status: ${currentRunStatus}`);
     }
 
     // Get messages and parse results
     const messages = await openai.beta.threads.messages.list(thread.id, { order: 'desc' });
-    const assistantMessage = messages.data.find(msg => msg.role === 'assistant');
+    const assistantMessage = messages.data.find((msg) => msg.role === 'assistant');
 
     let results: RagSearchResult[] = [];
 
@@ -116,17 +126,17 @@ Return up to ${maxResults} results ordered by relevance.`,
         if (content.type === 'text') {
           // Parse JSON response or extract citations
           const textContent = content.text.value;
-          
+
           // Extract file citations from annotations
           const annotations = content.text.annotations || [];
-          const citations = annotations.filter(a => 'file_citation' in a);
+          const citations = annotations.filter((a) => 'file_citation' in a);
 
           if (citations.length > 0) {
             // Process each citation as a separate result
             for (let i = 0; i < citations.length && results.length < maxResults; i++) {
               const citation = citations[i] as any;
               const fileId = citation.file_citation?.file_id;
-              
+
               // Get file information
               let fileName = 'Unknown Document';
               try {
@@ -138,14 +148,15 @@ Return up to ${maxResults} results ordered by relevance.`,
 
               // Extract the relevant text around the citation
               const quoteParts = citation.text?.split('】') || [];
-              const relevantText = quoteParts.length > 1 
-                ? quoteParts[1].substring(0, 500).trim()
-                : textContent.substring(i * 200, (i + 1) * 200).trim();
+              const relevantText =
+                quoteParts.length > 1
+                  ? quoteParts[1].substring(0, 500).trim()
+                  : textContent.substring(i * 200, (i + 1) * 200).trim();
 
               results.push({
                 content: relevantText,
                 source: fileName,
-                score: Math.max(0.1, 1.0 - (i * 0.1)), // Decreasing relevance
+                score: Math.max(0.1, 1.0 - i * 0.1), // Decreasing relevance
                 metadata: {
                   file_id: fileId,
                   file_name: fileName,
@@ -156,12 +167,12 @@ Return up to ${maxResults} results ordered by relevance.`,
           } else {
             // Fallback: split text into chunks
             const chunks = textContent.match(/.{1,300}(?:\s|$)/g) || [textContent];
-            
+
             for (let i = 0; i < Math.min(chunks.length, maxResults); i++) {
               results.push({
                 content: chunks[i].trim(),
                 source: 'Vector Store Search',
-                score: Math.max(0.1, 1.0 - (i * 0.1)),
+                score: Math.max(0.1, 1.0 - i * 0.1),
                 metadata: {
                   file_id: 'unknown',
                   chunk_index: i,
@@ -174,25 +185,26 @@ Return up to ${maxResults} results ordered by relevance.`,
     }
 
     // Cleanup
-    await openai.beta.threads.del(thread.id).catch(() => {});
-    await openai.beta.assistants.del(tempAssistant.id).catch(() => {});
+    await openai.beta.threads.delete(thread.id).catch(() => {});
+    await openai.beta.assistants.delete(tempAssistant.id).catch(() => {});
 
-    console.log(`[rag-search] Found ${results.length} RAG results`);
+    // Return results
     return results.slice(0, maxResults);
-
   } catch (error) {
     console.error('[rag-search] RAG search error:', error);
-    
+
     // Return error result
-    return [{
-      content: `RAG search temporarily unavailable for "${query}". Please try the assistant search mode or try again later.`,
-      source: 'system-error',
-      score: 0.0,
-      metadata: {
-        file_id: 'error',
-        chunk_index: 0,
+    return [
+      {
+        content: `RAG search temporarily unavailable for "${query}". Please try the assistant search mode or try again later.`,
+        source: 'system-error',
+        score: 0.0,
+        metadata: {
+          file_id: 'error',
+          chunk_index: 0,
+        },
       },
-    }];
+    ];
   }
 }
 
@@ -204,9 +216,12 @@ export async function POST(request: Request) {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
       return addSecurityHeaders(
-        NextResponse.json({
-          error: 'Search service not configured'
-        }, { status: 503 })
+        NextResponse.json(
+          {
+            error: 'Search service not configured',
+          },
+          { status: 503 }
+        )
       );
     }
 
@@ -224,10 +239,13 @@ export async function POST(request: Request) {
 
       if (!validation.success) {
         return addSecurityHeaders(
-          NextResponse.json({
-            error: 'Invalid request',
-            details: validation.details
-          }, { status: 400 })
+          NextResponse.json(
+            {
+              error: 'Invalid request',
+              details: validation.details,
+            },
+            { status: 400 }
+          )
         );
       }
 
@@ -235,13 +253,16 @@ export async function POST(request: Request) {
 
       if (query.length < 3) {
         return addSecurityHeaders(
-          NextResponse.json({
-            error: 'Search query must be at least 3 characters long'
-          }, { status: 400 })
+          NextResponse.json(
+            {
+              error: 'Search query must be at least 3 characters long',
+            },
+            { status: 400 }
+          )
         );
       }
 
-      console.log(`[rag-search] Processing RAG search: "${query.substring(0, 50)}..."`);
+      // Process RAG search request
 
       // Perform RAG search
       const results = await performRagSearch(
@@ -252,23 +273,28 @@ export async function POST(request: Request) {
       );
 
       return addSecurityHeaders(
-        NextResponse.json({
-          success: true,
-          searchType: 'rag',
-          results,
-          query: query.substring(0, 200),
-          maxResults,
-          timestamp: new Date().toISOString(),
-        }, { status: 200 })
+        NextResponse.json(
+          {
+            success: true,
+            searchType: 'rag',
+            results,
+            query: query.substring(0, 200),
+            maxResults,
+            timestamp: new Date().toISOString(),
+          },
+          { status: 200 }
+        )
       );
-
     } catch (error) {
       console.error('[rag-search] Error:', error);
-      
+
       return addSecurityHeaders(
-        NextResponse.json({
-          error: 'RAG search temporarily unavailable'
-        }, { status: 500 })
+        NextResponse.json(
+          {
+            error: 'RAG search temporarily unavailable',
+          },
+          { status: 500 }
+        )
       );
     }
   });
@@ -279,7 +305,8 @@ export async function OPTIONS() {
     new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://debateai.com',
+        'Access-Control-Allow-Origin':
+          process.env.NODE_ENV === 'development' ? '*' : 'https://debateai.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

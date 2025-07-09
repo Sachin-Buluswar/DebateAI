@@ -5,7 +5,7 @@ import { wikiSearchConfig } from './wikiSearch.config';
 
 // Placeholder for chunking logic
 const chunkText = (text: string, chunkSize = wikiSearchConfig.chunkSize, overlap = wikiSearchConfig.chunkOverlap): string[] => {
-  console.log(`Chunking text of length ${text.length}`);
+  // console.log(`Chunking text of length ${text.length}`);
   // Basic chunking logic (can be refined later)
   const chunks: string[] = [];
   let start = 0;
@@ -19,7 +19,7 @@ const chunkText = (text: string, chunkSize = wikiSearchConfig.chunkSize, overlap
         break;
     }
   }
-  console.log(`Generated ${chunks.length} chunks`);
+  // console.log(`Generated ${chunks.length} chunks`);
   return chunks;
 };
 
@@ -32,7 +32,7 @@ const storeChunksInVectorStore = async (
   chunks: string[],
   fileName: string // Use original filename for context
 ): Promise<void> => {
-  console.log(`[storeChunks] Uploading ${chunks.length} chunks from ${fileName} to Vector Store ID: ${vectorStoreId}`);
+  // console.log(`[storeChunks] Uploading ${chunks.length} chunks from ${fileName} to Vector Store ID: ${vectorStoreId}`);
   if (!vectorStoreId || !vectorStoreId.startsWith('vs_')) {
     console.error(`[storeChunks] Invalid or missing Vector Store ID provided: ${vectorStoreId}`);
     throw new Error(`Invalid Vector Store ID: ${vectorStoreId}`);
@@ -45,7 +45,7 @@ const storeChunksInVectorStore = async (
     const fileUploadPromises = chunks.map(async (chunk, index) => {
       const chunkFileName = `${fileName}_chunk_${index}.txt`;
       const chunkBuffer = Buffer.from(chunk, 'utf-8');
-      console.log(`[storeChunks] Uploading chunk ${index} as ${chunkFileName} (${chunkBuffer.length} bytes)...`);
+      // console.log(`[storeChunks] Uploading chunk ${index} as ${chunkFileName} (${chunkBuffer.length} bytes)...`);
 
       try {
         const fileLike = await toFile(chunkBuffer, chunkFileName, { type: 'text/plain' });
@@ -53,7 +53,7 @@ const storeChunksInVectorStore = async (
           file: fileLike,
           purpose: 'assistants',
         });
-        console.log(`[storeChunks] Uploaded chunk ${index}, File ID: ${fileObject.id}`);
+        // console.log(`[storeChunks] Uploaded chunk ${index}, File ID: ${fileObject.id}`);
         uploadedFileIds.push(fileObject.id); // Add to list only on successful upload
         return fileObject.id;
       } catch (uploadError) {
@@ -73,10 +73,10 @@ const storeChunksInVectorStore = async (
       throw new Error(`Failed to upload any chunks for ${fileName}.`);
     }
 
-    console.log(`[storeChunks] Successfully uploaded ${fileIds.length} / ${chunks.length} chunk files for ${fileName}.`);
+    // console.log(`[storeChunks] Successfully uploaded ${fileIds.length} / ${chunks.length} chunk files for ${fileName}.`);
 
     // 2. Add these files to the Vector Store in a batch
-    console.log(`[storeChunks] Creating file batch for Vector Store ${vectorStoreId} with ${fileIds.length} files...`);
+    // console.log(`[storeChunks] Creating file batch for Vector Store ${vectorStoreId} with ${fileIds.length} files...`);
 
     let batch: { id: string; status: string; file_counts?: { total?: number; in_progress?: number; completed?: number; failed?: number; cancelled?: number } };
     try {
@@ -107,7 +107,7 @@ const storeChunksInVectorStore = async (
         }
     } catch (batchCreateError) {
         console.error(`[storeChunks] FATAL ERROR during createAndPoll for vector store ${vectorStoreId}:`, batchCreateError);
-        console.log(`[storeChunks] Attempting to delete ${uploadedFileIds.length} uploaded files due to batch creation failure...`);
+        // console.log(`[storeChunks] Attempting to delete ${uploadedFileIds.length} uploaded files due to batch creation failure...`);
         const deletePromises = uploadedFileIds.map(id => 
             openai.files.delete(id).catch(delErr => console.error(`[storeChunks] Failed to delete uploaded file ${id}:`, delErr))
         );
@@ -118,12 +118,12 @@ const storeChunksInVectorStore = async (
 
     // --- Detailed Logging of Batch Results --- 
     if (batch) {
-      console.log(`[storeChunks] File batch ${batch.id} processing finished. Status: ${batch.status}`);
-      console.log(`  Total files submitted: ${batch.file_counts?.total || 0}`);
-      console.log(`  In progress: ${batch.file_counts?.in_progress || 0}`);
-      console.log(`  Completed: ${batch.file_counts?.completed || 0}`);
-      console.log(`  Failed: ${batch.file_counts?.failed || 0}`);
-      console.log(`  Cancelled: ${batch.file_counts?.cancelled || 0}`);
+      // console.log(`[storeChunks] File batch ${batch.id} processing finished. Status: ${batch.status}`);
+      // console.log(`  Total files submitted: ${batch.file_counts?.total || 0}`);
+      // console.log(`  In progress: ${batch.file_counts?.in_progress || 0}`);
+      // console.log(`  Completed: ${batch.file_counts?.completed || 0}`);
+      // console.log(`  Failed: ${batch.file_counts?.failed || 0}`);
+      // console.log(`  Cancelled: ${batch.file_counts?.cancelled || 0}`);
       // ------------------------------------------
 
       if (batch.status !== 'completed' || (batch.file_counts?.failed || 0) > 0 || (batch.file_counts?.cancelled || 0) > 0) {
@@ -142,7 +142,7 @@ const storeChunksInVectorStore = async (
         // Decide on error handling: Throw an error to signal failure back up the chain?
         throw new Error(`Vector Store batch processing failed for ${fileName}. Status: ${batch.status}, Failed: ${batch.file_counts?.failed || 0}, Cancelled: ${batch.file_counts?.cancelled || 0}`);
       } else {
-        console.log(`[storeChunks] Successfully added ${batch.file_counts?.completed || 0} files from ${fileName} to Vector Store ${vectorStoreId}.`);
+        // console.log(`[storeChunks] Successfully added ${batch.file_counts?.completed || 0} files from ${fileName} to Vector Store ${vectorStoreId}.`);
       }
     } else {
       throw new Error(`Vector Store batch processing failed for ${fileName}. Batch object was not created successfully.`);
@@ -173,7 +173,7 @@ export const processAndIndexDocument = async (
     fileName: string
 ): Promise<void> => {
   try {
-    console.log(`[processAndIndex] Starting OpenAI Vector Store processing for document: ${fileName}`);
+    // console.log(`[processAndIndex] Starting OpenAI Vector Store processing for document: ${fileName}`);
 
     if (!vectorStoreId) {
       console.error("[processAndIndex] Vector Store ID is missing!");
@@ -187,14 +187,14 @@ export const processAndIndexDocument = async (
     const chunks = chunkText(fileContent);
 
     if (!chunks || chunks.length === 0) {
-      console.warn(`[processAndIndex] No chunks generated for ${fileName}. Skipping vector store upload.`);
+      // console.warn(`[processAndIndex] No chunks generated for ${fileName}. Skipping vector store upload.`);
       return;
     }
 
     // Store the chunks in the vector store
     await storeChunksInVectorStore(openai, vectorStoreId, chunks, fileName);
 
-    console.log(`[processAndIndex] Successfully processed and initiated indexing for document: ${fileName} in Vector Store ${vectorStoreId}`);
+    // console.log(`[processAndIndex] Successfully processed and initiated indexing for document: ${fileName} in Vector Store ${vectorStoreId}`);
   } catch (error) {
     console.error(`[processAndIndex] Error processing document ${fileName} for Vector Store:`, error);
     throw error; // Re-throw error

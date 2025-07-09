@@ -35,21 +35,26 @@ export default function PreferencesSection() {
     const fetchPreferences = async () => {
       try {
         setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session) {
           const { data, error } = await supabase
             .from('user_preferences')
             .select('preferences')
             .eq('user_id', session.user.id)
             .single();
-          
+
           if (error && error.code !== 'PGRST116') {
             console.error('Error fetching preferences:', error);
             setError('Failed to fetch preferences');
           } else if (data) {
             setPreferences({ ...defaultPreferences, ...data.preferences });
-            if (typeof data.preferences.darkMode === 'boolean' && data.preferences.darkMode !== isDarkMode) {
+            if (
+              typeof data.preferences.darkMode === 'boolean' &&
+              data.preferences.darkMode !== isDarkMode
+            ) {
               toggleDarkMode();
             }
           }
@@ -61,7 +66,7 @@ export default function PreferencesSection() {
         setLoading(false);
       }
     };
-    
+
     fetchPreferences();
   }, []);
 
@@ -70,24 +75,27 @@ export default function PreferencesSection() {
       setSaving(true);
       setError(null);
       setSuccess(false);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         setError('You must be logged in to save preferences');
         toast.error('Login required to save preferences');
         return;
       }
-      
+
       const prefsToSave = { ...preferences, darkMode: isDarkMode };
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
+      const { error } = await supabase.from('user_preferences').upsert(
+        {
           user_id: session.user.id,
           preferences: prefsToSave,
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
-      
+        },
+        { onConflict: 'user_id' }
+      );
+
       if (error) {
         console.error('Error saving preferences:', error);
         setError('Failed to save preferences');
@@ -125,15 +133,21 @@ export default function PreferencesSection() {
   return (
     <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
       <div className="px-4 py-5 sm:p-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">User Preferences</h3>
+        <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+          User Preferences
+        </h3>
         <div className="mt-5">
           <div className="space-y-6">
             {/* Toggle Preferences */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="flex-grow flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Dark Mode</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Enable dark mode for reduced eye strain</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                    Dark Mode
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Enable dark mode for reduced eye strain
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -149,15 +163,17 @@ export default function PreferencesSection() {
 
               <div className="flex items-center justify-between">
                 <span className="flex-grow flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Email Notifications</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Receive email updates about your activity</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                    Email Notifications
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Receive email updates about your activity
+                  </span>
                 </span>
                 <button
                   type="button"
                   className={`${
-                    preferences.emailNotifications
-                      ? 'bg-blue-600'
-                      : 'bg-gray-200 dark:bg-gray-700'
+                    preferences.emailNotifications ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                   } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                   onClick={() => handleToggle('emailNotifications')}
                 >
@@ -172,15 +188,17 @@ export default function PreferencesSection() {
 
               <div className="flex items-center justify-between">
                 <span className="flex-grow flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Auto-Save Debates</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Automatically save debate progress</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                    Auto-Save Debates
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Automatically save debate progress
+                  </span>
                 </span>
                 <button
                   type="button"
                   className={`${
-                    preferences.autoSave
-                      ? 'bg-blue-600'
-                      : 'bg-gray-200 dark:bg-gray-700'
+                    preferences.autoSave ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                   } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                   onClick={() => handleToggle('autoSave')}
                 >
@@ -195,15 +213,17 @@ export default function PreferencesSection() {
 
               <div className="flex items-center justify-between">
                 <span className="flex-grow flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Show Word Count</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Display word count during speeches</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                    Show Word Count
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Display word count during speeches
+                  </span>
                 </span>
                 <button
                   type="button"
                   className={`${
-                    preferences.showWordCount
-                      ? 'bg-blue-600'
-                      : 'bg-gray-200 dark:bg-gray-700'
+                    preferences.showWordCount ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                   } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                   onClick={() => handleToggle('showWordCount')}
                 >
@@ -220,7 +240,10 @@ export default function PreferencesSection() {
             {/* Select Preferences */}
             <div className="space-y-4">
               <div>
-                <label htmlFor="debate-format" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="debate-format"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Debate Format
                 </label>
                 <input
@@ -234,7 +257,10 @@ export default function PreferencesSection() {
               </div>
 
               <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="language"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Language
                 </label>
                 <select
@@ -275,9 +301,25 @@ export default function PreferencesSection() {
             >
               {saving ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Saving...
                 </>
@@ -290,4 +332,4 @@ export default function PreferencesSection() {
       </div>
     </div>
   );
-} 
+}

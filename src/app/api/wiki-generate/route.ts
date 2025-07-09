@@ -6,6 +6,8 @@
 
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import {
   searchVectorStore,
   SearchResult,
@@ -23,13 +25,23 @@ const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o'; // Allo
 // Initialize OpenAI client - moved inside handler
 let openai: OpenAI | null = null;
 
-// TODO: Implement proper authentication/authorization if needed
-
 /**
  * POST handler for generating an answer using RAG.
  * Expects a JSON body with { query: string, maxResults?: number }.
  */
 export async function POST(request: Request) {
+  // --- Authentication Check ---
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return NextResponse.json({ 
+      error: 'Authentication required' 
+    }, { status: 401 });
+  }
+  
   // --- Environment Variable Check ---
   if (!openaiApiKey) {
     console.error('OPENAI_API_KEY environment variable is not set.');
@@ -58,27 +70,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request body. Optional field maxResults must be a positive integer.' }, { status: 400 });
     }
 
-    console.log(`Received RAG generation request with query: "${query}"`);
+    // Process RAG generation request
 
     // --- Step 1: Retrieve Context Chunks ---
-    console.log('Step 1: Retrieving context chunks...');
     const contextChunks: SearchResult[] = await searchVectorStore(
         openai,
         vectorStoreId,
         query,
         maxResults // Pass optional maxResults or undefined (defaults in retrievalService)
     );
-    console.log(`Retrieved ${contextChunks.length} context chunks.`);
 
     // --- Step 2: Generate Answer from Context ---
-    console.log('Step 2: Generating answer...');
     const generatedResult: GeneratedAnswer = await generateAnswerFromContext(
         openai,
         generationModel, // Use the configured generation model
         query,
         contextChunks
     );
-    console.log('Answer generation complete.');
 
     // --- Return Generated Answer --- 
     return NextResponse.json(generatedResult, { status: 200 });

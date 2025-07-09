@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { PlayIcon, PauseIcon, ForwardIcon, BookmarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { supabase } from '@/lib/supabaseClient';
 
 type DebateSetup = {
   topic: string;
@@ -113,20 +114,75 @@ export default function DebatePage() {
   };
 
   useEffect(() => {
-    // This fetch call is necessary to initialize the socket.io server on the backend.
-    fetch('/api/socketio');
+    // Initialize socket with authentication
+    const initializeSocket = async () => {
+      // Get the current session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        console.error('No authenticated session found');
+        alert('You must be logged in to participate in debates');
+        return;
+      }
+      
+      // This fetch call is necessary to initialize the socket.io server on the backend.
+      fetch('/api/socketio');
 
-    const socket: Socket = io({
-      path: '/api/socketio',
+      const socket: Socket = io({
+        path: '/api/socketio',
+        auth: {
+          token: session.access_token
+        },
+        // Reconnection options
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        transports: ['websocket', 'polling']
+      });
+      
+      socketRef.current = socket;
+
+    socket.on('connect', () => {
+      setIsConnected(true);
     });
     
-    socketRef.current = socket;
-
-    socket.on('connect', () => setIsConnected(true));
-    socket.on('disconnect', () => setIsConnected(false));
+    socket.on('disconnect', (reason) => {
+      setIsConnected(false);
+      
+      // Handle different disconnect reasons
+      if (reason === 'io server disconnect') {
+        // Server disconnected, need to manually reconnect
+        socket.connect();
+      }
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+      setIsConnected(false);
+    });
+    
+    socket.on('reconnect', (attemptNumber) => {
+      setIsConnected(true);
+      
+      // Re-join debate if one was in progress
+      if (debateState && debateState.phase !== 'ENDED') {
+        // Optionally emit a rejoin event if the server supports it
+        // socket.emit('rejoinDebate', { debateId: debateState.id });
+      }
+    });
+    
+    socket.on('reconnect_attempt', (attemptNumber) => {
+      // Reconnection in progress
+    });
+    
+    socket.on('reconnect_failed', () => {
+      console.error('Socket reconnection failed');
+      alert('Connection to the debate server lost. Please refresh the page to reconnect.');
+    });
 
     socket.on('debateStateUpdate', (newState: DebateState, mode: string) => {
-      console.log('Debate state update:', newState, mode);
       setDebateState(newState);
       if (mode === 'crossfire') {
         setIsCrossfireActive(true);
@@ -167,7 +223,6 @@ export default function DebatePage() {
     });
 
     socket.on('aiSpeech', (data: { speaker: string; text: string }) => {
-      console.log('AI speech received:', data);
       // Only show speech text briefly as a preview
       setSpeechText(data.text);
       setCurrentSpeaker(data.speaker);
@@ -178,7 +233,6 @@ export default function DebatePage() {
     });
     
     socket.on('aiSpeechAudio', (audioBuffer: ArrayBuffer) => {
-      console.log('AI speech audio received:', audioBuffer.byteLength, 'bytes');
       const buffer = audioBuffer instanceof ArrayBuffer ? audioBuffer : 
                      new Uint8Array(audioBuffer).buffer;
       setAudioQueue(prev => [...prev, new Blob([buffer], { type: 'audio/mpeg' })]);
@@ -218,9 +272,16 @@ export default function DebatePage() {
         alert(`Failed to load debate: ${response.error}`);
       }
     });
+    };
+    
+    // Call the async initialization function
+    initializeSocket();
 
+    // Cleanup function
     return () => {
-      socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
   }, [setup]);
 
@@ -342,7 +403,7 @@ export default function DebatePage() {
             {!setup ? (
               <Card variant="gradient">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold text-white">Setup Debate</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Setup Debate</h2>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSetupSubmit} className="space-y-6">
@@ -356,7 +417,7 @@ export default function DebatePage() {
                     />
                     
                     <div>
-                      <label className="block text-sm font-medium text-white mb-3">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Choose Your Side
                       </label>
                       <div className="grid grid-cols-2 gap-3">
@@ -380,7 +441,7 @@ export default function DebatePage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-white mb-3">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Select 3 AI Debaters (Currently selected: {formData.selectedAIDebaters.length}/3)
                       </label>
                       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
@@ -391,8 +452,8 @@ export default function DebatePage() {
                             onClick={() => handleAIDebaterToggle(debater.name)}
                             className={`p-2 text-xs rounded-lg border transition-all text-left ${
                               formData.selectedAIDebaters.includes(debater.name)
-                                ? 'border-blue-400 bg-blue-100 text-blue-800'
-                                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                                ? 'border-blue-400 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                                : 'border-gray-300 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-gray-400 dark:hover:border-gray-600'
                             } ${formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name) 
                                 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             disabled={formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name)}
@@ -417,7 +478,7 @@ export default function DebatePage() {
                         onChange={(e) => setFormData(prev => ({ ...prev, aiPartner: e.target.checked }))}
                         className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
                       />
-                      <label htmlFor="aiPartner" className="text-sm text-white">
+                      <label htmlFor="aiPartner" className="text-sm text-gray-900 dark:text-white">
                         Include AI Partner on my team
                       </label>
                     </div>
@@ -702,7 +763,7 @@ export default function DebatePage() {
             {/* Overall Score */}
             <Card variant="gradient">
               <CardContent>
-                <div className="flex items-center justify-between text-white">
+                <div className="flex items-center justify-between text-gray-900 dark:text-white">
                   <h3 className="text-lg font-semibold">
                     Overall Performance Score
                   </h3>
@@ -710,9 +771,9 @@ export default function DebatePage() {
                     {debateAnalysis.overallScore}/100
                   </div>
                 </div>
-                <div className="mt-3 w-full bg-white/20 rounded-full h-3">
+                <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <div 
-                    className="bg-white h-3 rounded-full transition-all duration-500"
+                    className="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${debateAnalysis.overallScore}%` }}
                   />
                 </div>
@@ -805,7 +866,7 @@ export default function DebatePage() {
                     {debateAnalysis.keyMoments.map((moment: { timestamp: string; moment: string }, index: number) => (
                       <li key={index} className="text-sm flex items-start">
                         <span className="text-primary-500 mr-2">•</span>
-                        <span className="text-xs text-gray-500 mr-2">{moment.timestamp}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">{moment.timestamp}</span>
                         {moment.moment}
                       </li>
                     ))}

@@ -111,17 +111,11 @@ export async function POST(request: Request) {
       
       console.log('[speech-feedback] Processing complete, returning feedback');
       
-      // Return enhanced response with metadata
+      // Return response with id for frontend redirect
       return addSecurityHeaders(
         NextResponse.json({
-          ...result.feedback,
-          metadata: {
-            processingTime: new Date().toISOString(),
-            audioUrl: result.audioUrl,
-            feedbackId: result.feedbackId,
-            speechType,
-            topic: topic.substring(0, 100) // Limit echoed topic length
-          }
+          id: result.feedbackId,
+          success: true
         }, { status: 200 })
       );
       

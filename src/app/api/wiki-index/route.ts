@@ -5,7 +5,8 @@
 
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-// import { createClient } from '@supabase/supabase-js'; // Keep Supabase client if needed for auth/logging later
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { processAndIndexDocument } from '@/backend/modules/wikiSearch/indexingService';
 
 // Get environment variables
@@ -20,19 +21,37 @@ let openai: OpenAI | null = null;
 // Initialize Supabase admin client (Optional: for server operations like logging/auth checks)
 // const supabaseAdmin = createClient(supabaseUrl || '', supabaseServiceKey || '');
 
-// TODO: Implement proper authentication and authorization (e.g., admin only)
-
 /**
  * POST handler for indexing a single document.
  * Expects a JSON body with { fileName: string, fileContent: string }.
  */
 export async function POST(request: Request) {
-  // --- Add this debug line --- 
-  console.log('\n--- DEBUG: Checking Environment Variable ---');
-  console.log('process.env.OPENAI_VECTOR_STORE_ID =', process.env.OPENAI_VECTOR_STORE_ID);
-  console.log('process.env.OPENAI_API_KEY exists =', !!process.env.OPENAI_API_KEY);
-  console.log('--- End DEBUG ---\n');
-  // ----------------------------
+  // --- Authentication Check ---
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return NextResponse.json({ 
+      error: 'Authentication required' 
+    }, { status: 401 });
+  }
+  
+  // Optional: Add admin-only check
+  // const { data: profile } = await supabase
+  //   .from('user_profiles')
+  //   .select('role')
+  //   .eq('id', user.id)
+  //   .single();
+  //   
+  // if (profile?.role !== 'admin') {
+  //   return NextResponse.json({ 
+  //     error: 'Admin access required' 
+  //   }, { status: 403 });
+  // }
+  
+  // Environment variables are checked below
 
   let requestBodyForErrorLog: unknown = null; // Variable to hold body for logging in catch block
   // --- Environment Variable Check ---
@@ -61,12 +80,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request body. Required fields: fileName (string), fileContent (string).' }, { status: 400 });
     }
 
-    console.log(`[API /wiki-index] Received request to index document: ${fileName} for Vector Store: ${vectorStoreId}`);
+    // Process document indexing request
 
     // --- Synchronous Processing Call (for debugging) ---
-    console.log(`[API /wiki-index] Awaiting processing for ${fileName}...`);
+    // Process and index the document
     await processAndIndexDocument(openai, vectorStoreId, fileContent, fileName);
-    console.log(`[API /wiki-index] Successfully completed processing initiation for ${fileName}.`);
 
     // Return success response only if processAndIndexDocument completes without throwing
     return NextResponse.json({ message: `Successfully initiated and awaited indexing for ${fileName}.` }, { status: 200 });
