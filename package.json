@@ -25,7 +25,9 @@
     "apply-migrations": "node scripts/apply-migrations.js",
     "db:migrate": "node scripts/apply-migrations.js",
     "format": "prettier --check .",
-    "format:write": "prettier --write ."
+    "format:write": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:coverage": "jest --config=config/jest.config.js --coverage"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

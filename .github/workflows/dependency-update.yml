@@ -1,0 +1,76 @@
+name: Dependency Update
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Update npm dependencies
+        run: |
+          # Update dependencies to latest minor versions
+          npm update
+          
+          # Check for major version updates
+          npx npm-check-updates -u --target minor
+          
+          # Install updated dependencies
+          npm install
+
+      - name: Run tests
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test -- --passWithNoTests
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_VECTOR_STORE_ID: ${{ secrets.OPENAI_VECTOR_STORE_ID }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies'
+          title: 'chore: weekly dependency update'
+          body: |
+            ## Weekly Dependency Update
+            
+            This PR contains automatic dependency updates for the week.
+            
+            ### Changes
+            - Updated npm dependencies to latest minor versions
+            - All tests have been run and passed
+            
+            ### Review Checklist
+            - [ ] Review dependency changes in package.json
+            - [ ] Check for any breaking changes in updated packages
+            - [ ] Verify application still builds and runs correctly
+            - [ ] Test critical user flows
+            
+            ---
+            *This PR was automatically created by the dependency update workflow.*
+          branch: deps/weekly-update
+          delete-branch: true
+          labels: |
+            dependencies
+            automated

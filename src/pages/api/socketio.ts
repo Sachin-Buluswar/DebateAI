@@ -5,6 +5,7 @@ import type { Socket as NetSocket } from 'net';
 import { initializeSocketIO } from '@/temp-debatetest2-refactor/lib/server/modules/realtimeDebate/SocketManager';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/shared/env';
+import { initializeDebateAdapter } from '@/lib/socket/debateSocketAdapter';
 
 // This is a type assertion to add the custom 'io' property to the server object.
 interface NextApiResponseWithSocket extends NextApiResponse {

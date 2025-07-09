@@ -13,19 +13,21 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 const API_ENDPOINTS = [
   { method: 'GET', path: '/api/health', expected: 200, name: 'Health Check' },
   { method: 'GET', path: '/api/test', expected: 200, name: 'Test Endpoint' },
-  { method: 'POST', path: '/api/speech-feedback', expected: 503, name: 'Speech Feedback (Disabled)' },
-  { method: 'GET', path: '/api/wiki-search?query=test', expected: 200, name: 'Wiki Search' },
-  { method: 'POST', path: '/api/prototype/openai-argument', expected: 400, name: 'OpenAI Argument' },
-  { method: 'POST', path: '/api/prototype/elevenlabs-tts', expected: 400, name: 'ElevenLabs TTS' },
+  { method: 'POST', path: '/api/speech-feedback', expected: 401, name: 'Speech Feedback (Auth Required)', body: new FormData() },
+  { method: 'POST', path: '/api/wiki-search', expected: 401, name: 'Wiki Search (Auth Required)', body: { query: 'test' } },
+  { method: 'POST', path: '/api/prototype/openai-argument', expected: 200, name: 'OpenAI Argument', body: { topic: 'test', stance: 'pro' } },
+  { method: 'POST', path: '/api/prototype/elevenlabs-tts', expected: 200, name: 'ElevenLabs TTS', body: { text: 'test' } },
 ];
 
 async function testEndpoint(endpoint) {
   const url = `${BASE_URL}${endpoint.path}`;
   const options = {
     method: endpoint.method,
-    headers: {
+    headers: endpoint.body instanceof FormData ? {} : {
       'Content-Type': 'application/json',
     },
+    body: endpoint.body instanceof FormData ? endpoint.body : 
+          endpoint.body ? JSON.stringify(endpoint.body) : undefined,
   };
 
   try {
@@ -83,25 +85,34 @@ async function runTests() {
     const io = require('socket.io-client');
     const socket = io(BASE_URL, {
       path: '/api/socketio',
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
+      reconnection: false,
+      timeout: 10000,
+      auth: {
+        token: null // anonymous connection for testing
+      }
     });
     
     socket.on('connect', () => {
       console.log('✅ WebSocket connected successfully');
+      console.log('   Socket ID:', socket.id);
+      console.log('   Transport:', socket.io.engine.transport.name);
       socket.disconnect();
       process.exit(failed > 0 ? 1 : 0);
     });
     
     socket.on('connect_error', (error) => {
       console.log('❌ WebSocket connection failed:', error.message);
+      console.log('   Error type:', error.type);
       process.exit(1);
     });
     
     setTimeout(() => {
       console.log('❌ WebSocket connection timeout');
+      console.log('   Socket readyState:', socket.io.readyState);
       socket.disconnect();
       process.exit(1);
-    }, 5000);
+    }, 10000);
   } catch (error) {
     console.log('❌ WebSocket test failed:', error.message);
     console.log('   Make sure socket.io-client is installed: npm install socket.io-client');

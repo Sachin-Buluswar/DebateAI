@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Enable standalone output for Docker deployments
+  output: 'standalone',
   // Removed the broad /api rewrite. All new API routes (Socket.IO, STT, etc.)
   // are handled directly within Next.js. If you still need to proxy specific
   // legacy endpoints to an external service, add *targeted* rewrites here

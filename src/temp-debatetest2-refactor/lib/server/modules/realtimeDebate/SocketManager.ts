@@ -65,6 +65,15 @@ export function initializeSocketIO(io: SocketIOServer) {
 
   io.on('connection', (socket: Socket) => {
     console.log(`New client connected: ${socket.id}`);
+    
+    // Initialize debate adapter for compatibility with different event naming
+    let adapter: any;
+    try {
+      const { initializeDebateAdapter } = require('@/lib/socket/debateSocketAdapter');
+      adapter = initializeDebateAdapter(socket);
+    } catch (error) {
+      console.error('Failed to initialize debate adapter:', error);
+    }
 
     socket.on('startDebate', async (payload: { topic: string; participants: Participant[] }) => {
       const { topic, participants } = payload;
@@ -508,6 +517,11 @@ export function initializeSocketIO(io: SocketIOServer) {
 
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`);
+      
+      // Clean up adapter
+      if (adapter && adapter.cleanup) {
+        adapter.cleanup();
+      }
       
       // Clean up debate manager
       const debateManager = activeDebates.get(socket.id);
