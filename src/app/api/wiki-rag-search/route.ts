@@ -215,6 +215,7 @@ export async function POST(request: Request) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
+      console.error('[rag-search] Missing environment variables');
       return addSecurityHeaders(
         NextResponse.json(
           {

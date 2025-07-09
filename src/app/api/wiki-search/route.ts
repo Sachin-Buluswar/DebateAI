@@ -12,6 +12,8 @@ import {
 } from '@/backend/modules/wikiSearch/retrievalService';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 // Get environment variables
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -27,6 +29,21 @@ let openai: OpenAI | null = null;
 export async function POST(request: Request) {
   // Apply rate limiting
   const rateLimitResult = await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    // Check authentication
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.warn('[wiki-search] Unauthorized request - no session');
+      return addSecurityHeaders(
+        NextResponse.json({ 
+          error: 'Authentication required' 
+        }, { status: 401 })
+      );
+    }
+    
     // Environment Variable Check
     if (!openaiApiKey) {
       console.error('[wiki-search] OPENAI_API_KEY environment variable is not set.');
