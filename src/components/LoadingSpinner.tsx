@@ -14,7 +14,7 @@ export function LoadingSpinner({ fullScreen = false, size = 'md', text }: Loadin
   const spinner = (
     <div className="flex flex-col items-center justify-center">
       <div
-        className={`${sizeClasses[size]} border-blue-600 border-t-transparent rounded-full animate-spin`}
+        className={`${sizeClasses[size]} border-primary-500 border-t-transparent rounded-full animate-spin`}
       />
       {text && (
         <p className="mt-4 text-gray-600 dark:text-gray-300 text-sm">{text}</p>

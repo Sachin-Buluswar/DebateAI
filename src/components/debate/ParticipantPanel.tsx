@@ -21,19 +21,19 @@ export default function ParticipantPanel({ participants, currentSpeakerId }: Par
       key={participant.id}
       className={`p-3 rounded-lg transition-all relative overflow-hidden ${
         participant.id === currentSpeakerId
-          ? 'bg-blue-100 dark:bg-blue-900 ring-2 ring-blue-500'
+          ? 'bg-primary-100 dark:bg-primary-800 ring-2 ring-primary-500'
           : 'bg-gray-100 dark:bg-gray-700'
       }`}
     >
       {participant.id === currentSpeakerId && (
         <>
-          <div className="absolute inset-0 bg-blue-400 dark:bg-blue-600 opacity-10 animate-pulse" />
+          <div className="absolute inset-0 bg-primary-400 dark:bg-primary-500 opacity-10 animate-pulse" />
           <div className="absolute top-2 right-2">
             <div className="flex space-x-1">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="w-1 h-3 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse"
+                  className="w-1 h-3 bg-primary-500 dark:bg-primary-400 rounded-full animate-pulse"
                   style={{ animationDelay: `${i * 0.15}s` }}
                 />
               ))}

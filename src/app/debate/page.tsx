@@ -359,11 +359,11 @@ export default function DebatePage() {
   return (
     <Layout>
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+        <div className="mb-8 space-y-4 animate-fade-in">
+          <h1>
             Live Debate Simulator
           </h1>
-          <p className="mt-2 text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Practice your debate skills with AI opponents in real-time
           </p>
         </div>
@@ -372,9 +372,9 @@ export default function DebatePage() {
           {/* Setup and Participants Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             {/* Participants Panel */}
-            <Card variant="default">
+            <Card variant="default" className="animate-fade-in stagger-1">
               <CardHeader>
-                <h2 className="text-xl font-semibold">Participants</h2>
+                <h3>Participants</h3>
                                  {!isConnected && (
                    <Badge variant="error" className="w-fit">
                      Disconnected
@@ -401,9 +401,9 @@ export default function DebatePage() {
 
             {/* Debate Setup */}
             {!setup ? (
-              <Card variant="gradient">
+              <Card variant="gradient" className="animate-fade-in stagger-2">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Setup Debate</h2>
+                  <h3>Setup Debate</h3>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSetupSubmit} className="space-y-6">
@@ -423,7 +423,7 @@ export default function DebatePage() {
                       <div className="grid grid-cols-2 gap-3">
                         <Button
                           type="button"
-                          variant={formData.side === 'PRO' ? 'success' : 'outline'}
+                          variant={formData.side === 'PRO' ? 'primary' : 'outline'}
                           onClick={() => setFormData(prev => ({ ...prev, side: 'PRO' }))}
                           className="w-full"
                         >
@@ -431,7 +431,7 @@ export default function DebatePage() {
                         </Button>
                         <Button
                           type="button"
-                          variant={formData.side === 'CON' ? 'danger' : 'outline'}
+                          variant={formData.side === 'CON' ? 'secondary' : 'outline'}
                           onClick={() => setFormData(prev => ({ ...prev, side: 'CON' }))}
                           className="w-full"
                         >
@@ -452,7 +452,7 @@ export default function DebatePage() {
                             onClick={() => handleAIDebaterToggle(debater.name)}
                             className={`p-2 text-xs rounded-lg border transition-all text-left ${
                               formData.selectedAIDebaters.includes(debater.name)
-                                ? 'border-blue-400 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                                ? 'border-primary-400 bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-200'
                                 : 'border-gray-300 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-gray-400 dark:hover:border-gray-600'
                             } ${formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name) 
                                 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -464,7 +464,7 @@ export default function DebatePage() {
                         ))}
                       </div>
                       {formData.selectedAIDebaters.length < 3 && (
-                        <p className="text-xs text-yellow-200 mt-2">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                           Please select {3 - formData.selectedAIDebaters.length} more AI debater{3 - formData.selectedAIDebaters.length !== 1 ? 's' : ''}
                         </p>
                       )}
@@ -490,9 +490,9 @@ export default function DebatePage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card variant="default">
+              <Card variant="default" className="animate-fade-in stagger-2">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold">Debate Ready</h2>
+                  <h3>Debate Ready</h3>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -526,10 +526,10 @@ export default function DebatePage() {
 
             {/* Phase Progress */}
             {debateState && (
-              <Card variant="glass">
+              <Card variant="glass" className="animate-fade-in stagger-3">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Phase Progress</h3>
+                    <h4>Phase Progress</h4>
                     <Badge variant="primary">
                       {getCurrentPhaseIndex()}/{getTotalPhases()}
                     </Badge>
@@ -572,7 +572,7 @@ export default function DebatePage() {
           {/* Main Debate Area */}
           <div className="lg:col-span-2 space-y-6">
             {/* Debate Stage */}
-            <Card variant="elevated" className="min-h-[400px]">
+            <Card variant="elevated" className="min-h-[400px] animate-fade-in stagger-1">
               <CardContent className="flex flex-col items-center justify-center h-full py-16">
                 {debateState ? (
                   <div className="text-center space-y-8 w-full max-w-2xl">
@@ -580,9 +580,9 @@ export default function DebatePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-center gap-3 bg-primary-50 dark:bg-primary-900/20 px-6 py-4 rounded-full">
                         <div className={`w-3 h-3 rounded-full ${currentSpeaker ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                        <h2 className="text-xl font-semibold">
+                        <h4>
                           {currentSpeaker || 'Waiting for speaker...'}
-                        </h2>
+                        </h4>
                       </div>
                       
                       {/* Audio Waveform Visualization */}
@@ -649,7 +649,7 @@ export default function DebatePage() {
                              setSaveStatus('saving');
                            }}
                            disabled={saveStatus === 'saving'}
-                           variant="accent"
+                           variant="primary"
                            size="lg"
                            isLoading={saveStatus === 'saving'}
                          >
@@ -670,9 +670,9 @@ export default function DebatePage() {
                   </div>
                 ) : (
                   <div className="text-center space-y-4">
-                    <h2 className="text-2xl font-bold text-muted-foreground">
+                    <h3 className="text-muted-foreground">
                       Ready to begin your debate
-                    </h2>
+                    </h3>
                     <p className="text-muted-foreground">
                       Configure your debate settings and click "Start Debate" to begin
                     </p>
@@ -683,14 +683,14 @@ export default function DebatePage() {
 
                          {/* User Turn Notification */}
              {debateState?.currentSpeakerId === (setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1') && (
-               <Card variant="default" className="border-success-200 bg-success-50 dark:border-success-800 dark:bg-success-900/20">
+               <Card variant="default" className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20">
                  <CardContent>
                    <div className="flex items-center justify-between">
                      <div>
-                       <h4 className="font-semibold text-success-800 dark:text-success-200 mb-1">
+                       <h4 className="font-semibold text-primary-800 dark:text-primary-200 mb-1">
                          🎤 Your Turn to Speak!
                        </h4>
-                       <p className="text-sm text-success-700 dark:text-success-300">
+                       <p className="text-sm text-primary-700 dark:text-primary-300">
                          Phase: {getPhaseDisplayName(debateState.phase)}
                        </p>
                      </div>
@@ -705,9 +705,9 @@ export default function DebatePage() {
             {/* Audio and Recording Controls */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Audio Player */}
-              <Card variant="default">
+              <Card variant="default" className="animate-fade-in stagger-2">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">Audio Output</h3>
+                  <h4>Audio Output</h4>
                 </CardHeader>
                 <CardContent>
                   <StreamingAudioPlayer audioQueue={audioQueue} setAudioQueue={setAudioQueue} />
@@ -715,9 +715,9 @@ export default function DebatePage() {
               </Card>
               
               {/* Recording Controls */}
-              <Card variant="default">
+              <Card variant="default" className="animate-fade-in stagger-3">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">Voice Input</h3>
+                  <h4>Voice Input</h4>
                 </CardHeader>
                 <CardContent>
                   <AudioRecorder 
@@ -764,16 +764,16 @@ export default function DebatePage() {
             <Card variant="gradient">
               <CardContent>
                 <div className="flex items-center justify-between text-gray-900 dark:text-white">
-                  <h3 className="text-lg font-semibold">
+                  <h4>
                     Overall Performance Score
-                  </h3>
+                  </h4>
                   <div className="text-3xl font-bold">
                     {debateAnalysis.overallScore}/100
                   </div>
                 </div>
                 <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <div 
-                    className="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500"
+                    className="bg-primary-500 dark:bg-primary-400 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${debateAnalysis.overallScore}%` }}
                   />
                 </div>
@@ -807,7 +807,7 @@ export default function DebatePage() {
             {/* Detailed Feedback */}
             <Card variant="default">
               <CardHeader>
-                <h3 className="text-lg font-semibold">📝 Detailed Feedback</h3>
+                <h4>📝 Detailed Feedback</h4>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">
@@ -818,17 +818,17 @@ export default function DebatePage() {
 
                          {/* Strengths and Improvements */}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <Card variant="default" className="border-success-200 bg-success-50 dark:border-success-800 dark:bg-success-900/20">
+               <Card variant="default" className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20">
                  <CardHeader>
-                   <h3 className="text-lg font-semibold text-success-800 dark:text-success-200">
+                   <h4 className="text-primary-800 dark:text-primary-200">
                      ✅ Strengths
-                   </h3>
+                   </h4>
                  </CardHeader>
                  <CardContent>
                    <ul className="space-y-2">
                      {Array.isArray(debateAnalysis.strengthsAreas) && debateAnalysis.strengthsAreas.map((strength: string, index: number) => (
                        <li key={index} className="text-sm flex items-start">
-                         <span className="text-success-500 mr-2">•</span>
+                         <span className="text-primary-500 mr-2">•</span>
                          {strength}
                        </li>
                      ))}
@@ -836,17 +836,17 @@ export default function DebatePage() {
                  </CardContent>
                </Card>
                
-               <Card variant="default" className="border-warning-200 bg-warning-50 dark:border-warning-800 dark:bg-warning-900/20">
+               <Card variant="default" className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/20">
                  <CardHeader>
-                   <h3 className="text-lg font-semibold text-warning-800 dark:text-warning-200">
+                   <h4 className="text-gray-800 dark:text-gray-200">
                      🎯 Areas for Improvement
-                   </h3>
+                   </h4>
                  </CardHeader>
                  <CardContent>
                    <ul className="space-y-2">
                      {Array.isArray(debateAnalysis.improvementAreas) && debateAnalysis.improvementAreas.map((improvement: string, index: number) => (
                        <li key={index} className="text-sm flex items-start">
-                         <span className="text-warning-500 mr-2">•</span>
+                         <span className="text-gray-500 mr-2">•</span>
                          {improvement}
                        </li>
                      ))}
@@ -859,7 +859,7 @@ export default function DebatePage() {
             {Array.isArray(debateAnalysis.keyMoments) && debateAnalysis.keyMoments.length > 0 && (
               <Card variant="default">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">🌟 Key Moments</h3>
+                  <h4>🌟 Key Moments</h4>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
@@ -878,13 +878,13 @@ export default function DebatePage() {
             {/* Next Steps */}
             <Card variant="default">
               <CardHeader>
-                <h3 className="text-lg font-semibold">🚀 Recommended Next Steps</h3>
+                <h4>🚀 Recommended Next Steps</h4>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {Array.isArray(debateAnalysis.recommendedNextSteps) && debateAnalysis.recommendedNextSteps.map((step: string, index: number) => (
                     <li key={index} className="text-sm flex items-start">
-                      <span className="text-accent-500 mr-2">•</span>
+                      <span className="text-primary-500 mr-2">•</span>
                       {step}
                     </li>
                   ))}

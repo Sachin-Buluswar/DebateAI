@@ -252,7 +252,7 @@ export default function SearchPage() {
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="btn btn-primary"
               >
                 Try again
               </button>
@@ -265,7 +265,7 @@ export default function SearchPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="pb-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            <h1>
               Evidence Search
             </h1>
             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -273,7 +273,7 @@ export default function SearchPage() {
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-primary"
                 >
                   {generating ? 'Generating...' : 'Generate Answer'}
                 </button>
@@ -291,7 +291,7 @@ export default function SearchPage() {
                 onClick={() => setSearchMode('assistant')}
                 className={`px-3 py-2 text-sm rounded-md font-medium transition-colors ${
                   searchMode === 'assistant'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
@@ -301,7 +301,7 @@ export default function SearchPage() {
                 onClick={() => setSearchMode('rag')}
                 className={`px-3 py-2 text-sm rounded-md font-medium transition-colors ${
                   searchMode === 'rag'
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
@@ -326,12 +326,12 @@ export default function SearchPage() {
                   ? 'Search for specific document content...'
                   : 'Search for debate evidence or facts...'
               }
-              className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500"
             />
             <button
               type="submit"
               disabled={searching}
-              className="absolute inset-y-0 right-0 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-md"
+              className="absolute inset-y-0 right-0 px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-md transition-colors"
             >
               {searching ? 'Searching...' : 'Search'}
             </button>
@@ -341,9 +341,9 @@ export default function SearchPage() {
           {/* Search History */}
           {searchHistory.length > 0 && (
             <div className="mt-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <h3 className="mb-2">
                 Recent Searches
-              </h2>
+              </h3>
               <div className="overflow-x-auto">
                 <div className="flex flex-wrap gap-2">
                   {searchHistory.map((item) => (
@@ -368,12 +368,12 @@ export default function SearchPage() {
 
           {/* Generated Answer */}
           {generatedAnswer && (
-            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-green-500">
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-primary-500 animate-fade-in">
               <div className="flex justify-between items-start">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                <h3 className="mb-4">
                   AI-Generated Answer
-                </h2>
-                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                </h3>
+                <span className="px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200">
                   RAG-powered
                 </span>
               </div>
@@ -385,7 +385,7 @@ export default function SearchPage() {
                     return (
                       <span
                         key={i}
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-800 dark:text-primary-200"
                       >
                         {part}
                       </span>
@@ -397,9 +397,9 @@ export default function SearchPage() {
 
               {generatedAnswer.sources.length > 0 && (
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  <h4 className="mb-2">
                     Sources
-                  </h3>
+                  </h4>
                   <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                     {generatedAnswer.sources.map((source, idx) => (
                       <li key={idx} className="py-2 flex items-start">
@@ -431,16 +431,12 @@ export default function SearchPage() {
           <div className="mt-6 space-y-6">
             {results.length > 0 && (
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="mb-2">
                   {searchMode === 'rag' ? 'RAG Search Results' : 'Assistant Search Results'} (
                   {results.length})
-                </h2>
+                </h3>
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    searchMode === 'rag'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                  }`}
+                  className="px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200"
                 >
                   {searchMode === 'rag' ? 'Raw Document Chunks' : 'AI-Enhanced'}
                 </span>
@@ -449,14 +445,12 @@ export default function SearchPage() {
             {results.map((res, idx) => (
               <div
                 key={idx}
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 ${
-                  searchMode === 'rag' ? 'border-green-500' : 'border-blue-500'
-                }`}
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-primary-500 animate-fade-in stagger-${Math.min(idx + 1, 4)}`}
               >
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  <h4 className="text-gray-900 dark:text-white">
                     📄 {res.source}
-                  </h3>
+                  </h4>
                   <div className="flex flex-col items-end space-y-1">
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Relevance: {Math.round((res.score || 0) * 100)}%
@@ -502,7 +496,7 @@ export default function SearchPage() {
                       </div>
                     </details>
                     <button
-                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                      className="mt-2 text-sm text-primary-500 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-200"
                       onClick={() => {
                         // Future: Implement PDF context viewer
                         alert(

@@ -103,8 +103,8 @@ const DatabaseFix = () => {
           disabled={loading}
           className={`w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
             loading
-              ? 'bg-blue-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              ? 'bg-primary-400 cursor-not-allowed'
+              : 'bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500'
           }`}
         >
           {loading ? (

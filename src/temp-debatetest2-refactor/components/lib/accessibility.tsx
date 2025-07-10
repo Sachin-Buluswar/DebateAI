@@ -93,7 +93,7 @@ export function SkipLink({ href, children }: { href: string; children: React.Rea
   return (
     <a
       href={href}
-      className="absolute left-[-10000px] top-auto w-1 h-1 overflow-hidden focus:left-0 focus:top-0 focus:w-auto focus:h-auto focus:overflow-visible focus:bg-blue-600 focus:text-white focus:p-2 focus:z-50"
+      className="absolute left-[-10000px] top-auto w-1 h-1 overflow-hidden focus:left-0 focus:top-0 focus:w-auto focus:h-auto focus:overflow-visible focus:bg-primary-500 focus:text-white focus:p-2 focus:z-50"
       onFocus={() => ScreenReader.announce('Skip link focused')}
     >
       {children}
@@ -120,7 +120,7 @@ export function AccessibleButton({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+    primary: 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500',
     secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
   };
@@ -198,7 +198,7 @@ export function AccessibleInput({
       
       <input
         id={inputId}
-        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
           error
             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
             : 'border-gray-300 dark:border-gray-600'
@@ -319,7 +319,7 @@ export function AccessibleModal({
               </h3>
               <button
                 type="button"
-                className="ml-4 bg-white dark:bg-gray-800 rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="ml-4 bg-white dark:bg-gray-800 rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 onClick={onClose}
                 aria-label="Close modal"
               >
@@ -353,7 +353,7 @@ export function AccessibleSpinner({ size = 'md', label = 'Loading...' }: {
   return (
     <div className="flex items-center justify-center" role="status" aria-label={label}>
       <svg
-        className={`animate-spin text-blue-600 ${sizeClasses[size]}`}
+        className={`animate-spin text-primary-500 ${sizeClasses[size]}`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

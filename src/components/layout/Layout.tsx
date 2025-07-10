@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import PageTransition from '@/components/ui/PageTransition';
 import { usePathname } from 'next/navigation';
 
 // Define paths where sidebar should be hidden
@@ -64,7 +65,9 @@ export default function Layout({ children }: LayoutProps) {
                 : 'lg:ml-64' 
               : ''
           } px-8 py-12 lg:px-16 lg:py-16`}>
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </main>
         </div>
       </div>

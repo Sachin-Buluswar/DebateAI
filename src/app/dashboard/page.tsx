@@ -224,7 +224,7 @@ export default function Dashboard() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="mb-4">
                 Something went wrong
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
@@ -233,7 +233,7 @@ export default function Dashboard() {
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="btn btn-primary" // Updated class
+                className="btn btn-primary"
               >
                 Try again
               </button>
@@ -272,20 +272,20 @@ export default function Dashboard() {
         )}
 
         {/* Practice Stats Widget */}
-        <Widget title="Practice Stats" className="col-span-4 md:col-span-2 xl:col-span-1">
+        <Widget title="Practice Stats" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-1">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-3xl font-bold text-teal-500">{speechHistory.length}</p>
+              <p className="text-3xl font-bold text-primary-600">{speechHistory.length}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Speeches</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-primary-500">{debateHistory.length}</p>
+              <p className="text-3xl font-bold text-primary-600">{debateHistory.length}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Debates</p>
             </div>
             <div>
               {/* Display Average Score */}
               <p
-                className={`text-3xl font-bold ${avgScores.count > 0 ? 'text-yellow-500' : 'text-gray-400'}`}
+                className={`text-3xl font-bold ${avgScores.count > 0 ? 'text-primary-600' : 'text-gray-400'}`}
               >
                 {avgScores.count > 0 ? avgScores.overall : '-'}
               </p>
@@ -297,15 +297,15 @@ export default function Dashboard() {
         {/* Learning Progress Widget (Simplified to Overall Score) */}
         <Widget
           title="Overall Learning Progress"
-          className="col-span-4 md:col-span-2 xl:col-span-1"
+          className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-2"
         >
           {avgScores.count > 0 ? (
             <div className="space-y-4">
               <ProgressItem
                 label="Average Score"
                 value={avgScores.overall}
-                color="bg-yellow-500"
-                icon={<AcademicCapIcon className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />}
+                color="bg-primary-500"
+                icon={<AcademicCapIcon className="h-5 w-5 text-primary-700 dark:text-primary-300" />}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 Based on {avgScores.count} analyzed speech{avgScores.count !== 1 ? 'es' : ''}.
@@ -319,11 +319,11 @@ export default function Dashboard() {
         </Widget>
 
         {/* Quick Actions Widget */}
-        <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1">
+        <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-3">
           <div className="space-y-3">
             <button
               onClick={() => router.push('/speech-feedback')}
-              className="btn btn-accent w-full"
+              className="btn btn-secondary w-full"
             >
               <MicrophoneIcon className="w-5 h-5 mr-2" />
               Record Speech
@@ -340,37 +340,37 @@ export default function Dashboard() {
         </Widget>
 
         {/* Personal Bests & Stats Widget */}
-        <Widget title="Highlights & Milestones" className="col-span-4 md:col-span-2 xl:col-span-1">
+        <Widget title="Highlights & Milestones" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/40 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/30 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                <p className="text-sm font-medium text-primary-800 dark:text-primary-200">
                   Highest Score
                 </p>
                 <p
-                  className={`text-2xl font-bold ${highestScore !== null ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}
+                  className={`text-2xl font-bold ${highestScore !== null ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}`}
                 >
                   {highestScore !== null ? `${highestScore}` : 'N/A'}
                 </p>
               </div>
-              <FireIcon className="h-8 w-8 text-amber-500" />
+              <FireIcon className="h-8 w-8 text-primary-500" />
             </div>
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-sky-50 to-cyan-100 dark:from-sky-900/30 dark:to-cyan-900/40 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/40 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-cyan-800 dark:text-cyan-200">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                   Total Practice Time
                 </p>
-                <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
                   {hoursSpent} hrs
                 </p>
               </div>
-              <ClockIcon className="h-8 w-8 text-cyan-500" />
+              <ClockIcon className="h-8 w-8 text-gray-500" />
             </div>
           </div>
         </Widget>
 
         {/* Score Trend Widget */}
-        <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2">
+        <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2 animate-fade-in stagger-1">
           {scoreTrendData.length > 1 ? (
             <ScoreTrendChart data={scoreTrendData} />
           ) : (
@@ -381,12 +381,12 @@ export default function Dashboard() {
         </Widget>
 
         {/* Weekly Activity Widget */}
-        <Widget title="Weekly Activity" className="col-span-4 md:col-span-2">
+        <Widget title="Weekly Activity" className="col-span-4 md:col-span-2 animate-fade-in stagger-2">
           <WeeklyActivityChart data={weeklyChartData} />
         </Widget>
 
         {/* Recent Activity Widget */}
-        <Widget title="Recent Activity" className="col-span-4">
+        <Widget title="Recent Activity" className="col-span-4 animate-fade-in stagger-3">
           <div className="space-y-4">
             {recentActivity.length > 0 ? (
               recentActivity.map((item) => {
@@ -405,10 +405,10 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center min-w-0">
                         <div
-                          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-3 ${isSpeech ? 'bg-teal-100 dark:bg-teal-700' : 'bg-primary-100 dark:bg-primary-700'}`}
+                          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-3 ${isSpeech ? 'bg-primary-100 dark:bg-primary-800' : 'bg-primary-100 dark:bg-primary-800'}`}
                         >
                           {isSpeech ? (
-                            <MicrophoneIcon className="h-5 w-5 text-teal-600 dark:text-teal-300" />
+                            <MicrophoneIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
                           ) : (
                             <ChatBubbleLeftRightIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
                           )}
@@ -477,9 +477,9 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number | null 
           <Line
             type="monotone"
             dataKey="score"
-            stroke="#facc15" // yellow-500
+            stroke="#87A96B" // primary-500 (sage green)
             strokeWidth={2}
-            dot={{ r: 4, fill: '#facc15' }}
+            dot={{ r: 4, fill: '#87A96B' }}
             activeDot={{ r: 6 }}
             connectNulls // Connect line across null data points
           />
@@ -519,8 +519,8 @@ const WeeklyActivityChart = ({
           />
           <Bar
             dataKey="speeches"
-            fill="#14b8a6"
-            /* teal-500 */ name="Speeches"
+            fill="#87A96B"
+            /* primary-500 (sage green) */ name="Speeches"
             radius={[4, 4, 0, 0]}
           >
             {/* Optional: Add labels inside bars if needed */}
@@ -528,8 +528,8 @@ const WeeklyActivityChart = ({
           </Bar>
           <Bar
             dataKey="debates"
-            fill="#6366f1"
-            /* primary-500 */ name="Debates"
+            fill="#9DB88F"
+            /* primary-400 (lighter sage) */ name="Debates"
             radius={[4, 4, 0, 0]}
           >
             {/* <LabelList dataKey="debates" position="top" fontSize={10} fill="#fff" /> */}
@@ -544,7 +544,7 @@ const WeeklyActivityChart = ({
 interface ProgressItemProps {
   label: string;
   value: number; // Expect value 0-100
-  color: string; // Tailwind bg color class e.g., 'bg-blue-500'
+  color: string; // Tailwind bg color class e.g., 'bg-primary-500'
   icon: React.ReactNode;
 }
 

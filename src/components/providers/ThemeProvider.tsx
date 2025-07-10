@@ -23,12 +23,12 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  // Set dark mode as default
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Set light mode as default
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Always default to dark mode unless user has a saved preference
+    // Always default to light mode unless user has a saved preference
     const fetchUserPreference = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -44,21 +44,21 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           if (data && data.preferences && typeof data.preferences.darkMode === 'boolean') {
             setIsDarkMode(data.preferences.darkMode);
           } else {
-            setIsDarkMode(true); // Default to dark mode
+            setIsDarkMode(false); // Default to light mode
           }
         } else {
-          // No logged in user, check local storage or use dark mode
+          // No logged in user, check local storage or use light mode
           const storedTheme = localStorage.getItem('theme');
           if (storedTheme) {
             setIsDarkMode(storedTheme === 'dark');
           } else {
-            setIsDarkMode(true); // Default to dark mode
+            setIsDarkMode(false); // Default to light mode
           }
         }
       } catch (error) {
         console.error('Error fetching theme preference:', error);
-        // Default to dark mode
-        setIsDarkMode(true);
+        // Default to light mode
+        setIsDarkMode(false);
       } finally {
         setIsLoading(false);
       }

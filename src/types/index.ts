@@ -42,7 +42,8 @@ export interface SpeechFeedback {
   file_size_bytes?: number;
   duration_seconds?: number;
   feedback: {
-    overall: string;
+    // Old format fields
+    overall?: string;
     delivery?: {
       pronunciation: string[];
       pacing: string[];
@@ -75,6 +76,47 @@ export interface SpeechFeedback {
     intonation?: string[];
     clarity?: string[];
     score?: number;
+    
+    // New structured format fields
+    speakerScore?: number;
+    scoreJustification?: string;
+    overallSummary?: string;
+    structureOrganization?: {
+      analysis: string;
+      examples: string[];
+      suggestions: string[];
+    };
+    argumentationEvidence?: {
+      analysis: string;
+      examples: string[];
+      suggestions: string[];
+    };
+    clarityConciseness?: {
+      analysis: string;
+      examples: string[];
+      suggestions: string[];
+    };
+    persuasivenessImpact?: {
+      analysis: string;
+      examples: string[];
+      suggestions: string[];
+    };
+    deliveryStyle?: {
+      analysis: string;
+      examples: string[];
+      suggestions: string[];
+    };
+    relevanceToSpeechType?: {
+      analysis: string;
+      examples: string[];
+      suggestions: string[];
+    };
+    actionableSuggestions?: string[];
+    strengths?: string[];
+    areasForImprovement?: string[];
+    
+    // Additional fields for error states
+    message?: string;
   } | null;
   created_at: string;
   updated_at?: string;

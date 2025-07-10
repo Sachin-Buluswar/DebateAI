@@ -125,7 +125,7 @@ export default function PreferencesSection() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-48">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -151,7 +151,7 @@ export default function PreferencesSection() {
                 </span>
                 <button
                   type="button"
-                  className={`${isDarkMode ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'} relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                  className={`${isDarkMode ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'} relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
                   onClick={toggleDarkMode}
                 >
                   <span className="sr-only">Toggle dark mode</span>
@@ -173,8 +173,8 @@ export default function PreferencesSection() {
                 <button
                   type="button"
                   className={`${
-                    preferences.emailNotifications ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                    preferences.emailNotifications ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
+                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
                   onClick={() => handleToggle('emailNotifications')}
                 >
                   <span className="sr-only">Toggle email notifications</span>
@@ -198,8 +198,8 @@ export default function PreferencesSection() {
                 <button
                   type="button"
                   className={`${
-                    preferences.autoSave ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                    preferences.autoSave ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
+                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
                   onClick={() => handleToggle('autoSave')}
                 >
                   <span className="sr-only">Toggle auto-save</span>
@@ -223,8 +223,8 @@ export default function PreferencesSection() {
                 <button
                   type="button"
                   className={`${
-                    preferences.showWordCount ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                    preferences.showWordCount ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
+                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
                   onClick={() => handleToggle('showWordCount')}
                 >
                   <span className="sr-only">Toggle word count</span>
@@ -249,7 +249,7 @@ export default function PreferencesSection() {
                 <input
                   id="debate-format"
                   name="debate-format"
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:text-white cursor-not-allowed opacity-70"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md dark:bg-gray-700 dark:text-white cursor-not-allowed opacity-70"
                   value="Public Forum"
                   disabled
                   readOnly
@@ -266,7 +266,7 @@ export default function PreferencesSection() {
                 <select
                   id="language"
                   name="language"
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:text-white"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md dark:bg-gray-700 dark:text-white"
                   value={preferences.language}
                   onChange={(e) => handleSelect('language', e.target.value)}
                 >
@@ -297,7 +297,7 @@ export default function PreferencesSection() {
               type="button"
               onClick={savePreferences}
               disabled={saving}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
                 <>

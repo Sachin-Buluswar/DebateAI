@@ -48,9 +48,12 @@ export default function HomePage() {
               a distraction-free platform for developing your debate skills through ai-powered practice and analysis
             </p>
             
-            <div className="animate-fade-in stagger-2">
+            <div className="animate-fade-in stagger-2 space-x-4">
               <Link href="/debate" className="btn btn-primary">
                 begin practice
+              </Link>
+              <Link href="/about" className="btn btn-ghost">
+                learn more →
               </Link>
             </div>
           </div>

@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Layout from '@/components/layout/Layout';
 import type { SpeechFeedback } from '@/types';
-import { parseFeedbackMarkdown } from '@/utils/feedbackUtils';
+import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/utils/feedbackUtils';
 import ReactMarkdown from 'react-markdown';
 import FeedbackSection from '@/components/feedback/FeedbackSection';
 import { PlayIcon, PauseIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
@@ -227,8 +227,27 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
     return typeMappings[type] || type.charAt(0).toUpperCase() + type.slice(1);
   };
   
-  // Parse the feedback when available
-  const parsedFeedbackSections = parseFeedbackMarkdown(feedback?.feedback?.overall);
+  // Parse the feedback when available - handle both old and new formats
+  let parsedFeedbackSections: { [key: string]: string } = {};
+  
+  if (feedback?.feedback) {
+    // Check if it's the new structured format
+    if (feedback.feedback.speakerScore !== undefined && feedback.feedback.structureOrganization) {
+      // New structured format
+      parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
+    } else if (feedback.feedback.overall) {
+      // Old format with overall string
+      parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overall);
+    } else if (feedback.feedback.overallSummary) {
+      // New format but might be missing some fields - convert what we have
+      try {
+        parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
+      } catch (e) {
+        // Fallback to treating overallSummary as markdown
+        parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overallSummary);
+      }
+    }
+  }
   
   // Add a function to handle exporting feedback
   const handleExportFeedback = () => {
@@ -237,7 +256,22 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
     // Create content for export
     const title = `## Speech Feedback: ${feedback.topic}\n`;
     const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
-    const content = feedback.feedback?.overall || '';
+    
+    let content = '';
+    
+    // Export based on format
+    if (Object.keys(parsedFeedbackSections).length > 0) {
+      // Export parsed sections
+      for (const [heading, sectionContent] of Object.entries(parsedFeedbackSections)) {
+        content += `### ${heading}\n\n${sectionContent}\n\n`;
+      }
+    } else if (feedback.feedback?.overall) {
+      // Old format
+      content = feedback.feedback.overall;
+    } else if (feedback.feedback?.overallSummary) {
+      // New format - export as structured text
+      content = feedback.feedback.overallSummary;
+    }
     
     // Combine all content
     const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
@@ -368,8 +402,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                 'Clarity & Conciseness',
                 'Persuasiveness & Impact',
                 'Delivery Style (Inferred)',
-                'Relevance to Speech Type(s)',
-                'Actionable Suggestions'
+                'Relevance to Speech Type(s)'
               ].map(heading => {
                 const content = parsedFeedbackSections[heading];
                 if (!content) return null;
@@ -378,9 +411,9 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                 
                 // Determine accent color based on section type (example logic)
                 let accentColor = 'primary-500'; // Default
-                if (['Strengths'].includes(heading)) accentColor = 'green-500';
-                if (['Areas for Improvement', 'Actionable Suggestions'].includes(heading)) accentColor = 'yellow-500';
-                if (['Overall Summary', 'Next Steps'].includes(heading)) accentColor = 'blue-500'; 
+                if (['Strengths'].includes(heading)) accentColor = 'primary-500';
+                if (['Areas for Improvement', 'Actionable Suggestions'].includes(heading)) accentColor = 'secondary-500';
+                if (['Overall Summary', 'Next Steps'].includes(heading)) accentColor = 'primary-500'; 
 
                 return (
                   <FeedbackSection
@@ -394,71 +427,31 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
               })}
 
               {/* Fallback or message if parsing fails or no sections found */}
-              {Object.keys(parsedFeedbackSections).length === 0 && feedback.feedback?.overall && (
+              {Object.keys(parsedFeedbackSections).length === 0 && (feedback.feedback?.overall || feedback.feedback?.overallSummary) && (
                  <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
                    <div className="px-4 py-5 sm:px-6">
                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Feedback Assessment</h2>
                      <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
-                       <ReactMarkdown>{feedback.feedback.overall}</ReactMarkdown>
+                       <ReactMarkdown>{feedback.feedback.overall || feedback.feedback.overallSummary}</ReactMarkdown>
                      </div>
-                     <p className="mt-4 text-sm text-yellow-600 dark:text-yellow-400">
+                     <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                        Note: Could not automatically parse feedback into sections. Displaying raw content.
-                       <button
-                         onClick={() => {
-                           // Try to extract at least some sections using regex as a last resort
-                           const overallText = feedback.feedback?.overall || '';
-                           const emergencyParsed: {[key: string]: string} = {};
-                           
-                           // Extract any section content between headings (simple regex fallback)
-                           const headingMatches = overallText.match(/#{1,3}\s+([^\n]+)/g) || [];
-                           
-                           headingMatches.forEach((heading, index) => {
-                             const cleanHeading = heading.replace(/^#{1,3}\s+/, '');
-                             
-                             // Get content between this heading and the next (or the end)
-                             const startIndex = overallText.indexOf(heading) + heading.length;
-                             const nextHeadingIndex = index < headingMatches.length - 1 
-                               ? overallText.indexOf(headingMatches[index + 1])
-                               : overallText.length;
-                               
-                             const content = overallText.substring(startIndex, nextHeadingIndex).trim();
-                             
-                             if (cleanHeading && content) {
-                               emergencyParsed[cleanHeading] = content;
-                             }
-                           });
-                           
-                           // If we found any sections, update the parsed sections
-                           if (Object.keys(emergencyParsed).length > 0) {
-                             setFeedback(prev => {
-                               if (!prev) return null;
-                               return {
-                                 ...prev,
-                                 parsed_sections: emergencyParsed
-                               };
-                             });
-                           }
-                         }}
-                         className="ml-2 text-primary-600 dark:text-primary-400 hover:underline"
-                       >
-                         Try to fix
-                       </button>
                      </p>
                    </div>
                  </div>
               )}
 
               {/* Message if no feedback content at all */}
-              {!feedback.feedback?.overall && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-md p-4">
-                  <p className="text-sm text-yellow-700 dark:text-yellow-200">Feedback is still processing or was not generated for this speech.</p>
+              {!feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
+                <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-300 dark:border-gray-700 rounded-md p-4">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Feedback is still processing or was not generated for this speech.</p>
                 </div>
               )}
             </div>
           )}
           
           {/* Case where feedback object exists but no URL and no overall text */}
-          {feedback && !feedback.audio_url && !feedback.feedback?.overall && (
+          {feedback && !feedback.audio_url && !feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
              <div className="mt-6 bg-gray-50 dark:bg-gray-800 shadow-md rounded-lg p-6 text-center">
                <p className="text-gray-600 dark:text-gray-400">No audio recording or feedback text is available for this entry.</p>
              </div>

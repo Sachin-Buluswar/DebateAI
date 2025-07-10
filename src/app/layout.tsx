@@ -32,7 +32,7 @@ export default function RootLayout({
               <div className="bg-red-100 text-red-600 p-6 rounded-lg shadow-md max-w-lg">
                 <h2 className="text-xl font-bold mb-4">Something went wrong</h2>
                 <p className="mb-4">We encountered an error while loading this page. Please try refreshing or return to the homepage.</p>
-                <Link href="/" className="inline-block bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition-colors">
+                <Link href="/" className="inline-block bg-primary-500 text-white px-4 py-2 rounded font-medium hover:bg-primary-600 transition-colors">
                   Return Home
                 </Link>
               </div>

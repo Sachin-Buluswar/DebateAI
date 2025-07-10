@@ -28,9 +28,9 @@ const UPLOAD_CHUNK_SIZE = UPLOAD_CHUNK_SIZE_BYTES;
 const availableSpeechTypes = [
   { id: 'constructive', label: 'Constructive', color: 'primary' },
   { id: 'rebuttal', label: 'Rebuttal', color: 'primary' },
-  { id: 'cross-examination', label: 'Cross-Examination', color: 'warning' },
-  { id: 'summary', label: 'Summary', color: 'info' },
-  { id: 'final-focus', label: 'Final Focus', color: 'success' }
+  { id: 'cross-examination', label: 'Cross-Examination', color: 'secondary' },
+  { id: 'summary', label: 'Summary', color: 'secondary' },
+  { id: 'final-focus', label: 'Final Focus', color: 'primary' }
 ];
 
 export default function SpeechFeedback() {
@@ -665,7 +665,7 @@ export default function SpeechFeedback() {
                     <MicrophoneIcon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Speech Details</h2>
+                    <h2>Speech Details</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Provide details about your speech and upload or record the audio.
                     </p>
@@ -821,7 +821,7 @@ export default function SpeechFeedback() {
         <div className="lg:col-span-1">
           <Card variant="glass" className="sticky top-20">
             <CardHeader>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="flex items-center gap-2">
                 <span className="text-2xl">🎙️</span>
                 Audio Upload
               </h3>
@@ -995,7 +995,7 @@ export default function SpeechFeedback() {
             <> 
              {/* Page Header */}
              <div className="pb-5 border-b border-gray-200 dark:border-gray-700 mb-8">
-               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+               <h1>
                  Speech Practice
                </h1>
                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
