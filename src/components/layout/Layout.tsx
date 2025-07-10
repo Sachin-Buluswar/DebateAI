@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import Navbar from './Navbar';
+import EnhancedNavbar from './EnhancedNavbar';
 import Sidebar from './Sidebar';
 import PageTransition from '@/components/ui/PageTransition';
 import { usePathname } from 'next/navigation';
@@ -25,9 +26,10 @@ export const useSidebar = () => {
 
 type LayoutProps = {
   children: React.ReactNode;
+  useEnhancedNavbar?: boolean;
 };
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, useEnhancedNavbar = true }: LayoutProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   
@@ -47,7 +49,7 @@ export default function Layout({ children }: LayoutProps) {
     <SidebarContext.Provider value={sidebarContextValue}>
       {/* Minimalist background */}
       <div className="min-h-screen bg-white dark:bg-gray-950">
-        <Navbar />
+        {useEnhancedNavbar ? <EnhancedNavbar /> : <Navbar />}
         <div className="flex pt-20"> {/* Add padding-top to account for fixed Navbar height */}
           {showSidebar && (
             // Minimalist sidebar styling

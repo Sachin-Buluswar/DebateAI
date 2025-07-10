@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import type { Debate, SpeechFeedback } from '@/types';
 import DashboardLayout, { Widget } from '@/components/dashboard/DashboardLayout';
+import StatsSection from '@/components/dashboard/StatsSection';
 import Link from 'next/link';
 import {
   MicrophoneIcon,
@@ -43,7 +44,7 @@ export default function Dashboard() {
   const [debateHistory, setDebateHistory] = useState<Debate[]>([]);
   const [speechHistory, setSpeechHistory] = useState<SpeechFeedback[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [avgScores] = useState({
+  const [avgScores, setAvgScores] = useState({
     overall: 0,
     count: 0,
   });
@@ -127,6 +128,17 @@ export default function Dashboard() {
               );
               const debateHours = fetchedDebates.length * (5 / 60); // Rough estimate
               setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
+
+              // Calculate average score
+              const speechesWithScores = fetchedSpeeches.filter(s => s.feedback?.scores?.overall !== null && s.feedback?.scores?.overall !== undefined);
+              if (speechesWithScores.length > 0) {
+                const totalScore = speechesWithScores.reduce((sum, speech) => sum + (speech.feedback?.scores?.overall || 0), 0);
+                const average = totalScore / speechesWithScores.length;
+                setAvgScores({
+                  overall: Math.round(average * 10) / 10, // Round to 1 decimal place
+                  count: speechesWithScores.length
+                });
+              }
 
               // Calculate weekly activity for chart
               const now = new Date();
@@ -271,28 +283,16 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Practice Stats Widget */}
-        <Widget title="Practice Stats" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-1">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-3xl font-bold text-primary-600">{speechHistory.length}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Speeches</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-primary-600">{debateHistory.length}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Debates</p>
-            </div>
-            <div>
-              {/* Display Average Score */}
-              <p
-                className={`text-3xl font-bold ${avgScores.count > 0 ? 'text-primary-600' : 'text-gray-400'}`}
-              >
-                {avgScores.count > 0 ? avgScores.overall : '-'}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg Score</p>
-            </div>
-          </div>
-        </Widget>
+        {/* Modern Stats Section */}
+        <div className="col-span-4 animate-fade-in stagger-1">
+          <StatsSection
+            totalSpeeches={speechHistory.length}
+            totalDebates={debateHistory.length}
+            averageScore={avgScores.overall}
+            totalPracticeTime={Math.round(hoursSpent * 60)} // Convert hours to minutes
+            loading={loading}
+          />
+        </div>
 
         {/* Learning Progress Widget (Simplified to Overall Score) */}
         <Widget
