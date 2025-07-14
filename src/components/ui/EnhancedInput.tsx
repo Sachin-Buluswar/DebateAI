@@ -30,15 +30,15 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
     const inputId = useId();
 
     const handleFocus = () => setIsFocused(true);
-    const handleBlur = (e: any) => {
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setIsFocused(false);
       setHasValue(!!e.target.value);
     };
 
-    const handleChange = (e: any) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setHasValue(!!e.target.value);
       if ('onChange' in props && props.onChange) {
-        props.onChange(e);
+        (props.onChange as any)(e);
       }
     };
 
@@ -68,7 +68,8 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
 
     const baseInputStyles = cn(
       'block w-full bg-transparent border-0 border-b transition-all duration-300 focus:outline-none peer',
-      'placeholder-transparent',
+      'placeholder-transparent resize-none box-border overflow-hidden',
+      'break-words overflow-wrap-break-word min-w-0',
       currentSize.input,
       error 
         ? 'border-red-500 text-red-900 dark:text-red-400 focus:border-red-600' 
@@ -92,8 +93,8 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
     const componentProps = multiline ? { rows, ...props } : props;
 
     return (
-      <div className="relative">
-        <div className="relative">
+      <div className="relative w-full box-border">
+        <div className="relative w-full">
           <Component
             ref={ref as any}
             id={inputId}
@@ -102,7 +103,8 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
             onBlur={handleBlur}
             onChange={handleChange}
             placeholder=" "
-            {...componentProps}
+            style={{ resize: 'none' }}
+            {...(componentProps as any)}
           />
           <label
             htmlFor={inputId}
@@ -124,7 +126,7 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
         {/* Helper text or error message */}
         {(error || helperText) && (
           <p className={cn(
-            'mt-1.5 text-xs',
+            'mt-1.5 text-xs break-words overflow-hidden',
             error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
           )}>
             {error || helperText}

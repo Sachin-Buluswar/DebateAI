@@ -84,21 +84,12 @@ export default function AboutPage() {
             </p>
           </section>
 
-          <section className="space-y-6">
-            <h2 className="text-gray-900 dark:text-gray-100">get in touch</h2>
-            <p>
-              have questions or feedback? we'd love to hear from you.
-            </p>
-            <p className="text-primary-500">
-              contact@debateai.com
-            </p>
-          </section>
 
           <div className="divider"></div>
 
           <footer className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-500">
-              © 2024 debateai. focused practice for better debates.
+              debateai. focused practice for better debates.
             </p>
           </footer>
         </article>

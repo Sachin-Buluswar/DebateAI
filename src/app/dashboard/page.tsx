@@ -16,6 +16,8 @@ import {
   MagnifyingGlassIcon,
   ClockIcon,
   FireIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/solid';
 import {
   LineChart,
@@ -38,6 +40,30 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// Helper function to extract score from feedback object
+const extractScore = (feedback: any): number | null => {
+  if (!feedback) return null;
+  
+  // Check multiple possible locations for scores
+  // 1. New format: speakerScore (NSDA scale 25-30)
+  if (typeof feedback.speakerScore === 'number') {
+    // Convert NSDA scale (25-30) to percentage (0-100)
+    return ((feedback.speakerScore - 25) / 5) * 100;
+  }
+  
+  // 2. Legacy format: scores.overall (already in percentage)
+  if (feedback.scores?.overall !== undefined && feedback.scores?.overall !== null) {
+    return feedback.scores.overall;
+  }
+  
+  // 3. Even older format: score (percentage)
+  if (typeof feedback.score === 'number') {
+    return feedback.score;
+  }
+  
+  return null;
+};
+
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -48,12 +74,14 @@ export default function Dashboard() {
     overall: 0,
     count: 0,
   });
-  const [scoreTrendData] = useState<{ date: string; score: number | null }[]>([]);
+  const [scoreTrendData, setScoreTrendData] = useState<{ date: string; score: number }[]>([]);
   const [weeklyChartData, setWeeklyChartData] = useState<
-    { name: string; speeches: number; debates: number }[]
+    { name: string; hours: number }[]
   >([]);
   const [hoursSpent, setHoursSpent] = useState(0);
-  const [highestScore] = useState<number | null>(null);
+  const [highestScore, setHighestScore] = useState<number | null>(null);
+  const [dateRange, setDateRange] = useState<'week' | 'month' | 'year' | 'all'>('month');
+  const [chartDateRange, setChartDateRange] = useState<'week' | 'month' | 'year'>('week');
 
   useEffect(() => {
     // Check if user is logged in
@@ -129,21 +157,49 @@ export default function Dashboard() {
               const debateHours = fetchedDebates.length * (5 / 60); // Rough estimate
               setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
 
-              // Calculate average score
-              const speechesWithScores = fetchedSpeeches.filter(s => s.feedback?.scores?.overall !== null && s.feedback?.scores?.overall !== undefined);
+              // Calculate average score and highest score
+              const speechesWithScores = fetchedSpeeches.filter(s => {
+                const score = extractScore(s.feedback);
+                return score !== null && typeof score === 'number';
+              });
+              
               if (speechesWithScores.length > 0) {
-                const totalScore = speechesWithScores.reduce((sum, speech) => sum + (speech.feedback?.scores?.overall || 0), 0);
-                const average = totalScore / speechesWithScores.length;
+                // Extract scores for calculations
+                const scores = speechesWithScores.map(s => extractScore(s.feedback) || 0);
+                
+                // Average score
+                const totalScore = scores.reduce((sum, score) => sum + score, 0);
+                const average = totalScore / scores.length;
                 setAvgScores({
                   overall: Math.round(average * 10) / 10, // Round to 1 decimal place
                   count: speechesWithScores.length
                 });
+                
+                // Highest score
+                const maxScore = Math.max(...scores);
+                setHighestScore(Math.round(maxScore * 10) / 10);
+                
+                // Score trend data for chart
+                const sortedSpeeches = [...speechesWithScores].sort(
+                  (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+                
+                const trendData = sortedSpeeches.map(speech => ({
+                  date: new Date(speech.created_at).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: sortedSpeeches.length > 10 ? '2-digit' : undefined
+                  }),
+                  score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
+                }));
+                
+                setScoreTrendData(trendData);
               }
 
-              // Calculate weekly activity for chart
+              // Calculate weekly activity for chart (in hours)
               const now = new Date();
               const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              const weeklyDataMap = new Map<string, { speeches: number; debates: number }>();
+              const weeklyDataMap = new Map<string, number>();
               const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
               const orderedDays: string[] = [];
 
@@ -152,32 +208,36 @@ export default function Dashboard() {
                 const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
                 const dayName = days[d.getDay()];
                 orderedDays.push(dayName);
-                weeklyDataMap.set(dayName, { speeches: 0, debates: 0 });
+                weeklyDataMap.set(dayName, 0);
               }
 
+              // Add speech hours
               fetchedSpeeches.forEach((item) => {
                 const d = new Date(item.created_at);
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    weeklyDataMap.get(dayName)!.speeches++;
+                    const hours = item.duration_seconds ? item.duration_seconds / 3600 : 0.25;
+                    weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
               });
+              
+              // Add debate hours (5 minutes per debate)
               fetchedDebates.forEach((item) => {
                 const d = new Date(item.created_at);
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    weeklyDataMap.get(dayName)!.debates++;
+                    const hours = 5 / 60; // 5 minutes in hours
+                    weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
               });
 
               const finalWeeklyChartData = orderedDays.map((dayName) => ({
                 name: dayName,
-                speeches: weeklyDataMap.get(dayName)?.speeches || 0,
-                debates: weeklyDataMap.get(dayName)?.debates || 0,
+                hours: Math.round(weeklyDataMap.get(dayName)! * 100) / 100, // Round to 2 decimal places
               }));
               setWeeklyChartData(finalWeeklyChartData);
             }
@@ -208,6 +268,125 @@ export default function Dashboard() {
 
     return () => clearTimeout(loadingTimeout);
   }, [router]);
+
+  // Function to filter score data based on date range
+  const getFilteredScoreData = () => {
+    if (!scoreTrendData.length) return [];
+    
+    const now = new Date();
+    let cutoffDate: Date;
+    
+    switch (dateRange) {
+      case 'week':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+      default:
+        return scoreTrendData;
+    }
+    
+    // Filter speeches by date and recalculate the displayed data
+    const filteredSpeeches = speechHistory
+      .filter(s => {
+        const score = extractScore(s.feedback);
+        return score !== null && new Date(s.created_at) >= cutoffDate;
+      })
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    
+    return filteredSpeeches.map(speech => ({
+      date: new Date(speech.created_at).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: filteredSpeeches.length > 10 ? '2-digit' : undefined
+      }),
+      score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
+    }));
+  };
+
+  // Function to get weekly activity data based on chart date range
+  const getWeeklyActivityData = () => {
+    const now = new Date();
+    let daysToShow: number;
+    
+    switch (chartDateRange) {
+      case 'week':
+        daysToShow = 7;
+        break;
+      case 'month':
+        daysToShow = 30;
+        break;
+      case 'year':
+        daysToShow = 365;
+        break;
+      default:
+        daysToShow = 7;
+    }
+    
+    const cutoffDate = new Date(now.getTime() - daysToShow * 24 * 60 * 60 * 1000);
+    const dataMap = new Map<string, number>();
+    
+    // Generate date labels based on range
+    const dateLabels: string[] = [];
+    for (let i = daysToShow - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      let label: string;
+      
+      if (chartDateRange === 'week') {
+        label = d.toLocaleDateString('en-US', { weekday: 'short' });
+      } else if (chartDateRange === 'month') {
+        label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else {
+        label = d.toLocaleDateString('en-US', { month: 'short' });
+      }
+      
+      // Only show some labels to avoid crowding
+      if (chartDateRange === 'month' && i % 5 !== 0) {
+        label = '';
+      } else if (chartDateRange === 'year' && i % 30 !== 0) {
+        label = '';
+      }
+      
+      const key = d.toISOString().split('T')[0]; // Use ISO date as key
+      dateLabels.push(label);
+      dataMap.set(key, 0);
+    }
+    
+    // Calculate hours for each day
+    speechHistory.forEach(speech => {
+      const d = new Date(speech.created_at);
+      if (d >= cutoffDate) {
+        const key = d.toISOString().split('T')[0];
+        if (dataMap.has(key)) {
+          const hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 0.25;
+          dataMap.set(key, dataMap.get(key)! + hours);
+        }
+      }
+    });
+    
+    debateHistory.forEach(debate => {
+      const d = new Date(debate.created_at);
+      if (d >= cutoffDate) {
+        const key = d.toISOString().split('T')[0];
+        if (dataMap.has(key)) {
+          const hours = 5 / 60; // 5 minutes per debate
+          dataMap.set(key, dataMap.get(key)! + hours);
+        }
+      }
+    });
+    
+    // Convert to array format
+    const keys = Array.from(dataMap.keys()).sort();
+    return keys.map((key, index) => ({
+      name: dateLabels[index],
+      hours: Math.round(dataMap.get(key)! * 100) / 100
+    })).filter(item => chartDateRange !== 'year' || item.name !== ''); // Only show labeled items for year view
+  };
 
   if (loading) {
     return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
@@ -294,29 +473,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Learning Progress Widget (Simplified to Overall Score) */}
-        <Widget
-          title="Overall Learning Progress"
-          className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-2"
-        >
-          {avgScores.count > 0 ? (
-            <div className="space-y-4">
-              <ProgressItem
-                label="Average Score"
-                value={avgScores.overall}
-                color="bg-primary-500"
-                icon={<AcademicCapIcon className="h-5 w-5 text-primary-700 dark:text-primary-300" />}
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Based on {avgScores.count} analyzed speech{avgScores.count !== 1 ? 'es' : ''}.
-              </p>
-            </div>
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-              No speech scores available yet. Practice a speech to see your progress!
-            </p>
-          )}
-        </Widget>
 
         {/* Quick Actions Widget */}
         <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-3">
@@ -371,18 +527,100 @@ export default function Dashboard() {
 
         {/* Score Trend Widget */}
         <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2 animate-fade-in stagger-1">
-          {scoreTrendData.length > 1 ? (
-            <ScoreTrendChart data={scoreTrendData} />
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-              Not enough data to show score trend. Complete at least two scored speeches.
-            </p>
-          )}
+          <div className="space-y-4">
+            {/* Date Range Selector */}
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={() => setDateRange('week')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  dateRange === 'week'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                1W
+              </button>
+              <button
+                onClick={() => setDateRange('month')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  dateRange === 'month'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                1M
+              </button>
+              <button
+                onClick={() => setDateRange('year')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  dateRange === 'year'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                1Y
+              </button>
+              <button
+                onClick={() => setDateRange('all')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  dateRange === 'all'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                All
+              </button>
+            </div>
+            
+            {scoreTrendData.length > 1 ? (
+              <ScoreTrendChart data={getFilteredScoreData()} />
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                Not enough data to show score trend. Complete at least two scored speeches.
+              </p>
+            )}
+          </div>
         </Widget>
 
         {/* Weekly Activity Widget */}
         <Widget title="Weekly Activity" className="col-span-4 md:col-span-2 animate-fade-in stagger-2">
-          <WeeklyActivityChart data={weeklyChartData} />
+          <div className="space-y-4">
+            {/* Date Range Selector */}
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={() => setChartDateRange('week')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  chartDateRange === 'week'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                1W
+              </button>
+              <button
+                onClick={() => setChartDateRange('month')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  chartDateRange === 'month'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                1M
+              </button>
+              <button
+                onClick={() => setChartDateRange('year')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  chartDateRange === 'year'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                1Y
+              </button>
+            </div>
+            
+            <WeeklyActivityChart data={getWeeklyActivityData()} />
+          </div>
         </Widget>
 
         {/* Recent Activity Widget */}
@@ -457,13 +695,22 @@ export default function Dashboard() {
 // --- Chart Components ---
 
 // Simplified Score Trend Chart
-const ScoreTrendChart = ({ data }: { data: { date: string; score: number | null }[] }) => {
+const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) => {
   return (
     <div className="h-60 md:h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-          <XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} />
+          <XAxis 
+            dataKey="date" 
+            fontSize={10} 
+            tickLine={false} 
+            axisLine={false}
+            interval={data.length > 20 ? 'preserveStartEnd' : 0}
+            angle={data.length > 10 ? -45 : 0}
+            textAnchor={data.length > 10 ? 'end' : 'middle'}
+            height={data.length > 10 ? 60 : 30}
+          />
           <YAxis domain={[0, 100]} fontSize={10} tickLine={false} axisLine={false} />
           <Tooltip
             contentStyle={{
@@ -473,6 +720,7 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number | null 
             }}
             itemStyle={{ color: '#d1d5db' }} // text-gray-300
             labelStyle={{ color: '#f9fafb', fontWeight: 'bold' }} // text-gray-50
+            formatter={(value: number) => `${value}%`}
           />
           <Line
             type="monotone"
@@ -481,7 +729,6 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number | null 
             strokeWidth={2}
             dot={{ r: 4, fill: '#87A96B' }}
             activeDot={{ r: 6 }}
-            connectNulls // Connect line across null data points
           />
         </LineChart>
       </ResponsiveContainer>
@@ -493,7 +740,7 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number | null 
 const WeeklyActivityChart = ({
   data,
 }: {
-  data: { name: string; speeches: number; debates: number }[];
+  data: { name: string; hours: number }[];
 }) => {
   return (
     <div className="h-60 md:h-72 w-full">
@@ -501,7 +748,12 @@ const WeeklyActivityChart = ({
         <BarChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
           <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-          <YAxis fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+          <YAxis 
+            fontSize={10} 
+            tickLine={false} 
+            axisLine={false} 
+            tickFormatter={(value) => `${value}h`}
+          />
           <Tooltip
             contentStyle={{
               backgroundColor: 'rgba(31, 41, 55, 0.8)',
@@ -510,30 +762,14 @@ const WeeklyActivityChart = ({
             }}
             itemStyle={{ color: '#d1d5db' }}
             labelStyle={{ color: '#f9fafb', fontWeight: 'bold' }}
-          />
-          <Legend
-            verticalAlign="top"
-            height={36}
-            iconSize={10}
-            wrapperStyle={{ fontSize: '12px' }}
+            formatter={(value: number) => [`${value.toFixed(2)} hours`, 'Practice Time']}
           />
           <Bar
-            dataKey="speeches"
+            dataKey="hours"
             fill="#87A96B"
-            /* primary-500 (sage green) */ name="Speeches"
+            name="Practice Hours"
             radius={[4, 4, 0, 0]}
-          >
-            {/* Optional: Add labels inside bars if needed */}
-            {/* <LabelList dataKey="speeches" position="top" fontSize={10} fill="#fff" /> */}
-          </Bar>
-          <Bar
-            dataKey="debates"
-            fill="#9DB88F"
-            /* primary-400 (lighter sage) */ name="Debates"
-            radius={[4, 4, 0, 0]}
-          >
-            {/* <LabelList dataKey="debates" position="top" fontSize={10} fill="#fff" /> */}
-          </Bar>
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -10,6 +10,7 @@ import { useSidebar } from './Layout';
 
 const navigation = [
   { name: 'dashboard', href: '/dashboard' },
+  { name: 'history', href: '/history' },
   { name: 'search', href: '/search' },
   { name: 'feedback', href: '/speech-feedback' },
   { name: 'debate', href: '/debate' },
@@ -39,7 +40,7 @@ export default function EnhancedNavbar() {
       if (currentScrollY === 0) {
         setScrollState('top');
         setIsCompact(false);
-      } else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+      } else if (currentScrollY > lastScrollY.current && currentScrollY > 150) {
         // Scrolling down and past threshold
         setScrollState('scrolling');
         setIsCompact(true);
@@ -70,7 +71,7 @@ export default function EnhancedNavbar() {
     <>
       <nav 
         className={cn(
-          'fixed w-full z-40 top-0 left-0 transition-all duration-500 ease-out',
+          'fixed w-full z-40 top-0 left-0 transition-all duration-300 ease-out',
           scrollState === 'top' 
             ? 'bg-transparent' 
             : 'bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm',
@@ -80,7 +81,7 @@ export default function EnhancedNavbar() {
       >
         <div className="max-w-7xl mx-auto px-8">
           <div className={cn(
-            'flex justify-between items-center transition-all duration-500 ease-out',
+            'flex justify-between items-center transition-all duration-300 ease-out',
             isCompact ? 'h-14' : 'h-20'
           )}>
             {/* Logo and Sidebar Toggle */}
@@ -90,7 +91,7 @@ export default function EnhancedNavbar() {
                 <button
                   onClick={sidebarContext.toggleSidebar}
                   className={cn(
-                    'hidden lg:flex items-center justify-center p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-300',
+                    'hidden lg:flex items-center justify-center p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-200',
                     isCompact ? 'mr-4 scale-90' : 'mr-6'
                   )}
                   title={sidebarContext.isCollapsed ? 'expand sidebar' : 'collapse sidebar'}
@@ -108,7 +109,7 @@ export default function EnhancedNavbar() {
               <Link 
                 href="/" 
                 className={cn(
-                  'font-light tracking-wide text-gray-900 dark:text-gray-100 hover:text-primary-500 transition-all duration-300',
+                  'font-light tracking-wide text-gray-900 dark:text-gray-100 hover:text-primary-500 transition-all duration-200',
                   isCompact ? 'text-xl' : 'text-2xl'
                 )}
               >
@@ -119,7 +120,7 @@ export default function EnhancedNavbar() {
             {/* Desktop Navigation - Enhanced with animations */}
             <div className="hidden md:flex md:items-center md:space-x-8">
               <div className={cn(
-                'flex items-center transition-all duration-300',
+                'flex items-center transition-all duration-200',
                 isCompact ? 'space-x-6' : 'space-x-8'
               )}>
                 {navigation.map((item) => {
@@ -129,7 +130,7 @@ export default function EnhancedNavbar() {
                       key={item.name}
                       href={item.href}
                       className={cn(
-                        'relative text-sm font-medium transition-all duration-300',
+                        'relative text-sm font-medium transition-all duration-200',
                         isActive
                           ? 'text-primary-600 dark:text-primary-400'
                           : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100',
@@ -141,7 +142,7 @@ export default function EnhancedNavbar() {
                         {/* Active indicator - animated underline */}
                         <span
                           className={cn(
-                            'absolute -bottom-1 left-0 h-0.5 bg-primary-500 transition-all duration-300',
+                            'absolute -bottom-1 left-0 h-0.5 bg-primary-500 transition-all duration-200',
                             isActive ? 'w-full' : 'w-0'
                           )}
                         />
@@ -154,13 +155,13 @@ export default function EnhancedNavbar() {
               {/* Right side items */}
               <div className="flex items-center space-x-4 ml-8">
                 <div className={cn(
-                  'transition-all duration-300',
+                  'transition-all duration-200',
                   isCompact && 'scale-90'
                 )}>
                   <DarkModeToggle />
                 </div>
                 <div className={cn(
-                  'transition-all duration-300',
+                  'transition-all duration-200',
                   isCompact && 'scale-95'
                 )}>
                   <ProfileMenu />
@@ -188,26 +189,12 @@ export default function EnhancedNavbar() {
           </div>
         </div>
 
-        {/* Compact mode indicator - subtle pill that appears when scrolling */}
-        <div
-          className={cn(
-            'absolute left-1/2 -translate-x-1/2 -bottom-3 transition-all duration-500',
-            isCompact ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-          )}
-        >
-          <div className="px-4 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-2">
-            <span>scroll up to expand</span>
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
-          </div>
-        </div>
       </nav>
 
       {/* Mobile menu - Enhanced with smooth animations */}
       <div
         className={cn(
-          'fixed inset-0 z-50 bg-white dark:bg-gray-950 md:hidden transition-all duration-300',
+          'fixed inset-0 z-50 bg-white dark:bg-gray-950 md:hidden transition-all duration-200',
           isMobileMenuOpen 
             ? 'opacity-100 pointer-events-auto' 
             : 'opacity-0 pointer-events-none'
@@ -233,7 +220,7 @@ export default function EnhancedNavbar() {
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
-                  'text-3xl font-light transition-all duration-300',
+                  'text-3xl font-light transition-all duration-200',
                   isActive
                     ? 'text-primary-600 dark:text-primary-400'
                     : 'text-gray-900 dark:text-gray-100',

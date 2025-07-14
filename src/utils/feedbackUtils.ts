@@ -95,7 +95,7 @@ export const feedbackSectionTitles: { [key: string]: string } = {
   'Clarity & Conciseness': 'Clarity & Conciseness',
   'Persuasiveness & Impact': 'Persuasiveness',
   'Delivery Style (Inferred)': 'Delivery Mechanics',
-  'Relevance to Speech Type(s)': 'Relevance to Speech Type(s)',
+  'Strategic success Speech Type(s)': 'Strategic success Speech Type(s)',
   'Actionable Suggestions': 'Actionable Suggestions'
 };
 
@@ -186,7 +186,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
     sections['Delivery Style (Inferred)'] = content.trim();
   }
   
-  // Relevance to Speech Type
+  // Strategic success Speech Type
   const relevanceSection = feedback.relevanceToSpeechType;
   if (relevanceSection) {
     let content = `${relevanceSection.analysis}\n\n`;
@@ -196,7 +196,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
     if (relevanceSection.suggestions && relevanceSection.suggestions.length > 0) {
       content += `**Suggestions:**\n${relevanceSection.suggestions.map(s => `- ${s}`).join('\n')}`;
     }
-    sections['Relevance to Speech Type(s)'] = content.trim();
+    sections['Strategic success Speech Type(s)'] = content.trim();
   }
   
   return sections;

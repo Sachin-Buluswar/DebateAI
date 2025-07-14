@@ -91,10 +91,10 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   };
 
   const typeStyles = {
-    success: 'border-l-4 border-l-[#87A96B]',
-    error: 'border-l-4 border-l-red-500',
-    warning: 'border-l-4 border-l-yellow-500',
-    info: 'border-l-4 border-l-blue-500'
+    success: 'border-l-2 border-l-[#87A96B]',
+    error: 'border-l-2 border-l-red-500',
+    warning: 'border-l-2 border-l-yellow-500',
+    info: 'border-l-2 border-l-gray-500'
   };
 
   const icons = {
@@ -114,7 +114,7 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       </svg>
     ),
     info: (
-      <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     )
@@ -123,22 +123,23 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   return (
     <div
       className={cn(
-        'min-w-[300px] max-w-[500px] bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-800 p-4 transition-all duration-300',
+        'min-w-[300px] max-w-[500px] bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200',
         typeStyles[toast.type],
         isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       )}
+      style={{ borderRadius: 0 }}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         {/* Icon */}
         <div className="flex-shrink-0">{icons[toast.type]}</div>
         
         {/* Content */}
         <div className="flex-1">
-          <p className="text-sm text-gray-900 dark:text-gray-100">{toast.message}</p>
+          <p className="text-sm text-gray-900 dark:text-gray-100 font-normal">{toast.message}</p>
           {toast.action && (
             <button
               onClick={toast.action.onClick}
-              className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+              className="mt-3 text-sm font-medium text-[#87A96B] hover:text-[#6e8a57] dark:text-[#87A96B] dark:hover:text-[#6e8a57] transition-colors underline-offset-4 hover:underline"
             >
               {toast.action.label}
             </button>
@@ -148,10 +149,10 @@ const ToastItem = ({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
         {/* Close button */}
         <button
           onClick={handleRemove}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>

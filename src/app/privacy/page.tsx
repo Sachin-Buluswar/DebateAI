@@ -107,10 +107,6 @@ export default function PrivacyPolicyPage() {
               <li>object to certain processing</li>
               <li>withdraw consent</li>
             </ul>
-            <p className="mt-4">
-              to exercise these rights, contact us at{' '}
-              <span className="text-primary-500">privacy@debateai.com</span>
-            </p>
           </section>
 
           <section className="space-y-6">
@@ -138,19 +134,12 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-          <section className="space-y-6">
-            <h2 className="text-gray-900 dark:text-gray-100">contact us</h2>
-            <p>
-              questions about this privacy policy? reach us at{' '}
-              <span className="text-primary-500">privacy@debateai.com</span>
-            </p>
-          </section>
 
           <div className="divider"></div>
 
           <footer className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-500">
-              © 2024 debateai. focused practice for better debates.
+              debateai. focused practice for better debates.
             </p>
           </footer>
         </article>

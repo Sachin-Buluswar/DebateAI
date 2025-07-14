@@ -49,7 +49,7 @@ export const Modal: React.FC<ModalProps> = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -65,17 +65,18 @@ export const Modal: React.FC<ModalProps> = ({
             >
               <Dialog.Panel
                 className={cn(
-                  'w-full transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-2xl transition-all',
+                  'w-full transform overflow-hidden bg-white dark:bg-gray-900 p-8 text-left align-middle shadow-sm border border-gray-200 dark:border-gray-700 transition-all',
                   sizeClasses[size],
                   className
                 )}
+                style={{ borderRadius: 0 }}
               >
                 {(title || showCloseButton) && (
                   <div className="flex items-start justify-between mb-4">
                     {title && (
                       <Dialog.Title
                         as="h3"
-                        className="text-xl font-semibold leading-6 text-gray-900 dark:text-white"
+                        className="text-lg font-medium leading-6 text-gray-900 dark:text-white"
                       >
                         {title}
                       </Dialog.Title>
@@ -83,8 +84,9 @@ export const Modal: React.FC<ModalProps> = ({
                     {showCloseButton && (
                       <button
                         type="button"
-                        className="ml-auto -mr-2 -mt-2 rounded-lg p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                        className="ml-auto -mr-2 -mt-2 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#87A96B] focus-visible:ring-offset-2"
                         onClick={onClose}
+                        style={{ borderRadius: 0 }}
                       >
                         <span className="sr-only">Close</span>
                         <svg

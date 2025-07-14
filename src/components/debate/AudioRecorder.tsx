@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Button from '@/components/ui/Button';
+import EnhancedButton from '@/components/ui/EnhancedButton';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 interface AudioRecorderProps {
   onTranscription: (text: string) => void;
@@ -73,12 +74,16 @@ export default function AudioRecorder({ onTranscription, disabled = false, onRec
         <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
             <h3 className="text-xl font-semibold mb-2">Your Turn to Speak</h3>
             <div className="flex items-center space-x-4">
-                <Button onClick={isRecording ? handleStopRecording : handleStartRecording} disabled={disabled}>
-                    {isRecording ? 'Stop Recording' : disabled ? 'Start Debate First' : 'Start Recording'}
-                </Button>
+                <EnhancedButton 
+                    onClick={isRecording ? handleStopRecording : handleStartRecording} 
+                    disabled={disabled}
+                    variant={isRecording ? 'danger' : 'primary'}
+                >
+                    {isRecording ? 'stop recording' : disabled ? 'start debate first' : 'start recording'}
+                </EnhancedButton>
                 {isRecording && <div className="text-red-500 animate-pulse">Recording...</div>}
             </div>
-            {error && <p className="text-red-500 mt-4">Error: {error}</p>}
+            {error && <AlertMessage type="error" message={error} className="mt-4" />}
         </div>
     );
 } 

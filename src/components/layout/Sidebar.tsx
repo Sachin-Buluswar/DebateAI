@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useSidebar } from './Layout';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface NavItem {
   name: string;
@@ -55,6 +56,8 @@ export default function Sidebar() {
   const router = useRouter();
   const [userName, setUserName] = useState('user');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const sidebarContext = useSidebar();
   const isCollapsed = sidebarContext?.isCollapsed || false;
   
@@ -66,18 +69,38 @@ export default function Sidebar() {
         if (session?.user?.email) {
           const name = session.user.email.split('@')[0];
           setUserName(name.toLowerCase());
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error getting user info:', error);
+        setIsAuthenticated(false);
       }
     };
     
     getUserInfo();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.email) {
+        const name = session.user.email.split('@')[0];
+        setUserName(name.toLowerCase());
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
+      setShowLogoutConfirm(false);
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -91,6 +114,14 @@ export default function Sidebar() {
       console.error('Exception during logout:', error);
     } finally {
       setIsLoggingOut(false);
+    }
+  };
+
+  const handleAuthButtonClick = () => {
+    if (isAuthenticated) {
+      setShowLogoutConfirm(true);
+    } else {
+      router.push('/auth');
     }
   };
 
@@ -121,25 +152,36 @@ export default function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-6">
-        {!isCollapsed && (
+      <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-6 relative">
+        {!isCollapsed && isAuthenticated && (
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {userName}
           </div>
         )}
         <button
-          onClick={handleLogout}
+          onClick={handleAuthButtonClick}
           disabled={isLoggingOut}
           className={`
             text-sm text-gray-600 dark:text-gray-400 
             hover:text-primary-500 transition-colors duration-200
             ${isCollapsed ? 'w-full text-center' : ''}
           `}
-          title={isCollapsed ? 'sign out' : undefined}
+          title={isCollapsed ? (isAuthenticated ? 'sign out' : 'log in') : undefined}
         >
-          {isLoggingOut ? '...' : (isCollapsed ? 'x' : 'sign out')}
+          {isLoggingOut ? '...' : (isCollapsed ? (isAuthenticated ? 'x' : '→') : (isAuthenticated ? 'sign out' : 'log in'))}
         </button>
       </div>
+      
+      <ConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out of your account?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        confirmButtonClass="px-8 py-3 text-sm font-medium bg-red-500 hover:bg-red-600 text-white border border-red-500 hover:border-red-600 transition-all duration-200 lowercase tracking-wide"
+      />
     </div>
   );
 }

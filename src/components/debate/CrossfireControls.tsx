@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Button from '@/components/ui/Button';
+import EnhancedButton from '@/components/ui/EnhancedButton';
 
 const CrossfireController = () => {
     const [isConnecting, setIsConnecting] = useState(false);
@@ -79,15 +79,15 @@ const CrossfireController = () => {
         <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
             <h3 className="text-xl font-semibold mb-2">Crossfire Controller</h3>
             {!isConnected && (
-                <Button onClick={connect} disabled={isConnecting}>
-                    {isConnecting ? 'Connecting...' : 'Connect to Crossfire'}
-                </Button>
+                <EnhancedButton onClick={connect} disabled={isConnecting} loading={isConnecting} loadingText="connecting...">
+                    connect to crossfire
+                </EnhancedButton>
             )}
             {isConnected && (
                 <div className="flex items-center space-x-4">
-                    <Button onClick={isRecording ? stopRecording : startRecording}>
-                        {isRecording ? 'Stop Speaking' : 'Start Speaking'}
-                    </Button>
+                    <EnhancedButton onClick={isRecording ? stopRecording : startRecording} variant={isRecording ? 'danger' : 'primary'}>
+                        {isRecording ? 'stop speaking' : 'start speaking'}
+                    </EnhancedButton>
                     {isRecording && <div className="text-red-500 animate-pulse">Live</div>}
                 </div>
             )}

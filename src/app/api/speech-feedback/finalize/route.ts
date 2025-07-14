@@ -10,7 +10,7 @@ interface Metadata {
   contentType: string;
   filename: string;
   topic: string;
-  speechTypes: string[];
+  speechType: string;
   userSide: string;
   customInstructions: string;
   userId: string;
@@ -56,7 +56,7 @@ async function forwardStreamToMainEndpoint(sessionId: string, metadata: Metadata
     
     // Append other metadata
     form.append('topic', metadata.topic);
-    form.append('speechTypes', JSON.stringify(metadata.speechTypes || []));
+    form.append('speechType', metadata.speechType || 'debate');
     form.append('userSide', metadata.userSide || 'None');
     form.append('customInstructions', metadata.customInstructions || '');
     form.append('userId', metadata.userId);

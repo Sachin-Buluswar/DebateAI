@@ -4,11 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function ProfileMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   
@@ -62,6 +64,11 @@ export default function ProfileMenu() {
       setIsLoggingOut(false);
     }
   };
+
+  const handleLogoutClick = () => {
+    setIsOpen(false);
+    setShowLogoutConfirm(true);
+  };
   
   return (
     <div className="relative" ref={dropdownRef}>
@@ -106,13 +113,24 @@ export default function ProfileMenu() {
           <button
             className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors"
             role="menuitem"
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             disabled={isLoggingOut}
           >
             {isLoggingOut ? 'signing out...' : 'sign out'}
           </button>
         </div>
       )}
+      
+      <ConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title="Sign Out"
+        message="Are you sure you want to sign out of your account?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        confirmButtonClass="px-8 py-3 text-sm font-medium bg-red-500 hover:bg-red-600 text-white border border-red-500 hover:border-red-600 transition-all duration-200 lowercase tracking-wide"
+      />
     </div>
   );
 }

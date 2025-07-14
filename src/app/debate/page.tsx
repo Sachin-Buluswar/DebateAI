@@ -14,8 +14,8 @@ import AudioRecorder from '../../components/debate/AudioRecorder';
 import CrossfireController from '../../components/debate/CrossfireControls';
 import Layout from '@/components/layout/Layout';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Textarea } from '@/components/ui/Textarea';
+import EnhancedButton from '@/components/ui/EnhancedButton';
+import EnhancedInput from '@/components/ui/EnhancedInput';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { PlayIcon, PauseIcon, ForwardIcon, BookmarkIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -407,36 +407,42 @@ export default function DebatePage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSetupSubmit} className="space-y-6">
-                    <Textarea
-                      label="Debate Topic"
-                      value={formData.topic}
-                      onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
-                      placeholder="e.g., Should autonomous vehicles be implemented on a large scale?"
-                      rows={3}
-                      required
-                    />
+                    <div className="w-full">
+                      <EnhancedInput
+                        label="Debate Topic"
+                        value={formData.topic}
+                        onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                        placeholder="e.g., Should autonomous vehicles be implemented on a large scale?"
+                        multiline
+                        rows={3}
+                        required
+                        className="resize-none"
+                      />
+                    </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Choose Your Side
                       </label>
                       <div className="grid grid-cols-2 gap-3">
-                        <Button
+                        <EnhancedButton
                           type="button"
                           variant={formData.side === 'PRO' ? 'primary' : 'outline'}
                           onClick={() => setFormData(prev => ({ ...prev, side: 'PRO' }))}
                           className="w-full"
+                          icon={<span className="text-xl">👍</span>}
                         >
-                          👍 PRO
-                        </Button>
-                        <Button
+                          PRO
+                        </EnhancedButton>
+                        <EnhancedButton
                           type="button"
-                          variant={formData.side === 'CON' ? 'secondary' : 'outline'}
+                          variant={formData.side === 'CON' ? 'danger' : 'outline'}
                           onClick={() => setFormData(prev => ({ ...prev, side: 'CON' }))}
                           className="w-full"
+                          icon={<span className="text-xl">👎</span>}
                         >
-                          👎 CON
-                        </Button>
+                          CON
+                        </EnhancedButton>
                       </div>
                     </div>
                     
@@ -444,22 +450,43 @@ export default function DebatePage() {
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Select 3 AI Debaters (Currently selected: {formData.selectedAIDebaters.length}/3)
                       </label>
-                      <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
                         {availableAIDebaters.map((debater) => (
                           <button
                             key={debater.id}
                             type="button"
                             onClick={() => handleAIDebaterToggle(debater.name)}
-                            className={`p-2 text-xs rounded-lg border transition-all text-left ${
+                            className={`p-3 rounded-lg border-2 transition-all duration-200 text-left group relative overflow-hidden box-border min-w-0 ${
                               formData.selectedAIDebaters.includes(debater.name)
-                                ? 'border-primary-400 bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-200'
-                                : 'border-gray-300 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-gray-400 dark:hover:border-gray-600'
+                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 shadow-md'
+                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-sm'
                             } ${formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name) 
                                 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             disabled={formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name)}
                           >
-                            <div className="font-medium">{debater.name}</div>
-                            <div className="text-xs opacity-75 truncate">{debater.description}</div>
+                            <div className="flex items-start justify-between w-full">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                                  {debater.name}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2 break-words">
+                                  {debater.description}
+                                </div>
+                              </div>
+                              {formData.selectedAIDebaters.includes(debater.name) && (
+                                <div className="ml-2 flex-shrink-0">
+                                  <div className="w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center">
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} 
+                                        d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className={`absolute inset-0 bg-gradient-to-r from-primary-500/10 to-primary-600/10 transform transition-transform duration-300 ${
+                              formData.selectedAIDebaters.includes(debater.name) ? 'translate-x-0' : '-translate-x-full'
+                            }`} />
                           </button>
                         ))}
                       </div>
@@ -470,22 +497,46 @@ export default function DebatePage() {
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="aiPartner"
-                        checked={formData.aiPartner}
-                        onChange={(e) => setFormData(prev => ({ ...prev, aiPartner: e.target.checked }))}
-                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                      <label htmlFor="aiPartner" className="text-sm text-gray-900 dark:text-white">
+                    <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer"
+                         onClick={() => setFormData(prev => ({ ...prev, aiPartner: !prev.aiPartner }))}>
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id="aiPartner"
+                          checked={formData.aiPartner}
+                          onChange={(e) => setFormData(prev => ({ ...prev, aiPartner: e.target.checked }))}
+                          className="sr-only"
+                        />
+                        <div className={`w-10 h-6 rounded-full transition-colors ${
+                          formData.aiPartner ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}>
+                          <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+                            formData.aiPartner ? 'translate-x-4' : 'translate-x-0'
+                          }`} />
+                        </div>
+                      </div>
+                      <label htmlFor="aiPartner" className="text-sm text-gray-900 dark:text-white cursor-pointer flex-1">
                         Include AI Partner on my team
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Get assistance from an AI teammate during the debate
+                        </span>
                       </label>
                     </div>
                     
-                    <Button type="submit" variant="primary" size="lg" className="w-full">
+                    <EnhancedButton 
+                      type="submit" 
+                      variant="primary" 
+                      size="lg" 
+                      className="w-full"
+                      icon={
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      }
+                    >
                       Configure Debate
-                    </Button>
+                    </EnhancedButton>
                   </form>
                 </CardContent>
               </Card>
@@ -511,15 +562,29 @@ export default function DebatePage() {
                       <Badge variant="primary">Enabled</Badge>
                     </div>
                   )}
-                  <Button
+                  <EnhancedButton
                     onClick={startDebate}
                     disabled={!isConnected || !!debateState}
                     variant="primary"
                     size="lg"
                     className="w-full"
+                    loading={!isConnected}
+                    icon={
+                      debateState ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                        </svg>
+                      )
+                    }
                   >
                     {!isConnected ? 'Connecting...' : debateState ? 'Debate Active' : 'Start Debate'}
-                  </Button>
+                  </EnhancedButton>
                 </CardContent>
               </Card>
             )}
@@ -616,34 +681,25 @@ export default function DebatePage() {
                     {/* Debate Controls */}
                     {debateState.phase !== 'ENDED' && (
                       <div className="flex flex-wrap justify-center gap-4">
-                                                 <Button
+                         <EnhancedButton
                            onClick={!isPaused ? pauseDebate : resumeDebate}
                            variant="secondary"
                            size="lg"
+                           icon={!isPaused ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
                          >
-                           {!isPaused ? (
-                             <>
-                               <PauseIcon className="w-5 h-5 mr-2" />
-                               Pause
-                             </>
-                           ) : (
-                             <>
-                               <PlayIcon className="w-5 h-5 mr-2" />
-                               Resume
-                             </>
-                           )}
-                         </Button>
+                           {!isPaused ? 'Pause' : 'Resume'}
+                         </EnhancedButton>
                          
-                         <Button
+                         <EnhancedButton
                            onClick={() => socketRef.current?.emit('skipTurn')}
                            variant="ghost"
                            size="lg"
+                           icon={<ForwardIcon className="w-5 h-5" />}
                          >
-                           <ForwardIcon className="w-5 h-5 mr-2" />
                            Skip Turn
-                         </Button>
+                         </EnhancedButton>
                          
-                         <Button
+                         <EnhancedButton
                            onClick={() => {
                              socketRef.current?.emit('saveDebate');
                              setSaveStatus('saving');
@@ -651,20 +707,11 @@ export default function DebatePage() {
                            disabled={saveStatus === 'saving'}
                            variant="primary"
                            size="lg"
-                           isLoading={saveStatus === 'saving'}
+                           loading={saveStatus === 'saving'}
+                           icon={saveStatus === 'saved' ? <CheckIcon className="w-5 h-5" /> : <BookmarkIcon className="w-5 h-5" />}
                          >
-                           {saveStatus === 'saved' ? (
-                             <>
-                               <CheckIcon className="w-5 h-5 mr-2" />
-                               Saved!
-                             </>
-                           ) : (
-                             <>
-                               <BookmarkIcon className="w-5 h-5 mr-2" />
-                               Save Progress
-                             </>
-                           )}
-                         </Button>
+                           {saveStatus === 'saved' ? 'Saved!' : 'Save Progress'}
+                         </EnhancedButton>
                       </div>
                     )}
                   </div>
@@ -683,20 +730,33 @@ export default function DebatePage() {
 
                          {/* User Turn Notification */}
              {debateState?.currentSpeakerId === (setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1') && (
-               <Card variant="default" className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20">
+               <Card variant="default" className="border-2 border-primary-400 bg-gradient-to-r from-primary-50 to-primary-100 dark:border-primary-600 dark:from-primary-900/30 dark:to-primary-800/30 shadow-lg animate-pulse-subtle">
                  <CardContent>
                    <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="font-semibold text-primary-800 dark:text-primary-200 mb-1">
-                         🎤 Your Turn to Speak!
-                       </h4>
-                       <p className="text-sm text-primary-700 dark:text-primary-300">
-                         Phase: {getPhaseDisplayName(debateState.phase)}
-                       </p>
+                     <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center animate-bounce">
+                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                             d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                         </svg>
+                       </div>
+                       <div>
+                         <h4 className="font-bold text-lg text-primary-800 dark:text-primary-200">
+                           Your Turn to Speak!
+                         </h4>
+                         <p className="text-sm text-primary-700 dark:text-primary-300">
+                           {getPhaseDisplayName(debateState.phase)} • {Math.floor(debateState.remainingTime / 60)}:{(debateState.remainingTime % 60).toString().padStart(2, '0')} remaining
+                         </p>
+                       </div>
                      </div>
-                     <Button onClick={skipUserTurn} variant="ghost" size="sm">
+                     <EnhancedButton 
+                       onClick={skipUserTurn} 
+                       variant="ghost" 
+                       size="sm"
+                       icon={<ForwardIcon className="w-4 h-4" />}
+                     >
                        Skip My Turn
-                     </Button>
+                     </EnhancedButton>
                    </div>
                  </CardContent>
                </Card>
@@ -736,17 +796,23 @@ export default function DebatePage() {
           </div>
         </div>
 
-        {/* Research Panel Toggle */}
+        {/* Advice Panel Toggle */}
         {setup && (
           <div className="fixed bottom-6 right-6 z-40">
-            <Button
+            <EnhancedButton
               onClick={() => setIsResearchPanelVisible(!isResearchPanelVisible)}
               variant="primary"
               size="lg"
               className="rounded-full shadow-lg"
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              }
             >
-              {isResearchPanelVisible ? 'Close Research' : 'Open Research'}
-            </Button>
+              {isResearchPanelVisible ? 'Close Advice' : 'Get Advice'}
+            </EnhancedButton>
           </div>
         )}
       </div>
@@ -894,7 +960,7 @@ export default function DebatePage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <Button
+              <EnhancedButton
                 onClick={() => {
                   setShowAnalysis(false);
                   // Reset for new debate
@@ -904,16 +970,28 @@ export default function DebatePage() {
                 }}
                 variant="primary"
                 className="flex-1"
+                icon={
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                      d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                }
               >
                 Start New Debate
-              </Button>
-              <Button
+              </EnhancedButton>
+              <EnhancedButton
                 onClick={() => setShowAnalysis(false)}
                 variant="secondary"
                 className="flex-1"
+                icon={
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                      d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                }
               >
                 Close Analysis
-              </Button>
+              </EnhancedButton>
             </div>
           </div>
         </Modal>
@@ -926,6 +1004,7 @@ export default function DebatePage() {
           userPerspective={setup.side}
           isVisible={isResearchPanelVisible}
           onToggle={() => setIsResearchPanelVisible(!isResearchPanelVisible)}
+          currentSpeaker={currentSpeaker}
         />
       )}
     </Layout>

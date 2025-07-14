@@ -11,6 +11,7 @@ import Layout from '@/components/layout/Layout';
 import { parseFeedbackMarkdown } from '@/utils/feedbackUtils';
 import ReactMarkdown from 'react-markdown';
 import { MicrophoneIcon, ChatBubbleLeftRightIcon, PlayIcon, PauseIcon, TrashIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
+import { useToast } from '@/components/ui/Toast';
 
 // Helper component for the audio player in history items
 function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
@@ -107,10 +108,10 @@ function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
       <div className="flex items-center">
         <button 
           onClick={handlePlayPause}
-          className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-600 hover:bg-primary-700 flex items-center justify-center text-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:ring-offset-1 disabled:opacity-50"
+          className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary-600 hover:bg-primary-700 flex items-center justify-center text-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:ring-offset-1 disabled:opacity-50 transition-all"
           disabled={!!error || loading}
         >
-          {isPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+          {isPlaying ? <PauseIcon className="h-4 w-4 sm:h-5 sm:w-5" /> : <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5" />}
         </button>
         <div className="ml-3 flex-1">
           <input 
@@ -134,6 +135,7 @@ function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
 
 export default function History() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [debateHistory, setDebateHistory] = useState<Debate[]>([]);
   const [speechHistory, setSpeechHistory] = useState<SpeechFeedback[]>([]);
@@ -208,7 +210,9 @@ export default function History() {
       if (loading) {
         console.error('History page loading timed out');
         setLoading(false);
-        setError('Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.');
+        const errorMessage = 'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.';
+        setError(errorMessage);
+        addToast({ message: errorMessage, type: 'error' });
       }
     }, 30000); // 30 seconds timeout (increased from 10s)
     
@@ -296,7 +300,9 @@ export default function History() {
         }
         
         setSpeechHistory(prev => prev.filter(item => item.id !== id));
-        setDeleteSuccess('Speech record deleted successfully');
+        const successMessage = 'Speech record deleted successfully';
+        setDeleteSuccess(successMessage);
+        addToast({ message: successMessage, type: 'success' });
       } else { // type === 'debate'
         // Delete the record from the table
         const { error: deleteError } = await supabase
@@ -309,12 +315,16 @@ export default function History() {
         }
         
         setDebateHistory(prev => prev.filter(item => item.id !== id));
-        setDeleteSuccess('Debate record deleted successfully');
+        const successMessage = 'Debate record deleted successfully';
+        setDeleteSuccess(successMessage);
+        addToast({ message: successMessage, type: 'success' });
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       console.error('Error deleting item:', error);
-      setError(`Failed to delete the item: ${errorMessage}`);
+      const fullErrorMessage = `Failed to delete the item: ${errorMessage}`;
+      setError(fullErrorMessage);
+      addToast({ message: fullErrorMessage, type: 'error' });
       // Ensure loading state is reset even if error occurs mid-process
       // Note: setItemToDelete(null) is now primarily handled in finally
       setIsDeleting(false); 
@@ -362,13 +372,13 @@ export default function History() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
           <div className="text-center">
-            <h2 className="mb-4">Something went wrong</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4">Something went wrong</h2>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-6">
               We encountered an error in the history page. Please try refreshing.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="btn btn-primary"
+              className="px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               Try again
             </button>
@@ -379,7 +389,7 @@ export default function History() {
       <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-6">
-            <h1>History</h1>
+            <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">History</h1>
             <div className="mt-4 sm:mt-0">
               {/* Tab Navigation */}
               <div className="inline-flex rounded-md shadow-sm" role="group">
@@ -461,50 +471,70 @@ export default function History() {
                   : `Debate: ${(item as Debate).title || (item as Debate).topic || 'Untitled Debate'}`;
                 
                 return (
-                  <div key={`${item.id || index}`} className={`bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200 animate-fade-in stagger-${Math.min(index + 1, 4)}`}>
+                  <div key={`${item.id || index}`} className={`bg-white dark:bg-gray-800 shadow-md rounded-lg hover:shadow-lg transition-shadow duration-200 animate-fade-in stagger-${Math.min(index + 1, 4)}`}>
                     {/* Card Header */}
-                    <div className="px-4 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                      <div className="flex items-center min-w-0">
-                        <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${isSpeech ? 'bg-accent-100 dark:bg-accent-700' : 'bg-primary-100 dark:bg-primary-700'}`}>
+                    <div className="px-4 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                      <div className="flex items-center min-w-0 flex-1">
+                        <div className={`flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${isSpeech ? 'bg-accent-100 dark:bg-accent-700' : 'bg-primary-100 dark:bg-primary-700'}`}>
                           {isSpeech ? (
                             <MicrophoneIcon className="h-5 w-5 text-accent-600 dark:text-accent-300" />
                           ) : (
                             <ChatBubbleLeftRightIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
                           )}
                         </div>
-                        <div className="ml-3 min-w-0">
-                          <h3 className="truncate" title={title}>
+                        <div className="ml-3 min-w-0 flex-1">
+                          <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 break-words" title={title}>
                             {title}
                           </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {formatDate(item.created_at)}
                           </p>
                         </div>
+                        {/* Speaker Score Preview for Speeches */}
+                        {isSpeech && (item as SpeechFeedback).feedback && (
+                          <div className="ml-3 flex-shrink-0">
+                            {(() => {
+                              const feedback = (item as SpeechFeedback).feedback;
+                              const score = feedback.speakerScore || feedback.scores?.overall || feedback.score;
+                              if (score !== undefined && score !== null) {
+                                const scoreColor = score >= 80 ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' :
+                                                 score >= 60 ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' :
+                                                               'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
+                                return (
+                                  <div className={`px-3 py-1 rounded-full ${scoreColor} font-semibold text-sm`}>
+                                    {Math.round(score)}/100
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        )}
                       </div>
                       {/* Action Buttons */}
-                      <div className="flex space-x-2 flex-shrink-0 ml-4">
+                      <div className="flex gap-2 flex-shrink-0">
                         {isSpeech ? (
                           <button
                             onClick={() => router.push(`/speech-feedback/${item.id}`)}
-                            className="btn btn-primary btn-sm text-xs px-3 py-1"
+                            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                           >
                             View Feedback
                           </button>
                         ) : (
                           <Link 
                             href={`/debate/${item.id}`}
-                            className="btn btn-primary btn-sm text-xs px-3 py-1"
+                            className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                           >
                             View Debate
                           </Link>
                         )}
                         <button
                           onClick={() => handleDeleteConfirm(item.id, isSpeech ? 'speech' : 'debate')}
-                          className="btn btn-danger btn-sm text-xs p-1.5"
+                          className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
                           aria-label="Delete"
                           title="Delete Item"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
                       </div>
                     </div>
@@ -515,7 +545,7 @@ export default function History() {
                         <div className="space-y-4">
                           {(item as SpeechFeedback).audio_url && typeof (item as SpeechFeedback).audio_url === 'string' ? (
                             <div>
-                              <h4 className="mb-2">Audio Recording</h4>
+                              <h4 className="text-sm sm:text-base font-medium mb-2">Audio Recording</h4>
                               {/* Check if audio_url is actually a non-empty string before rendering */}
                               {(item as SpeechFeedback).audio_url && (
                                 <HistoryAudioPlayer audioUrl={(item as SpeechFeedback).audio_url!} /> 
@@ -525,19 +555,19 @@ export default function History() {
                           
                           {(item as SpeechFeedback).feedback && (
                             <div>
-                              <h4 className="mb-2">Feedback Summary</h4>
-                              <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                              <h4 className="text-sm sm:text-base font-medium mb-2">Feedback Summary</h4>
+                              <div className="mt-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                                 {(() => {
                                   const parsedSections = parseFeedbackMarkdown(item.feedback?.overall);
                                   const summary = parsedSections['Overall Summary'];
                                   
                                   if (summary) {
                                     return (
-                                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                                      <div className="prose prose-xs sm:prose-sm dark:prose-invert max-w-none overflow-hidden">
                                          <ReactMarkdown 
                                             components={{ 
-                                              p: ({...props}) => <p className="my-1" {...props} />,
-                                              ul: ({...props}) => <ul className="list-disc list-inside my-1" {...props} />,
+                                              p: ({...props}) => <p className="my-1 text-xs sm:text-sm" {...props} />,
+                                              ul: ({...props}) => <ul className="list-disc list-inside my-1 text-xs sm:text-sm" {...props} />,
                                               li: ({...props}) => <li className="my-0.5" {...props} />
                                             }}
                                           >
@@ -551,9 +581,9 @@ export default function History() {
                                                     ? item.feedback.overall.substring(0, 400) + '...' 
                                                     : item.feedback.overall;
                                     return (
-                                       <div className="prose prose-sm dark:prose-invert max-w-none">
+                                       <div className="prose prose-xs sm:prose-sm dark:prose-invert max-w-none overflow-hidden">
                                           <ReactMarkdown 
-                                             components={{ p: ({...props}) => <p className="my-1" {...props} /> }}
+                                             components={{ p: ({...props}) => <p className="my-1 text-xs sm:text-sm" {...props} /> }}
                                           >
                                             {truncated}
                                           </ReactMarkdown>
@@ -575,15 +605,15 @@ export default function History() {
                         <div className="space-y-4">
                           {(item as Debate).description && (
                             <div>
-                              <h4 className="mb-2">Description</h4>
-                              <p className="text-gray-700 dark:text-gray-300">{(item as Debate).description}</p>
+                              <h4 className="text-sm sm:text-base font-medium mb-2">Description</h4>
+                              <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{(item as Debate).description}</p>
                             </div>
                           )}
                           
                           {(item as Debate).transcript && (
                             <div>
-                              <h4 className="mb-2">Transcript Preview</h4>
-                              <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-3 text-xs text-gray-600 dark:text-gray-400 font-mono overflow-hidden">
+                              <h4 className="text-sm sm:text-base font-medium mb-2">Transcript Preview</h4>
+                              <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-2 sm:p-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-mono overflow-hidden break-words">
                                 {(() => {
                                   try {
                                     // Check if transcript is a non-empty string before parsing
@@ -620,17 +650,17 @@ export default function History() {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="mx-auto h-12 w-12 text-gray-400">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                 </svg>
-                <h3 className="mt-2">No {activeTab !== 'all' ? activeTab : 'practice history'} found</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <h3 className="mt-2 text-lg sm:text-xl font-medium">No {activeTab !== 'all' ? activeTab : 'practice history'} found</h3>
+                <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Get started with your first {activeTab === 'speeches' ? 'speech practice' : activeTab === 'debates' ? 'debate' : 'practice session'}.
                 </p>
                 <div className="mt-6 space-x-4">
                   {activeTab === 'speeches' || activeTab === 'all' ? (
                     <button
                       onClick={() => router.push('/speech-feedback')}
-                      className="btn btn-accent"
+                      className="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-accent-600 hover:bg-accent-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-accent-500"
                     >
-                      <MicrophoneIcon className="w-5 h-5 mr-2" />
+                      <MicrophoneIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Record Speech
                     </button>
                   ) : null}
@@ -638,9 +668,9 @@ export default function History() {
                   {activeTab === 'debates' || activeTab === 'all' ? (
                     <button
                       onClick={() => router.push('/debate')}
-                      className="btn btn-primary"
+                      className="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                     >
-                      <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2" />
+                      <ChatBubbleLeftRightIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Start Debate
                     </button>
                   ) : null}
@@ -653,22 +683,22 @@ export default function History() {
         {/* Confirmation Dialog */}
         {itemToDelete && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 px-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl max-w-sm w-full">
-              <h3 className="mb-2">Confirm Deletion</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-xl max-w-sm w-full mx-auto">
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Confirm Deletion</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
                 Are you sure you want to delete this {itemToDelete.type === 'speech' ? 'speech' : 'debate'} record? Associated audio files (if any) will also be removed. This action cannot be undone.
               </p>
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="btn btn-secondary"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                   disabled={isDeleting}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteItem}
-                  className="btn btn-danger"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
                   disabled={isDeleting}
                 >
                   {isDeleting ? (

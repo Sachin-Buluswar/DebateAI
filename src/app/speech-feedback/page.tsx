@@ -9,12 +9,12 @@ import Layout from '@/components/layout/Layout';
 import type { User } from '@/types';
 import { PlayIcon, PauseIcon, StopIcon, CloudArrowUpIcon, MicrophoneIcon } from '@heroicons/react/24/solid';
 import { MAX_UPLOAD_SIZE_BYTES, MAX_USER_STORAGE_BYTES, UPLOAD_CHUNK_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
+import { useToast } from '@/components/ui/Toast';
 
 // Import our new UI components
-import { Button } from '@/components/ui/Button';
+import EnhancedButton from '@/components/ui/EnhancedButton';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
+import EnhancedInput from '@/components/ui/EnhancedInput';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/utils/cn';
 
@@ -24,17 +24,21 @@ const MAX_RECORDING_LENGTH_MINUTES = MAX_RECORDING_MINUTES;
 const MAX_USER_STORAGE_MB = MAX_USER_STORAGE_BYTES / (1024 * 1024);
 const UPLOAD_CHUNK_SIZE = UPLOAD_CHUNK_SIZE_BYTES;
 
-// Define available speech types
+// Define available speech types - Public Forum debate speeches
 const availableSpeechTypes = [
-  { id: 'constructive', label: 'Constructive', color: 'primary' },
-  { id: 'rebuttal', label: 'Rebuttal', color: 'primary' },
-  { id: 'cross-examination', label: 'Cross-Examination', color: 'secondary' },
-  { id: 'summary', label: 'Summary', color: 'secondary' },
-  { id: 'final-focus', label: 'Final Focus', color: 'primary' }
+  { id: 'pro_case', label: 'Pro Team Case', side: 'affirmative', type: 'constructive' },
+  { id: 'con_case', label: 'Con Team Case', side: 'negative', type: 'constructive' },
+  { id: 'pro_rebuttal', label: 'Pro Team Rebuttal', side: 'affirmative', type: 'rebuttal' },
+  { id: 'con_rebuttal', label: 'Con Team Rebuttal', side: 'negative', type: 'rebuttal' },
+  { id: 'pro_summary', label: 'Pro Team Summary', side: 'affirmative', type: 'summary' },
+  { id: 'con_summary', label: 'Con Team Summary', side: 'negative', type: 'summary' },
+  { id: 'pro_final_focus', label: 'Pro Team Final Focus', side: 'affirmative', type: 'final_focus' },
+  { id: 'con_final_focus', label: 'Con Team Final Focus', side: 'negative', type: 'final_focus' }
 ];
 
 export default function SpeechFeedback() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +46,7 @@ export default function SpeechFeedback() {
   const [success, setSuccess] = useState<string | null>(null);
   
   const [topic, setTopic] = useState('');
-  const [selectedSpeechTypes, setSelectedSpeechTypes] = useState<string[]>([]);
+  const [selectedSpeechType, setSelectedSpeechType] = useState<string>('');
   const [userSide, setUserSide] = useState<string>('None'); // 'Proposition', 'Opposition', 'None'
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customInstructions, setCustomInstructions] = useState('');
@@ -89,13 +93,17 @@ export default function SpeechFeedback() {
     try {
       // Check if user has reached storage limit
       if (isStorageLimitReached()) {
-        setError(`You've reached your storage limit of ${MAX_USER_STORAGE_MB}MB. Please delete some recordings before adding more.`);
+        const message = `You've reached your storage limit of ${MAX_USER_STORAGE_MB}MB. Please delete some recordings before adding more.`;
+        setError(message);
+        addToast({ message, type: 'error' });
         return;
       }
       
       // Enhanced browser compatibility check for audio recording
       if (!navigator.mediaDevices) {
-        setError('Audio recording is not supported in your browser. Please try using Chrome, Firefox, or Safari, or upload an audio file instead.');
+        const message = 'Audio recording is not supported in your browser. Please try using Chrome, Firefox, or Safari, or upload an audio file instead.';
+        setError(message);
+        addToast({ message, type: 'error' });
         return;
       }
       
@@ -211,9 +219,13 @@ export default function SpeechFeedback() {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
       console.error('Error starting recording:', err);
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
-          setError('Microphone access denied. Please grant permission in your browser settings.');
+          const message = 'Microphone access denied. Please grant permission in your browser settings.';
+          setError(message);
+          addToast({ message, type: 'error' });
       } else {
-          setError('Failed to access microphone. Please check permissions and ensure it is connected.');
+          const message = 'Failed to access microphone. Please check permissions and ensure it is connected.';
+          setError(message);
+          addToast({ message, type: 'error' });
       }
     }
   }, [audioUrl, isStorageLimitReached, recordingTime, stopRecording]);
@@ -314,7 +326,9 @@ export default function SpeechFeedback() {
       
       // Check if user has reached storage limit
       if (isStorageLimitReached()) {
-        setError(`You've reached your storage limit of ${MAX_USER_STORAGE_MB}MB. Please delete some recordings before adding more.`);
+        const message = `You've reached your storage limit of ${MAX_USER_STORAGE_MB}MB. Please delete some recordings before adding more.`;
+        setError(message);
+        addToast({ message, type: 'error' });
         e.target.value = ''; // Reset file input
         return;
       }
@@ -322,7 +336,9 @@ export default function SpeechFeedback() {
       // Validate file type
       const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a'];
       if (!validTypes.includes(file.type)) {
-        setError(`Invalid file type (${file.type}). Please upload MP3, WAV, OGG, WEBM, AAC, FLAC or M4A.`);
+        const message = `Invalid file type (${file.type}). Please upload MP3, WAV, OGG, WEBM, AAC, FLAC or M4A.`;
+        setError(message);
+        addToast({ message, type: 'error' });
         e.target.value = ''; // Reset file input
         return;
       }
@@ -330,7 +346,9 @@ export default function SpeechFeedback() {
       // Validate file size (25MB limit)
       const MAX_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024; // 25MB in bytes
       if (file.size > MAX_SIZE) {
-        setError(`File too large (${(file.size / (1024*1024)).toFixed(1)}MB). Max size: ${MAX_UPLOAD_SIZE_MB}MB.`);
+        const message = `File too large (${(file.size / (1024*1024)).toFixed(1)}MB). Max size: ${MAX_UPLOAD_SIZE_MB}MB.`;
+        setError(message);
+        addToast({ message, type: 'error' });
         e.target.value = ''; // Reset file input
         return;
       }
@@ -360,17 +378,23 @@ export default function SpeechFeedback() {
     e.preventDefault();
     
     if (!topic.trim()) {
-      setError('Please enter a speech topic');
+      const message = 'Please enter a speech topic';
+      setError(message);
+      addToast({ message, type: 'error' });
       return;
     }
     
     if (!audioBlob && !uploadedFile) {
-      setError('Please record or upload your speech audio');
+      const message = 'Please record or upload your speech audio';
+      setError(message);
+      addToast({ message, type: 'error' });
       return;
     }
     
-    if (selectedSpeechTypes.length === 0) {
-      setError('Please select at least one speech type.');
+    if (!selectedSpeechType) {
+      const message = 'Please select a speech type.';
+      setError(message);
+      addToast({ message, type: 'error' });
       return;
     }
     
@@ -403,8 +427,8 @@ export default function SpeechFeedback() {
       }
       
       // Validate selections again
-      if (selectedSpeechTypes.length === 0) {
-        throw new Error('Please select at least one speech type.');
+      if (!selectedSpeechType) {
+        throw new Error('Please select a speech type.');
       }
       
       // Use streaming upload with chunks to prevent memory issues
@@ -421,7 +445,7 @@ export default function SpeechFeedback() {
           const formData = new FormData();
           formData.append('audio', audioFile);
           formData.append('topic', topic);
-          formData.append('speechTypes', JSON.stringify(selectedSpeechTypes));
+          formData.append('speechType', selectedSpeechType);
           formData.append('userSide', userSide);
           formData.append('customInstructions', customInstructions);
           formData.append('userId', user?.id || '');
@@ -461,7 +485,9 @@ export default function SpeechFeedback() {
           throw new Error('Authentication error. Please try signing out and back in.');
         } else if (errorData?.warning) {
           // Handle warnings that might be returned from the API
-          setSuccess(`Feedback generated successfully. ${errorData.warning}`);
+          const message = `Feedback generated successfully. ${errorData.warning}`;
+          setSuccess(message);
+          addToast({ message, type: 'success' });
           const feedbackId = errorData.id || 'unknown';
           router.push(`/speech-feedback/${feedbackId}`);
           return;
@@ -474,7 +500,9 @@ export default function SpeechFeedback() {
       
       if (result.id) {
         // Success - redirect to the feedback page
-        setSuccess('Feedback generated successfully!');
+        const message = 'Feedback generated successfully!';
+        setSuccess(message);
+        addToast({ message, type: 'success' });
         router.push(`/speech-feedback/${result.id}`);
       } else {
         // Handle unexpected result format
@@ -484,7 +512,9 @@ export default function SpeechFeedback() {
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
       console.error('Error submitting speech:', error);
-      setError(error?.message || 'An unexpected error occurred. Please try again.');
+      const message = error?.message || 'An unexpected error occurred. Please try again.';
+      setError(message);
+      addToast({ message, type: 'error' });
       // Reset submitting state to allow retry
       setSubmitting(false);
     }
@@ -515,7 +545,7 @@ export default function SpeechFeedback() {
           totalChunks: totalChunks,
           sessionId: sessionId,
           topic: topic,
-          speechTypes: selectedSpeechTypes,
+          speechType: selectedSpeechType,
           userSide: userSide,
           customInstructions: customInstructions,
           userId: user?.id || '',
@@ -567,7 +597,7 @@ export default function SpeechFeedback() {
           const finalizeBody = JSON.stringify({
             sessionId: sessionId,
             topic: topic,
-            speechTypes: selectedSpeechTypes,
+            speechType: selectedSpeechType,
             userSide: userSide,
             customInstructions: customInstructions,
             userId: user?.id || '',
@@ -607,11 +637,8 @@ export default function SpeechFeedback() {
     }
   };
   
-  const handleSpeechTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value, checked } = event.target;
-    setSelectedSpeechTypes(prev => 
-      checked ? [...prev, value] : prev.filter(type => type !== value)
-    );
+  const handleSpeechTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSpeechType(event.target.value);
   };
 
   // --- Audio Preview Player Logic ---
@@ -675,47 +702,72 @@ export default function SpeechFeedback() {
 
               <CardContent className="space-y-6">
                 {/* Topic Input */}
-                <Input
+                <EnhancedInput
                   id="topic"
                   label="Debate Topic / Speech Title"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="e.g., Abolishing the Electoral College"
                   required
+                  icon={
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                  }
                 />
 
                 {/* Speech Type Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Speech Type(s) <span className="text-red-500">*</span>
+                    Speech Type <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableSpeechTypes.map((type) => (
-                      <label
-                        key={type.id}
-                        className={cn(
-                          "relative flex items-center px-4 py-2 rounded-lg border-2 cursor-pointer transition-all",
-                          selectedSpeechTypes.includes(type.id)
-                            ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
-                            : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          value={type.id}
-                          checked={selectedSpeechTypes.includes(type.id)}
-                          onChange={handleSpeechTypeChange}
-                          className="sr-only"
-                        />
-                        <Badge 
-                          variant={selectedSpeechTypes.includes(type.id) ? type.color as 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'outline' : 'secondary'}
-                          size="md"
-                        >
+                  <select
+                    value={selectedSpeechType}
+                    onChange={handleSpeechTypeChange}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Select a speech type...</option>
+                    <optgroup label="Constructive Speeches">
+                      {availableSpeechTypes.filter(type => type.type === 'constructive').map((type) => (
+                        <option key={type.id} value={type.id}>
                           {type.label}
-                        </Badge>
-                      </label>
-                    ))}
-                  </div>
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Rebuttal Speeches">
+                      {availableSpeechTypes.filter(type => type.type === 'rebuttal').map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Summary Speeches">
+                      {availableSpeechTypes.filter(type => type.type === 'summary').map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Final Focus Speeches">
+                      {availableSpeechTypes.filter(type => type.type === 'final_focus').map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  {selectedSpeechType && (
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      {(() => {
+                        const selected = availableSpeechTypes.find(t => t.id === selectedSpeechType);
+                        if (!selected) return '';
+                        const sideText = selected.side === 'affirmative' ? 'Pro' : 'Con';
+                        const typeText = selected.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        return `${sideText} side - ${typeText}`;
+                      })()}
+                    </p>
+                  )}
                 </div>
 
                 {/* User Side Selection */}
@@ -754,14 +806,21 @@ export default function SpeechFeedback() {
                 </div>
 
                 {/* Custom Instructions */}
-                <Textarea
+                <EnhancedInput
                   id="customInstructions"
                   label="Custom Instructions (Optional)"
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
                   placeholder="e.g., Focus on my pacing and tone..."
                   helperText="Tell the AI specific areas you want feedback on."
+                  multiline
                   rows={3}
+                  icon={
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  }
                 />
 
                 {/* Storage Usage */}
@@ -800,18 +859,18 @@ export default function SpeechFeedback() {
               </CardContent>
 
               <CardFooter>
-                <Button
+                <EnhancedButton
                   type="submit"
                   variant="primary"
                   size="lg"
                   fullWidth
-                  disabled={submitting || (!audioBlob && !uploadedFile) || !topic.trim() || selectedSpeechTypes.length === 0}
-                  isLoading={submitting}
+                  disabled={submitting || (!audioBlob && !uploadedFile) || !topic.trim() || !selectedSpeechType}
+                  loading={submitting}
                   loadingText="Generating feedback..."
-                  leftIcon={submitting ? undefined : <CloudArrowUpIcon className="w-5 h-5" />}
+                  icon={submitting ? undefined : <CloudArrowUpIcon className="w-5 h-5" />}
                 >
                   Submit for Feedback
-                </Button>
+                </EnhancedButton>
               </CardFooter>
             </form>
           </Card>
@@ -839,15 +898,15 @@ export default function SpeechFeedback() {
                   disabled={isRecording || submitting}
                 />
                 
-                <Button
+                <EnhancedButton
                   variant="secondary"
                   fullWidth
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isRecording || submitting}
-                  leftIcon={<CloudArrowUpIcon className="w-5 h-5" />}
+                  icon={<CloudArrowUpIcon className="w-5 h-5" />}
                 >
                   Upload Audio File
-                </Button>
+                </EnhancedButton>
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -859,15 +918,15 @@ export default function SpeechFeedback() {
                 </div>
 
                 {!isRecording ? (
-                  <Button
+                  <EnhancedButton
                     variant="accent"
                     fullWidth
                     onClick={startRecording}
                     disabled={submitting}
-                    leftIcon={<MicrophoneIcon className="w-5 h-5" />}
+                    icon={<MicrophoneIcon className="w-5 h-5" />}
                   >
                     Start Recording
-                  </Button>
+                  </EnhancedButton>
                 ) : (
                   <div className="bg-error-50 dark:bg-error-900/20 border-2 border-error-300 dark:border-error-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -881,15 +940,15 @@ export default function SpeechFeedback() {
                         {formatTime(recordingTime)}
                       </span>
                     </div>
-                    <Button
+                    <EnhancedButton
                       variant="danger"
                       fullWidth
                       size="sm"
                       onClick={stopRecording}
-                      leftIcon={<StopIcon className="w-4 h-4" />}
+                      icon={<StopIcon className="w-4 h-4" />}
                     >
                       Stop Recording
-                    </Button>
+                    </EnhancedButton>
                   </div>
                 )}
               </div>
@@ -915,13 +974,12 @@ export default function SpeechFeedback() {
                   />
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <Button
+                      <EnhancedButton
                         variant="primary"
-                        size="icon"
+                        size="sm"
                         onClick={handlePreviewPlayPause}
-                      >
-                        {previewPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
-                      </Button>
+                        icon={previewPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
+                      />
                       <div className="flex-1">
                         <input 
                           type="range" 
@@ -946,17 +1004,17 @@ export default function SpeechFeedback() {
                 </div>
               )}
 
-              {/* Alert Messages */}
+              {/* Alert Messages - Keep for inline context but toast will also show */}
               {error && (
-                <div className="alert alert-error">
-                  <p className="text-sm font-medium">Error</p>
-                  <p className="text-xs mt-1">{error}</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-3">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">Error</p>
+                  <p className="text-xs mt-1 text-red-700 dark:text-red-300">{error}</p>
                 </div>
               )}
               {success && (
-                <div className="alert alert-success">
-                  <p className="text-sm font-medium">Success</p>
-                  <p className="text-xs mt-1">{success}</p>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-800 rounded-lg p-3">
+                  <p className="text-sm font-medium text-green-800 dark:text-green-200">Success</p>
+                  <p className="text-xs mt-1 text-green-700 dark:text-green-300">{success}</p>
                 </div>
               )}
             </CardContent>
@@ -975,12 +1033,12 @@ export default function SpeechFeedback() {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               We encountered an error in the speech feedback page. Please try refreshing.
             </p>
-            <button
+            <EnhancedButton
               onClick={() => window.location.reload()}
-              className="btn btn-primary"
+              variant="primary"
             >
               Try again
-            </button>
+            </EnhancedButton>
           </div>
         </div>
       </div>

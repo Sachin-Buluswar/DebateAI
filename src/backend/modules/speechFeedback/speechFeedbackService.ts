@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
+import { getAudioDuration } from '@/backend/utils/audioUtils';
 
 // Storage constants
 export const SPEECH_BUCKET = 'speech_audio';
@@ -37,6 +38,7 @@ export interface SpeechFeedbackInput {
   topic: string;
   userId: string;
   speechType?: string;
+  userSide?: string;
   customInstructions?: string;
 }
 
@@ -81,10 +83,12 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
 /**
  * Get the system prompt for different speech types
  */
-function getSpeechTypePrompt(speechType: string, topic: string, customInstructions?: string): string {
-  const basePrompt = `You are an expert Public Forum debate coach with 20+ years of experience judging at the highest levels of competition including NSDA Nationals and TOC. You are analyzing a ${speechType} on the topic: "${topic}".`;
+function getSpeechTypePrompt(speechType: string, topic: string, userSide?: string, customInstructions?: string): string {
+  const sideContext = userSide && userSide !== 'None' ? ` The speaker is on the ${userSide} side.` : '';
+  const basePrompt = `You are an expert Public Forum debate coach with 20+ years of experience judging at the highest levels of competition including NSDA Nationals and TOC. You are analyzing a ${speechType} on the topic: "${topic}".${sideContext}`;
   
   const prompts: Record<string, string> = {
+    // Legacy types for backward compatibility
     debate: `${basePrompt} Focus on argumentation, evidence use, rebuttals, and persuasiveness.`,
     presentation: `${basePrompt} Focus on clarity, organization, engagement, and visual aid references.`,
     speech: `${basePrompt} Focus on delivery, rhetoric, emotional appeal, and audience connection.`,
@@ -93,6 +97,34 @@ function getSpeechTypePrompt(speechType: string, topic: string, customInstructio
     'cross-examination': `${basePrompt} This is a cross-examination period. Focus on: strategic questioning to expose weaknesses, clarity of questions, control of the cross-ex, ability to set up future arguments, and professional demeanor under pressure.`,
     summary: `${basePrompt} This is a summary speech. Focus on: crystallization of key voting issues, impact comparison and weighing, narrative construction, judge appeal, and strategic choice of what arguments to go for in the final speech.`,
     'final-focus': `${basePrompt} This is a final focus speech. Focus on: final impact comparison, resolution of key clashes, persuasive conclusion, strategic voting issue selection, and ability to close the debate decisively.`,
+    
+    // Specific debate speech types
+    '1AC': `${basePrompt} This is the 1st Affirmative Constructive (1AC). Focus on: establishing a clear framework/definitions, presenting the affirmative case with strong contentions, providing solid evidence with proper citations, establishing clear impacts and link chains, setting up the narrative for the round, and delivering with confidence and clarity. The 1AC sets the foundation for the entire debate.`,
+    '1NC': `${basePrompt} This is the 1st Negative Constructive (1NC). Focus on: effectively responding to the 1AC framework, presenting negative case/disadvantages, attacking affirmative contentions with evidence, establishing negative ground in the debate, time allocation between offense and defense, and maintaining organization while covering multiple arguments.`,
+    '2AC': `${basePrompt} This is the 2nd Affirmative Constructive (2AC). Focus on: defending the affirmative case against 1NC attacks, rebuilding/extending affirmative arguments, responding to negative case/disadvantages, frontlining key arguments, maintaining offensive pressure, and efficiently covering the flow while adding new evidence.`,
+    '2NC': `${basePrompt} This is the 2nd Negative Constructive (2NC). Focus on: extending and developing negative arguments, responding to 2AC frontlines, deepening attacks on affirmative case, strategic argument selection, impact comparison, and working effectively with their partner to divide labor.`,
+    '1NR': `${basePrompt} This is the 1st Negative Rebuttal (1NR). Focus on: extending specific arguments from constructives, covering arguments not addressed by 2NR, efficiency in a short speech (3 minutes), clear impact comparison, maintaining negative strategy, and setting up voting issues for the 2NR.`,
+    '1AR': `${basePrompt} This is the 1st Affirmative Rebuttal (1AR). Focus on: covering the entire flow efficiently in limited time (4 minutes), extending key affirmative arguments, responding to negative voting issues, re-establishing affirmative narrative, smart argument selection, and maintaining composure under time pressure.`,
+    '2NR': `${basePrompt} This is the 2nd Negative Rebuttal (2NR). Focus on: crystallizing 1-2 key voting issues, impact comparison and outweighing, telling the negative ballot story, responding to 1AR coverage, strategic argument selection (going for the right arguments), and closing the debate persuasively.`,
+    '2AR': `${basePrompt} This is the 2nd Affirmative Rebuttal (2AR). Focus on: winning the key voting issues identified by 2NR, final impact comparison, resolving major clashes in the debate, appealing to the judge's decision calculus, maintaining consistency with earlier speeches, and delivering a persuasive final message.`,
+    
+    // Public Forum specific speech types
+    'pro_case': `${basePrompt} This is a Pro Team Case in Public Forum debate. Focus on: establishing a clear framework and definitions, presenting pro contentions with strong evidence, creating compelling narratives, establishing clear impacts and weighing mechanisms, setting up the debate structure, and delivering with confidence. The case should be accessible to lay judges while maintaining competitive rigor.`,
+    
+    'con_case': `${basePrompt} This is a Con Team Case in Public Forum debate. Focus on: responding to the pro framework when necessary, presenting con contentions with strong evidence, establishing why the status quo is preferable or why the pro side fails, creating compelling counter-narratives, providing clear impacts and weighing, and setting up negative ground for the round.`,
+    
+    'pro_rebuttal': `${basePrompt} This is a Pro Team Rebuttal in Public Forum debate. Focus on: effectively attacking con contentions with evidence and logic, defending the pro case against con attacks, establishing clash on key issues, beginning impact comparison, maintaining organization across multiple arguments, and efficiently using time to cover the most important arguments.`,
+    
+    'con_rebuttal': `${basePrompt} This is a Con Team Rebuttal in Public Forum debate. Focus on: effectively attacking pro contentions with evidence and logic, defending the con case against pro attacks, establishing clash on key issues, beginning impact comparison, maintaining organization across multiple arguments, and efficiently using time to cover the most important arguments.`,
+    
+    'pro_summary': `${basePrompt} This is a Pro Team Summary in Public Forum debate. Focus on: crystallizing the key voting issues in the round, providing clear impact comparison and weighing analysis, extending the most important arguments from earlier speeches, responding to major con claims, creating a clear narrative for why pro should win, and making strategic choices about which arguments to prioritize.`,
+    
+    'con_summary': `${basePrompt} This is a Con Team Summary in Public Forum debate. Focus on: crystallizing the key voting issues in the round, providing clear impact comparison and weighing analysis, extending the most important arguments from earlier speeches, responding to major pro claims, creating a clear narrative for why con should win, and making strategic choices about which arguments to prioritize.`,
+    
+    'pro_final_focus': `${basePrompt} This is a Pro Team Final Focus in Public Forum debate. Focus on: making the final case for why pro should win the round, providing ultimate impact comparison and weighing, resolving key clashes identified in summary speeches, appealing directly to the judge's decision-making process, maintaining consistency with the pro summary, and delivering a compelling closing argument that crystallizes the pro ballot story.`,
+    
+    'con_final_focus': `${basePrompt} This is a Con Team Final Focus in Public Forum debate. Focus on: making the final case for why con should win the round, providing ultimate impact comparison and weighing, resolving key clashes identified in summary speeches, appealing directly to the judge's decision-making process, maintaining consistency with the con summary, and delivering a compelling closing argument that crystallizes the con ballot story.`,
+    
     default: `${basePrompt} Provide comprehensive feedback on all aspects of the delivery and argumentation.`
   };
   
@@ -162,7 +194,7 @@ Analyze the transcription and provide feedback in JSON format with these exact f
  * Main speech feedback processing function
  */
 export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise<SpeechFeedbackResult> {
-  const { audioBuffer, filename, topic, userId, speechType = 'debate' } = input;
+  const { audioBuffer, filename, topic, userId, speechType = 'debate', userSide } = input;
   
   console.log(`[speechFeedbackService] Processing ${filename} for user ${userId}`);
   
@@ -185,10 +217,21 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   // Write buffer to temporary file
   await fs.writeFile(tempFilePath, audioBuffer);
   
+  // Get actual audio duration
+  const durationSeconds = await getAudioDuration(tempFilePath);
+  
+  // Validate duration
+  const durationMinutes = durationSeconds / 60;
+  if (durationMinutes > MAX_RECORDING_LENGTH_MINUTES) {
+    // Clean up temp file
+    await fs.unlink(tempFilePath).catch(() => {});
+    throw new Error(`Recording duration of ${Math.round(durationMinutes)} minutes exceeds maximum of ${MAX_RECORDING_LENGTH_MINUTES} minutes`);
+  }
+  
   const processedAudio = {
     filePath: tempFilePath,
     fileId,
-    durationSeconds: 60 // Mock duration - in production this would be calculated
+    durationSeconds
   };
   
   // Check processed file size
@@ -228,6 +271,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         user_id: userId,
         topic,
         speech_type: speechType,
+        user_side: userSide,
         feedback: { message: 'Audio file too large for automated feedback.' },
         audio_url: audioUrl,
         transcription: null,
@@ -328,7 +372,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     };
   } else {
     try {
-      const systemPrompt = getSpeechTypePrompt(speechType, topic, input.customInstructions);
+      const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions);
       
       const feedbackCompletion = await openai.chat.completions.create({
         model: 'gpt-4o',
@@ -441,6 +485,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         user_id: userId,
         topic,
         speech_type: speechType,
+        user_side: userSide,
         feedback,
         audio_url: audioUrl,
         transcription: JSON.stringify(transcription),

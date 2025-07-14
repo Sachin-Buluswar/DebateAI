@@ -10,6 +10,7 @@ import { useSidebar } from './Layout';
 
 const navigation = [
   { name: 'dashboard', href: '/dashboard' },
+  { name: 'history', href: '/history' },
   { name: 'search', href: '/search' },
   { name: 'feedback', href: '/speech-feedback' },
   { name: 'debate', href: '/debate' },

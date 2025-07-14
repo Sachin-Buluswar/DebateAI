@@ -6,6 +6,7 @@ import EnhancedNavbar from './EnhancedNavbar';
 import Sidebar from './Sidebar';
 import PageTransition from '@/components/ui/PageTransition';
 import { usePathname } from 'next/navigation';
+import { usePreferences } from '@/components/providers/PreferencesProvider';
 
 // Define paths where sidebar should be hidden
 const pathsWithoutSidebar = ['/auth', '/', '/auth-test']; // Add landing page, auth pages etc.
@@ -29,9 +30,13 @@ type LayoutProps = {
   useEnhancedNavbar?: boolean;
 };
 
-export default function Layout({ children, useEnhancedNavbar = true }: LayoutProps) {
+export default function Layout({ children, useEnhancedNavbar }: LayoutProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { preferences, loading } = usePreferences();
+  
+  // Use enhanced navbar from preferences if not explicitly overridden
+  const shouldUseEnhancedNavbar = useEnhancedNavbar !== undefined ? useEnhancedNavbar : preferences.enhancedNavbar;
   
   // Determine if sidebar should be shown based on current path
   const showSidebar = !!pathname && !pathsWithoutSidebar.includes(pathname);
@@ -49,7 +54,7 @@ export default function Layout({ children, useEnhancedNavbar = true }: LayoutPro
     <SidebarContext.Provider value={sidebarContextValue}>
       {/* Minimalist background */}
       <div className="min-h-screen bg-white dark:bg-gray-950">
-        {useEnhancedNavbar ? <EnhancedNavbar /> : <Navbar />}
+        {shouldUseEnhancedNavbar ? <EnhancedNavbar /> : <Navbar />}
         <div className="flex pt-20"> {/* Add padding-top to account for fixed Navbar height */}
           {showSidebar && (
             // Minimalist sidebar styling

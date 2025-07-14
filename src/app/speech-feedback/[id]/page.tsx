@@ -402,7 +402,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                 'Clarity & Conciseness',
                 'Persuasiveness & Impact',
                 'Delivery Style (Inferred)',
-                'Relevance to Speech Type(s)'
+                'Strategic success Speech Type(s)'
               ].map(heading => {
                 const content = parsedFeedbackSections[heading];
                 if (!content) return null;

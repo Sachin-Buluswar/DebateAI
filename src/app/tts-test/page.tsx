@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { playTextToSpeech } from '@/frontend/services/audioService';
-import Button from '@/components/ui/Button';
+import EnhancedButton from '@/components/ui/EnhancedButton';
 
 export default function TtsTest() {
   const [text, setText] = useState('Hello, world! This is a test of the text-to-speech functionality.');
@@ -24,9 +24,9 @@ export default function TtsTest() {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <Button onClick={handlePlay} disabled={isLoading}>
-          {isLoading ? 'Generating Audio...' : 'Play Audio'}
-        </Button>
+        <EnhancedButton onClick={handlePlay} disabled={isLoading} loading={isLoading} loadingText="Generating Audio...">
+          Play Audio
+        </EnhancedButton>
       </div>
     </div>
   );

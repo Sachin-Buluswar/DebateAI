@@ -22,7 +22,13 @@ export const commonSchemas = {
       /^[a-zA-Z0-9\s\-_.,!?'"()[\]{}:;@#$%&*+=<>\/\\]*$/,
       'Topic contains invalid characters'
     ),
-  speechType: z.enum(['debate', 'presentation', 'speech', 'constructive', 'rebuttal', 'cross-examination', 'summary', 'final-focus'], {
+  speechType: z.enum([
+    'debate', 'presentation', 'speech', 'constructive', 'rebuttal', 'cross-examination', 'summary', 'final-focus',
+    // Public Forum specific types
+    'pro_case', 'con_case', 'pro_rebuttal', 'con_rebuttal', 'pro_summary', 'con_summary', 'pro_final_focus', 'con_final_focus',
+    // Policy debate types (for backward compatibility)
+    '1AC', '1NC', '2AC', '2NC', '1NR', '1AR', '2NR', '2AR'
+  ], {
     errorMap: () => ({ message: 'Invalid speech type' })
   }),
   audioMimeType: z.enum(['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a'], {
@@ -39,7 +45,7 @@ export const validationSchemas = {
 
   speechFeedback: z.object({
     topic: commonSchemas.debateTopic,
-    speechTypes: z.string().optional(),
+    speechType: commonSchemas.speechType.optional(),
     userSide: z.enum(['Proposition', 'Opposition', 'None']).optional(),
     customInstructions: commonSchemas.safeString.optional(),
     userId: commonSchemas.uuid,

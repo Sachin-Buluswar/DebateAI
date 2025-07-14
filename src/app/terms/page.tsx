@@ -142,19 +142,12 @@ export default function TermsOfServicePage() {
             </p>
           </section>
 
-          <section className="space-y-6">
-            <h2 className="text-gray-900 dark:text-gray-100">contact information</h2>
-            <p>
-              for questions about these terms, contact us at{' '}
-              <span className="text-primary-500">legal@debateai.com</span>
-            </p>
-          </section>
 
           <div className="divider"></div>
 
           <footer className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-500">
-              © 2024 debateai. focused practice for better debates.
+              debateai. focused practice for better debates.
             </p>
           </footer>
         </article>
