@@ -149,12 +149,18 @@ export default function Dashboard() {
             // Calculate stats from speech feedback
             if (fetchedSpeeches.length > 0) {
               // Hours spent estimate
+              // For speeches with 60 seconds duration (legacy entries), use more realistic estimate
               const speechHours = fetchedSpeeches.reduce(
-                (sum, speech) =>
-                  sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 0.25),
+                (sum, speech) => {
+                  if (speech.duration_seconds === 60) {
+                    // Legacy entries - estimate based on typical speech length
+                    return sum + (3 / 60); // 3 minutes average
+                  }
+                  return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60);
+                },
                 0
               );
-              const debateHours = fetchedDebates.length * (5 / 60); // Rough estimate
+              const debateHours = fetchedDebates.length * (10 / 60); // 10 minutes per debate (more realistic)
               setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
 
               // Calculate average score and highest score
@@ -217,19 +223,25 @@ export default function Dashboard() {
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    const hours = item.duration_seconds ? item.duration_seconds / 3600 : 0.25;
+                    let hours: number;
+                    if (item.duration_seconds === 60) {
+                      // Legacy entries - use realistic estimate
+                      hours = 3 / 60; // 3 minutes
+                    } else {
+                      hours = item.duration_seconds ? item.duration_seconds / 3600 : 3 / 60;
+                    }
                     weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
               });
               
-              // Add debate hours (5 minutes per debate)
+              // Add debate hours (10 minutes per debate)
               fetchedDebates.forEach((item) => {
                 const d = new Date(item.created_at);
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    const hours = 5 / 60; // 5 minutes in hours
+                    const hours = 10 / 60; // 10 minutes in hours
                     weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
@@ -363,7 +375,13 @@ export default function Dashboard() {
       if (d >= cutoffDate) {
         const key = d.toISOString().split('T')[0];
         if (dataMap.has(key)) {
-          const hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 0.25;
+          let hours: number;
+          if (speech.duration_seconds === 60) {
+            // Legacy entries - use realistic estimate
+            hours = 3 / 60; // 3 minutes
+          } else {
+            hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60;
+          }
           dataMap.set(key, dataMap.get(key)! + hours);
         }
       }
@@ -374,7 +392,7 @@ export default function Dashboard() {
       if (d >= cutoffDate) {
         const key = d.toISOString().split('T')[0];
         if (dataMap.has(key)) {
-          const hours = 5 / 60; // 5 minutes per debate
+          const hours = 10 / 60; // 10 minutes per debate
           dataMap.set(key, dataMap.get(key)! + hours);
         }
       }
@@ -529,47 +547,49 @@ export default function Dashboard() {
         <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2 animate-fade-in stagger-1">
           <div className="space-y-4">
             {/* Date Range Selector */}
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={() => setDateRange('week')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  dateRange === 'week'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                1W
-              </button>
-              <button
-                onClick={() => setDateRange('month')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  dateRange === 'month'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                1M
-              </button>
-              <button
-                onClick={() => setDateRange('year')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  dateRange === 'year'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                1Y
-              </button>
-              <button
-                onClick={() => setDateRange('all')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  dateRange === 'all'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                All
-              </button>
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-lg shadow-sm" role="group">
+                <button
+                  onClick={() => setDateRange('week')}
+                  className={`px-4 py-2 text-xs font-medium rounded-l-lg border transition-all duration-200 ${
+                    dateRange === 'week'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1W
+                </button>
+                <button
+                  onClick={() => setDateRange('month')}
+                  className={`px-4 py-2 text-xs font-medium border-t border-b transition-all duration-200 ${
+                    dateRange === 'month'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1M
+                </button>
+                <button
+                  onClick={() => setDateRange('year')}
+                  className={`px-4 py-2 text-xs font-medium border transition-all duration-200 ${
+                    dateRange === 'year'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1Y
+                </button>
+                <button
+                  onClick={() => setDateRange('all')}
+                  className={`px-4 py-2 text-xs font-medium rounded-r-lg border transition-all duration-200 ${
+                    dateRange === 'all'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  All
+                </button>
+              </div>
             </div>
             
             {scoreTrendData.length > 1 ? (
@@ -586,37 +606,39 @@ export default function Dashboard() {
         <Widget title="Weekly Activity" className="col-span-4 md:col-span-2 animate-fade-in stagger-2">
           <div className="space-y-4">
             {/* Date Range Selector */}
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={() => setChartDateRange('week')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  chartDateRange === 'week'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                1W
-              </button>
-              <button
-                onClick={() => setChartDateRange('month')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  chartDateRange === 'month'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                1M
-              </button>
-              <button
-                onClick={() => setChartDateRange('year')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  chartDateRange === 'year'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                1Y
-              </button>
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-lg shadow-sm" role="group">
+                <button
+                  onClick={() => setChartDateRange('week')}
+                  className={`px-4 py-2 text-xs font-medium rounded-l-lg border transition-all duration-200 ${
+                    chartDateRange === 'week'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1W
+                </button>
+                <button
+                  onClick={() => setChartDateRange('month')}
+                  className={`px-4 py-2 text-xs font-medium border-t border-b transition-all duration-200 ${
+                    chartDateRange === 'month'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1M
+                </button>
+                <button
+                  onClick={() => setChartDateRange('year')}
+                  className={`px-4 py-2 text-xs font-medium rounded-r-lg border transition-all duration-200 ${
+                    chartDateRange === 'year'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1Y
+                </button>
+              </div>
             </div>
             
             <WeeklyActivityChart data={getWeeklyActivityData()} />
@@ -699,36 +721,52 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) 
   return (
     <div className="h-60 md:h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
+          <defs>
+            <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#87A96B" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#87A96B" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
           <XAxis 
             dataKey="date" 
-            fontSize={10} 
+            fontSize={11} 
             tickLine={false} 
-            axisLine={false}
-            interval={data.length > 20 ? 'preserveStartEnd' : 0}
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            interval={data.length > 20 ? 'preserveStartEnd' : data.length > 10 ? 2 : 0}
             angle={data.length > 10 ? -45 : 0}
             textAnchor={data.length > 10 ? 'end' : 'middle'}
             height={data.length > 10 ? 60 : 30}
+            tick={{ fill: '#6b7280' }}
           />
-          <YAxis domain={[0, 100]} fontSize={10} tickLine={false} axisLine={false} />
+          <YAxis 
+            domain={[0, 100]} 
+            fontSize={11} 
+            tickLine={false} 
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            tick={{ fill: '#6b7280' }}
+            tickFormatter={(value) => `${value}%`}
+          />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(31, 41, 55, 0.8)', // bg-gray-800 with opacity
-              border: '1px solid rgba(75, 85, 99, 0.5)', // border-gray-600
-              borderRadius: '0.375rem', // rounded-md
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             }}
-            itemStyle={{ color: '#d1d5db' }} // text-gray-300
-            labelStyle={{ color: '#f9fafb', fontWeight: 'bold' }} // text-gray-50
-            formatter={(value: number) => `${value}%`}
+            itemStyle={{ color: '#374151', fontWeight: '500' }}
+            labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
+            formatter={(value: number) => [`${value.toFixed(1)}%`, 'Score']}
           />
           <Line
             type="monotone"
             dataKey="score"
-            stroke="#87A96B" // primary-500 (sage green)
-            strokeWidth={2}
-            dot={{ r: 4, fill: '#87A96B' }}
-            activeDot={{ r: 6 }}
+            stroke="#87A96B"
+            strokeWidth={3}
+            dot={{ r: 5, fill: '#87A96B', strokeWidth: 2, stroke: '#ffffff' }}
+            activeDot={{ r: 7, fill: '#6e8a57', stroke: '#ffffff', strokeWidth: 2 }}
+            fill="url(#scoreGradient)"
           />
         </LineChart>
       </ResponsiveContainer>
@@ -745,30 +783,52 @@ const WeeklyActivityChart = ({
   return (
     <div className="h-60 md:h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-          <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-          <YAxis 
-            fontSize={10} 
+        <BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#87A96B" stopOpacity={1}/>
+              <stop offset="100%" stopColor="#6e8a57" stopOpacity={1}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <XAxis 
+            dataKey="name" 
+            fontSize={11} 
             tickLine={false} 
-            axisLine={false} 
-            tickFormatter={(value) => `${value}h`}
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            tick={{ fill: '#6b7280' }}
+          />
+          <YAxis 
+            fontSize={11} 
+            tickLine={false} 
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            tick={{ fill: '#6b7280' }}
+            tickFormatter={(value) => value === 0 ? '0' : `${value}h`}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(31, 41, 55, 0.8)',
-              border: '1px solid rgba(75, 85, 99, 0.5)',
-              borderRadius: '0.375rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             }}
-            itemStyle={{ color: '#d1d5db' }}
-            labelStyle={{ color: '#f9fafb', fontWeight: 'bold' }}
-            formatter={(value: number) => [`${value.toFixed(2)} hours`, 'Practice Time']}
+            itemStyle={{ color: '#374151', fontWeight: '500' }}
+            labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
+            formatter={(value: number) => {
+              const hours = Math.floor(value);
+              const minutes = Math.round((value - hours) * 60);
+              if (hours === 0 && minutes === 0) return ['No activity', 'Practice Time'];
+              if (hours === 0) return [`${minutes} min`, 'Practice Time'];
+              if (minutes === 0) return [`${hours} hr`, 'Practice Time'];
+              return [`${hours} hr ${minutes} min`, 'Practice Time'];
+            }}
           />
           <Bar
             dataKey="hours"
-            fill="#87A96B"
+            fill="url(#barGradient)"
             name="Practice Hours"
-            radius={[4, 4, 0, 0]}
+            radius={[8, 8, 0, 0]}
+            maxBarSize={60}
           />
         </BarChart>
       </ResponsiveContainer>

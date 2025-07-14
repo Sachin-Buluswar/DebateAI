@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import EnhancedInput from '@/components/ui/EnhancedInput';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 export default function FeedbackForm() {
   const [feedback, setFeedback] = useState('');
@@ -87,30 +89,23 @@ export default function FeedbackForm() {
           </div>
           
           <div className="mb-4">
-            <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Your Feedback
-            </label>
-            <textarea
+            <EnhancedInput
               id="feedback"
-              name="feedback"
+              label="Your Feedback"
+              multiline
               rows={4}
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-gray-700 dark:text-white"
               placeholder="Share your thoughts, ideas, or report an issue..."
             />
           </div>
           
           {error && (
-            <div className="mb-4 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm rounded-md">
-              {error}
-            </div>
+            <AlertMessage type="error" message={error} className="mb-4" />
           )}
           
           {success && (
-            <div className="mb-4 p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-md">
-              Thank you for your feedback! We appreciate your help improving DebateAI.
-            </div>
+            <AlertMessage type="success" message="Thank you for your feedback! We appreciate your help improving DebateAI." className="mb-4" />
           )}
           
           <button

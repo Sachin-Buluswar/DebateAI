@@ -85,9 +85,9 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
   }, [audioUrl]);
 
   return (
-    <div className="mt-4 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="mt-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       {error ? (
-        <div className="text-red-500 dark:text-red-400 py-2 text-sm">
+        <div className="text-red-500 dark:text-red-400 py-2 text-sm flex items-center justify-center">
           {error}
           <button 
             onClick={() => {
@@ -97,14 +97,19 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
                 audioRef.current.load(); // Attempt to reload
               }
             }}
-            className="ml-2 underline"
+            className="ml-2 text-primary-600 hover:text-primary-700 underline font-medium"
           >
             Try again
           </button>
         </div>
       ) : loading ? (
-        <div className="flex justify-center items-center py-4">
-          <div className="animate-pulse text-gray-500 dark:text-gray-400">Loading audio...</div>
+        <div className="flex justify-center items-center py-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '100ms' }}></div>
+            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+            <span className="ml-2 text-gray-500 dark:text-gray-400">Loading audio...</span>
+          </div>
         </div>
       ) : null}
       
@@ -118,33 +123,45 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
         onError={handleError}
         preload="metadata" // Important for getting duration quickly
       />
-      <div className="flex items-center">
-        <button 
-          onClick={handlePlayPause}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-600 hover:bg-primary-700 flex items-center justify-center text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-          disabled={!!error || loading}
-        >
-          {isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
-        </button>
-        <div className="ml-4 flex-1">
-          <input 
-            type="range" 
-            min="0" 
-            max={duration || 0}
-            step="0.1"
-            value={currentTime} 
-            onChange={handleSeek}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-primary-600 focus:outline-none disabled:opacity-50"
-            aria-label="Audio progress"
+      {!error && !loading && (
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={handlePlayPause}
+            className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-500/30 disabled:opacity-50"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
             disabled={!!error || loading}
-          />
-          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+          >
+            {isPlaying ? <PauseIcon className="h-6 w-6" /> : <PlayIcon className="h-6 w-6 ml-0.5" />}
+          </button>
+          <div className="flex-1 space-y-2">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full transition-all duration-300"
+                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max={duration || 0}
+                step="0.1"
+                value={currentTime} 
+                onChange={handleSeek}
+                className="relative w-full h-2 opacity-0 cursor-pointer z-10"
+                aria-label="Audio progress"
+                disabled={!!error || loading}
+              />
+            </div>
+            <div className="flex justify-between items-center text-sm font-medium">
+              <span className="text-gray-600 dark:text-gray-400">{formatTime(currentTime)}</span>
+              <span className="text-gray-500 dark:text-gray-500">{formatTime(duration)}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
