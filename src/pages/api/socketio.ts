@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import type { NextApiResponse, NextApiRequest } from 'next';
 import type { Server as HTTPServer } from 'http';
 import type { Socket as NetSocket } from 'net';
-import { initializeSocketIO } from '@/temp-debatetest2-refactor/lib/server/modules/realtimeDebate/SocketManager';
+import { initializeSocketIO } from '@/backend/modules/realtimeDebate/SocketManager';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/shared/env';
 import { initializeDebateAdapter } from '@/lib/socket/debateSocketAdapter';
@@ -40,50 +40,67 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
       }
     });
     
-    // Add authentication middleware (temporarily simplified for debugging)
+    // Add authentication middleware with proper JWT validation
     io.use(async (socket, next) => {
       try {
         const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
         
-        // For development/debugging: allow connections but mark as unauthenticated
         if (!token) {
-          console.warn('Socket connection without auth token - allowing for development');
+          // In development, allow anonymous connections for testing
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Socket connection without auth token - allowing for development');
+            socket.data.user = null;
+            socket.data.userId = 'anonymous-' + socket.id;
+            return next();
+          }
+          // In production, reject connections without tokens
+          return next(new Error('Authentication token required'));
+        }
+        
+        // Create Supabase client with service role key for JWT validation
+        const supabase = createClient(
+          env.NEXT_PUBLIC_SUPABASE_URL,
+          env.SUPABASE_SERVICE_ROLE_KEY,
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false
+            }
+          }
+        );
+        
+        // Verify the JWT token with Supabase
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        
+        if (error || !user) {
+          // In development, allow connection but mark as unauthenticated
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Invalid auth token - allowing for development:', error?.message);
+            socket.data.user = null;
+            socket.data.userId = 'anonymous-' + socket.id;
+            return next();
+          }
+          // In production, reject invalid tokens
+          return next(new Error('Invalid authentication token'));
+        }
+        
+        // Authentication successful
+        socket.data.user = { id: user.id, email: user.email };
+        socket.data.userId = user.id;
+        console.log('Socket authenticated for user:', user.id);
+        next();
+      } catch (error) {
+        console.error('Socket authentication error:', error);
+        
+        // In development, allow connection on error
+        if (process.env.NODE_ENV === 'development') {
           socket.data.user = null;
           socket.data.userId = 'anonymous-' + socket.id;
           return next();
         }
         
-        // Try basic JWT decode to extract user info
-        try {
-          // JWT tokens have 3 parts separated by dots
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            // Decode the payload (middle part)
-            const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-            
-            // Extract user info from JWT payload
-            if (payload.sub) {
-              socket.data.user = { id: payload.sub, email: payload.email };
-              socket.data.userId = payload.sub;
-              console.log('Socket authenticated for user:', payload.sub);
-              return next();
-            }
-          }
-        } catch (decodeError) {
-          console.warn('Failed to decode JWT token:', decodeError);
-        }
-        
-        // If we can't decode the token, allow connection but mark as unauthenticated
-        console.warn('Socket connection with invalid token - allowing for development');
-        socket.data.user = null;
-        socket.data.userId = 'anonymous-' + socket.id;
-        next();
-      } catch (error) {
-        console.error('Socket authentication error:', error);
-        // Allow connection even on error for development
-        socket.data.user = null;
-        socket.data.userId = 'anonymous-' + socket.id;
-        next();
+        // In production, reject on error
+        next(new Error('Authentication failed'));
       }
     });
     

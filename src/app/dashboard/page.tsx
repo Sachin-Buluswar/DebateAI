@@ -1,13 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
 import type { Debate, SpeechFeedback } from '@/types';
-import DashboardLayout, { Widget } from '@/components/dashboard/DashboardLayout';
-import StatsSection from '@/components/dashboard/StatsSection';
+
+// Lazy load dashboard components for better performance
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const DashboardLayout = dynamic(() => import('@/components/dashboard/DashboardLayout'), {
+  loading: () => <LoadingSpinner text="Loading dashboard..." />,
+});
+
+// Widget needs to be imported separately since it's a named export
+import { Widget } from '@/components/dashboard/DashboardLayout';
+
+const StatsSection = dynamic(() => import('@/components/dashboard/StatsSection'), {
+  loading: () => <LoadingSpinner text="Loading statistics..." />,
+});
 import Link from 'next/link';
 import {
   MicrophoneIcon,
@@ -19,18 +33,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/solid';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from 'recharts';
+// Lazy load the entire recharts library when needed
+import * as Recharts from 'recharts';
 
 // Add global error handler to catch unhandled errors
 if (typeof window !== 'undefined') {
@@ -64,6 +68,9 @@ const extractScore = (feedback: any): number | null => {
   return null;
 };
 
+// Constants for pagination
+const ITEMS_PER_PAGE = 20;
+
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -82,6 +89,7 @@ export default function Dashboard() {
   const [highestScore, setHighestScore] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'year' | 'all'>('month');
   const [chartDateRange, setChartDateRange] = useState<'week' | 'month' | 'year'>('week');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     // Check if user is logged in
@@ -104,12 +112,13 @@ export default function Dashboard() {
         let fetchedSpeeches: SpeechFeedback[] = [];
 
         try {
-          // Fetch debates
+          // Fetch debates with pagination
           const { data: debatesData, error: debatesError } = await supabase
             .from('debate_history')
             .select('*')
             .eq('user_id', data.session.user.id)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
           if (debatesError && debatesError.code !== '42P01') {
             setError((prev) =>
@@ -124,43 +133,36 @@ export default function Dashboard() {
         }
 
         try {
-          // Fetch speech recordings - SIMPLIFIED FOR DEBUGGING
+          // Fetch speech recordings with pagination
           const { data: speechData, error: speechError } = await supabase
             .from('speech_feedback')
-            .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url') // Simplified select
-            .eq('user_id', data.session.user.id);
-          // .order('created_at', { ascending: true }); // Temporarily removed order
+            .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url')
+            .eq('user_id', data.session.user.id)
+            .order('created_at', { ascending: false })
+            .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
           if (speechError && speechError.code !== '42P01') {
-            // Log the specific error to console for detailed debugging
             console.error('Supabase speech fetch error:', speechError);
             setError((prev) =>
               prev ? `${prev}. Failed to load speech history.` : 'Failed to load speech history.'
             );
           } else {
             fetchedSpeeches = speechData || [];
-            // Sort descending for recent activity list display later
-            setSpeechHistory(
-              [...fetchedSpeeches].sort(
-                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-              )
-            );
+            setSpeechHistory(fetchedSpeeches);
 
             // Calculate stats from speech feedback
             if (fetchedSpeeches.length > 0) {
               // Hours spent estimate
-              // For speeches with 60 seconds duration (legacy entries), use more realistic estimate
               const speechHours = fetchedSpeeches.reduce(
                 (sum, speech) => {
                   if (speech.duration_seconds === 60) {
-                    // Legacy entries - estimate based on typical speech length
                     return sum + (3 / 60); // 3 minutes average
                   }
                   return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60);
                 },
                 0
               );
-              const debateHours = fetchedDebates.length * (10 / 60); // 10 minutes per debate (more realistic)
+              const debateHours = fetchedDebates.length * (10 / 60); // 10 minutes per debate
               setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
 
               // Calculate average score and highest score
@@ -170,14 +172,13 @@ export default function Dashboard() {
               });
               
               if (speechesWithScores.length > 0) {
-                // Extract scores for calculations
                 const scores = speechesWithScores.map(s => extractScore(s.feedback) || 0);
                 
                 // Average score
                 const totalScore = scores.reduce((sum, score) => sum + score, 0);
                 const average = totalScore / scores.length;
                 setAvgScores({
-                  overall: Math.round(average * 10) / 10, // Round to 1 decimal place
+                  overall: Math.round(average * 10) / 10,
                   count: speechesWithScores.length
                 });
                 
@@ -202,7 +203,7 @@ export default function Dashboard() {
                 setScoreTrendData(trendData);
               }
 
-              // Calculate weekly activity for chart (in hours)
+              // Calculate weekly activity for chart
               const now = new Date();
               const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
               const weeklyDataMap = new Map<string, number>();
@@ -225,7 +226,6 @@ export default function Dashboard() {
                   if (weeklyDataMap.has(dayName)) {
                     let hours: number;
                     if (item.duration_seconds === 60) {
-                      // Legacy entries - use realistic estimate
                       hours = 3 / 60; // 3 minutes
                     } else {
                       hours = item.duration_seconds ? item.duration_seconds / 3600 : 3 / 60;
@@ -235,7 +235,7 @@ export default function Dashboard() {
                 }
               });
               
-              // Add debate hours (10 minutes per debate)
+              // Add debate hours
               fetchedDebates.forEach((item) => {
                 const d = new Date(item.created_at);
                 if (d >= oneWeekAgo) {
@@ -249,7 +249,7 @@ export default function Dashboard() {
 
               const finalWeeklyChartData = orderedDays.map((dayName) => ({
                 name: dayName,
-                hours: Math.round(weeklyDataMap.get(dayName)! * 100) / 100, // Round to 2 decimal places
+                hours: Math.round(weeklyDataMap.get(dayName)! * 100) / 100,
               }));
               setWeeklyChartData(finalWeeklyChartData);
             }
@@ -276,13 +276,13 @@ export default function Dashboard() {
           'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.'
         );
       }
-    }, 30000); // 30 seconds timeout (increased from 10s)
+    }, 30000); // 30 seconds timeout
 
     return () => clearTimeout(loadingTimeout);
-  }, [router]);
+  }, [router, page]);
 
-  // Function to filter score data based on date range
-  const getFilteredScoreData = () => {
+  // Memoized function to filter score data based on date range
+  const getFilteredScoreData = useMemo(() => {
     if (!scoreTrendData.length) return [];
     
     const now = new Date();
@@ -319,10 +319,10 @@ export default function Dashboard() {
       }),
       score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
     }));
-  };
+  }, [scoreTrendData, dateRange, speechHistory]);
 
-  // Function to get weekly activity data based on chart date range
-  const getWeeklyActivityData = () => {
+  // Memoized function to get weekly activity data based on chart date range
+  const getWeeklyActivityData = useMemo(() => {
     const now = new Date();
     let daysToShow: number;
     
@@ -377,7 +377,6 @@ export default function Dashboard() {
         if (dataMap.has(key)) {
           let hours: number;
           if (speech.duration_seconds === 60) {
-            // Legacy entries - use realistic estimate
             hours = 3 / 60; // 3 minutes
           } else {
             hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60;
@@ -403,15 +402,11 @@ export default function Dashboard() {
     return keys.map((key, index) => ({
       name: dateLabels[index],
       hours: Math.round(dataMap.get(key)! * 100) / 100
-    })).filter(item => chartDateRange !== 'year' || item.name !== ''); // Only show labeled items for year view
-  };
-
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
-  }
+    })).filter(item => chartDateRange !== 'year' || item.name !== '');
+  }, [chartDateRange, speechHistory, debateHistory]);
 
   // Format date for display in recent activity list
-  const formatListDate = (dateString: string) => {
+  const formatListDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -420,12 +415,18 @@ export default function Dashboard() {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
-  };
+  }, []);
 
-  // Combine and sort recent activity
-  const recentActivity = [...(speechHistory || []), ...(debateHistory || [])]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 3); // Show only the 3 most recent items
+  // Memoize recent activity
+  const recentActivity = useMemo(() => {
+    return [...(speechHistory || []), ...(debateHistory || [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 3);
+  }, [speechHistory, debateHistory]);
+
+  if (loading) {
+    return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
+  }
 
   return (
     <ErrorBoundary
@@ -593,7 +594,7 @@ export default function Dashboard() {
             </div>
             
             {scoreTrendData.length > 1 ? (
-              <ScoreTrendChart data={getFilteredScoreData()} />
+              <ScoreTrendChart data={getFilteredScoreData} />
             ) : (
               <p className="text-center text-gray-500 dark:text-gray-400 py-4">
                 Not enough data to show score trend. Complete at least two scored speeches.
@@ -641,7 +642,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <WeeklyActivityChart data={getWeeklyActivityData()} />
+            <WeeklyActivityChart data={getWeeklyActivityData} />
           </div>
         </Widget>
 
@@ -716,20 +717,20 @@ export default function Dashboard() {
 
 // --- Chart Components ---
 
-// Simplified Score Trend Chart
-const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) => {
+// Memoized Score Trend Chart
+const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[] }) => {
   return (
     <div className="h-60 md:h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
+      <Recharts.ResponsiveContainer width="100%" height="100%">
+        <Recharts.LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
           <defs>
             <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#87A96B" stopOpacity={0.3}/>
               <stop offset="95%" stopColor="#87A96B" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
-          <XAxis 
+          <Recharts.CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <Recharts.XAxis 
             dataKey="date" 
             fontSize={11} 
             tickLine={false} 
@@ -740,7 +741,7 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) 
             height={data.length > 10 ? 60 : 30}
             tick={{ fill: '#6b7280' }}
           />
-          <YAxis 
+          <Recharts.YAxis 
             domain={[0, 100]} 
             fontSize={11} 
             tickLine={false} 
@@ -748,7 +749,7 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) 
             tick={{ fill: '#6b7280' }}
             tickFormatter={(value) => `${value}%`}
           />
-          <Tooltip
+          <Recharts.Tooltip
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
@@ -759,7 +760,7 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) 
             labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
             formatter={(value: number) => [`${value.toFixed(1)}%`, 'Score']}
           />
-          <Line
+          <Recharts.Line
             type="monotone"
             dataKey="score"
             stroke="#87A96B"
@@ -768,44 +769,45 @@ const ScoreTrendChart = ({ data }: { data: { date: string; score: number }[] }) 
             activeDot={{ r: 7, fill: '#6e8a57', stroke: '#ffffff', strokeWidth: 2 }}
             fill="url(#scoreGradient)"
           />
-        </LineChart>
-      </ResponsiveContainer>
+        </Recharts.LineChart>
+      </Recharts.ResponsiveContainer>
     </div>
   );
-};
+});
+ScoreTrendChart.displayName = 'ScoreTrendChart';
 
-// Weekly Activity Chart
-const WeeklyActivityChart = ({
+// Memoized Weekly Activity Chart
+const WeeklyActivityChart = memo(({
   data,
 }: {
   data: { name: string; hours: number }[];
 }) => {
   return (
     <div className="h-60 md:h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+      <Recharts.ResponsiveContainer width="100%" height="100%">
+        <Recharts.BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#87A96B" stopOpacity={1}/>
               <stop offset="100%" stopColor="#6e8a57" stopOpacity={1}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
-          <XAxis 
+          <Recharts.CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <Recharts.XAxis 
             dataKey="name" 
             fontSize={11} 
             tickLine={false} 
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
           />
-          <YAxis 
+          <Recharts.YAxis 
             fontSize={11} 
             tickLine={false} 
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
             tickFormatter={(value) => value === 0 ? '0' : `${value}h`}
           />
-          <Tooltip
+          <Recharts.Tooltip
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
@@ -823,18 +825,19 @@ const WeeklyActivityChart = ({
               return [`${hours} hr ${minutes} min`, 'Practice Time'];
             }}
           />
-          <Bar
+          <Recharts.Bar
             dataKey="hours"
             fill="url(#barGradient)"
             name="Practice Hours"
             radius={[8, 8, 0, 0]}
             maxBarSize={60}
           />
-        </BarChart>
-      </ResponsiveContainer>
+        </Recharts.BarChart>
+      </Recharts.ResponsiveContainer>
     </div>
   );
-};
+});
+WeeklyActivityChart.displayName = 'WeeklyActivityChart';
 
 // Simple Progress Bar Component (if needed, or use existing ProgressItem)
 interface ProgressItemProps {

@@ -42,6 +42,29 @@ export {
   RateLimitTracker
 } from './middleware';
 
+// OpenTelemetry exports
+export {
+  initializeOpenTelemetry,
+  shutdownOpenTelemetry,
+  createSpan,
+  traceAsync,
+  traceSync,
+  addSpanEvent,
+  setSpanAttributes,
+  instrumentSocketIO,
+  debateMetrics,
+  recordDebateStart,
+  recordDebateEnd,
+  recordAIResponse,
+  recordError
+} from './opentelemetry';
+
+// Socket monitoring exports
+export {
+  SocketMonitor,
+  createMonitoredSocketServer
+} from './socketMonitor';
+
 // Type exports
 export type { ErrorDetails } from './errorTracker';
 
@@ -52,6 +75,10 @@ export type { ErrorDetails } from './errorTracker';
 export function initializeMonitoring() {
   // Import logger within function
   const { apiLogger } = require('./logger');
+  const { initializeOpenTelemetry } = require('./opentelemetry');
+  
+  // Initialize OpenTelemetry
+  initializeOpenTelemetry();
   
   // Set up global error handlers
   if (typeof window === 'undefined') {
@@ -60,12 +87,21 @@ export function initializeMonitoring() {
       apiLogger.fatal('Unhandled Promise Rejection', reason as Error, {
         metadata: { promise: promise.toString() }
       });
+      
+      // Also capture in Sentry
+      const { sentryServer } = require('../../../sentry.server.config');
+      sentryServer.captureException(reason as Error);
     });
 
     process.on('uncaughtException', (error) => {
       apiLogger.fatal('Uncaught Exception', error, {
         metadata: { fatal: true }
       });
+      
+      // Also capture in Sentry
+      const { sentryServer } = require('../../../sentry.server.config');
+      sentryServer.captureException(error);
+      
       // Give the logger time to flush before exiting
       setTimeout(() => process.exit(1), 1000);
     });
@@ -73,10 +109,18 @@ export function initializeMonitoring() {
     // Client-side error handling
     window.addEventListener('unhandledrejection', (event) => {
       console.error('Unhandled promise rejection:', event.reason);
+      
+      // Also capture in Sentry
+      const { sentryClient } = require('../../../sentry.client.config');
+      sentryClient.captureException(new Error(event.reason));
     });
 
     window.addEventListener('error', (event) => {
       console.error('Global error:', event.error);
+      
+      // Also capture in Sentry
+      const { sentryClient } = require('../../../sentry.client.config');
+      sentryClient.captureException(event.error);
     });
   }
 
@@ -84,7 +128,9 @@ export function initializeMonitoring() {
   apiLogger.info('Monitoring initialized', {
     metadata: {
       environment: process.env.NODE_ENV,
-      logLevel: process.env.LOG_LEVEL || 'info'
+      logLevel: process.env.LOG_LEVEL || 'info',
+      openTelemetryEnabled: !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+      sentryEnabled: !!process.env.SENTRY_DSN
     }
   });
 }
@@ -98,8 +144,14 @@ export async function measure<T>(
   logger?: any
 ): Promise<T> {
   const { apiLogger: defaultLogger } = require('./logger');
+  const { traceAsync } = require('./opentelemetry');
   const log = logger || defaultLogger;
   const start = Date.now();
+  
+  // Use OpenTelemetry tracing if available
+  if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
+    return traceAsync(name, operation);
+  }
   
   try {
     const result = await operation();
@@ -135,4 +187,21 @@ export function createRequestLogger(
     userId,
     metadata
   });
+}
+
+/**
+ * Gracefully shutdown monitoring systems
+ */
+export async function shutdownMonitoring() {
+  const { shutdownOpenTelemetry } = require('./opentelemetry');
+  const { apiLogger } = require('./logger');
+  
+  apiLogger.info('Shutting down monitoring systems');
+  
+  try {
+    await shutdownOpenTelemetry();
+    apiLogger.info('Monitoring shutdown complete');
+  } catch (error) {
+    apiLogger.error('Error during monitoring shutdown', error as Error);
+  }
 }

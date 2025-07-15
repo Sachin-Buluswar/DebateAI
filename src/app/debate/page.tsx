@@ -1,18 +1,42 @@
 'use client';
 
-import { useEffect, useState, useRef, FormEvent } from 'react';
+import { useEffect, useState, useRef, FormEvent, useMemo, useCallback, memo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import {
   Participant,
   DebateState,
 } from '@/backend/modules/realtimeDebate/debate-types';
 import { debateConfig } from '@/backend/modules/realtimeDebate/debate.config';
-import ParticipantPanel from '../../components/debate/ParticipantPanel';
-import { WikiSearchPanel } from '@/components/debate/WikiSearchPanel';
-import StreamingAudioPlayer from '../../components/debate/StreamingAudioPlayer';
-import AudioRecorder from '../../components/debate/AudioRecorder';
-import CrossfireController from '../../components/debate/CrossfireControls';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import Layout from '@/components/layout/Layout';
+
+// Lazy load heavy components for better initial load performance
+const ParticipantPanel = dynamic(() => import('../../components/debate/ParticipantPanel'), {
+  loading: () => <LoadingSpinner text="Loading participants..." />,
+  ssr: false,
+});
+
+const WikiSearchPanel = dynamic(() => import('@/components/debate/WikiSearchPanel').then(mod => ({ default: mod.WikiSearchPanel })), {
+  loading: () => <LoadingSpinner text="Loading research panel..." />,
+  ssr: false,
+});
+
+const StreamingAudioPlayer = dynamic(() => import('../../components/debate/StreamingAudioPlayer'), {
+  loading: () => <LoadingSpinner text="Loading audio player..." />,
+  ssr: false,
+});
+
+const AudioRecorder = dynamic(() => import('../../components/debate/AudioRecorder'), {
+  loading: () => <LoadingSpinner text="Loading recorder..." />,
+  ssr: false,
+});
+
+const CrossfireController = dynamic(() => import('../../components/debate/CrossfireControls'), {
+  loading: () => <LoadingSpinner text="Loading controls..." />,
+  ssr: false,
+});
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import EnhancedButton from '@/components/ui/EnhancedButton';
 import EnhancedInput from '@/components/ui/EnhancedInput';
@@ -28,6 +52,7 @@ type DebateSetup = {
   selectedAIDebaters: string[]; // Array of 3 selected AI debater names
 };
 
+// Create participants function outside component for performance
 const createParticipants = (setup: DebateSetup): Participant[] => {
   const participants: Participant[] = [];
   
@@ -59,9 +84,13 @@ export default function DebatePage() {
   const [isResearchPanelVisible, setIsResearchPanelVisible] = useState(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isCrossfireActive, setIsCrossfireActive] = useState<boolean>(false);
   const socketRef = useRef<Socket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [setup, setSetup] = useState<DebateSetup | null>(null);
   const [speechText, setSpeechText] = useState<string>('');
@@ -89,10 +118,15 @@ export default function DebatePage() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  // Get available AI debaters from config
-  const availableAIDebaters = Object.values(debateConfig.personalities);
+  // Memoize available AI debaters to avoid recreating array on each render
+  const availableAIDebaters = useMemo(() => Object.values(debateConfig.personalities), []);
 
-  const handleAIDebaterToggle = (debaterName: string) => {
+  // Memoize participants array to avoid recreating on each render
+  const participants = useMemo(() => {
+    return setup ? createParticipants(setup) : [];
+  }, [setup]);
+
+  const handleAIDebaterToggle = useCallback((debaterName: string) => {
     setFormData(prev => {
       const currentSelected = prev.selectedAIDebaters;
       if (currentSelected.includes(debaterName)) {
@@ -111,7 +145,77 @@ export default function DebatePage() {
       // If already 3 selected, don't add more
       return prev;
     });
-  };
+  }, []);
+
+  const handleSetupSubmit = useCallback((e: FormEvent) => {
+    e.preventDefault();
+    const topic = formData.topic?.trim();
+    if (!topic) {
+      alert('Please enter a debate topic');
+      return;
+    }
+    if (formData.selectedAIDebaters.length < 3) {
+      alert('Please select exactly 3 AI debaters');
+      return;
+    }
+    setSetup({ topic, side: formData.side, aiPartner: formData.aiPartner, selectedAIDebaters: formData.selectedAIDebaters });
+  }, [formData]);
+
+  const startDebate = useCallback(() => {
+    if (!setup) return;
+    if (!isConnected) {
+      alert('Not connected to server. Please refresh the page.');
+      return;
+    }
+    console.log('Starting debate with participants:', participants);
+    socketRef.current?.emit('startDebate', { topic: setup.topic, participants });
+  }, [setup, isConnected, participants]);
+  
+  const handleUserSpeech = useCallback((text: string) => {
+    console.log('User speech transcribed:', text);
+    setCurrentSpeaker('You');
+    
+    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
+    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
+      socketRef.current.emit('userSpeech', { 
+        text, 
+        speakerId: userSpeakerId,
+        phase: debateState?.phase 
+      });
+    }
+  }, [setup, debateState]);
+
+  const skipUserTurn = useCallback(() => {
+    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
+    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
+      const mockSpeech = `Thank you for this opportunity. I believe my fellow debater has already made our key points well, and I yield the remainder of my time.`;
+      handleUserSpeech(mockSpeech);
+    }
+  }, [setup, debateState, handleUserSpeech]);
+
+  const getPhaseDisplayName = useCallback((phase: string) => {
+    return phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }, []);
+
+  const getTotalPhases = useCallback(() => 11, []);
+  const getCurrentPhaseIndex = useCallback(() => {
+    const phases = ['PRO_CONSTRUCTIVE', 'CON_CONSTRUCTIVE', 'CROSSFIRE_1', 'PRO_REBUTTAL', 'CON_REBUTTAL', 'CROSSFIRE_2', 'PRO_SUMMARY', 'CON_SUMMARY', 'GRAND_CROSSFIRE', 'PRO_FINAL_FOCUS', 'CON_FINAL_FOCUS'];
+    return phases.indexOf(debateState?.phase || '') + 1;
+  }, [debateState?.phase]);
+
+  const pauseDebate = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('pauseDebate');
+      setIsPaused(true);
+    }
+  }, []);
+
+  const resumeDebate = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('resumeDebate');
+      setIsPaused(false);
+    }
+  }, []);
 
   useEffect(() => {
     // Initialize socket with authentication
@@ -121,12 +225,23 @@ export default function DebatePage() {
       
       if (error || !session) {
         console.error('No authenticated session found');
-        alert('You must be logged in to participate in debates');
+        setConnectionError('You must be logged in to participate in debates');
+        setIsConnecting(false);
         return;
       }
       
       // This fetch call is necessary to initialize the socket.io server on the backend.
-      fetch('/api/socketio');
+      try {
+        setIsConnecting(true);
+        setConnectionError(null);
+        
+        await fetch('/api/socketio');
+      } catch (error) {
+        console.error('Failed to initialize socket server:', error);
+        setConnectionError('Failed to connect to debate server. Please try again.');
+        setIsConnecting(false);
+        return;
+      }
 
       const socket: Socket = io({
         path: '/api/socketio',
@@ -145,26 +260,48 @@ export default function DebatePage() {
       socketRef.current = socket;
 
     socket.on('connect', () => {
+      console.log('Socket connected successfully');
       setIsConnected(true);
+      setIsConnecting(false);
+      setConnectionError(null);
+      setReconnectAttempt(0);
     });
     
     socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
       setIsConnected(false);
       
       // Handle different disconnect reasons
       if (reason === 'io server disconnect') {
-        // Server disconnected, need to manually reconnect
+        setConnectionError('Disconnected by server. Attempting to reconnect...');
         socket.connect();
+      } else if (reason === 'transport close' || reason === 'transport error') {
+        setConnectionError('Connection lost. Attempting to reconnect...');
+      } else if (reason === 'ping timeout') {
+        setConnectionError('Connection timeout. Check your internet connection.');
       }
     });
     
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error.message);
       setIsConnected(false);
+      setIsConnecting(false);
+      
+      // Provide user-friendly error messages
+      if (error.message.includes('Authentication')) {
+        setConnectionError('Authentication failed. Please log in again.');
+      } else if (error.message.includes('timeout')) {
+        setConnectionError('Connection timeout. Please check your internet connection.');
+      } else {
+        setConnectionError(`Connection failed: ${error.message}`);
+      }
     });
     
     socket.on('reconnect', (attemptNumber) => {
+      console.log('Socket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
+      setConnectionError(null);
+      setReconnectAttempt(0);
       
       // Re-join debate if one was in progress
       if (debateState && debateState.phase !== 'ENDED') {
@@ -174,12 +311,20 @@ export default function DebatePage() {
     });
     
     socket.on('reconnect_attempt', (attemptNumber) => {
-      // Reconnection in progress
+      console.log('Socket reconnection attempt', attemptNumber);
+      setReconnectAttempt(attemptNumber);
+      setConnectionError(`Reconnecting... (Attempt ${attemptNumber}/5)`);
     });
     
     socket.on('reconnect_failed', () => {
       console.error('Socket reconnection failed');
-      alert('Connection to the debate server lost. Please refresh the page to reconnect.');
+      setIsConnected(false);
+      setConnectionError('Failed to reconnect. Please refresh the page to try again.');
+      
+      // Offer manual reconnection after a delay
+      reconnectTimeoutRef.current = setTimeout(() => {
+        setConnectionError('Connection lost. Click "Reconnect" to try again.');
+      }, 2000);
     });
 
     socket.on('debateStateUpdate', (newState: DebateState, mode: string) => {
@@ -193,7 +338,6 @@ export default function DebatePage() {
         setIsCrossfireActive(false);
         // Find and set current speaker name
         if (setup && newState.currentSpeakerId && newState.currentSpeakerId !== 'CROSSFIRE') {
-          const participants = createParticipants(setup);
           const speaker = participants.find(p => p.id === newState.currentSpeakerId);
           if (speaker) {
             setCurrentSpeaker(speaker.name);
@@ -236,6 +380,35 @@ export default function DebatePage() {
       const buffer = audioBuffer instanceof ArrayBuffer ? audioBuffer : 
                      new Uint8Array(audioBuffer).buffer;
       setAudioQueue(prev => [...prev, new Blob([buffer], { type: 'audio/mpeg' })]);
+    });
+
+    // WebSocket streaming audio handlers
+    let audioChunks: Uint8Array[] = [];
+    
+    socket.on('aiSpeechAudioChunk', (chunk: Buffer) => {
+      // Collect audio chunks as they arrive
+      const uint8Array = new Uint8Array(chunk);
+      audioChunks.push(uint8Array);
+    });
+    
+    socket.on('aiSpeechAudioEnd', () => {
+      // Combine all chunks and add to audio queue
+      if (audioChunks.length > 0) {
+        const totalLength = audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const combinedChunks = new Uint8Array(totalLength);
+        let offset = 0;
+        
+        for (const chunk of audioChunks) {
+          combinedChunks.set(chunk, offset);
+          offset += chunk.length;
+        }
+        
+        const audioBlob = new Blob([combinedChunks.buffer], { type: 'audio/mpeg' });
+        setAudioQueue(prev => [...prev, audioBlob]);
+        
+        // Clear chunks for next stream
+        audioChunks = [];
+      }
     });
 
     socket.on('debateError', (error: { message: string; error: string }) => {
@@ -283,78 +456,7 @@ export default function DebatePage() {
         socketRef.current.disconnect();
       }
     };
-  }, [setup]);
-
-  const handleSetupSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const topic = formData.topic?.trim();
-    if (!topic) {
-      alert('Please enter a debate topic');
-      return;
-    }
-    if (formData.selectedAIDebaters.length < 3) {
-      alert('Please select exactly 3 AI debaters');
-      return;
-    }
-    setSetup({ topic, side: formData.side, aiPartner: formData.aiPartner, selectedAIDebaters: formData.selectedAIDebaters });
-  };
-
-  const startDebate = () => {
-    if (!setup) return;
-    if (!isConnected) {
-      alert('Not connected to server. Please refresh the page.');
-      return;
-    }
-    const participants = createParticipants(setup);
-    console.log('Starting debate with participants:', participants);
-    socketRef.current?.emit('startDebate', { topic: setup.topic, participants });
-  };
-  
-  const handleUserSpeech = (text: string) => {
-    console.log('User speech transcribed:', text);
-    setCurrentSpeaker('You');
-    
-    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
-    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
-      socketRef.current.emit('userSpeech', { 
-        text, 
-        speakerId: userSpeakerId,
-        phase: debateState?.phase 
-      });
-    }
-  };
-
-  const skipUserTurn = () => {
-    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
-    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
-      const mockSpeech = `Thank you for this opportunity. I believe my fellow debater has already made our key points well, and I yield the remainder of my time.`;
-      handleUserSpeech(mockSpeech);
-    }
-  };
-
-  const getPhaseDisplayName = (phase: string) => {
-    return phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const getTotalPhases = () => 11;
-  const getCurrentPhaseIndex = () => {
-    const phases = ['PRO_CONSTRUCTIVE', 'CON_CONSTRUCTIVE', 'CROSSFIRE_1', 'PRO_REBUTTAL', 'CON_REBUTTAL', 'CROSSFIRE_2', 'PRO_SUMMARY', 'CON_SUMMARY', 'GRAND_CROSSFIRE', 'PRO_FINAL_FOCUS', 'CON_FINAL_FOCUS'];
-    return phases.indexOf(debateState?.phase || '') + 1;
-  };
-
-  const pauseDebate = () => {
-    if (socketRef.current) {
-      socketRef.current.emit('pauseDebate');
-      setIsPaused(true);
-    }
-  };
-
-  const resumeDebate = () => {
-    if (socketRef.current) {
-      socketRef.current.emit('resumeDebate');
-      setIsPaused(false);
-    }
-  };
+  }, [setup, participants]);
 
   return (
     <Layout>
@@ -366,6 +468,39 @@ export default function DebatePage() {
           <p className="text-lg text-muted-foreground">
             Practice your debate skills with AI opponents in real-time
           </p>
+          
+          {/* Connection Status Alert */}
+          {connectionError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center justify-between animate-fade-in">
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="text-sm text-red-800 dark:text-red-200">{connectionError}</span>
+              </div>
+              {connectionError.includes('Click "Reconnect"') && (
+                <EnhancedButton
+                  onClick={() => {
+                    setConnectionError(null);
+                    setIsConnecting(true);
+                    socketRef.current?.connect();
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Reconnect
+                </EnhancedButton>
+              )}
+            </div>
+          )}
+          
+          {/* Connecting Indicator */}
+          {isConnecting && !connectionError && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 animate-fade-in">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-blue-800 dark:text-blue-200">Connecting to debate server...</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -393,7 +528,7 @@ export default function DebatePage() {
               </CardHeader>
               <CardContent>
                 <ParticipantPanel
-                  participants={setup ? createParticipants(setup) : []}
+                  participants={participants}
                   currentSpeakerId={debateState?.currentSpeakerId || null}
                 />
               </CardContent>
@@ -1009,4 +1144,4 @@ export default function DebatePage() {
       )}
     </Layout>
   );
-} 
+}

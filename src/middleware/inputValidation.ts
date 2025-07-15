@@ -68,6 +68,59 @@ export const validationSchemas = {
       autoplay: z.boolean().optional(),
     }).optional(),
   }),
+
+  // OpenAI-specific schemas
+  debateAdvice: z.object({
+    query: z.string().min(1, 'Query cannot be empty').max(2000, 'Query too long'),
+    debateTopic: commonSchemas.debateTopic,
+    userPerspective: z.enum(['proposition', 'opposition']),
+    adviceType: z.enum(['counter', 'strengthen', 'general']).optional().default('general'),
+  }),
+
+  debateAnalysis: z.object({
+    transcript: z.array(z.object({
+      participantId: z.string(),
+      participantName: z.string(),
+      content: z.string().min(1).max(10000, 'Content too long'),
+      timestamp: z.number().optional(),
+    })).min(1, 'Transcript must have at least one entry').max(100, 'Transcript too long'),
+    userParticipantId: z.string(),
+    debateTopic: commonSchemas.debateTopic.optional(),
+    debateFormat: z.string().max(50).optional(),
+  }),
+
+  wikiGenerate: z.object({
+    query: commonSchemas.safeString.min(3, 'Query too short'),
+    maxResults: z.number().int().min(1).max(10).optional().default(3),
+    context: z.array(z.object({
+      content: z.string().max(5000, 'Context chunk too large'),
+      source: z.string().optional(),
+      relevance: z.number().min(0).max(1).optional(),
+    })).optional(),
+  }),
+
+  wikiIndex: z.object({
+    files: z.array(z.object({
+      name: z.string().min(1).max(255, 'Filename too long'),
+      content: z.string().min(1).max(1000000, 'File content too large (1MB limit)'),
+      metadata: z.record(z.string()).optional(),
+    })).min(1, 'At least one file required').max(100, 'Too many files'),
+    vectorStoreId: z.string().optional(),
+  }),
+
+  prototypeArgument: z.object({
+    topic: commonSchemas.debateTopic,
+    stance: z.enum(['for', 'against']),
+    style: z.enum(['logical', 'emotional', 'balanced']).optional().default('balanced'),
+    length: z.enum(['short', 'medium', 'long']).optional().default('medium'),
+  }),
+
+  // RAG search (uses same schema as wiki search but with additional fields)
+  wikiRagSearch: z.object({
+    query: commonSchemas.safeString.min(3, 'Search query too short'),
+    maxResults: z.number().int().min(1).max(20).optional().default(5),
+    includeContext: z.boolean().optional().default(true),
+  }),
 };
 
 // File validation for uploads

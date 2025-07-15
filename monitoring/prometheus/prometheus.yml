@@ -1,0 +1,94 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    monitor: 'debateai'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules files
+rule_files:
+  - '/etc/prometheus/rules.yml'
+
+# Scrape configurations
+scrape_configs:
+  # DebateAI application metrics
+  - job_name: 'debateai'
+    metrics_path: '/api/monitoring/metrics'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['debateai:3001']
+        labels:
+          service: 'debateai-app'
+          component: 'backend'
+
+  # OpenTelemetry Collector metrics
+  - job_name: 'otel-collector'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['otel-collector:8888']
+        labels:
+          service: 'otel-collector'
+
+  # Node exporter for host metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+
+  # Blackbox exporter for endpoint monitoring
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - https://debateai.com/api/health
+          - https://api.openai.com/v1/models
+          - https://api.elevenlabs.io/v1/models
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # PostgreSQL exporter for database metrics
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgresql'
+          database: 'debateai'
+
+# Remote write for long-term storage
+remote_write:
+  - url: '${REMOTE_WRITE_URL}'
+    bearer_token: '${REMOTE_WRITE_TOKEN}'
+    write_relabel_configs:
+      # Drop high-cardinality metrics
+      - source_labels: [__name__]
+        regex: 'go_memstats_.*'
+        action: drop
+    queue_config:
+      capacity: 10000
+      max_shards: 50
+      min_shards: 1
+      max_samples_per_send: 5000
+      batch_send_deadline: 5s
+      min_backoff: 30ms
+      max_backoff: 100ms
+
+# Remote read for querying historical data
+remote_read:
+  - url: '${REMOTE_READ_URL}'
+    bearer_token: '${REMOTE_READ_TOKEN}'
+    read_recent: true

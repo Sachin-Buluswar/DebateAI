@@ -3,11 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
 import type { User, SearchResult, GeneratedAnswer } from '@/types';
-import Layout from '@/components/layout/Layout';
-import EnhancedSearchCard from '@/components/search/EnhancedSearchCard';
+
+// Lazy load heavy components
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const Layout = dynamic(() => import('@/components/layout/Layout'), {
+  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
+});
+
+const EnhancedSearchCard = dynamic(() => import('@/components/search/EnhancedSearchCard'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
+  ssr: false,
+});
 import EnhancedInput from '@/components/ui/EnhancedInput';
 import EnhancedButton from '@/components/ui/EnhancedButton';
 

@@ -1,0 +1,321 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  packages: write
+
+jobs:
+  # Check if release is needed
+  check-release:
+    name: Check Release
+    runs-on: ubuntu-latest
+    outputs:
+      release-needed: ${{ steps.check.outputs.release-needed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if release is needed
+        id: check
+        run: |
+          # Check if there are any commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          COMMITS_SINCE_TAG=$(git rev-list $LAST_TAG..HEAD --count)
+          
+          if [[ $COMMITS_SINCE_TAG -gt 0 ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "release-needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "release-needed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Generate Release
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: check-release
+    if: needs.check-release.outputs.release-needed == 'true'
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release-url: ${{ steps.create-release.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version bump
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RELEASE_TYPE="${{ github.event.inputs.release-type }}"
+          else
+            # Analyze commit messages to determine release type
+            COMMITS=$(git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD --pretty=format:"%s")
+            
+            if echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?!:"; then
+              RELEASE_TYPE="major"
+            elif echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?:"; then
+              RELEASE_TYPE="minor"
+            else
+              RELEASE_TYPE="patch"
+            fi
+          fi
+          
+          echo "Release type: $RELEASE_TYPE"
+          echo "release-type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+          
+          # Bump version
+          npm version $RELEASE_TYPE --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        uses: conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-file: './package.json'
+          preset: 'conventionalcommits'
+          output-file: 'CHANGELOG.md'
+          skip-version-file: true
+          skip-commit: true
+
+      - name: Update version files
+        run: |
+          # Update version in multiple files if needed
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Update package-lock.json
+          npm install --package-lock-only
+          
+          # Update any other version references
+          # sed -i "s/version: .*/version: $VERSION/g" docker-compose.yml || true
+
+      - name: Commit changes
+        run: |
+          git add .
+          git commit -m "chore(release): v${{ steps.version.outputs.version }} [skip ci]" || echo "No changes to commit"
+
+      - name: Create tag
+        run: |
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin main --tags
+
+      - name: Create GitHub Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## What's Changed
+            
+            ${{ steps.changelog.outputs.clean_changelog }}
+            
+            ## Docker Image
+            
+            ```bash
+            docker pull ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}
+            ```
+            
+            ## Full Changelog
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/v${{ steps.changelog.outputs.previous-version }}...v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ steps.version.outputs.release-type == 'prerelease' }}
+
+  # Build Release Assets
+  build-assets:
+    name: Build Release Assets
+    runs-on: ubuntu-latest
+    needs: release
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.release.outputs.version }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:v${{ needs.release.outputs.version }}-${{ matrix.arch }}
+            ghcr.io/${{ github.repository }}:latest-${{ matrix.arch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Create Docker Manifest
+  docker-manifest:
+    name: Create Docker Manifest
+    runs-on: ubuntu-latest
+    needs: [release, build-assets]
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push manifest
+        run: |
+          VERSION=${{ needs.release.outputs.version }}
+          
+          # Create versioned manifest
+          docker manifest create ghcr.io/${{ github.repository }}:v${VERSION} \
+            ghcr.io/${{ github.repository }}:v${VERSION}-amd64 \
+            ghcr.io/${{ github.repository }}:v${VERSION}-arm64
+          
+          docker manifest push ghcr.io/${{ github.repository }}:v${VERSION}
+          
+          # Create latest manifest
+          docker manifest create ghcr.io/${{ github.repository }}:latest \
+            ghcr.io/${{ github.repository }}:latest-amd64 \
+            ghcr.io/${{ github.repository }}:latest-arm64
+          
+          docker manifest push ghcr.io/${{ github.repository }}:latest
+
+  # Deploy Release
+  deploy-release:
+    name: Deploy Release
+    runs-on: ubuntu-latest
+    needs: [release, docker-manifest]
+    if: success()
+    steps:
+      - name: Trigger production deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main',
+              inputs: {
+                environment: 'production'
+              }
+            });
+
+  # Update Documentation
+  update-docs:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    needs: release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update documentation
+        run: |
+          VERSION=${{ needs.release.outputs.version }}
+          DATE=$(date +%Y-%m-%d)
+          
+          # Update version in README
+          sed -i "s/\[Version: .*/\[Version: v$VERSION\]/g" README.md || true
+          
+          # Update deployment documentation
+          if [[ -f "docs/deployment.md" ]]; then
+            sed -i "s/Latest Release: .*/Latest Release: v$VERSION ($DATE)/g" docs/deployment.md || true
+          fi
+          
+          # Commit if there are changes
+          if [[ -n $(git status -s) ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "docs: update version to v$VERSION [skip ci]"
+            git push
+          fi
+
+  # Notify Team
+  notify:
+    name: Notify Team
+    runs-on: ubuntu-latest
+    needs: [release, deploy-release]
+    if: always()
+    steps:
+      - name: Send notification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ needs.deploy-release.result }}' === 'success' ? '✅' : '❌';
+            const version = '${{ needs.release.outputs.version }}';
+            const releaseUrl = '${{ needs.release.outputs.release-url }}';
+            
+            const message = `${status} Release v${version} has been ${status === '✅' ? 'successfully deployed' : 'failed'}!\n\nRelease notes: ${releaseUrl}`;
+            
+            // Create an issue comment if this was triggered by a PR
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: message
+              });
+            }
+            
+            // You can also send notifications to Slack, Discord, etc.
+            console.log(message);

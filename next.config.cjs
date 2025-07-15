@@ -19,10 +19,35 @@ const nextConfig = {
         url: false
       };
     }
+    
+    // Add rule to ignore markdown files in node_modules
+    config.module.rules.push({
+      test: /\.md$/,
+      loader: 'ignore-loader'
+    });
+    
+    // Add alias to ignore problematic ffprobe sync require
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@ffprobe-installer/ffprobe': false
+    };
+    
     return config;
   },
   // Ensure strict mode is enabled for React
   reactStrictMode: true,
+  
+  // Enable SWC minification for better performance
+  swcMinify: true,
+  
+  // Optimize production builds
+  productionBrowserSourceMaps: false,
+  
+  // Enable experimental optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['recharts', 'react-markdown', '@heroicons/react'],
+  },
   // Adding a custom path for the API server
   serverRuntimeConfig: {
     apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003',

@@ -4,10 +4,11 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
 import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
 import { getAudioDuration } from '@/backend/utils/audioUtils';
+import { openAIService } from '@/backend/services/openaiService';
+import { aiLogger as logger } from '@/lib/monitoring/logger';
 
 // Storage constants
 export const SPEECH_BUCKET = 'speech_audio';
@@ -17,18 +18,13 @@ export const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
 export const WHISPER_MAX_BYTES = 25 * 1024 * 1024;
 
 // Initialize clients
-const openaiApiKey = process.env.OPENAI_API_KEY || '';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-if (!openaiApiKey) {
-  console.warn('[speechFeedbackService] OPENAI_API_KEY not found');
-}
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('[speechFeedbackService] Supabase credentials missing');
+  logger.error('Supabase credentials missing');
 }
 
-const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export interface SpeechFeedbackInput {
@@ -298,41 +294,53 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     };
   }
   
-  // Transcribe audio using OpenAI Whisper
-  let transcription;
-  if (!openai) {
-    console.warn('[speechFeedbackService] OpenAI client not available, using fallback transcription');
+  // Transcribe audio using OpenAI Whisper with error recovery
+  let transcription: any;
+  const fallbackTranscription = {
+    text: `[Transcription temporarily unavailable] Speech about ${topic} by ${userSide || 'speaker'} - Duration: ${Math.round(processedAudio.durationSeconds)} seconds.`,
+    segments: [],
+    duration: processedAudio.durationSeconds
+  };
+  
+  try {
+    logger.info('Starting audio transcription', {
+      fileId: processedAudio.fileId,
+      duration: processedAudio.durationSeconds,
+      userId
+    });
+    
+    const audioFileStream = createReadStream(processedAudio.filePath);
+    
+    const whisperResponse = await openAIService.createTranscription({
+      file: audioFileStream,
+      model: 'whisper-1',
+      response_format: 'verbose_json',
+      timestamp_granularities: ['segment'],
+    }, {
+      fallbackResponse: fallbackTranscription
+    });
+    
     transcription = {
-      text: `Transcription unavailable - OpenAI API key not configured. Speech about ${topic}.`,
-      segments: []
+      ...whisperResponse,
+      duration: whisperResponse.duration || processedAudio.durationSeconds
     };
-  } else {
-    try {
-      const audioFileStream = createReadStream(processedAudio.filePath);
-      
-      const whisperResponse = await openai.audio.transcriptions.create({
-        file: audioFileStream,
-        model: 'whisper-1',
-        response_format: 'verbose_json',
-        timestamp_granularities: ['segment'],
-      });
-      
-      transcription = whisperResponse;
-      console.log('[speechFeedbackService] Transcription completed successfully');
-    } catch (error) {
-      console.error('[speechFeedbackService] Transcription failed:', error);
-      transcription = {
-        text: `Transcription failed due to API error. Speech about ${topic}.`,
-        segments: []
-      };
-    }
+    
+    logger.info('Transcription completed successfully', {
+      textLength: transcription.text?.length,
+      segments: transcription.segments?.length
+    });
+  } catch (error) {
+    logger.error('Transcription failed', {
+      error,
+      fileId: processedAudio.fileId
+    });
+    
+    transcription = fallbackTranscription;
   }
   
-  // Generate AI feedback using GPT-4o
-  let feedback;
-  if (!openai) {
-    console.warn('[speechFeedbackService] OpenAI client not available, using fallback feedback');
-    feedback = {
+  // Generate AI feedback using GPT-4o with structured output
+  let feedback: any;
+  const fallbackFeedback = {
       speakerScore: 0,
       scoreJustification: "Unable to provide score - OpenAI API not configured",
       overallSummary: `Unable to provide AI analysis - OpenAI API not configured. Manual review recommended for speech about ${topic}.`,
@@ -370,30 +378,43 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       strengths: ["Unable to analyze without API"],
       areasForImprovement: ["Unable to analyze without API"]
     };
-  } else {
+  
+  try {
+    const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions);
+    
+    logger.info('Generating AI feedback', {
+      speechType,
+      topic,
+      transcriptionLength: transcription.text?.length
+    });
+    
+    const feedbackCompletion = await openAIService.createChatCompletion({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { 
+          role: 'user', 
+          content: `Here is the transcription of my speech:\n\n${JSON.stringify(transcription)}\n\nPlease provide detailed feedback in the specified JSON format. Remember to be specific with examples from the speech and provide constructive, actionable feedback.` 
+        }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.7,
+    }, {
+      fallbackResponse: JSON.stringify(fallbackFeedback)
+    });
+    
+    const feedbackContent = feedbackCompletion.choices[0].message.content;
+    
     try {
-      const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions);
-      
-      const feedbackCompletion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { 
-            role: 'user', 
-            content: `Here is the transcription of my speech:\n\n${JSON.stringify(transcription)}\n\nPlease provide detailed feedback in the specified JSON format. Remember to be specific with examples from the speech and provide constructive, actionable feedback.` 
-          }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
+      feedback = JSON.parse(feedbackContent || '{}');
+      logger.info('AI feedback generated successfully', {
+        speakerScore: feedback.speakerScore
       });
-      
-      const feedbackContent = feedbackCompletion.choices[0].message.content;
-      
-      try {
-        feedback = JSON.parse(feedbackContent || '{}');
-        console.log('[speechFeedbackService] AI feedback generated successfully');
-      } catch (parseError) {
-        console.error('[speechFeedbackService] Failed to parse AI feedback:', parseError);
+    } catch (parseError) {
+      logger.error('Failed to parse AI feedback', {
+        error: parseError,
+        contentSnippet: feedbackContent?.substring(0, 200)
+      });
         feedback = {
           speakerScore: 25,
           scoreJustification: "Default score due to parsing error",
@@ -432,8 +453,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
           strengths: ["Unable to parse feedback"],
           areasForImprovement: ["Unable to parse feedback"]
         };
-      }
-    } catch (error) {
+    }
+  } catch (error) {
       console.error('[speechFeedbackService] AI feedback generation failed:', error);
       feedback = {
         speakerScore: 0,
@@ -473,7 +494,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         strengths: ["Unable to analyze"],
         areasForImprovement: ["Unable to analyze"]
       };
-    }
   }
   
   // Save to database
@@ -525,4 +545,4 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       })) || []
     } : undefined
   };
-} 
+}

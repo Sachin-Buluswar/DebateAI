@@ -3,9 +3,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
-import Layout from '@/components/layout/Layout';
+
+// Lazy load heavy components
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const Layout = dynamic(() => import('@/components/layout/Layout'), {
+  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
+});
 import type { User } from '@/types';
 import { PlayIcon, PauseIcon, StopIcon, CloudArrowUpIcon, MicrophoneIcon } from '@heroicons/react/24/solid';
 import { MAX_UPLOAD_SIZE_BYTES, MAX_USER_STORAGE_BYTES, UPLOAD_CHUNK_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
@@ -709,12 +717,6 @@ export default function SpeechFeedback() {
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="e.g., Abolishing the Electoral College"
                   required
-                  icon={
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                    </svg>
-                  }
                 />
 
                 {/* Speech Type Selection */}
@@ -815,12 +817,6 @@ export default function SpeechFeedback() {
                   helperText="Tell the AI specific areas you want feedback on."
                   multiline
                   rows={3}
-                  icon={
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  }
                 />
 
                 {/* Storage Usage */}

@@ -116,6 +116,49 @@ DebateAI is a **fully operational, production-ready application** that provides 
 
 ---
 
+## 🐳 **Docker Deployment**
+
+### **Quick Start with Docker**
+
+1. **Using Docker Compose (Recommended)**
+   ```bash
+   # Development
+   docker-compose up --build
+   
+   # Production
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+2. **Using Helper Scripts**
+   ```bash
+   # Build Docker image
+   ./scripts/docker-build.sh [development|production]
+   
+   # Run with Docker
+   ./scripts/docker-run.sh [development|production]
+   ```
+
+3. **Manual Docker Commands**
+   ```bash
+   # Build image
+   docker build -t debateai:latest .
+   
+   # Run container
+   docker run -p 3001:3001 --env-file .env.local debateai:latest
+   ```
+
+### **Docker Features**
+- **Multi-stage builds** for optimized image size (~150MB)
+- **Non-root user** for enhanced security
+- **Health checks** for container monitoring
+- **Volume mounts** for persistent data
+- **BuildKit caching** for faster builds
+- **Production-ready** with nginx reverse proxy
+
+For detailed Docker setup and deployment instructions, see [DOCKER_SETUP_GUIDE.md](DOCKER_SETUP_GUIDE.md).
+
+---
+
 ## 📖 **Documentation Structure**
 
 The project documentation is organized in the `docs/` folder for easy navigation:

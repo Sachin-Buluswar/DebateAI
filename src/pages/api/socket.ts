@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import type { NextApiResponse, NextApiRequest } from 'next';
 import type { Server as HTTPServer } from 'http';
 import type { Socket as NetSocket } from 'net';
-import { initializeSocketIO } from '@/temp-debatetest2-refactor/lib/server/modules/realtimeDebate/SocketManager';
+import { initializeSocketIO } from '@/backend/modules/realtimeDebate/SocketManager';
 
 // This is a type assertion to add the custom 'io' property to the server object.
 interface NextApiResponseWithSocket extends NextApiResponse {

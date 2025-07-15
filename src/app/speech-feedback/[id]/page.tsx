@@ -4,12 +4,28 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import Layout from '@/components/layout/Layout';
+import dynamic from 'next/dynamic';
 import type { SpeechFeedback } from '@/types';
 import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/utils/feedbackUtils';
-import ReactMarkdown from 'react-markdown';
-import FeedbackSection from '@/components/feedback/FeedbackSection';
+
+// Lazy load heavy components
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const Layout = dynamic(() => import('@/components/layout/Layout'), {
+  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
+});
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
+  ssr: false,
+});
+
+const FeedbackSection = dynamic(() => import('@/components/feedback/FeedbackSection'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
+  ssr: false,
+});
 import { PlayIcon, PauseIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 // Helper component for the audio player

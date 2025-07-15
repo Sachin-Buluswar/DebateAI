@@ -11,46 +11,13 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
       - nginx-cache:/var/cache/nginx
+      - static-content:/usr/share/nginx/html/static:ro
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
       - debateai-network
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    image: debateai:production
-    container_name: debateai-app
-    expose:
-      - "3000"
-    environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_VECTOR_STORE_ID=${OPENAI_VECTOR_STORE_ID}
-      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
-      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://debateai.com}
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    networks:
-      - debateai-network
     logging:
       driver: "json-file"
       options:
@@ -59,14 +26,89 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.debateai.com}
+      cache_from:
+        - node:20-alpine
+    image: debateai:production
+    container_name: debateai-app
+    expose:
+      - "3001"
+    environment:
+      # Core environment variables
+      - NODE_ENV=production
+      - PORT=3001
+      # Supabase configuration
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_VECTOR_STORE_ID=${OPENAI_VECTOR_STORE_ID}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      # Production URLs
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://debateai.com}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.debateai.com}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - debateai-network
+    volumes:
+      # Persistent volumes for uploads and temp files
+      - uploads:/app/uploads
+      - temp:/app/temp
+      - static-content:/app/.next/static:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "10"
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      resources:
+        limits:
           cpus: '2'
           memory: 2G
         reservations:
           cpus: '0.5'
           memory: 512M
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/server
 
 volumes:
   nginx-cache:
+    driver: local
+  uploads:
+    driver: local
+  temp:
+    driver: local
+  static-content:
     driver: local
 
 networks:

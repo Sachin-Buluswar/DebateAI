@@ -4,7 +4,7 @@
  */
 
 import { Socket } from 'socket.io';
-import { Participant, DebateState } from '@/temp-debatetest2-refactor/lib/server/modules/realtimeDebate/debate-types';
+import { Participant, DebateState } from '@/backend/modules/realtimeDebate/debate-types';
 import { socketLogger } from '@/lib/monitoring';
 
 // Extended Participant type for AI configuration
@@ -55,10 +55,15 @@ export class DebateSocketAdapter {
       });
 
       try {
+        // Validate required fields
+        if (!payload.debateId || !payload.userId) {
+          throw new Error('Missing required fields: debateId and userId are required');
+        }
+
         this.debateId = payload.debateId;
         
         // Create participants list based on join payload
-        const userSide = payload.userSide.toUpperCase() as 'PRO' | 'CON';
+        const userSide = (payload.userSide || 'PRO').toUpperCase() as 'PRO' | 'CON';
         const participants: ExtendedParticipant[] = [
           {
             id: payload.userId,

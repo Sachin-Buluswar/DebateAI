@@ -43,7 +43,7 @@ if [ "$ENVIRONMENT" == "production" ]; then
     echo -e "${GREEN}Production environment started!${NC}"
     echo -e "${YELLOW}Services:${NC}"
     echo "  - Application: http://localhost (via nginx)"
-    echo "  - Direct app: http://localhost:3000 (internal only)"
+    echo "  - Direct app: http://localhost:3001 (internal only)"
     echo ""
     echo -e "${YELLOW}View logs:${NC}"
     echo "  docker-compose -f docker-compose.prod.yml logs -f"
@@ -53,7 +53,7 @@ else
     
     echo -e "${GREEN}Development environment started!${NC}"
     echo -e "${YELLOW}Services:${NC}"
-    echo "  - Application: http://localhost:3000"
+    echo "  - Application: http://localhost:3001"
     echo ""
     echo -e "${YELLOW}View logs:${NC}"
     echo "  docker-compose logs -f"
@@ -71,7 +71,7 @@ while [ $attempt -lt $max_attempts ]; do
             break
         fi
     else
-        if curl -s http://localhost:3000/api/health > /dev/null 2>&1; then
+        if curl -s http://localhost:3001/api/health > /dev/null 2>&1; then
             echo -e "${GREEN}Application is ready!${NC}"
             break
         fi

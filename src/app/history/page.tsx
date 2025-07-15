@@ -1,20 +1,37 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { Debate, SpeechFeedback } from '@/types';
-import Layout from '@/components/layout/Layout';
 import { parseFeedbackMarkdown } from '@/utils/feedbackUtils';
-import ReactMarkdown from 'react-markdown';
+
+// Lazy load heavy components
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const Layout = dynamic(() => import('@/components/layout/Layout'), {
+  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
+});
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
+  ssr: false,
+});
 import { MicrophoneIcon, ChatBubbleLeftRightIcon, PlayIcon, PauseIcon, TrashIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/Toast';
+import { FixedSizeList as List } from 'react-window';
+
+// Constants for pagination
+const ITEMS_PER_PAGE = 50;
+const INITIAL_LOAD = 100;
 
 // Helper component for the audio player in history items
-function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
+const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -22,7 +39,7 @@ function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -35,46 +52,46 @@ function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
       });
     }
     setIsPlaying(!isPlaying);
-  };
+  }, [isPlaying]);
 
-  const handleTimeUpdate = () => {
+  const handleTimeUpdate = useCallback(() => {
     if (!audioRef.current) return;
     setCurrentTime(audioRef.current.currentTime);
-  };
+  }, []);
 
-  const handleLoadedMetadata = () => {
+  const handleLoadedMetadata = useCallback(() => {
     if (!audioRef.current) return;
     setDuration(audioRef.current.duration);
     setLoading(false);
-  };
+  }, []);
   
-  const formatTime = (time: number) => {
+  const formatTime = useCallback((time: number) => {
     if (isNaN(time) || time === Infinity) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
+  }, []);
   
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
     const newTime = parseFloat(e.target.value);
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
-  };
+  }, []);
   
-  const handleEnded = () => {
+  const handleEnded = useCallback(() => {
     setIsPlaying(false);
     setCurrentTime(0);
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
     }
-  };
+  }, []);
 
-  const handleError = () => {
+  const handleError = useCallback(() => {
     console.error('Audio loading error in history item');
     setError('Failed to load audio');
     setLoading(false);
-  };
+  }, []);
 
   // Check for valid URL format
   useEffect(() => {
@@ -131,7 +148,126 @@ function HistoryAudioPlayer({ audioUrl }: { audioUrl: string }) {
       </div>
     </div>
   );
+});
+HistoryAudioPlayer.displayName = 'HistoryAudioPlayer';
+
+// Memoized history item component for virtual list
+interface HistoryItemData {
+  item: Debate | SpeechFeedback;
+  formatDate: (dateString: string) => string;
+  onDelete: (id: string, type: 'speech' | 'debate') => void;
+  router: any;
 }
+
+const HistoryItem = memo(({ data, index, style }: { data: HistoryItemData[], index: number, style: React.CSSProperties }) => {
+  const { item, formatDate, onDelete, router } = data[index];
+  
+  // Determine if the item is a speech or debate
+  const isSpeech = 'topic' in item && !('title' in item);
+  const title = isSpeech 
+    ? `Speech: ${(item as SpeechFeedback).topic}`
+    : `Debate: ${(item as Debate).title || (item as Debate).topic || 'Untitled Debate'}`;
+  
+  return (
+    <div style={style} className="px-6">
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg hover:shadow-lg transition-shadow duration-200 animate-fade-in">
+        {/* Card Header */}
+        <div className="px-4 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="flex items-center min-w-0 flex-1">
+            <div className={`flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${isSpeech ? 'bg-accent-100 dark:bg-accent-700' : 'bg-primary-100 dark:bg-primary-700'}`}>
+              {isSpeech ? (
+                <MicrophoneIcon className="h-5 w-5 text-accent-600 dark:text-accent-300" />
+              ) : (
+                <ChatBubbleLeftRightIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
+              )}
+            </div>
+            <div className="ml-3 min-w-0 flex-1">
+              <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 break-words" title={title}>
+                {title}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {formatDate(item.created_at)}
+              </p>
+            </div>
+            {/* Speaker Score Preview for Speeches */}
+            {isSpeech && (item as SpeechFeedback).feedback && (
+              <div className="ml-3 flex-shrink-0">
+                {(() => {
+                  const feedback = (item as SpeechFeedback).feedback;
+                  const score = feedback.speakerScore || feedback.scores?.overall || feedback.score;
+                  if (score !== undefined && score !== null) {
+                    const scoreColor = score >= 80 ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' :
+                                     score >= 60 ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' :
+                                                   'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
+                    return (
+                      <div className={`px-3 py-1 rounded-full ${scoreColor} font-semibold text-sm`}>
+                        {Math.round(score)}/100
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+          </div>
+          {/* Action Buttons */}
+          <div className="flex gap-2 flex-shrink-0">
+            {isSpeech ? (
+              <button
+                onClick={() => router.push(`/speech-feedback/${item.id}`)}
+                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                View Feedback
+              </button>
+            ) : (
+              <Link 
+                href={`/debate/${item.id}`}
+                className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                View Debate
+              </Link>
+            )}
+            <button
+              onClick={() => onDelete(item.id, isSpeech ? 'speech' : 'debate')}
+              className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+              aria-label="Delete"
+              title="Delete Item"
+            >
+              <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
+          </div>
+        </div>
+        {/* Card Body - Simplified for performance */}
+        <div className="px-4 py-5 sm:p-6">
+          {isSpeech ? (
+            // Speech content - simplified
+            <div className="space-y-4">
+              {(item as SpeechFeedback).feedback && (
+                <div>
+                  <h4 className="text-sm sm:text-base font-medium mb-2">Feedback Summary</h4>
+                  <div className="mt-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                    <p className="italic">View full feedback to see details.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Debate content - simplified
+            <div className="space-y-4">
+              {(item as Debate).description && (
+                <div>
+                  <h4 className="text-sm sm:text-base font-medium mb-2">Description</h4>
+                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{(item as Debate).description}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+HistoryItem.displayName = 'HistoryItem';
 
 export default function History() {
   const router = useRouter();
@@ -144,9 +280,18 @@ export default function History() {
   const [itemToDelete, setItemToDelete] = useState<{ id: string, type: 'speech' | 'debate' } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
-  const checkUser = useCallback(async () => {
+  const checkUser = useCallback(async (loadMore = false) => {
     try {
+      if (!loadMore) {
+        setLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      
       const { data, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -161,34 +306,51 @@ export default function History() {
       }
       
       try {
-        // Fetch debates
+        // Fetch debates with pagination
+        const currentPage = loadMore ? page : 1;
         const { data: debatesData, error: debatesError } = await supabase
           .from('debate_history')
           .select('*')
           .eq('user_id', data.session.user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
         if (debatesError && debatesError.code !== '42P01') {
           setError(prev => prev ? `${prev}. Failed to load debates.` : 'Failed to load debates.');
         } else {
-          setDebateHistory(debatesData || []);
+          if (loadMore) {
+            setDebateHistory(prev => [...prev, ...(debatesData || [])]);
+          } else {
+            setDebateHistory(debatesData || []);
+          }
+          
+          // Check if there are more items
+          if (!debatesData || debatesData.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          }
         }
       } catch (debateError) {
         console.error('Exception fetching debates:', debateError);
       }
 
       try {
-        // Fetch speech recordings
+        // Fetch speech recordings with pagination
+        const currentPage = loadMore ? page : 1;
         const { data: speechData, error: speechError } = await supabase
           .from('speech_feedback')
           .select('*')
           .eq('user_id', data.session.user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
         if (speechError && speechError.code !== '42P01') {
           setError(prev => prev ? `${prev}. Failed to load speech history.` : 'Failed to load speech history.');
         } else {
-          setSpeechHistory(speechData || []);
+          if (loadMore) {
+            setSpeechHistory(prev => [...prev, ...(speechData || [])]);
+          } else {
+            setSpeechHistory(speechData || []);
+          }
         }
       } catch (speechError) {
         console.error('Exception fetching speech feedback:', speechError);
@@ -199,8 +361,9 @@ export default function History() {
       setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [router]);
+  }, [router, page]);
 
   useEffect(() => {
     checkUser();
@@ -214,23 +377,23 @@ export default function History() {
         setError(errorMessage);
         addToast({ message: errorMessage, type: 'error' });
       }
-    }, 30000); // 30 seconds timeout (increased from 10s)
+    }, 30000); // 30 seconds timeout
     
     return () => clearTimeout(loadingTimeout);
-  }, [checkUser, loading]);
+  }, []);
 
   // Function to handle delete confirmation
-  const handleDeleteConfirm = (id: string, type: 'speech' | 'debate') => {
+  const handleDeleteConfirm = useCallback((id: string, type: 'speech' | 'debate') => {
     setItemToDelete({ id, type });
-  };
+  }, []);
 
   // Function to handle delete cancellation
-  const handleDeleteCancel = () => {
+  const handleDeleteCancel = useCallback(() => {
     setItemToDelete(null);
-  };
+  }, []);
 
   // Function to handle actual deletion
-  const handleDeleteItem = async () => {
+  const handleDeleteItem = useCallback(async () => {
     if (!itemToDelete) return;
     
     setIsDeleting(true);
@@ -258,7 +421,6 @@ export default function History() {
             const url = new URL(speechItem.audio_url);
             const pathParts = url.pathname.split('/');
             const storageIndex = pathParts.indexOf('storage');
-            // Ensure 'storage', 'v1', 'object', 'public', bucketName exist
             if (storageIndex !== -1 && pathParts.length > storageIndex + 4) {
               const bucketName = pathParts[storageIndex + 4]; 
               const storagePath = pathParts.slice(storageIndex + 5).join('/');
@@ -270,22 +432,13 @@ export default function History() {
                   .from(bucketName)
                   .remove([storagePath]);
                 if (storageError) {
-                   // Throw error instead of just warning
                    console.error('Error deleting storage file:', storageError);
                    throw new Error(`Failed to delete associated audio file: ${storageError.message}`);
                 }
-              } else {
-                console.warn('Could not reliably parse storage path from URL:', speechItem.audio_url);
-                // Decide if this should be a hard error or just a warning
-                // For now, let's log a warning and proceed with DB deletion, but this could be changed.
               }
-            } else {
-               console.warn('Could not find expected structure in storage URL path:', speechItem.audio_url);
             }
           } catch (urlParseError) {
             console.error('Error parsing audio URL for deletion:', urlParseError);
-            // Decide if this should stop the deletion
-            // throw new Error('Failed to parse audio URL for deletion.'); 
           }
         }
         
@@ -325,30 +478,21 @@ export default function History() {
       const fullErrorMessage = `Failed to delete the item: ${errorMessage}`;
       setError(fullErrorMessage);
       addToast({ message: fullErrorMessage, type: 'error' });
-      // Ensure loading state is reset even if error occurs mid-process
-      // Note: setItemToDelete(null) is now primarily handled in finally
       setIsDeleting(false); 
     } finally {
-      // This block runs whether the try succeeded or failed (after catch)
-      setIsDeleting(false); // Explicitly ensure loading spinner stops
-      setItemToDelete(null); // Explicitly ensure modal closes
+      setIsDeleting(false);
+      setItemToDelete(null);
       
-      // Clear success message after a few seconds
-      // Only set timeout if deleteSuccess has a value
-      if (deleteSuccess) { // Check moved from try block
+      if (deleteSuccess) {
          setTimeout(() => {
            setDeleteSuccess(null);
          }, 3000);
       }
     }
-  };
-  
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Loading your history..." />;
-  }
+  }, [itemToDelete, deleteSuccess, addToast]);
   
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -357,15 +501,42 @@ export default function History() {
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
-  };
+  }, []);
   
-  const displayItems = activeTab === 'all' 
-    ? [...speechHistory, ...debateHistory].sort((a, b) => 
+  // Memoize filtered display items
+  const displayItems = useMemo(() => {
+    if (activeTab === 'all') {
+      return [...speechHistory, ...debateHistory].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
-    : activeTab === 'debates' 
-        ? debateHistory
-        : speechHistory;
+      );
+    } else if (activeTab === 'debates') {
+      return debateHistory;
+    } else {
+      return speechHistory;
+    }
+  }, [activeTab, speechHistory, debateHistory]);
+  
+  // Load more items
+  const loadMore = useCallback(() => {
+    if (!isLoadingMore && hasMore) {
+      setPage(prev => prev + 1);
+      checkUser(true);
+    }
+  }, [isLoadingMore, hasMore, checkUser]);
+  
+  // Prepare data for virtual list
+  const itemData = useMemo(() => {
+    return displayItems.map(item => ({
+      item,
+      formatDate,
+      onDelete: handleDeleteConfirm,
+      router
+    }));
+  }, [displayItems, formatDate, handleDeleteConfirm, router]);
+  
+  if (loading) {
+    return <LoadingSpinner fullScreen text="Loading your history..." />;
+  }
   
   return (
     <ErrorBoundary fallback={
@@ -460,190 +631,32 @@ export default function History() {
             </div>
           )}
           
-          {/* History Items */}
-          <div className="mt-6 space-y-6 animate-fade-in">
+          {/* History Items - Virtual Scrolling for performance */}
+          <div className="mt-6 animate-fade-in">
             {displayItems.length > 0 ? (
-              displayItems.map((item, index) => {
-                // Determine if the item is a speech or debate
-                const isSpeech = 'topic' in item && !('title' in item);
-                const title = isSpeech 
-                  ? `Speech: ${(item as SpeechFeedback).topic}`
-                  : `Debate: ${(item as Debate).title || (item as Debate).topic || 'Untitled Debate'}`;
-                
-                return (
-                  <div key={`${item.id || index}`} className={`bg-white dark:bg-gray-800 shadow-md rounded-lg hover:shadow-lg transition-shadow duration-200 animate-fade-in stagger-${Math.min(index + 1, 4)}`}>
-                    {/* Card Header */}
-                    <div className="px-4 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                      <div className="flex items-center min-w-0 flex-1">
-                        <div className={`flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${isSpeech ? 'bg-accent-100 dark:bg-accent-700' : 'bg-primary-100 dark:bg-primary-700'}`}>
-                          {isSpeech ? (
-                            <MicrophoneIcon className="h-5 w-5 text-accent-600 dark:text-accent-300" />
-                          ) : (
-                            <ChatBubbleLeftRightIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
-                          )}
-                        </div>
-                        <div className="ml-3 min-w-0 flex-1">
-                          <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 break-words" title={title}>
-                            {title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {formatDate(item.created_at)}
-                          </p>
-                        </div>
-                        {/* Speaker Score Preview for Speeches */}
-                        {isSpeech && (item as SpeechFeedback).feedback && (
-                          <div className="ml-3 flex-shrink-0">
-                            {(() => {
-                              const feedback = (item as SpeechFeedback).feedback;
-                              const score = feedback.speakerScore || feedback.scores?.overall || feedback.score;
-                              if (score !== undefined && score !== null) {
-                                const scoreColor = score >= 80 ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' :
-                                                 score >= 60 ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' :
-                                                               'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
-                                return (
-                                  <div className={`px-3 py-1 rounded-full ${scoreColor} font-semibold text-sm`}>
-                                    {Math.round(score)}/100
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 flex-shrink-0">
-                        {isSpeech ? (
-                          <button
-                            onClick={() => router.push(`/speech-feedback/${item.id}`)}
-                            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          >
-                            View Feedback
-                          </button>
-                        ) : (
-                          <Link 
-                            href={`/debate/${item.id}`}
-                            className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          >
-                            View Debate
-                          </Link>
-                        )}
-                        <button
-                          onClick={() => handleDeleteConfirm(item.id, isSpeech ? 'speech' : 'debate')}
-                          className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
-                          aria-label="Delete"
-                          title="Delete Item"
-                        >
-                          <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
-                      </div>
-                    </div>
-                    {/* Card Body */}
-                    <div className="px-4 py-5 sm:p-6">
-                      {isSpeech ? (
-                        // Speech content
-                        <div className="space-y-4">
-                          {(item as SpeechFeedback).audio_url && typeof (item as SpeechFeedback).audio_url === 'string' ? (
-                            <div>
-                              <h4 className="text-sm sm:text-base font-medium mb-2">Audio Recording</h4>
-                              {/* Check if audio_url is actually a non-empty string before rendering */}
-                              {(item as SpeechFeedback).audio_url && (
-                                <HistoryAudioPlayer audioUrl={(item as SpeechFeedback).audio_url!} /> 
-                              )}
-                            </div>
-                          ) : null /* Render nothing if no valid audio_url */}
-                          
-                          {(item as SpeechFeedback).feedback && (
-                            <div>
-                              <h4 className="text-sm sm:text-base font-medium mb-2">Feedback Summary</h4>
-                              <div className="mt-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                {(() => {
-                                  const parsedSections = parseFeedbackMarkdown(item.feedback?.overall);
-                                  const summary = parsedSections['Overall Summary'];
-                                  
-                                  if (summary) {
-                                    return (
-                                      <div className="prose prose-xs sm:prose-sm dark:prose-invert max-w-none overflow-hidden">
-                                         <ReactMarkdown 
-                                            components={{ 
-                                              p: ({...props}) => <p className="my-1 text-xs sm:text-sm" {...props} />,
-                                              ul: ({...props}) => <ul className="list-disc list-inside my-1 text-xs sm:text-sm" {...props} />,
-                                              li: ({...props}) => <li className="my-0.5" {...props} />
-                                            }}
-                                          >
-                                            {summary.length > 400 ? summary.substring(0, 400) + '...' : summary}
-                                          </ReactMarkdown>
-                                      </div>
-                                    );
-                                  } else if (item.feedback?.overall) {
-                                    // Fallback: show truncated raw feedback if summary section not found
-                                    const truncated = item.feedback.overall.length > 400 
-                                                    ? item.feedback.overall.substring(0, 400) + '...' 
-                                                    : item.feedback.overall;
-                                    return (
-                                       <div className="prose prose-xs sm:prose-sm dark:prose-invert max-w-none overflow-hidden">
-                                          <ReactMarkdown 
-                                             components={{ p: ({...props}) => <p className="my-1 text-xs sm:text-sm" {...props} /> }}
-                                          >
-                                            {truncated}
-                                          </ReactMarkdown>
-                                       </div>
-                                    );
-                                  } else {
-                                    return <p className="italic">No feedback summary available.</p>;
-                                  }
-                                })()}
-                              </div>
-                            </div>
-                          )}
-                          {!(item as SpeechFeedback).audio_url && !(item as SpeechFeedback).feedback && (
-                             <p className="text-sm text-gray-500 dark:text-gray-400 italic">No audio or feedback available for this entry.</p>
-                          )}
-                        </div>
-                      ) : (
-                        // Debate content
-                        <div className="space-y-4">
-                          {(item as Debate).description && (
-                            <div>
-                              <h4 className="text-sm sm:text-base font-medium mb-2">Description</h4>
-                              <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{(item as Debate).description}</p>
-                            </div>
-                          )}
-                          
-                          {(item as Debate).transcript && (
-                            <div>
-                              <h4 className="text-sm sm:text-base font-medium mb-2">Transcript Preview</h4>
-                              <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-2 sm:p-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-mono overflow-hidden break-words">
-                                {(() => {
-                                  try {
-                                    // Check if transcript is a non-empty string before parsing
-                                    const transcriptString = (item as Debate).transcript;
-                                    if (typeof transcriptString === 'string' && transcriptString.trim() !== '') {
-                                      const transcriptArray = JSON.parse(transcriptString);
-                                      const firstMessage = Array.isArray(transcriptArray) && transcriptArray.length > 0 ? transcriptArray[0]?.content : null;
-                                      return firstMessage 
-                                        ? firstMessage.substring(0, 150) + (firstMessage.length > 150 ? '...' : '') 
-                                        : 'Transcript available, view details.';
-                                    } else {
-                                      return 'No transcript preview available.';
-                                    }
-                                  } catch (e) {
-                                    console.error("Error parsing transcript preview:", e);
-                                    return 'Could not parse transcript preview.';
-                                  }
-                                })()}
-                              </div>
-                            </div>
-                          )}
-                          {!(item as Debate).description && !(item as Debate).transcript && (
-                             <p className="text-sm text-gray-500 dark:text-gray-400 italic">No description or transcript preview available.</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
+              <div style={{ height: '70vh' }}>
+                <List
+                  height={window.innerHeight * 0.7}
+                  itemCount={displayItems.length}
+                  itemSize={200} // Approximate height of each item
+                  width="100%"
+                  itemData={itemData}
+                  onScroll={({ scrollOffset, scrollUpdateWasRequested }) => {
+                    // Load more when near bottom
+                    const scrollPercentage = scrollOffset / (displayItems.length * 200 - window.innerHeight * 0.7);
+                    if (scrollPercentage > 0.8 && !isLoadingMore && hasMore && !scrollUpdateWasRequested) {
+                      loadMore();
+                    }
+                  }}
+                >
+                  {HistoryItem}
+                </List>
+                {isLoadingMore && (
+                  <div className="text-center py-4">
+                    <LoadingSpinner text="Loading more..." />
                   </div>
-                );
-              })
+                )}
+              </div>
             ) : (
               // Empty State
               <div className="text-center py-12 bg-white dark:bg-gray-800 shadow-md rounded-lg">
@@ -718,4 +731,4 @@ export default function History() {
       </Layout>
     </ErrorBoundary>
   );
-} 
+}

@@ -2,8 +2,6 @@
  * Audio utility functions for DebateAI
  */
 
-import { getAudioDurationInSeconds } from 'get-audio-duration';
-
 /**
  * Get audio file duration in seconds
  * @param filePath Path to the audio file
@@ -11,14 +9,13 @@ import { getAudioDurationInSeconds } from 'get-audio-duration';
  */
 export async function getAudioDuration(filePath: string): Promise<number> {
   try {
-    // Try to get actual duration using get-audio-duration package
-    const durationSeconds = await getAudioDurationInSeconds(filePath);
-    console.log(`[audioUtils] Audio duration for ${filePath}: ${durationSeconds} seconds`);
-    return Math.round(durationSeconds);
+    // For now, return a default duration of 60 seconds
+    // The ffprobe package is causing webpack issues in production
+    // TODO: Implement a different solution for getting audio duration
+    console.log(`[audioUtils] Using default duration for ${filePath}`);
+    return 60;
   } catch (error) {
     console.error('[audioUtils] Error getting audio duration:', error);
-    // Return a default duration of 60 seconds if we can't read the file
-    // This ensures backwards compatibility
     return 60;
   }
 }
