@@ -22,7 +22,7 @@ import {
 
 // Get environment variables
 const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
-const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o';
+const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini';
 
 /**
  * POST handler for generating an answer using RAG.

@@ -79,7 +79,7 @@ export class DebateSocketAdapter {
             team: userSide === 'PRO' ? 'CON' : 'PRO',
             role: 'SPEAKER_1',
             aiConfig: {
-              model: 'gpt-4o',
+              model: 'gpt-4o-mini',
               personalityId: 'confident-debater',
               voiceId: 'EXAVITQu4vr4xnSDxMaL'
             }

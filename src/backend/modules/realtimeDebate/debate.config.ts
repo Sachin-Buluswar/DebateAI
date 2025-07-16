@@ -10,7 +10,7 @@ export const debateConfig = {
   /**
    * The OpenAI model used for generating all debate content.
    */
-  model: 'gpt-4o',
+  model: 'gpt-4o-mini',
 
   /**
    * The maximum number of tokens to generate for a single speech.

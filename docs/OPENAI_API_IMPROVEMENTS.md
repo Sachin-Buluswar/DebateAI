@@ -164,7 +164,7 @@ Added to `/src/middleware/inputValidation.ts`:
 ```env
 OPENAI_API_KEY=your_api_key
 OPENAI_VECTOR_STORE_ID=your_vector_store_id
-OPENAI_GENERATION_MODEL=gpt-4o  # Optional, defaults to gpt-4o
+OPENAI_GENERATION_MODEL=gpt-4o-mini  # Optional, defaults to gpt-4o-mini
 ```
 
 ### Rate Limiting Configuration:

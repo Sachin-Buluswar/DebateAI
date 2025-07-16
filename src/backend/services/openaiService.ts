@@ -22,7 +22,7 @@ export const openAISchemas = {
       role: z.enum(['system', 'user', 'assistant']),
       content: z.string().min(1).max(32000), // OpenAI token limit approximation
     })),
-    model: z.string().default('gpt-4o'),
+    model: z.string().default('gpt-4o-mini'),
     temperature: z.number().min(0).max(2).optional(),
     max_tokens: z.number().min(1).max(4096).optional(),
     response_format: z.object({
@@ -54,7 +54,7 @@ export type EmbeddingParams = z.infer<typeof openAISchemas.embedding>;
 
 class OpenAIService {
   private readonly defaultModels = {
-    chat: env.OPENAI_GENERATION_MODEL || 'gpt-4o',
+    chat: env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini',
     embedding: 'text-embedding-3-small',
     transcription: 'whisper-1',
   };
@@ -292,7 +292,7 @@ class OpenAIService {
     // Rough cost estimates (update with actual pricing)
     const pricing: Record<string, number> = {
       'gpt-4o': 0.01, // per 1K tokens
-      'gpt-4o-mini': 0.0002,
+      'gpt-4o-mini': 0.0002, // per 1K tokens - primary model
       'text-embedding-3-small': 0.00002,
       'text-embedding-3-large': 0.00013,
       'whisper-1': 0.006, // per minute

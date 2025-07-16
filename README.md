@@ -19,7 +19,7 @@ DebateAI is a **fully operational, production-ready application** that provides 
 
 ### 📊 **AI-Powered Speech Feedback**
 - **Audio Upload & Recording** with browser-based recording capabilities
-- **Advanced Speech Analysis** using OpenAI Whisper and GPT-4o
+- **Advanced Speech Analysis** using OpenAI Whisper and GPT-4o-mini
 - **Multi-Criteria Scoring** on delivery, arguments, persuasiveness, and overall performance
 - **Detailed Recommendations** with specific suggestions for improvement
 - **Progress Tracking** with complete speech history and analytics
@@ -53,7 +53,7 @@ DebateAI is a **fully operational, production-ready application** that provides 
 - **Production-grade error handling** and retry logic
 
 ### **AI & Voice Services**
-- **OpenAI GPT-4o** for speech generation and analysis
+- **OpenAI GPT-4o-mini** for speech generation and analysis
 - **ElevenLabs TTS/STT** for voice synthesis and transcription
 - **OpenAI Vector Storage** for semantic document search
 - **Hybrid AI Architecture** optimized for different use cases
@@ -65,7 +65,7 @@ DebateAI is a **fully operational, production-ready application** that provides 
 ### **Prerequisites**
 - Node.js 18+ and npm
 - Supabase account and project
-- OpenAI API key with GPT-4o access
+- OpenAI API key with GPT-4o-mini access
 - ElevenLabs API key
 - (Optional) OpenAI Vector Store for evidence search
 
@@ -170,7 +170,7 @@ docs/
 ├── contributing.md         – Contribution guidelines
 └── apis/                   – API reference documentation
     ├── supabase.md        – Database, auth, and RLS
-    ├── openai.md          – GPT-4o, embeddings, vector stores
+    ├── openai.md          – GPT-4o-mini, embeddings, vector stores
     ├── elevenlabs.md      – TTS, STT, real-time voice
     └── socketio.md        – Real-time communication
 
@@ -377,7 +377,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 **Acknowledgments**
 
-- **OpenAI** for GPT-4o language model and vector storage
+- **OpenAI** for GPT-4o-mini language model and vector storage
 - **ElevenLabs** for high-quality TTS and STT services
 - **Supabase** for database and authentication infrastructure
 - **Vercel** for Next.js framework and deployment platform
