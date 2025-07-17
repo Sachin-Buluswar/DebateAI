@@ -65,9 +65,9 @@ src/
 
 ### Before Starting
 1. Read the [README.md](README.md) for project overview
-2. Review [PRODUCTION_STATUS.md](PRODUCTION_STATUS.md) for current state
-3. Check [UI_IMPROVEMENTS_ROADMAP.md](UI_IMPROVEMENTS_ROADMAP.md) for remaining work
-4. Understand the [architecture](docs/architecture.md)
+2. Review [PRODUCTION_STATUS.md](docs/project/status.md) for current state
+3. Check [UI_IMPROVEMENTS_ROADMAP.md](docs/project/roadmap.md) for remaining work
+4. Understand the [architecture](docs/architecture/overview.md)
 
 ### Local Development
 ```bash
@@ -250,14 +250,14 @@ npm run test:socket
 - ✅ CI/CD and monitoring configured
 
 ### What Needs Work
-- 🚧 Mobile optimization (see [UI_IMPROVEMENTS_ROADMAP.md](UI_IMPROVEMENTS_ROADMAP.md))
+- 🚧 Mobile optimization (see [UI_IMPROVEMENTS_ROADMAP.md](docs/project/roadmap.md))
 - 🚧 Final deployment configuration
 - 🚧 Load testing and security audit
 
 ### Active Development
 - Current focus: Mobile responsiveness
 - Next priority: Production deployment
-- See [PRODUCTION_STATUS.md](PRODUCTION_STATUS.md) for details
+- See [PRODUCTION_STATUS.md](docs/project/status.md) for details
 
 ---
 
@@ -274,25 +274,25 @@ npm run test:socket
 ## 📚 Key Documentation
 
 ### Architecture & Design
-- [System Architecture](docs/architecture.md) - Component design and interactions
-- [Enhanced RAG Architecture](docs/ENHANCED_RAG_ARCHITECTURE.md) - PDF search system
-- [OpenAI API Improvements](docs/OPENAI_API_IMPROVEMENTS.md) - API architecture
+- [System Architecture](docs/architecture/overview.md) - Component design and interactions
+- [Enhanced RAG Architecture](docs/architecture/rag-system.md) - PDF search system
+- [OpenAI API Improvements](docs/architecture/openai-integration.md) - API architecture
 
 ### Operations & Deployment
-- [CI/CD Setup](docs/CI_CD_SETUP.md) - GitHub Actions workflows
-- [Deployment Process](docs/DEPLOYMENT_PROCESS.md) - Production deployment
-- [Monitoring Guide](docs/MONITORING_GUIDE.md) - Observability setup
+- [CI/CD Setup](docs/deployment/ci-cd.md) - GitHub Actions workflows
+- [Deployment Process](docs/deployment/production.md) - Production deployment
+- [Monitoring Guide](docs/deployment/monitoring.md) - Observability setup
 
 ### API References
-- [Supabase API](docs/apis/supabase.md) - Database and auth
-- [OpenAI API](docs/apis/openai.md) - AI services
-- [ElevenLabs API](docs/apis/elevenlabs.md) - Voice services
-- [Socket.IO API](docs/apis/socketio.md) - Real-time communication
+- [Supabase API](docs/api/supabase.md) - Database and auth
+- [OpenAI API](docs/api/openai.md) - AI services
+- [ElevenLabs API](docs/api/elevenlabs.md) - Voice services
+- [Socket.IO API](docs/api/socketio.md) - Real-time communication
 
 ### Development Resources
-- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
-- [Environment Secrets](docs/ENVIRONMENT_SECRETS.md) - Configuration guide
-- [Performance Baseline](docs/PERFORMANCE_BASELINE.md) - Benchmarks
+- [Troubleshooting](docs/development/troubleshooting.md) - Common issues and solutions
+- [Environment Secrets](docs/development/environment.md) - Configuration guide
+- [Performance Baseline](docs/performance/baseline.md) - Benchmarks
 
 ---
 
