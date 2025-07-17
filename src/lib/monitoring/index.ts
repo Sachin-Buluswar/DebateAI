@@ -111,7 +111,7 @@ export function initializeMonitoring() {
       console.error('Unhandled promise rejection:', event.reason);
       
       // Also capture in Sentry
-      const { sentryClient } = require('../../../sentry.client.config');
+      const { sentryClient } = require('../../../instrumentation-client');
       sentryClient.captureException(new Error(event.reason));
     });
 
@@ -119,7 +119,7 @@ export function initializeMonitoring() {
       console.error('Global error:', event.error);
       
       // Also capture in Sentry
-      const { sentryClient } = require('../../../sentry.client.config');
+      const { sentryClient } = require('../../../instrumentation-client');
       sentryClient.captureException(event.error);
     });
   }

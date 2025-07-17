@@ -20,7 +20,7 @@ This document summarizes the production readiness improvements made to the Debat
 - ✅ Nginx reverse proxy configuration with SSL support
 - ✅ Health checks and resource limits configured
 - ✅ Deployment scripts for easy container management
-- 📝 Documentation: `DOCKER_DEPLOYMENT.md`
+- 📝 Documentation: `docs/DOCKER_SETUP.md`
 
 **Key Files:**
 - `Dockerfile` - Production-optimized multi-stage build
@@ -164,7 +164,7 @@ Set up all required secrets in GitHub repository settings:
 
 ## 📝 Documentation Created
 
-1. **DOCKER_DEPLOYMENT.md** - Complete Docker deployment guide
+1. **docs/DOCKER_SETUP.md** - Complete Docker setup and deployment guide
 2. **MONITORING_GUIDE.md** - How to use the monitoring system
 3. **.github/GITHUB_SECRETS.md** - GitHub Actions secrets setup
 4. **This summary document** - Overview of all improvements

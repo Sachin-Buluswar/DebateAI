@@ -124,6 +124,9 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
   }
 }
 
+// Export the required hook for Sentry navigation instrumentation
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 // Export utilities for manual error tracking
 export const sentryClient = {
   captureException: (error: Error, context?: any) => {

@@ -7,9 +7,9 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import {
-  searchVectorStore,
-  SearchResult,
-} from '@/backend/modules/wikiSearch/retrievalService';
+  enhancedSearchVectorStore,
+  EnhancedSearchResult,
+} from '@/backend/modules/wikiSearch/enhancedRetrievalService';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       console.log(`[wiki-search] Processing search request: "${query.substring(0, 50)}..."`);
 
       // Perform Search
-      const results: SearchResult[] = await searchVectorStore(
+      const results: EnhancedSearchResult[] = await enhancedSearchVectorStore(
         openai,
         vectorStoreId,
         query,

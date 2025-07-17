@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { sentryClient } from '../../sentry.client.config';
+import { sentryClient } from '../../instrumentation-client';
 import { debateMetrics } from '@/lib/monitoring/opentelemetry';
 
 interface PerformanceEntry {

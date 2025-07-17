@@ -19,33 +19,92 @@ This guide provides comprehensive instructions for containerizing and deploying 
 - Docker Engine 20.10+ installed
 - Docker Compose v2.0+ installed
 - At least 4GB of available RAM
+- All environment variables configured in `.env.local`
 - Required API keys and credentials
 
 ## Quick Start
 
-### 1. Clone the repository
+This section provides concise instructions for quickly deploying DebateAI using Docker.
+
+### Quick Build & Run
+
+#### Using Helper Scripts
+
 ```bash
-git clone <repository-url>
-cd debatetest2
+# Build for development
+./scripts/docker-build.sh
+
+# Build for production
+./scripts/docker-build.sh production
+
+# Run in development mode
+./scripts/docker-run.sh
+
+# Run in production mode
+./scripts/docker-run.sh production
 ```
 
-### 2. Set up environment variables
+#### Using Docker Commands Directly
+
 ```bash
-cp .env.example .env.local
-# Edit .env.local with your actual values
+# Build the image manually
+docker build -t debateai:latest .
+
+# Build with build arguments
+docker build \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=your_url \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key \
+  -t debateai:latest .
+
+# Run standalone container
+docker run -d \
+  --name debateai \
+  -p 3001:3001 \
+  --env-file .env.local \
+  debateai:latest
 ```
 
-### 3. Build and run with Docker Compose
+#### Using Docker Compose
 
-**For Development:**
 ```bash
-docker-compose up --build
+# Development
+docker-compose up -d
+
+# Production (with nginx)
+docker-compose -f docker-compose.prod.yml up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop containers
+docker-compose down
 ```
 
-**For Production:**
+### Quick Health Checks
+
+The application includes health checks:
+
+- **Application health:** `http://localhost:3001/api/health`
+- **Nginx health:** `http://localhost/health` (production only)
+
+### Quick Troubleshooting
+
 ```bash
-docker-compose -f docker-compose.prod.yml up --build -d
+# Check logs
+docker logs debateai-app
+
+# Check container status
+docker ps -a
+
+# Clean Docker cache and rebuild
+docker system prune -a
+docker build --no-cache -t debateai:latest .
+
+# Check resource usage
+docker stats
 ```
+
+For detailed setup instructions and advanced configurations, continue reading below.
 
 ## Development Setup
 
@@ -107,6 +166,15 @@ docker-compose -f docker-compose.prod.yml up -d --scale app=3
 docker-compose -f docker-compose.prod.yml ps
 ```
 
+### SSL Certificate Setup
+
+For production deployment with HTTPS:
+
+1. Obtain SSL certificates (e.g., from Let's Encrypt)
+2. Place certificates in `./ssl/` directory:
+   - `fullchain.pem`
+   - `privkey.pem`
+
 ### Production Features
 
 - **Multi-stage Build**: Optimized image size (~150MB)
@@ -115,6 +183,19 @@ docker-compose -f docker-compose.prod.yml ps
 - **Resource Limits**: Configurable CPU and memory limits
 - **Read-only Filesystem**: Enhanced security with tmpfs for writable areas
 - **Nginx Reverse Proxy**: Load balancing and SSL termination
+
+### Production Resource Limits
+
+The production configuration includes resource limits:
+
+- **Application:**
+  - CPU: 2 cores limit, 0.5 cores reserved
+  - Memory: 2GB limit, 512MB reserved
+- **Nginx:**
+  - CPU: 0.5 cores limit, 0.1 cores reserved
+  - Memory: 256MB limit, 128MB reserved
+
+Adjust these in `docker-compose.prod.yml` based on your server capacity.
 
 ## Environment Variables
 
@@ -143,6 +224,21 @@ Create separate `.env` files for different environments:
 - `.env.development` - Development settings
 - `.env.production` - Production settings
 - `.env.staging` - Staging settings
+
+#### Production Environment Example
+
+Create a `.env.production` file with production values:
+
+```env
+NODE_ENV=production
+NEXT_PUBLIC_SUPABASE_URL=your_production_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_key
+OPENAI_API_KEY=your_openai_key
+OPENAI_VECTOR_STORE_ID=your_vector_store_id
+ELEVENLABS_API_KEY=your_elevenlabs_key
+NEXT_PUBLIC_SITE_URL=https://debateai.com
+```
 
 ## Building Images
 
@@ -368,23 +464,76 @@ docker stats debateai-app
 
 ## Security Best Practices
 
-1. **Never commit secrets**: Use environment variables
+1. **Never commit secrets**: Use environment variables or secrets management
 2. **Run as non-root**: Application runs as `nextjs` user
-3. **Use read-only filesystem**: Enabled in production
+3. **Use read-only filesystem**: Enabled in production with tmpfs for writable areas
 4. **Limit resources**: CPU and memory limits configured
-5. **Regular updates**: Keep base images updated
-6. **Scan for vulnerabilities**:
+5. **Regular updates**: Keep base images and dependencies updated
+6. **Enable firewall rules**: For production servers
+7. **Use HTTPS**: In production with valid certificates
+8. **Scan for vulnerabilities**:
    ```bash
    docker scan debateai:production
    ```
+
+## Additional Features
+
+### Multi-Platform Builds
+
+```bash
+# Build for multiple architectures
+docker buildx build --platform linux/amd64,linux/arm64 -t debateai:latest .
+```
+
+### Development with Hot Reload
+
+The development docker-compose configuration includes volume mounts for hot reload:
+
+```yaml
+volumes:
+  - ./src:/app/src:ro
+  - ./public:/app/public:ro
+  - ./next.config.cjs:/app/next.config.cjs:ro
+```
+
+### Production Security Features
+
+The production setup includes:
+
+- Non-root user execution (runs as `nextjs` user)
+- Read-only root filesystem with tmpfs for writable areas
+- Security headers via nginx
+- Rate limiting configuration
+- No new privileges flag
+
+### Monitoring Recommendations
+
+For production monitoring, consider:
+
+1. **Log aggregation:** Ship logs to centralized logging service
+2. **Metrics collection:** Use Prometheus/Grafana for metrics
+3. **Uptime monitoring:** Set up external health check monitoring
+4. **Alert configuration:** Configure alerts for failures
+
+### Backup and Recovery
+
+1. **Database backups:** Supabase handles database backups
+2. **Environment backups:** Keep secure copies of environment variables
+3. **Image backups:** Push production images to private registry
+
+```bash
+# Tag and push to registry
+docker tag debateai:production your-registry.com/debateai:v1.0.0
+docker push your-registry.com/debateai:v1.0.0
+```
 
 ## Additional Resources
 
 - [Next.js Docker Documentation](https://nextjs.org/docs/deployment#docker-image)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Production Checklist](./PRODUCTION_READINESS_PLAN.md)
+- [Production Checklist](../PRODUCTION_READINESS_PLAN.md)
 
 ---
 
-For more help, check the [Troubleshooting Guide](./TROUBLESHOOTING.md) or open an issue in the repository.
+For more help, check the [Troubleshooting Guide](../TROUBLESHOOTING.md) or open an issue in the repository.

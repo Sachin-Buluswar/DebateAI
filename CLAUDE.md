@@ -1,30 +1,8 @@
 # Claude Development Guide for DebateAI
 
-## 🎯 Project Overview
+This guide provides development guidelines, code patterns, and workflow instructions for AI assistants and contributors working on DebateAI.
 
-DebateAI is a production-ready AI debate platform that enables users to practice debating against AI opponents with distinct personalities. The application features real-time debates, speech analysis, and evidence search capabilities.
-
-**Status**: 95% complete - Core features operational, production infrastructure ready, pending mobile optimization and final deployment configuration.
-
----
-
-## 🏗️ Architecture & Technical Stack
-
-### Core Technologies
-- **Frontend**: Next.js 14.2.30 with TypeScript, Tailwind CSS
-- **Backend**: Node.js with Socket.IO for real-time communication
-- **Database**: Supabase (PostgreSQL) with Row Level Security
-- **AI Services**: 
-  - OpenAI GPT-4o-mini for debate speech and analysis
-  - ElevenLabs for Text-to-Speech and Speech-to-Text
-  - Vector embeddings for semantic search
-- **Infrastructure**: Docker, GitHub Actions CI/CD, OpenTelemetry monitoring
-
-### Key Features
-1. **Real-time AI Debates**: 10 unique AI personalities with distinct debate styles
-2. **Speech Feedback**: AI-powered analysis of user speeches with transcription
-3. **Wiki Search**: Vector-based semantic search for evidence during debates
-4. **Authentication**: Supabase Auth with email verification and OAuth support
+**Important**: This is a production application. Always prioritize stability, security, and user experience. Never merge to main without explicit user approval.
 
 ---
 
@@ -55,59 +33,57 @@ src/
 
 ```
 
-## 🚀 Recent Improvements (2025-07)
+## 🚀 Key Development Areas
 
-### OpenAI API Architecture Refactor
-- **Centralized Client Management**: Single connection pool via `OpenAIClientManager`
-- **Standardized Error Handling**: Exponential backoff, circuit breakers, structured logging
-- **Type Safety**: Comprehensive Zod schemas for all API interactions
-- **Performance Monitoring**: Request tracking, cost estimation, latency metrics
+### 1. Enhanced RAG System
+- PDF documents stored in Supabase Storage with direct viewing
+- Three search modes: Assistant (AI-enhanced), RAG (raw chunks), Enhanced RAG (with PDF context)
+- OpenCaseList integration for debate evidence
+- Admin dashboard at `/admin/documents` for document management
 
-### Enhanced UI Components (`ui-improvements` branch)
-- `EnhancedButton`: Animated buttons with loading states
-- `EnhancedInput`: Floating labels, validation feedback
-- `Toast`: Non-intrusive notifications system
+### 2. OpenAI API Architecture
+- Centralized client management via `OpenAIClientManager`
+- Exponential backoff and circuit breakers for reliability
+- Comprehensive Zod schemas for type safety
+- Request tracking and cost estimation
+
+### 3. UI Components
+- Enhanced components with loading states and animations
 - Minimalist design system with consistent styling
-- Enhanced debate stage visualization with progress indicators
+- Toast notifications for user feedback
+- Progressive enhancement for accessibility
 
-### Production Infrastructure
-- **Docker**: Multi-stage builds, ~150MB production image
-- **CI/CD**: 9 GitHub Actions workflows (test, security, deploy)
-- **Monitoring**: OpenTelemetry, Sentry, Grafana dashboards
-- **Health Checks**: Comprehensive endpoint monitoring
+### 4. Production Infrastructure
+- Docker multi-stage builds (~150MB production image)
+- 9 GitHub Actions workflows for CI/CD
+- OpenTelemetry and Sentry monitoring
+- Comprehensive health checks
 
 ---
 
-## 🔧 Development Setup
+## 🔧 Development Workflow
 
-### Environment Configuration
+### Before Starting
+1. Read the [README.md](README.md) for project overview
+2. Review [PRODUCTION_STATUS.md](PRODUCTION_STATUS.md) for current state
+3. Check [UI_IMPROVEMENTS_ROADMAP.md](UI_IMPROVEMENTS_ROADMAP.md) for remaining work
+4. Understand the [architecture](docs/architecture.md)
+
+### Local Development
 ```bash
-# Install dependencies
+# Setup
 npm install
-
-# Configure environment
 cp .env.example .env.local
+npm run check-env
 
-# Required variables:
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-OPENAI_API_KEY=
-ELEVENLABS_API_KEY=
-OPENAI_VECTOR_STORE_ID=
+# Development
+npm run dev          # Start dev server (http://localhost:3001)
+npm run lint         # Check code style
+npm run typecheck    # Validate TypeScript
 
-# Start development
-npm run dev  # http://localhost:3001
-```
-
-### Available Scripts
-```bash
-npm run dev          # Development server
-npm run build        # Production build
-npm run lint         # ESLint check
-npm run typecheck    # TypeScript validation
-npm run check-env    # Validate environment
-npm run test:manual  # Manual testing scripts
+# Testing
+npm run test:manual  # Manual test scripts
+npm run test:socket  # Socket.IO connection test
 ```
 
 ---
@@ -265,32 +241,23 @@ npm run test:socket
 - **Log errors** with context for debugging
 - **Implement retry logic** for transient failures
 
-## 📊 Current Status
+## 📊 Development Status
 
-### Completed Features (95%)
-✅ **Core Functionality**
-- Real-time AI debates with 10 personalities
-- Speech analysis with transcription
-- Wiki search with vector embeddings
-- Authentication with Supabase
+### What's Working
+- ✅ All core features operational
+- ✅ Production infrastructure ready
+- ✅ Enhanced RAG system with PDF support
+- ✅ CI/CD and monitoring configured
 
-✅ **Recent Improvements**
-- OpenAI API centralization and optimization
-- Enhanced UI components (ui-improvements branch)
-- Docker containerization
-- CI/CD pipeline with GitHub Actions
-- Production monitoring setup
+### What Needs Work
+- 🚧 Mobile optimization (see [UI_IMPROVEMENTS_ROADMAP.md](UI_IMPROVEMENTS_ROADMAP.md))
+- 🚧 Final deployment configuration
+- 🚧 Load testing and security audit
 
-### Remaining Work (5%)
-🚧 **Mobile Optimization**
-- Responsive layouts for debate interface
-- Touch-optimized controls
-- Mobile audio handling
-
-🚧 **Final Production Steps**
-- Deploy configuration
-- Load testing
-- Security audit
+### Active Development
+- Current focus: Mobile responsiveness
+- Next priority: Production deployment
+- See [PRODUCTION_STATUS.md](PRODUCTION_STATUS.md) for details
 
 ---
 
@@ -304,19 +271,42 @@ npm run test:socket
 
 ---
 
-## 📚 Documentation
+## 📚 Key Documentation
 
-### Core References
-- `docs/OPENAI_API_IMPROVEMENTS.md` - Recent API architecture changes
-- `docs/architecture.md` - System design overview
-- `docs/CI_CD_SETUP.md` - Deployment pipeline
-- `instructions/requirements.md` - Feature specifications
+### Architecture & Design
+- [System Architecture](docs/architecture.md) - Component design and interactions
+- [Enhanced RAG Architecture](docs/ENHANCED_RAG_ARCHITECTURE.md) - PDF search system
+- [OpenAI API Improvements](docs/OPENAI_API_IMPROVEMENTS.md) - API architecture
 
-### Quick Links
-- [Production Deployment](docs/DEPLOYMENT_PROCESS.md)
-- [Monitoring Guide](docs/MONITORING_GUIDE.md)
-- [Troubleshooting](TROUBLESHOOTING.md)
+### Operations & Deployment
+- [CI/CD Setup](docs/CI_CD_SETUP.md) - GitHub Actions workflows
+- [Deployment Process](docs/DEPLOYMENT_PROCESS.md) - Production deployment
+- [Monitoring Guide](docs/MONITORING_GUIDE.md) - Observability setup
+
+### API References
+- [Supabase API](docs/apis/supabase.md) - Database and auth
+- [OpenAI API](docs/apis/openai.md) - AI services
+- [ElevenLabs API](docs/apis/elevenlabs.md) - Voice services
+- [Socket.IO API](docs/apis/socketio.md) - Real-time communication
+
+### Development Resources
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
+- [Environment Secrets](docs/ENVIRONMENT_SECRETS.md) - Configuration guide
+- [Performance Baseline](docs/PERFORMANCE_BASELINE.md) - Benchmarks
 
 ---
 
-**Remember**: This is a production application with real users. Always prioritize stability, security, and user experience in all changes.
+## 🤖 AI Assistant Guidelines
+
+When working on this codebase:
+
+1. **Never merge without approval** - Always create feature branches
+2. **Test everything** - Run lint, typecheck, and manual tests
+3. **Follow existing patterns** - Consistency is key
+4. **Document changes** - Update relevant documentation
+5. **Consider mobile** - All UI changes must work on mobile
+6. **Handle errors gracefully** - Implement retry logic for external APIs
+7. **Secure by default** - Validate inputs, use RLS, rate limit endpoints
+8. **Note necessary human action** - Give the human a list of ALL the tasks they must do to complete the changes
+
+Remember: This is a production application with real users. Quality matters.

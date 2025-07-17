@@ -6,6 +6,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
 import type { User, SearchResult, GeneratedAnswer } from '@/types';
+import type { EnhancedSearchResult } from '@/types/documents';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
@@ -16,7 +17,7 @@ const Layout = dynamic(() => import('@/components/layout/Layout'), {
   loading: () => <LoadingSpinner fullScreen text="Loading..." />,
 });
 
-const EnhancedSearchCard = dynamic(() => import('@/components/search/EnhancedSearchCard'), {
+const UnifiedSearchCard = dynamic(() => import('@/components/search/UnifiedSearchCard'), {
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
   ssr: false,
 });
@@ -37,7 +38,7 @@ export default function SearchPage() {
     Array<{ id: string; query: string; results_count: number; created_at: string }>
   >([]);
   const [generatedAnswer, setGeneratedAnswer] = useState<GeneratedAnswer | null>(null);
-  const [searchMode, setSearchMode] = useState<'assistant' | 'rag'>('assistant');
+  const [searchMode, setSearchMode] = useState<'assistant' | 'rag'>('rag');
   const [showRecentSearches, setShowRecentSearches] = useState(true);
 
   useEffect(() => {
@@ -193,57 +194,11 @@ export default function SearchPage() {
     setGeneratedAnswer(null); // Reset generated answer when performing a new search
 
     try {
-      // Create table if it doesn't exist
-      const { error: tableCheckError } = await supabase
-        .from('saved_searches')
-        .select('id')
-        .limit(1);
-
-      if (tableCheckError && tableCheckError.code === '42P01') {
-        // Table doesn't exist, create it
-        const createTableQuery = `
-          CREATE TABLE IF NOT EXISTS saved_searches (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            query TEXT NOT NULL,
-            results_count INTEGER NOT NULL DEFAULT 0,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-          );
-          
-          ALTER TABLE saved_searches ENABLE ROW LEVEL SECURITY;
-          
-          CREATE POLICY "Users can view own saved searches" 
-            ON saved_searches 
-            FOR SELECT 
-            USING (auth.uid() = user_id);
-          
-          CREATE POLICY "Users can insert own saved searches" 
-            ON saved_searches 
-            FOR INSERT 
-            WITH CHECK (auth.uid() = user_id);
-          
-          CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id);
-        `;
-
-        // Use our API endpoint instead of the direct RPC call
-        const response = await fetch('/api/sql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query: createTableQuery }),
-        });
-
-        if (!response.ok) {
-          console.error('Error creating table:', await response.text());
-          setError('Failed to create saved searches table. Please contact support.');
-          setSearching(false);
-          return;
-        }
-      }
 
       // Call the appropriate search API based on mode
-      const searchEndpoint = searchMode === 'rag' ? '/api/wiki-rag-search' : '/api/wiki-search';
+      const searchEndpoint = searchMode === 'rag' 
+        ? '/api/wiki-rag-search-enhanced' 
+        : '/api/wiki-search';
       const searchResponse = await fetch(searchEndpoint, {
         method: 'POST',
         headers: {
@@ -384,6 +339,14 @@ export default function SearchPage() {
             </span>
             <div className="flex space-x-2">
               <EnhancedButton
+                onClick={() => setSearchMode('rag')}
+                variant={searchMode === 'rag' ? 'primary' : 'secondary'}
+                size="sm"
+                icon={<span>📎</span>}
+              >
+                RAG Search
+              </EnhancedButton>
+              <EnhancedButton
                 onClick={() => setSearchMode('assistant')}
                 variant={searchMode === 'assistant' ? 'primary' : 'secondary'}
                 size="sm"
@@ -391,19 +354,11 @@ export default function SearchPage() {
               >
                 Assistant Search
               </EnhancedButton>
-              <EnhancedButton
-                onClick={() => setSearchMode('rag')}
-                variant={searchMode === 'rag' ? 'primary' : 'secondary'}
-                size="sm"
-                icon={<span>📄</span>}
-              >
-                RAG Search
-              </EnhancedButton>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
-              {searchMode === 'assistant'
-                ? 'AI-powered search with generated summaries and analysis'
-                : 'Direct document search with original PDF context and chunks'}
+              {searchMode === 'rag'
+                ? 'Direct document search with PDF links and surrounding context'
+                : 'AI-powered search with generated summaries and analysis'}
             </div>
           </div>
 
@@ -618,22 +573,16 @@ export default function SearchPage() {
                 <span
                   className="px-3 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200"
                 >
-                  {searchMode === 'rag' ? 'Raw Document Chunks' : 'AI-Enhanced'}
+                  {searchMode === 'rag' ? 'Document Search' : 'AI-Enhanced'}
                 </span>
               </div>
             )}
             {results.map((res, idx) => (
-              <EnhancedSearchCard
+              <UnifiedSearchCard
                 key={idx}
                 result={res}
                 index={idx}
                 searchMode={searchMode}
-                onViewContext={() => {
-                  // Future: Implement PDF context viewer
-                  alert(
-                    'PDF context viewer coming soon! This will show the surrounding text from the original document.'
-                  );
-                }}
               />
             ))}
           </div>
