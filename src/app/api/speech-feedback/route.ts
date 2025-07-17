@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       // Create data object for validation
       const requestData = {
         topic: formData.get('topic') as string,
-        speechTypes: formData.get('speechTypes') as string,
+        speechType: formData.get('speechType') as string,
         userSide: formData.get('userSide') as string,
         customInstructions: formData.get('customInstructions') as string,
         userId: formData.get('userId') as string,
@@ -79,22 +79,9 @@ export async function POST(request: Request) {
         );
       }
 
-      // Determine speech type safely
-      let speechType = 'debate'; // default
-      try {
-        const speechTypes = requestData.speechTypes;
-        if (speechTypes) {
-          const typesArray = JSON.parse(speechTypes);
-          if (Array.isArray(typesArray) && typesArray.length > 0) {
-            const validTypes = ['debate', 'presentation', 'speech'];
-            if (validTypes.includes(typesArray[0])) {
-              speechType = typesArray[0];
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('[speech-feedback] Failed to parse speechTypes, using default:', e);
-      }
+      // Get speech type and user side from request
+      const speechType = requestData.speechType || 'debate';
+      const userSide = requestData.userSide || 'None';
       
       console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
 
@@ -106,6 +93,7 @@ export async function POST(request: Request) {
         topic,
         userId,
         speechType,
+        userSide,
         customInstructions
       });
       

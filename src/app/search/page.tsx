@@ -3,10 +3,25 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
 import type { User, SearchResult, GeneratedAnswer } from '@/types';
-import Layout from '@/components/layout/Layout';
+
+// Lazy load heavy components
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const Layout = dynamic(() => import('@/components/layout/Layout'), {
+  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
+});
+
+const EnhancedSearchCard = dynamic(() => import('@/components/search/EnhancedSearchCard'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
+  ssr: false,
+});
+import EnhancedInput from '@/components/ui/EnhancedInput';
+import EnhancedButton from '@/components/ui/EnhancedButton';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -23,6 +38,7 @@ export default function SearchPage() {
   >([]);
   const [generatedAnswer, setGeneratedAnswer] = useState<GeneratedAnswer | null>(null);
   const [searchMode, setSearchMode] = useState<'assistant' | 'rag'>('assistant');
+  const [showRecentSearches, setShowRecentSearches] = useState(true);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -75,6 +91,85 @@ export default function SearchPage() {
       setSearchHistory(data || []);
     } catch (error) {
       console.error('Failed to fetch search history:', error);
+    }
+  };
+
+  // Add function to delete a search from history
+  const deleteSearchHistory = async (searchId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('saved_searches')
+        .delete()
+        .eq('id', searchId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting search:', error);
+        return;
+      }
+
+      // Refresh search history
+      fetchSearchHistory();
+    } catch (error) {
+      console.error('Failed to delete search:', error);
+    }
+  };
+
+  // Function to truncate long search queries
+  const truncateQuery = (query: string, maxLength: number = 50) => {
+    if (query.length <= maxLength) return query;
+    return query.substring(0, maxLength) + '...';
+  };
+
+  // Function to upsert search history (update if exists, insert if new)
+  const upsertSearchHistory = async (searchQuery: string, resultsCount: number) => {
+    if (!user) return;
+
+    try {
+      // First, check if this exact query already exists
+      const { data: existingSearch, error: selectError } = await supabase
+        .from('saved_searches')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('query', searchQuery.trim())
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Error checking existing search:', selectError);
+        return;
+      }
+
+      if (existingSearch) {
+        // Update existing entry with new timestamp and results count
+        const { error: updateError } = await supabase
+          .from('saved_searches')
+          .update({
+            results_count: resultsCount,
+            created_at: new Date().toISOString() // Update timestamp to move to top
+          })
+          .eq('id', existingSearch.id);
+
+        if (updateError) {
+          console.error('Error updating search:', updateError);
+        }
+      } else {
+        // Insert new entry
+        const { error: insertError } = await supabase
+          .from('saved_searches')
+          .insert({
+            user_id: user.id,
+            query: searchQuery.trim(),
+            results_count: resultsCount,
+          });
+
+        if (insertError) {
+          console.error('Error inserting search:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to upsert search history:', error);
     }
   };
 
@@ -173,20 +268,14 @@ export default function SearchPage() {
           ? searchData.results
           : [];
 
-      // Save the search in Supabase
-      const { error: insertError } = await supabase.from('saved_searches').insert({
-        user_id: user?.id,
-        query: query,
-        results_count: searchResults.length,
-      });
-
-      if (insertError) {
-        console.error('Error saving search:', insertError);
-        // Don't return an error to the user, just log it
-      }
+      // This is now handled by upsertSearchHistory function
+      // (removed duplicate search saving code)
 
       // Set the results
       setResults(searchResults);
+
+      // Update or create search history entry
+      await upsertSearchHistory(query, searchResults.length);
 
       // Refresh search history after successful search
       fetchSearchHistory();
@@ -252,7 +341,7 @@ export default function SearchPage() {
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="btn btn-primary"
               >
                 Try again
               </button>
@@ -265,18 +354,25 @@ export default function SearchPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="pb-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            <h1>
               Evidence Search
             </h1>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {results.length > 0 && (
-                <button
+                <EnhancedButton
                   onClick={handleGenerate}
-                  disabled={generating}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  loading={generating}
+                  variant="primary"
+                  size="sm"
+                  icon={
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  }
                 >
                   {generating ? 'Generating...' : 'Generate Answer'}
-                </button>
+                </EnhancedButton>
               )}
             </div>
           </div>
@@ -287,26 +383,22 @@ export default function SearchPage() {
               Search Mode:
             </span>
             <div className="flex space-x-2">
-              <button
+              <EnhancedButton
                 onClick={() => setSearchMode('assistant')}
-                className={`px-3 py-2 text-sm rounded-md font-medium transition-colors ${
-                  searchMode === 'assistant'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                }`}
+                variant={searchMode === 'assistant' ? 'primary' : 'secondary'}
+                size="sm"
+                icon={<span>🤖</span>}
               >
-                🤖 Assistant Search
-              </button>
-              <button
+                Assistant Search
+              </EnhancedButton>
+              <EnhancedButton
                 onClick={() => setSearchMode('rag')}
-                className={`px-3 py-2 text-sm rounded-md font-medium transition-colors ${
-                  searchMode === 'rag'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                }`}
+                variant={searchMode === 'rag' ? 'primary' : 'secondary'}
+                size="sm"
+                icon={<span>📄</span>}
               >
-                📄 RAG Search
-              </button>
+                RAG Search
+              </EnhancedButton>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
               {searchMode === 'assistant'
@@ -315,77 +407,155 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Search Form */}
-          <form onSubmit={handleSearch} className="mt-4 relative max-w-xl">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                searchMode === 'rag'
-                  ? 'Search for specific document content...'
-                  : 'Search for debate evidence or facts...'
-              }
-              className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button
-              type="submit"
-              disabled={searching}
-              className="absolute inset-y-0 right-0 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-md"
-            >
-              {searching ? 'Searching...' : 'Search'}
-            </button>
-          </form>
+          {/* Search Form - Main Focus */}
+          <div className="mt-6 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-2xl p-6 border border-primary-200 dark:border-primary-700">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 flex items-center justify-center gap-2">
+                <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Enter your search query
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Search for evidence, facts, or specific document content to support your arguments
+              </p>
+            </div>
+            <form onSubmit={handleSearch} className="max-w-3xl mx-auto">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 min-w-0">
+                  <EnhancedInput
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={
+                      searchMode === 'rag'
+                        ? 'Search for specific document content...'
+                        : 'Search for debate evidence or facts...'
+                    }
+                    label="Search query"
+                    className="text-lg resize-none"
+                  />
+                </div>
+                <EnhancedButton
+                  type="submit"
+                  loading={searching}
+                  variant="primary"
+                  size="lg"
+                  className="px-8 w-full sm:w-auto flex-shrink-0"
+                  icon={
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  }
+                >
+                  {searching ? 'Searching...' : 'Search'}
+                </EnhancedButton>
+              </div>
+            </form>
+          </div>
           {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           {/* Search History */}
           {searchHistory.length > 0 && (
             <div className="mt-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Recent Searches
-              </h2>
-              <div className="overflow-x-auto">
-                <div className="flex flex-wrap gap-2">
-                  {searchHistory.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setQuery(item.query);
-                        handleSearch({ preventDefault: () => {} } as React.FormEvent);
-                      }}
-                      className="inline-flex items-center px-3 py-1 rounded text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
-                    >
-                      <span>{item.query}</span>
-                      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
-                        ({item.results_count})
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  onClick={() => setShowRecentSearches(!showRecentSearches)}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+                >
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${showRecentSearches ? 'rotate-90' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Recent Searches ({searchHistory.length})
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to clear all recent searches?')) {
+                      Promise.all(searchHistory.map(item => deleteSearchHistory(item.id))).then(() => {
+                        setSearchHistory([]);
+                      });
+                    }
+                  }}
+                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                >
+                  Clear All
+                </button>
               </div>
+              {showRecentSearches && (
+                <div className="overflow-x-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {searchHistory.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 group transition-all duration-200 min-w-0 box-border"
+                      >
+                        <button
+                          onClick={() => {
+                            setQuery(item.query);
+                            handleSearch({ preventDefault: () => {} } as React.FormEvent);
+                          }}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-l-lg hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex-1 min-w-0"
+                          title={item.query}
+                        >
+                          <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="truncate flex-1 break-words">{truncateQuery(item.query, 30)}</span>
+                        </button>
+                        <button
+                          onClick={() => deleteSearchHistory(item.id)}
+                          className="px-2 py-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-200 border-l border-gray-200 dark:border-gray-600 flex-shrink-0"
+                          title="Delete this search"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Generated Answer */}
           {generatedAnswer && (
-            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-green-500">
+            <div className="mt-8 bg-white dark:bg-gray-800/50 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700 animate-fade-in-up backdrop-blur-sm">
               <div className="flex justify-between items-start">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  AI-Generated Answer
-                </h2>
-                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-2">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    AI-Generated Answer
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Synthesized from {generatedAnswer.sources.length} sources
+                  </p>
+                </div>
+                <span className="px-3 py-1.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200">
                   RAG-powered
                 </span>
               </div>
 
-              <div className="prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg max-w-none">
+              <div className="prose dark:prose-invert prose-sm sm:prose-base max-w-none mt-6">
                 {/* Format the answer text by splitting it at source citations and adding proper formatting */}
                 {generatedAnswer.answer.split(/(\[Source:[^\]]+\])/).map((part, i) => {
                   if (part.match(/\[Source:[^\]]+\]/)) {
                     return (
                       <span
                         key={i}
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-800 dark:text-primary-200"
                       >
                         {part}
                       </span>
@@ -396,134 +566,75 @@ export default function SearchPage() {
               </div>
 
               {generatedAnswer.sources.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
                     Sources
-                  </h3>
-                  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                  </h4>
+                  <div className="grid gap-3">
                     {generatedAnswer.sources.map((source, idx) => (
-                      <li key={idx} className="py-2 flex items-start">
+                      <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
                         <svg
-                          className="h-5 w-5 text-gray-400 mr-2 mt-0.5"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
+                          className="h-5 w-5 text-primary-500 mt-0.5 flex-shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
                           {source.source}
                         </span>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 
-              <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 italic">
-                This answer was generated using AI based on the search results and may not be 100%
-                accurate. Always verify important information.
+              <div className="mt-6 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                <p className="text-xs text-yellow-800 dark:text-yellow-200 flex items-start gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  This answer was generated using AI based on the search results and may not be 100%
+                  accurate. Always verify important information.</p>
               </div>
             </div>
           )}
 
           {/* Results */}
-          <div className="mt-6 space-y-6">
+          <div className="mt-8 space-y-4">
             {results.length > 0 && (
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {searchMode === 'rag' ? 'RAG Search Results' : 'Assistant Search Results'} (
                   {results.length})
-                </h2>
+                </h3>
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    searchMode === 'rag'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                  }`}
+                  className="px-3 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200"
                 >
                   {searchMode === 'rag' ? 'Raw Document Chunks' : 'AI-Enhanced'}
                 </span>
               </div>
             )}
             {results.map((res, idx) => (
-              <div
+              <EnhancedSearchCard
                 key={idx}
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 ${
-                  searchMode === 'rag' ? 'border-green-500' : 'border-blue-500'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    📄 {res.source}
-                  </h3>
-                  <div className="flex flex-col items-end space-y-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Relevance: {Math.round((res.score || 0) * 100)}%
-                    </span>
-                    {searchMode === 'rag' && (res as any).metadata && (
-                      <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                        Chunk #{(res as any).metadata.chunk_index || 0}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="prose dark:prose-invert prose-sm max-w-none">
-                  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                    {res.content}
-                  </p>
-                </div>
-
-                {searchMode === 'rag' && (res as any).metadata && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <details className="text-sm text-gray-600 dark:text-gray-400">
-                      <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 font-medium">
-                        📋 Document Metadata
-                      </summary>
-                      <div className="mt-2 space-y-1 ml-4">
-                        <p>
-                          <strong>File ID:</strong> {(res as any).metadata.file_id}
-                        </p>
-                        <p>
-                          <strong>File Name:</strong> {(res as any).metadata.file_name || 'Unknown'}
-                        </p>
-                        {(res as any).metadata.page_number && (
-                          <p>
-                            <strong>Page:</strong> {(res as any).metadata.page_number}
-                          </p>
-                        )}
-                        {(res as any).metadata.start_char && (
-                          <p>
-                            <strong>Position:</strong> Characters {(res as any).metadata.start_char}
-                            -{(res as any).metadata.end_char}
-                          </p>
-                        )}
-                      </div>
-                    </details>
-                    <button
-                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                      onClick={() => {
-                        // Future: Implement PDF context viewer
-                        alert(
-                          'PDF context viewer coming soon! This will show the surrounding text from the original document.'
-                        );
-                      }}
-                    >
-                      🔍 View in PDF Context
-                    </button>
-                  </div>
-                )}
-
-                {searchMode === 'assistant' && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                      ✨ This result was processed and potentially summarized by AI for relevance
-                      and clarity.
-                    </p>
-                  </div>
-                )}
-              </div>
+                result={res}
+                index={idx}
+                searchMode={searchMode}
+                onViewContext={() => {
+                  // Future: Implement PDF context viewer
+                  alert(
+                    'PDF context viewer coming soon! This will show the surrounding text from the original document.'
+                  );
+                }}
+              />
             ))}
           </div>
         </div>

@@ -8,21 +8,30 @@ services:
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    image: debateai:latest
-    container_name: debateai-app
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      cache_from:
+        - node:20-alpine
+    image: debateai:development
+    container_name: debateai-app-dev
     ports:
-      - "3000:3000"
+      - "${PORT:-3001}:3001"
     environment:
-      - NODE_ENV=production
+      # Core environment variables
+      - NODE_ENV=development
+      - PORT=3001
+      # Supabase configuration
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # API Keys
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_VECTOR_STORE_ID=${OPENAI_VECTOR_STORE_ID}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       - DEBUG_API_KEY=${DEBUG_API_KEY}
+      # API URL
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -31,14 +40,32 @@ services:
     networks:
       - debateai-network
     volumes:
-      # For development only - remove in production
+      # Development volumes for hot reload
+      - ./src:/app/src:ro
       - ./public:/app/public:ro
+      - ./next.config.cjs:/app/next.config.cjs:ro
+      # Named volumes for persistent data
+      - uploads:/app/uploads
+      - temp:/app/temp
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+    # Resource limits for development
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+volumes:
+  uploads:
+    driver: local
+  temp:
+    driver: local
 
 networks:
   debateai-network:
     driver: bridge
+    name: debateai-dev-network

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import Button from '@/components/ui/Button';
+import EnhancedButton from '@/components/ui/EnhancedButton';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 // Mock transcript for demonstration purposes
 const mockTranscript = `
@@ -54,10 +55,10 @@ export default function AnalysisPage() {
           {mockTranscript}
         </pre>
       </div>
-      <Button onClick={handleAnalyze} disabled={isLoading}>
-        {isLoading ? 'Analyzing...' : 'Analyze Debate'}
-      </Button>
-      {error && <p className="text-red-500 mt-4">Error: {error}</p>}
+      <EnhancedButton onClick={handleAnalyze} disabled={isLoading} loading={isLoading} loadingText="analyzing...">
+        analyze debate
+      </EnhancedButton>
+      {error && <AlertMessage type="error" message={error} className="mt-4" />}
       {analysis && (
         <div className="mt-4 p-4 border rounded-lg bg-white dark:bg-gray-800">
           <h2 className="text-2xl font-bold mb-2">Judge's Analysis</h2>

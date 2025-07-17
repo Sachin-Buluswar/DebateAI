@@ -1,11 +1,12 @@
 # Docker Deployment Guide for DebateAI
 
-This guide explains how to build and deploy DebateAI using Docker.
+This guide provides concise instructions for deploying DebateAI using Docker. For comprehensive documentation, see [DOCKER_SETUP_GUIDE.md](DOCKER_SETUP_GUIDE.md).
 
 ## Prerequisites
 
 - Docker Engine 20.10+ installed
-- Docker Compose 2.0+ installed
+- Docker Compose v2.0+ installed  
+- At least 4GB of available RAM
 - All environment variables configured in `.env.local`
 
 ## Quick Start
@@ -66,7 +67,7 @@ docker-compose down
 ```bash
 docker run -d \
   --name debateai \
-  -p 3000:3000 \
+  -p 3001:3001 \
   --env-file .env.local \
   debateai:latest
 ```
@@ -118,15 +119,19 @@ NEXT_PUBLIC_SITE_URL=https://debateai.com
 
 The application includes health checks:
 
-- **Application health:** `http://localhost:3000/api/health`
+- **Application health:** `http://localhost:3001/api/health`
 - **Nginx health:** `http://localhost/health`
 
 ## Resource Limits
 
 The production configuration includes resource limits:
 
-- **CPU:** 2 cores limit, 0.5 cores reserved
-- **Memory:** 2GB limit, 512MB reserved
+- **Application:**
+  - CPU: 2 cores limit, 0.5 cores reserved
+  - Memory: 2GB limit, 512MB reserved
+- **Nginx:**
+  - CPU: 0.5 cores limit, 0.1 cores reserved
+  - Memory: 256MB limit, 128MB reserved
 
 Adjust these in `docker-compose.prod.yml` based on your server capacity.
 
@@ -192,3 +197,35 @@ For production monitoring, consider:
 docker tag debateai:production your-registry.com/debateai:v1.0.0
 docker push your-registry.com/debateai:v1.0.0
 ```
+
+## Additional Features
+
+### Multi-Platform Builds
+
+```bash
+# Build for multiple architectures
+docker buildx build --platform linux/amd64,linux/arm64 -t debateai:latest .
+```
+
+### Development with Hot Reload
+
+The development docker-compose configuration includes volume mounts for hot reload:
+
+```yaml
+volumes:
+  - ./src:/app/src:ro
+  - ./public:/app/public:ro
+  - ./next.config.cjs:/app/next.config.cjs:ro
+```
+
+### Production Security
+
+The production setup includes:
+
+- Non-root user execution (runs as `nextjs` user)
+- Read-only root filesystem with tmpfs for writable areas
+- Security headers via nginx
+- Rate limiting configuration
+- No new privileges flag
+
+For detailed setup instructions and advanced configurations, see [DOCKER_SETUP_GUIDE.md](DOCKER_SETUP_GUIDE.md).

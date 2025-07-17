@@ -1,12 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
 import type { Debate, SpeechFeedback } from '@/types';
-import DashboardLayout, { Widget } from '@/components/dashboard/DashboardLayout';
+
+// Lazy load dashboard components for better performance
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const DashboardLayout = dynamic(() => import('@/components/dashboard/DashboardLayout'), {
+  loading: () => <LoadingSpinner text="Loading dashboard..." />,
+});
+
+// Widget needs to be imported separately since it's a named export
+import { Widget } from '@/components/dashboard/DashboardLayout';
+
+const StatsSection = dynamic(() => import('@/components/dashboard/StatsSection'), {
+  loading: () => <LoadingSpinner text="Loading statistics..." />,
+});
 import Link from 'next/link';
 import {
   MicrophoneIcon,
@@ -15,19 +30,11 @@ import {
   MagnifyingGlassIcon,
   ClockIcon,
   FireIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/solid';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from 'recharts';
+// Lazy load the entire recharts library when needed
+import * as Recharts from 'recharts';
 
 // Add global error handler to catch unhandled errors
 if (typeof window !== 'undefined') {
@@ -37,22 +44,52 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// Helper function to extract score from feedback object
+const extractScore = (feedback: any): number | null => {
+  if (!feedback) return null;
+  
+  // Check multiple possible locations for scores
+  // 1. New format: speakerScore (NSDA scale 25-30)
+  if (typeof feedback.speakerScore === 'number') {
+    // Convert NSDA scale (25-30) to percentage (0-100)
+    return ((feedback.speakerScore - 25) / 5) * 100;
+  }
+  
+  // 2. Legacy format: scores.overall (already in percentage)
+  if (feedback.scores?.overall !== undefined && feedback.scores?.overall !== null) {
+    return feedback.scores.overall;
+  }
+  
+  // 3. Even older format: score (percentage)
+  if (typeof feedback.score === 'number') {
+    return feedback.score;
+  }
+  
+  return null;
+};
+
+// Constants for pagination
+const ITEMS_PER_PAGE = 20;
+
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [debateHistory, setDebateHistory] = useState<Debate[]>([]);
   const [speechHistory, setSpeechHistory] = useState<SpeechFeedback[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [avgScores] = useState({
+  const [avgScores, setAvgScores] = useState({
     overall: 0,
     count: 0,
   });
-  const [scoreTrendData] = useState<{ date: string; score: number | null }[]>([]);
+  const [scoreTrendData, setScoreTrendData] = useState<{ date: string; score: number }[]>([]);
   const [weeklyChartData, setWeeklyChartData] = useState<
-    { name: string; speeches: number; debates: number }[]
+    { name: string; hours: number }[]
   >([]);
   const [hoursSpent, setHoursSpent] = useState(0);
-  const [highestScore] = useState<number | null>(null);
+  const [highestScore, setHighestScore] = useState<number | null>(null);
+  const [dateRange, setDateRange] = useState<'week' | 'month' | 'year' | 'all'>('month');
+  const [chartDateRange, setChartDateRange] = useState<'week' | 'month' | 'year'>('week');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     // Check if user is logged in
@@ -75,12 +112,13 @@ export default function Dashboard() {
         let fetchedSpeeches: SpeechFeedback[] = [];
 
         try {
-          // Fetch debates
+          // Fetch debates with pagination
           const { data: debatesData, error: debatesError } = await supabase
             .from('debate_history')
             .select('*')
             .eq('user_id', data.session.user.id)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
           if (debatesError && debatesError.code !== '42P01') {
             setError((prev) =>
@@ -95,43 +133,80 @@ export default function Dashboard() {
         }
 
         try {
-          // Fetch speech recordings - SIMPLIFIED FOR DEBUGGING
+          // Fetch speech recordings with pagination
           const { data: speechData, error: speechError } = await supabase
             .from('speech_feedback')
-            .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url') // Simplified select
-            .eq('user_id', data.session.user.id);
-          // .order('created_at', { ascending: true }); // Temporarily removed order
+            .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url')
+            .eq('user_id', data.session.user.id)
+            .order('created_at', { ascending: false })
+            .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
           if (speechError && speechError.code !== '42P01') {
-            // Log the specific error to console for detailed debugging
             console.error('Supabase speech fetch error:', speechError);
             setError((prev) =>
               prev ? `${prev}. Failed to load speech history.` : 'Failed to load speech history.'
             );
           } else {
             fetchedSpeeches = speechData || [];
-            // Sort descending for recent activity list display later
-            setSpeechHistory(
-              [...fetchedSpeeches].sort(
-                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-              )
-            );
+            setSpeechHistory(fetchedSpeeches);
 
             // Calculate stats from speech feedback
             if (fetchedSpeeches.length > 0) {
               // Hours spent estimate
               const speechHours = fetchedSpeeches.reduce(
-                (sum, speech) =>
-                  sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 0.25),
+                (sum, speech) => {
+                  if (speech.duration_seconds === 60) {
+                    return sum + (3 / 60); // 3 minutes average
+                  }
+                  return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60);
+                },
                 0
               );
-              const debateHours = fetchedDebates.length * (5 / 60); // Rough estimate
+              const debateHours = fetchedDebates.length * (10 / 60); // 10 minutes per debate
               setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
+
+              // Calculate average score and highest score
+              const speechesWithScores = fetchedSpeeches.filter(s => {
+                const score = extractScore(s.feedback);
+                return score !== null && typeof score === 'number';
+              });
+              
+              if (speechesWithScores.length > 0) {
+                const scores = speechesWithScores.map(s => extractScore(s.feedback) || 0);
+                
+                // Average score
+                const totalScore = scores.reduce((sum, score) => sum + score, 0);
+                const average = totalScore / scores.length;
+                setAvgScores({
+                  overall: Math.round(average * 10) / 10,
+                  count: speechesWithScores.length
+                });
+                
+                // Highest score
+                const maxScore = Math.max(...scores);
+                setHighestScore(Math.round(maxScore * 10) / 10);
+                
+                // Score trend data for chart
+                const sortedSpeeches = [...speechesWithScores].sort(
+                  (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+                
+                const trendData = sortedSpeeches.map(speech => ({
+                  date: new Date(speech.created_at).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: sortedSpeeches.length > 10 ? '2-digit' : undefined
+                  }),
+                  score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
+                }));
+                
+                setScoreTrendData(trendData);
+              }
 
               // Calculate weekly activity for chart
               const now = new Date();
               const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              const weeklyDataMap = new Map<string, { speeches: number; debates: number }>();
+              const weeklyDataMap = new Map<string, number>();
               const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
               const orderedDays: string[] = [];
 
@@ -140,32 +215,41 @@ export default function Dashboard() {
                 const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
                 const dayName = days[d.getDay()];
                 orderedDays.push(dayName);
-                weeklyDataMap.set(dayName, { speeches: 0, debates: 0 });
+                weeklyDataMap.set(dayName, 0);
               }
 
+              // Add speech hours
               fetchedSpeeches.forEach((item) => {
                 const d = new Date(item.created_at);
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    weeklyDataMap.get(dayName)!.speeches++;
+                    let hours: number;
+                    if (item.duration_seconds === 60) {
+                      hours = 3 / 60; // 3 minutes
+                    } else {
+                      hours = item.duration_seconds ? item.duration_seconds / 3600 : 3 / 60;
+                    }
+                    weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
               });
+              
+              // Add debate hours
               fetchedDebates.forEach((item) => {
                 const d = new Date(item.created_at);
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    weeklyDataMap.get(dayName)!.debates++;
+                    const hours = 10 / 60; // 10 minutes in hours
+                    weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
               });
 
               const finalWeeklyChartData = orderedDays.map((dayName) => ({
                 name: dayName,
-                speeches: weeklyDataMap.get(dayName)?.speeches || 0,
-                debates: weeklyDataMap.get(dayName)?.debates || 0,
+                hours: Math.round(weeklyDataMap.get(dayName)! * 100) / 100,
               }));
               setWeeklyChartData(finalWeeklyChartData);
             }
@@ -192,17 +276,137 @@ export default function Dashboard() {
           'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.'
         );
       }
-    }, 30000); // 30 seconds timeout (increased from 10s)
+    }, 30000); // 30 seconds timeout
 
     return () => clearTimeout(loadingTimeout);
-  }, [router]);
+  }, [router, page]);
 
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
-  }
+  // Memoized function to filter score data based on date range
+  const getFilteredScoreData = useMemo(() => {
+    if (!scoreTrendData.length) return [];
+    
+    const now = new Date();
+    let cutoffDate: Date;
+    
+    switch (dateRange) {
+      case 'week':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+      default:
+        return scoreTrendData;
+    }
+    
+    // Filter speeches by date and recalculate the displayed data
+    const filteredSpeeches = speechHistory
+      .filter(s => {
+        const score = extractScore(s.feedback);
+        return score !== null && new Date(s.created_at) >= cutoffDate;
+      })
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    
+    return filteredSpeeches.map(speech => ({
+      date: new Date(speech.created_at).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: filteredSpeeches.length > 10 ? '2-digit' : undefined
+      }),
+      score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
+    }));
+  }, [scoreTrendData, dateRange, speechHistory]);
+
+  // Memoized function to get weekly activity data based on chart date range
+  const getWeeklyActivityData = useMemo(() => {
+    const now = new Date();
+    let daysToShow: number;
+    
+    switch (chartDateRange) {
+      case 'week':
+        daysToShow = 7;
+        break;
+      case 'month':
+        daysToShow = 30;
+        break;
+      case 'year':
+        daysToShow = 365;
+        break;
+      default:
+        daysToShow = 7;
+    }
+    
+    const cutoffDate = new Date(now.getTime() - daysToShow * 24 * 60 * 60 * 1000);
+    const dataMap = new Map<string, number>();
+    
+    // Generate date labels based on range
+    const dateLabels: string[] = [];
+    for (let i = daysToShow - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      let label: string;
+      
+      if (chartDateRange === 'week') {
+        label = d.toLocaleDateString('en-US', { weekday: 'short' });
+      } else if (chartDateRange === 'month') {
+        label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else {
+        label = d.toLocaleDateString('en-US', { month: 'short' });
+      }
+      
+      // Only show some labels to avoid crowding
+      if (chartDateRange === 'month' && i % 5 !== 0) {
+        label = '';
+      } else if (chartDateRange === 'year' && i % 30 !== 0) {
+        label = '';
+      }
+      
+      const key = d.toISOString().split('T')[0]; // Use ISO date as key
+      dateLabels.push(label);
+      dataMap.set(key, 0);
+    }
+    
+    // Calculate hours for each day
+    speechHistory.forEach(speech => {
+      const d = new Date(speech.created_at);
+      if (d >= cutoffDate) {
+        const key = d.toISOString().split('T')[0];
+        if (dataMap.has(key)) {
+          let hours: number;
+          if (speech.duration_seconds === 60) {
+            hours = 3 / 60; // 3 minutes
+          } else {
+            hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60;
+          }
+          dataMap.set(key, dataMap.get(key)! + hours);
+        }
+      }
+    });
+    
+    debateHistory.forEach(debate => {
+      const d = new Date(debate.created_at);
+      if (d >= cutoffDate) {
+        const key = d.toISOString().split('T')[0];
+        if (dataMap.has(key)) {
+          const hours = 10 / 60; // 10 minutes per debate
+          dataMap.set(key, dataMap.get(key)! + hours);
+        }
+      }
+    });
+    
+    // Convert to array format
+    const keys = Array.from(dataMap.keys()).sort();
+    return keys.map((key, index) => ({
+      name: dateLabels[index],
+      hours: Math.round(dataMap.get(key)! * 100) / 100
+    })).filter(item => chartDateRange !== 'year' || item.name !== '');
+  }, [chartDateRange, speechHistory, debateHistory]);
 
   // Format date for display in recent activity list
-  const formatListDate = (dateString: string) => {
+  const formatListDate = useCallback((dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -211,12 +415,18 @@ export default function Dashboard() {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
-  };
+  }, []);
 
-  // Combine and sort recent activity
-  const recentActivity = [...(speechHistory || []), ...(debateHistory || [])]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 3); // Show only the 3 most recent items
+  // Memoize recent activity
+  const recentActivity = useMemo(() => {
+    return [...(speechHistory || []), ...(debateHistory || [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 3);
+  }, [speechHistory, debateHistory]);
+
+  if (loading) {
+    return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
+  }
 
   return (
     <ErrorBoundary
@@ -224,7 +434,7 @@ export default function Dashboard() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="mb-4">
                 Something went wrong
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
@@ -233,7 +443,7 @@ export default function Dashboard() {
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="btn btn-primary" // Updated class
+                className="btn btn-primary"
               >
                 Try again
               </button>
@@ -271,59 +481,24 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Practice Stats Widget */}
-        <Widget title="Practice Stats" className="col-span-4 md:col-span-2 xl:col-span-1">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-3xl font-bold text-teal-500">{speechHistory.length}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Speeches</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-primary-500">{debateHistory.length}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Debates</p>
-            </div>
-            <div>
-              {/* Display Average Score */}
-              <p
-                className={`text-3xl font-bold ${avgScores.count > 0 ? 'text-yellow-500' : 'text-gray-400'}`}
-              >
-                {avgScores.count > 0 ? avgScores.overall : '-'}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg Score</p>
-            </div>
-          </div>
-        </Widget>
+        {/* Modern Stats Section */}
+        <div className="col-span-4 animate-fade-in stagger-1">
+          <StatsSection
+            totalSpeeches={speechHistory.length}
+            totalDebates={debateHistory.length}
+            averageScore={avgScores.overall}
+            totalPracticeTime={Math.round(hoursSpent * 60)} // Convert hours to minutes
+            loading={loading}
+          />
+        </div>
 
-        {/* Learning Progress Widget (Simplified to Overall Score) */}
-        <Widget
-          title="Overall Learning Progress"
-          className="col-span-4 md:col-span-2 xl:col-span-1"
-        >
-          {avgScores.count > 0 ? (
-            <div className="space-y-4">
-              <ProgressItem
-                label="Average Score"
-                value={avgScores.overall}
-                color="bg-yellow-500"
-                icon={<AcademicCapIcon className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />}
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Based on {avgScores.count} analyzed speech{avgScores.count !== 1 ? 'es' : ''}.
-              </p>
-            </div>
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-              No speech scores available yet. Practice a speech to see your progress!
-            </p>
-          )}
-        </Widget>
 
         {/* Quick Actions Widget */}
-        <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1">
+        <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-3">
           <div className="space-y-3">
             <button
               onClick={() => router.push('/speech-feedback')}
-              className="btn btn-accent w-full"
+              className="btn btn-secondary w-full"
             >
               <MicrophoneIcon className="w-5 h-5 mr-2" />
               Record Speech
@@ -340,53 +515,139 @@ export default function Dashboard() {
         </Widget>
 
         {/* Personal Bests & Stats Widget */}
-        <Widget title="Highlights & Milestones" className="col-span-4 md:col-span-2 xl:col-span-1">
+        <Widget title="Highlights & Milestones" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/40 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/30 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                <p className="text-sm font-medium text-primary-800 dark:text-primary-200">
                   Highest Score
                 </p>
                 <p
-                  className={`text-2xl font-bold ${highestScore !== null ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}`}
+                  className={`text-2xl font-bold ${highestScore !== null ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'}`}
                 >
                   {highestScore !== null ? `${highestScore}` : 'N/A'}
                 </p>
               </div>
-              <FireIcon className="h-8 w-8 text-amber-500" />
+              <FireIcon className="h-8 w-8 text-primary-500" />
             </div>
-            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-sky-50 to-cyan-100 dark:from-sky-900/30 dark:to-cyan-900/40 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/40 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-cyan-800 dark:text-cyan-200">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                   Total Practice Time
                 </p>
-                <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
                   {hoursSpent} hrs
                 </p>
               </div>
-              <ClockIcon className="h-8 w-8 text-cyan-500" />
+              <ClockIcon className="h-8 w-8 text-gray-500" />
             </div>
           </div>
         </Widget>
 
         {/* Score Trend Widget */}
-        <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2">
-          {scoreTrendData.length > 1 ? (
-            <ScoreTrendChart data={scoreTrendData} />
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-              Not enough data to show score trend. Complete at least two scored speeches.
-            </p>
-          )}
+        <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2 animate-fade-in stagger-1">
+          <div className="space-y-4">
+            {/* Date Range Selector */}
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-lg shadow-sm" role="group">
+                <button
+                  onClick={() => setDateRange('week')}
+                  className={`px-4 py-2 text-xs font-medium rounded-l-lg border transition-all duration-200 ${
+                    dateRange === 'week'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1W
+                </button>
+                <button
+                  onClick={() => setDateRange('month')}
+                  className={`px-4 py-2 text-xs font-medium border-t border-b transition-all duration-200 ${
+                    dateRange === 'month'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1M
+                </button>
+                <button
+                  onClick={() => setDateRange('year')}
+                  className={`px-4 py-2 text-xs font-medium border transition-all duration-200 ${
+                    dateRange === 'year'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1Y
+                </button>
+                <button
+                  onClick={() => setDateRange('all')}
+                  className={`px-4 py-2 text-xs font-medium rounded-r-lg border transition-all duration-200 ${
+                    dateRange === 'all'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  All
+                </button>
+              </div>
+            </div>
+            
+            {scoreTrendData.length > 1 ? (
+              <ScoreTrendChart data={getFilteredScoreData} />
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                Not enough data to show score trend. Complete at least two scored speeches.
+              </p>
+            )}
+          </div>
         </Widget>
 
         {/* Weekly Activity Widget */}
-        <Widget title="Weekly Activity" className="col-span-4 md:col-span-2">
-          <WeeklyActivityChart data={weeklyChartData} />
+        <Widget title="Weekly Activity" className="col-span-4 md:col-span-2 animate-fade-in stagger-2">
+          <div className="space-y-4">
+            {/* Date Range Selector */}
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-lg shadow-sm" role="group">
+                <button
+                  onClick={() => setChartDateRange('week')}
+                  className={`px-4 py-2 text-xs font-medium rounded-l-lg border transition-all duration-200 ${
+                    chartDateRange === 'week'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1W
+                </button>
+                <button
+                  onClick={() => setChartDateRange('month')}
+                  className={`px-4 py-2 text-xs font-medium border-t border-b transition-all duration-200 ${
+                    chartDateRange === 'month'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1M
+                </button>
+                <button
+                  onClick={() => setChartDateRange('year')}
+                  className={`px-4 py-2 text-xs font-medium rounded-r-lg border transition-all duration-200 ${
+                    chartDateRange === 'year'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-sm'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  1Y
+                </button>
+              </div>
+            </div>
+            
+            <WeeklyActivityChart data={getWeeklyActivityData} />
+          </div>
         </Widget>
 
         {/* Recent Activity Widget */}
-        <Widget title="Recent Activity" className="col-span-4">
+        <Widget title="Recent Activity" className="col-span-4 animate-fade-in stagger-3">
           <div className="space-y-4">
             {recentActivity.length > 0 ? (
               recentActivity.map((item) => {
@@ -405,10 +666,10 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center min-w-0">
                         <div
-                          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-3 ${isSpeech ? 'bg-teal-100 dark:bg-teal-700' : 'bg-primary-100 dark:bg-primary-700'}`}
+                          className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-3 ${isSpeech ? 'bg-primary-100 dark:bg-primary-800' : 'bg-primary-100 dark:bg-primary-800'}`}
                         >
                           {isSpeech ? (
-                            <MicrophoneIcon className="h-5 w-5 text-teal-600 dark:text-teal-300" />
+                            <MicrophoneIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
                           ) : (
                             <ChatBubbleLeftRightIcon className="h-5 w-5 text-primary-600 dark:text-primary-300" />
                           )}
@@ -456,95 +717,133 @@ export default function Dashboard() {
 
 // --- Chart Components ---
 
-// Simplified Score Trend Chart
-const ScoreTrendChart = ({ data }: { data: { date: string; score: number | null }[] }) => {
+// Memoized Score Trend Chart
+const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[] }) => {
   return (
     <div className="h-60 md:h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-          <XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} />
-          <YAxis domain={[0, 100]} fontSize={10} tickLine={false} axisLine={false} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'rgba(31, 41, 55, 0.8)', // bg-gray-800 with opacity
-              border: '1px solid rgba(75, 85, 99, 0.5)', // border-gray-600
-              borderRadius: '0.375rem', // rounded-md
-            }}
-            itemStyle={{ color: '#d1d5db' }} // text-gray-300
-            labelStyle={{ color: '#f9fafb', fontWeight: 'bold' }} // text-gray-50
+      <Recharts.ResponsiveContainer width="100%" height="100%">
+        <Recharts.LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
+          <defs>
+            <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#87A96B" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#87A96B" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <Recharts.CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <Recharts.XAxis 
+            dataKey="date" 
+            fontSize={11} 
+            tickLine={false} 
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            interval={data.length > 20 ? 'preserveStartEnd' : data.length > 10 ? 2 : 0}
+            angle={data.length > 10 ? -45 : 0}
+            textAnchor={data.length > 10 ? 'end' : 'middle'}
+            height={data.length > 10 ? 60 : 30}
+            tick={{ fill: '#6b7280' }}
           />
-          <Line
+          <Recharts.YAxis 
+            domain={[0, 100]} 
+            fontSize={11} 
+            tickLine={false} 
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            tick={{ fill: '#6b7280' }}
+            tickFormatter={(value) => `${value}%`}
+          />
+          <Recharts.Tooltip
+            contentStyle={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            }}
+            itemStyle={{ color: '#374151', fontWeight: '500' }}
+            labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
+            formatter={(value: number) => [`${value.toFixed(1)}%`, 'Score']}
+          />
+          <Recharts.Line
             type="monotone"
             dataKey="score"
-            stroke="#facc15" // yellow-500
-            strokeWidth={2}
-            dot={{ r: 4, fill: '#facc15' }}
-            activeDot={{ r: 6 }}
-            connectNulls // Connect line across null data points
+            stroke="#87A96B"
+            strokeWidth={3}
+            dot={{ r: 5, fill: '#87A96B', strokeWidth: 2, stroke: '#ffffff' }}
+            activeDot={{ r: 7, fill: '#6e8a57', stroke: '#ffffff', strokeWidth: 2 }}
+            fill="url(#scoreGradient)"
           />
-        </LineChart>
-      </ResponsiveContainer>
+        </Recharts.LineChart>
+      </Recharts.ResponsiveContainer>
     </div>
   );
-};
+});
+ScoreTrendChart.displayName = 'ScoreTrendChart';
 
-// Weekly Activity Chart
-const WeeklyActivityChart = ({
+// Memoized Weekly Activity Chart
+const WeeklyActivityChart = memo(({
   data,
 }: {
-  data: { name: string; speeches: number; debates: number }[];
+  data: { name: string; hours: number }[];
 }) => {
   return (
     <div className="h-60 md:h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-          <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-          <YAxis fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-          <Tooltip
+      <Recharts.ResponsiveContainer width="100%" height="100%">
+        <Recharts.BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#87A96B" stopOpacity={1}/>
+              <stop offset="100%" stopColor="#6e8a57" stopOpacity={1}/>
+            </linearGradient>
+          </defs>
+          <Recharts.CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <Recharts.XAxis 
+            dataKey="name" 
+            fontSize={11} 
+            tickLine={false} 
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            tick={{ fill: '#6b7280' }}
+          />
+          <Recharts.YAxis 
+            fontSize={11} 
+            tickLine={false} 
+            axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
+            tick={{ fill: '#6b7280' }}
+            tickFormatter={(value) => value === 0 ? '0' : `${value}h`}
+          />
+          <Recharts.Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(31, 41, 55, 0.8)',
-              border: '1px solid rgba(75, 85, 99, 0.5)',
-              borderRadius: '0.375rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
             }}
-            itemStyle={{ color: '#d1d5db' }}
-            labelStyle={{ color: '#f9fafb', fontWeight: 'bold' }}
+            itemStyle={{ color: '#374151', fontWeight: '500' }}
+            labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
+            formatter={(value: number) => {
+              const hours = Math.floor(value);
+              const minutes = Math.round((value - hours) * 60);
+              if (hours === 0 && minutes === 0) return ['No activity', 'Practice Time'];
+              if (hours === 0) return [`${minutes} min`, 'Practice Time'];
+              if (minutes === 0) return [`${hours} hr`, 'Practice Time'];
+              return [`${hours} hr ${minutes} min`, 'Practice Time'];
+            }}
           />
-          <Legend
-            verticalAlign="top"
-            height={36}
-            iconSize={10}
-            wrapperStyle={{ fontSize: '12px' }}
+          <Recharts.Bar
+            dataKey="hours"
+            fill="url(#barGradient)"
+            name="Practice Hours"
+            radius={[8, 8, 0, 0]}
+            maxBarSize={60}
           />
-          <Bar
-            dataKey="speeches"
-            fill="#14b8a6"
-            /* teal-500 */ name="Speeches"
-            radius={[4, 4, 0, 0]}
-          >
-            {/* Optional: Add labels inside bars if needed */}
-            {/* <LabelList dataKey="speeches" position="top" fontSize={10} fill="#fff" /> */}
-          </Bar>
-          <Bar
-            dataKey="debates"
-            fill="#6366f1"
-            /* primary-500 */ name="Debates"
-            radius={[4, 4, 0, 0]}
-          >
-            {/* <LabelList dataKey="debates" position="top" fontSize={10} fill="#fff" /> */}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+        </Recharts.BarChart>
+      </Recharts.ResponsiveContainer>
     </div>
   );
-};
+});
+WeeklyActivityChart.displayName = 'WeeklyActivityChart';
 
 // Simple Progress Bar Component (if needed, or use existing ProgressItem)
 interface ProgressItemProps {
   label: string;
   value: number; // Expect value 0-100
-  color: string; // Tailwind bg color class e.g., 'bg-blue-500'
+  color: string; // Tailwind bg color class e.g., 'bg-primary-500'
   icon: React.ReactNode;
 }
 

@@ -14,7 +14,7 @@ export function Widget({ title, children, className = '', colSpan = 'col-span-1'
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden ${colSpan} ${className}`}>
       <div className="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">{title}</h3>
+        <h3>{title}</h3>
       </div>
       <div className="px-4 py-5 sm:p-6">{children}</div>
     </div>
@@ -28,9 +28,9 @@ type DashboardLayoutProps = {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <Layout>
-      <div>
-        <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-6">
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
         </div>
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {children}

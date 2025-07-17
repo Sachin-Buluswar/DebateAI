@@ -1,0 +1,329 @@
+/* 
+ * Consistent Layout System for DebateAI
+ * This file defines standard spacing, layout patterns, and responsive utilities
+ * to ensure consistency across all pages.
+ */
+
+/* Page Layout Container Classes */
+.page-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8;
+}
+
+.page-container-narrow {
+  @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8;
+}
+
+.page-container-wide {
+  @apply max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8;
+}
+
+/* Section Spacing */
+.section-spacing {
+  @apply mb-8 sm:mb-12;
+}
+
+.section-spacing-lg {
+  @apply mb-12 sm:mb-16;
+}
+
+/* Content Spacing */
+.content-spacing {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.content-spacing-lg {
+  @apply space-y-6 sm:space-y-8;
+}
+
+/* Page Headers */
+.page-header {
+  @apply pb-5 border-b border-gray-200 dark:border-gray-700 mb-6 sm:mb-8;
+}
+
+.page-title {
+  @apply text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white;
+}
+
+.page-subtitle {
+  @apply mt-1 sm:mt-2 text-sm sm:text-base text-gray-500 dark:text-gray-400;
+}
+
+/* Card Layouts */
+.card-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+}
+
+.card-grid-2 {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6;
+}
+
+.card-spacing {
+  @apply p-4 sm:p-6;
+}
+
+/* Form Layouts */
+.form-section {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.form-group {
+  @apply space-y-2;
+}
+
+.form-row {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6;
+}
+
+/* Button Groups */
+.button-group {
+  @apply flex flex-wrap gap-2 sm:gap-3;
+}
+
+.button-group-vertical {
+  @apply flex flex-col gap-2 sm:gap-3;
+}
+
+/* Responsive Text Sizing */
+.text-responsive-xs {
+  @apply text-xs sm:text-sm;
+}
+
+.text-responsive-sm {
+  @apply text-sm sm:text-base;
+}
+
+.text-responsive-base {
+  @apply text-base sm:text-lg;
+}
+
+.text-responsive-lg {
+  @apply text-lg sm:text-xl;
+}
+
+.text-responsive-xl {
+  @apply text-xl sm:text-2xl;
+}
+
+.text-responsive-2xl {
+  @apply text-2xl sm:text-3xl;
+}
+
+/* Responsive Padding */
+.padding-responsive-sm {
+  @apply p-3 sm:p-4;
+}
+
+.padding-responsive {
+  @apply p-4 sm:p-6;
+}
+
+.padding-responsive-lg {
+  @apply p-6 sm:p-8;
+}
+
+/* Responsive Margins */
+.margin-responsive-sm {
+  @apply m-2 sm:m-3;
+}
+
+.margin-responsive {
+  @apply m-3 sm:m-4;
+}
+
+.margin-responsive-lg {
+  @apply m-4 sm:m-6;
+}
+
+/* Stack Layouts */
+.stack-sm {
+  @apply space-y-2;
+}
+
+.stack {
+  @apply space-y-4;
+}
+
+.stack-lg {
+  @apply space-y-6;
+}
+
+/* Inline Layouts */
+.inline-stack-sm {
+  @apply space-x-2;
+}
+
+.inline-stack {
+  @apply space-x-4;
+}
+
+.inline-stack-lg {
+  @apply space-x-6;
+}
+
+/* Empty States */
+.empty-state {
+  @apply text-center py-8 sm:py-12;
+}
+
+.empty-state-icon {
+  @apply mx-auto h-12 w-12 text-gray-400;
+}
+
+.empty-state-title {
+  @apply mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-gray-100;
+}
+
+.empty-state-description {
+  @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+}
+
+/* Loading States */
+.loading-container {
+  @apply flex justify-center items-center min-h-[200px] sm:min-h-[300px];
+}
+
+/* Modal Sizes */
+.modal-sm {
+  @apply max-w-sm w-full;
+}
+
+.modal-md {
+  @apply max-w-md w-full;
+}
+
+.modal-lg {
+  @apply max-w-lg w-full;
+}
+
+.modal-xl {
+  @apply max-w-xl w-full;
+}
+
+.modal-padding {
+  @apply p-4 sm:p-6;
+}
+
+/* Consistent Border Radius */
+.rounded-responsive {
+  @apply rounded-md sm:rounded-lg;
+}
+
+/* Responsive Icon Sizes */
+.icon-xs {
+  @apply w-4 h-4;
+}
+
+.icon-sm {
+  @apply w-4 h-4 sm:w-5 sm:h-5;
+}
+
+.icon-md {
+  @apply w-5 h-5 sm:w-6 sm:h-6;
+}
+
+.icon-lg {
+  @apply w-6 h-6 sm:w-8 sm:h-8;
+}
+
+/* Consistent Shadows */
+.shadow-responsive {
+  @apply shadow-sm sm:shadow-md hover:shadow-md sm:hover:shadow-lg transition-shadow;
+}
+
+/* List Layouts */
+.list-spacing {
+  @apply space-y-3 sm:space-y-4;
+}
+
+.list-item {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow;
+}
+
+/* Tab Layouts */
+.tab-group {
+  @apply flex space-x-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1;
+}
+
+.tab-item {
+  @apply flex-1 text-center py-2 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-md transition-all;
+}
+
+/* Alert/Message Layouts */
+.alert {
+  @apply p-3 sm:p-4 rounded-lg border;
+}
+
+.alert-success {
+  @apply bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800;
+}
+
+.alert-error {
+  @apply bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800;
+}
+
+.alert-warning {
+  @apply bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-800;
+}
+
+.alert-info {
+  @apply bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-800;
+}
+
+/* Responsive utilities for maintaining aspect ratios */
+.aspect-responsive {
+  @apply aspect-square sm:aspect-video;
+}
+
+/* Consistent hover states */
+.hover-lift {
+  @apply transition-all hover:-translate-y-0.5 hover:shadow-lg;
+}
+
+.hover-glow {
+  @apply transition-all hover:shadow-lg hover:shadow-primary-500/10;
+}
+
+/* Focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+}
+
+/* Disabled states */
+.disabled-state {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Scroll padding for fixed headers */
+.scroll-padding-top {
+  scroll-padding-top: 6rem; /* Adjust based on navbar height */
+}
+
+/* Responsive breakpoint utilities */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    @apply w-full !important;
+  }
+  
+  .mobile-stack {
+    @apply flex-col !important;
+  }
+  
+  .mobile-hidden {
+    @apply hidden !important;
+  }
+}
+
+/* Print utilities */
+@media print {
+  .no-print {
+    @apply hidden !important;
+  }
+  
+  .print-break-before {
+    page-break-before: always;
+  }
+  
+  .print-break-after {
+    page-break-after: always;
+  }
+}

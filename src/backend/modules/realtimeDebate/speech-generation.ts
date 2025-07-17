@@ -1,12 +1,8 @@
-import OpenAI from 'openai';
-import { env } from '@/shared/env';
+import { openAIService } from '@/backend/services/openaiService';
 import { Participant } from './debate-types';
 import { debateConfig } from './debate.config';
 import { DifficultyLevel } from './types';
-
-const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
-});
+import { aiLogger as logger } from '@/lib/monitoring/logger';
 
 function fillPromptTemplate(template: string, data: Record<string, string>): string {
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || `{{${key}}}`);
@@ -54,8 +50,11 @@ export async function generateSpeech(
       crossfireType: 'Grand' // Default, can be made dynamic
   });
 
+  // Define fallback response based on phase and personality
+  const fallbackResponse = `As ${personality?.name || speaker.name} representing the ${speaker.team} side, I ${phase === 'Opening' ? 'believe that' : 'argue that'} "${topic}" is ${speaker.team === 'Proposition' ? 'an important issue that deserves our support' : 'a matter that requires careful consideration'}. ${phase === 'Rebuttal' ? 'While the opposition has made some points, I maintain my position.' : ''}`;
+
   try {
-    const response = await openai.chat.completions.create({
+    const response = await openAIService.createChatCompletion({
       model: debateConfig.model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -63,22 +62,48 @@ export async function generateSpeech(
       ],
       temperature: difficultyConfig.temperature,
       max_tokens: difficultyConfig.maxTokens,
-      frequency_penalty: 0.3, // Keep some interesting params
+      frequency_penalty: 0.3,
       presence_penalty: 0.2
+    }, {
+      fallbackResponse,
+      validateResponse: (response) => {
+        // Basic validation - ensure response is not empty and is reasonable length
+        return response.length > 10 && response.length < 10000;
+      }
     });
 
     const speech = response.choices[0]?.message?.content?.trim();
     
     if (!speech) {
-      console.warn(`OpenAI returned an empty speech for phase ${phase}. Using fallback.`);
-      return `As ${personality?.name || speaker.name}, I am considering my response to the topic of "${topic}".`;
+      logger.warn('OpenAI returned empty speech', {
+        phase,
+        speaker: speaker.name,
+        topic
+      });
+      return fallbackResponse;
     }
 
     // Simple sanitization
-    return speech.replace(/[\*#]/g, '').trim();
+    const sanitizedSpeech = speech.replace(/[\*#]/g, '').trim();
+    
+    logger.info('Speech generated successfully', {
+      phase,
+      speaker: speaker.name,
+      speechLength: sanitizedSpeech.length,
+      difficulty
+    });
+    
+    return sanitizedSpeech;
 
   } catch (error) {
-    console.error(`Error generating speech for phase ${phase}:`, error);
-    return `I am currently unable to generate a response. Please proceed to the next speaker.`;
+    logger.error('Failed to generate speech', {
+      error,
+      phase,
+      speaker: speaker.name,
+      topic
+    });
+    
+    // Return a more contextual fallback based on the phase
+    return fallbackResponse;
   }
 }

@@ -89,7 +89,7 @@ export default function DebateDetail() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function DebateDetail() {
             <div className="flex justify-between h-16">
               <div className="flex">
                 <Link href="/dashboard" className="flex-shrink-0 flex items-center">
-                  <h1 className="text-2xl font-bold text-blue-800">DebateAI</h1>
+                  <h2 className="text-primary-700">DebateAI</h2>
                 </Link>
               </div>
               <div className="flex items-center">
@@ -123,13 +123,13 @@ export default function DebateDetail() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <h2 className="text-lg font-medium">Error</h2>
+              <h3>Error</h3>
             </div>
             <p className="text-gray-700">{error}</p>
             <div className="mt-6">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-600"
               >
                 Return to Dashboard
               </Link>
@@ -152,7 +152,7 @@ export default function DebateDetail() {
           <div className="flex justify-between h-16">
             <div className="flex">
               <Link href="/dashboard" className="flex-shrink-0 flex items-center">
-                <h1 className="text-2xl font-bold text-blue-800">DebateAI</h1>
+                <h2 className="text-primary-700">DebateAI</h2>
               </Link>
             </div>
             <div className="flex items-center">
@@ -169,12 +169,12 @@ export default function DebateDetail() {
       
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {debate && (
-          <div className="bg-white shadow sm:rounded-lg overflow-hidden">
+          <div className="bg-white shadow sm:rounded-lg overflow-hidden animate-fade-in">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h3 className="text-gray-900">
                   {debate.title}
-                </h2>
+                </h3>
                 <div className="flex items-center">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 mr-2">
                     {debate.type}
@@ -208,7 +208,7 @@ export default function DebateDetail() {
             
             <div className="p-6 bg-gray-50 border-b border-gray-200">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-md font-medium text-gray-800">Debate Transcript</h3>
+                <h4 className="text-gray-800">Debate Transcript</h4>
                 
                 {/* Demo buttons for audio and crossfire */}
                 <div className="flex space-x-2">
@@ -217,7 +217,7 @@ export default function DebateDetail() {
                     className={`px-3 py-1 text-sm font-medium rounded-md ${
                       isCrossfireActive 
                         ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        : 'bg-primary-100 text-primary-600 hover:bg-primary-200'
                     }`}
                   >
                     {isCrossfireActive ? 'End Crossfire' : 'Start Crossfire'}
@@ -240,7 +240,7 @@ export default function DebateDetail() {
                     <div 
                       key={index} 
                       className={`p-3 rounded-lg ${
-                        message.startsWith('AI:') ? 'bg-blue-50 ml-12' : 'bg-white mr-12'
+                        message.startsWith('AI:') ? 'bg-primary-50 ml-12' : 'bg-white mr-12'
                       }`}
                     >
                       {message}
@@ -265,7 +265,7 @@ export default function DebateDetail() {
                 
                 <Link
                   href="/debate"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-600"
                 >
                   Start New Debate
                 </Link>

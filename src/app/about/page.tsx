@@ -1,97 +1,99 @@
-'use client';
-
-import React from 'react';
-import Link from 'next/link';
-import Layout from '@/components/layout/Layout';
+import Navbar from '@/components/layout/Navbar';
+import BackButton from '@/components/ui/BackButton';
 
 export default function AboutPage() {
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-8">About DebateAI</h1>
-          <p className="text-lg mb-6">
-            DebateAI is an innovative platform that leverages artificial intelligence to help users improve their debating skills through practice with AI-powered opponents.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Our Mission</h2>
-            <p className="text-gray-700 dark:text-gray-300">
-              Our mission is to democratize access to high-quality debate training and make it available to everyone,
-              regardless of their background or resources. We believe that strong communication and critical thinking
-              skills are essential in today&apos;s world, and we&apos;re committed to helping people develop these skills.
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Key Features</h2>
-            <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-              <li><strong>AI Speech Feedback:</strong> Receive detailed analysis on delivery, clarity, and structure.</li>
-              <li><strong>Wiki Evidence Search:</strong> Access a powerful search engine to find relevant evidence for your arguments.</li>
-              <li><strong>Debate Simulator:</strong> Practice with an AI opponent that adapts to your style and skill level.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">How It Works</h2>
-          
-          <div className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="md:w-16 flex justify-center">
-                <div className="h-12 w-12 flex items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 text-2xl font-bold">
-                  1
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Record Your Speech</h3>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Upload an audio recording of your debate speech or practice session. Our platform supports various formats and lengths.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="md:w-16 flex justify-center">
-                <div className="h-12 w-12 flex items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 text-2xl font-bold">
-                  2
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">AI Analysis</h3>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Our AI system analyzes your speech for content, structure, delivery, and argumentation techniques, providing comprehensive feedback.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="md:w-16 flex justify-center">
-                <div className="h-12 w-12 flex items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 text-2xl font-bold">
-                  3
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Practice & Improve</h3>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Use the insights to improve your future performances. Track your progress over time and see your debate skills evolve.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <Navbar />
+      
+      <main className="breathing-room max-w-4xl mx-auto">
+        <BackButton className="mb-12" />
         
-        <div className="mt-10 flex justify-center">
-          <Link
-            href="/auth"
-            className="btn btn-accent !text-white px-6 py-3"
-          >
-            Get Started Now
-          </Link>
-        </div>
-      </div>
-    </Layout>
+        <article className="space-y-12">
+          <header className="space-y-4 animate-fade-in">
+            <h1 className="text-gray-900 dark:text-gray-100">
+              about debateai
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              empowering the next generation of debaters through ai-powered practice
+            </p>
+          </header>
+
+          <div className="divider"></div>
+
+          <section className="space-y-6 animate-fade-in stagger-1">
+            <h2 className="text-gray-900 dark:text-gray-100">our mission</h2>
+            <p>
+              debateai was created to democratize access to high-quality debate practice. 
+              we believe every student should have the opportunity to develop critical thinking 
+              and communication skills, regardless of their school's resources or geographic location.
+            </p>
+            <p>
+              by combining advanced ai technology with proven debate pedagogy, we provide 
+              students with realistic practice partners, detailed feedback, and comprehensive 
+              research tools—all in one distraction-free platform.
+            </p>
+          </section>
+
+          <section className="space-y-6 animate-fade-in stagger-2">
+            <h2 className="text-gray-900 dark:text-gray-100">built for public forum debate</h2>
+            <p>
+              our platform is specifically designed for high school public forum debaters. 
+              every feature—from the timed debate rounds to the ai personalities—has been 
+              crafted to mirror real tournament conditions and help students prepare effectively.
+            </p>
+            <p>
+              with 10 distinct ai debate partners, each with unique arguing styles and strengths, 
+              students can practice against diverse opponents and improve their adaptability.
+            </p>
+          </section>
+
+          <section className="space-y-6">
+            <h2 className="text-gray-900 dark:text-gray-100">our approach</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-primary-500 mb-2">intelligent practice</h3>
+                <p>
+                  our ai opponents use gpt-4 to generate substantive arguments, respond to your 
+                  points, and engage in realistic crossfire exchanges.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-primary-500 mb-2">comprehensive feedback</h3>
+                <p>
+                  receive detailed analysis on your speeches, including scores for delivery, 
+                  argument quality, evidence usage, and rebuttal effectiveness.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-primary-500 mb-2">evidence at your fingertips</h3>
+                <p>
+                  our vector-based search engine helps you find relevant evidence quickly, 
+                  drawing from a curated database of credible sources.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <h2 className="text-gray-900 dark:text-gray-100">privacy & security</h2>
+            <p>
+              we take your privacy seriously. all debate sessions are private, your data is 
+              encrypted, and we use row-level security to ensure only you can access your 
+              practice history and feedback.
+            </p>
+          </section>
+
+
+          <div className="divider"></div>
+
+          <footer className="text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              debateai. focused practice for better debates.
+            </p>
+          </footer>
+        </article>
+      </main>
+    </div>
   );
-} 
+}

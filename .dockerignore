@@ -1,60 +1,169 @@
 # Dependencies
-node_modules
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Next.js build output
-.next
-out
+.next/
+out/
+dist/
+build/
 
 # Environment files
 .env
-.env.local
-.env.production.local
-.env.development.local
-.env.test.local
+.env.*
+!.env.example
 
 # Testing
-coverage
-.nyc_output
+coverage/
+.nyc_output/
+test-results/
+jest-results/
+*.lcov
 
-# Misc
+# OS files
 .DS_Store
-*.pem
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Debug
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
+logs/
+*.log
+dev.log
 
 # Git
-.git
+.git/
 .gitignore
+.gitattributes
 
-# Documentation
+# Documentation (not needed in production image)
 README.md
-TROUBLESHOOTING.md
-PRODUCTION_READINESS_PLAN.md
+CHANGELOG.md
+LICENSE
+docs/
+*.md
 instructions/
 
-# Development files
-scripts/test-endpoints.js
-dev.log
-*.log
+# Development and test files
+scripts/test-*
+scripts/demo-*
+test/
+tests/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+cypress/
+e2e/
 
 # Temporary files
-temp-debatetest2-refactor/
-.cache
+temp/
+tmp/
+temp-*
+.cache/
+*.tmp
+*.temp
 
-# Docker
-Dockerfile
-.dockerignore
+# Docker files (not needed inside the image)
+Dockerfile*
 docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+
+# Package manager files
+.npm/
+.yarn/
+.pnp.*
+.yarn-integrity
+
+# TypeScript cache
+*.tsbuildinfo
+.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Build tools
+.parcel-cache
+.turbo
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Backup files
+*.bak
+*.backup
+backup/
+
+# Data files (should be mounted as volumes)
+data/
+uploads/
+public/uploads/
+
+# Storybook
+.storybook/
+storybook-static/
+
+# Webpack
+.webpack/
+
+# Next.js telemetry
+.next-telemetry/

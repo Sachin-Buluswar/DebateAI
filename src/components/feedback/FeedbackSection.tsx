@@ -8,7 +8,7 @@ interface FeedbackSectionProps {
   content: string;
   initialCollapsed?: boolean;
   isCollapsible?: boolean; // Optional prop to disable collapse behavior
-  accentColor?: string; // Tailwind border color class, e.g. 'blue-500'
+  accentColor?: string; // Tailwind border color class, e.g. 'primary-500'
 }
 
 const FeedbackSection: React.FC<FeedbackSectionProps> = ({ 
@@ -16,7 +16,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
   content, 
   initialCollapsed = false, 
   isCollapsible = true, // Default to collapsible
-  accentColor = 'blue-500',
+  accentColor = 'primary-500',
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
 
@@ -32,10 +32,10 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
     <div
       className={`flex border-l-4 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden sm:rounded-lg ${
         // Fix for dynamic Tailwind classes that won't work with JIT compiler
-        accentColor === 'green-500' ? 'border-green-500' :
-        accentColor === 'yellow-500' ? 'border-yellow-500' :
-        accentColor === 'red-500' ? 'border-red-500' :
-        'border-blue-500' // Default
+        accentColor === 'primary-500' ? 'border-primary-500' :
+        accentColor === 'secondary-500' ? 'border-gray-500' :
+        accentColor === 'error-500' ? 'border-error-500' :
+        'border-primary-500' // Default
       }`}
     >
       <div className="w-full">
@@ -46,7 +46,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
           aria-expanded={!isCollapsed}
           tabIndex={isCollapsible ? 0 : -1}
           className={`px-4 py-4 sm:px-6 flex justify-between items-center border-b border-gray-200 dark:border-gray-700 
-            ${isCollapsible ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400' : ''}`}
+            ${isCollapsible ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary-400' : ''}`}
           onClick={toggleCollapse}
           onKeyDown={e => {
             if (isCollapsible && (e.key === 'Enter' || e.key === ' ')) {

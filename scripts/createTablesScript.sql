@@ -123,11 +123,16 @@ CREATE INDEX IF NOT EXISTS saved_searches_user_id_idx ON saved_searches(user_id)
 CREATE INDEX IF NOT EXISTS saved_evidence_user_id_idx ON saved_evidence(user_id);
 
 -- Create functions
-CREATE OR REPLACE FUNCTION handle_new_user()
+-- Note: Removed handle_new_user function as there's no separate users table
+-- User data is stored directly in auth.users which is managed by Supabase
+
+-- Create user_profiles for new users instead
+CREATE OR REPLACE FUNCTION handle_new_user_profile()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO users (id, email)
-  VALUES (NEW.id, NEW.email);
+  INSERT INTO user_profiles (id, display_name)
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)))
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -135,7 +140,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Create triggers
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user_profile();
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

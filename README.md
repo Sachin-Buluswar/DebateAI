@@ -19,7 +19,7 @@ DebateAI is a **fully operational, production-ready application** that provides 
 
 ### 📊 **AI-Powered Speech Feedback**
 - **Audio Upload & Recording** with browser-based recording capabilities
-- **Advanced Speech Analysis** using OpenAI Whisper and GPT-4o
+- **Advanced Speech Analysis** using OpenAI Whisper and GPT-4o-mini
 - **Multi-Criteria Scoring** on delivery, arguments, persuasiveness, and overall performance
 - **Detailed Recommendations** with specific suggestions for improvement
 - **Progress Tracking** with complete speech history and analytics
@@ -53,7 +53,7 @@ DebateAI is a **fully operational, production-ready application** that provides 
 - **Production-grade error handling** and retry logic
 
 ### **AI & Voice Services**
-- **OpenAI GPT-4o** for speech generation and analysis
+- **OpenAI GPT-4o-mini** for speech generation and analysis
 - **ElevenLabs TTS/STT** for voice synthesis and transcription
 - **OpenAI Vector Storage** for semantic document search
 - **Hybrid AI Architecture** optimized for different use cases
@@ -65,7 +65,7 @@ DebateAI is a **fully operational, production-ready application** that provides 
 ### **Prerequisites**
 - Node.js 18+ and npm
 - Supabase account and project
-- OpenAI API key with GPT-4o access
+- OpenAI API key with GPT-4o-mini access
 - ElevenLabs API key
 - (Optional) OpenAI Vector Store for evidence search
 
@@ -116,6 +116,49 @@ DebateAI is a **fully operational, production-ready application** that provides 
 
 ---
 
+## 🐳 **Docker Deployment**
+
+### **Quick Start with Docker**
+
+1. **Using Docker Compose (Recommended)**
+   ```bash
+   # Development
+   docker-compose up --build
+   
+   # Production
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+2. **Using Helper Scripts**
+   ```bash
+   # Build Docker image
+   ./scripts/docker-build.sh [development|production]
+   
+   # Run with Docker
+   ./scripts/docker-run.sh [development|production]
+   ```
+
+3. **Manual Docker Commands**
+   ```bash
+   # Build image
+   docker build -t debateai:latest .
+   
+   # Run container
+   docker run -p 3001:3001 --env-file .env.local debateai:latest
+   ```
+
+### **Docker Features**
+- **Multi-stage builds** for optimized image size (~150MB)
+- **Non-root user** for enhanced security
+- **Health checks** for container monitoring
+- **Volume mounts** for persistent data
+- **BuildKit caching** for faster builds
+- **Production-ready** with nginx reverse proxy
+
+For detailed Docker setup and deployment instructions, see [DOCKER_SETUP_GUIDE.md](DOCKER_SETUP_GUIDE.md).
+
+---
+
 ## 📖 **Documentation Structure**
 
 The project documentation is organized in the `docs/` folder for easy navigation:
@@ -127,7 +170,7 @@ docs/
 ├── contributing.md         – Contribution guidelines
 └── apis/                   – API reference documentation
     ├── supabase.md        – Database, auth, and RLS
-    ├── openai.md          – GPT-4o, embeddings, vector stores
+    ├── openai.md          – GPT-4o-mini, embeddings, vector stores
     ├── elevenlabs.md      – TTS, STT, real-time voice
     └── socketio.md        – Real-time communication
 
@@ -334,7 +377,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 **Acknowledgments**
 
-- **OpenAI** for GPT-4o language model and vector storage
+- **OpenAI** for GPT-4o-mini language model and vector storage
 - **ElevenLabs** for high-quality TTS and STT services
 - **Supabase** for database and authentication infrastructure
 - **Vercel** for Next.js framework and deployment platform

@@ -11,10 +11,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        // Use Inter for sans-serif (headings, body)
-        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui'],
-        // Use Source Code Pro for monospace (code blocks)
-        mono: ['var(--font-source-code-pro)', 'ui-monospace', 'SFMono-Regular'],
+        // Use Inter for all text (minimalist approach)
+        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+        // Use IBM Plex Mono for code/stats
+        mono: ['IBM Plex Mono', 'ui-monospace', 'SFMono-Regular'],
       },
       fontSize: {
         // Custom type scale for better hierarchy
@@ -31,40 +31,39 @@ module.exports = {
         '7xl': ['4.5rem', { lineHeight: '1' }],
       },
       colors: {
-        // Define the new color palette based on ui-ux-system-design.md
+        // Minimalist monochrome palette with sage green accent
         primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5', // Primary brand color
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+          50: '#f4f6f3',
+          100: '#e9ede7',
+          200: '#d3dccf',
+          300: '#bdcab7',
+          400: '#a0b192',
+          500: '#87A96B', // Sage green - main accent
+          600: '#6e8a57',
+          700: '#576d45',
+          800: '#465738',
+          900: '#3a482f',
+          950: '#1f2618',
         },
-        accent: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6', // Accent color
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
-          950: '#042f2e',
+        // Monochrome grays for minimalist approach
+        gray: {
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
         },
-        // Use Tailwind's built-in grays for neutrals
-        gray: colors.gray,
-        // Define semantic colors
-        success: colors.green,
-        warning: colors.amber,
-        error: colors.red,
-        info: colors.blue,
+        // Keep semantic colors subtle
+        success: { 500: '#87A96B', 600: '#6e8a57' },
+        warning: { 500: '#d4a574', 600: '#b8935f' },
+        error: { 500: '#dc6b6b', 600: '#c85a5a' },
+        info: { 500: '#6b9bd1', 600: '#5a87ba' },
       },
       spacing: {
         // 4-point baseline scale

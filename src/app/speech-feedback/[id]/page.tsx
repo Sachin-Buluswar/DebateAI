@@ -4,12 +4,28 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import Layout from '@/components/layout/Layout';
+import dynamic from 'next/dynamic';
 import type { SpeechFeedback } from '@/types';
-import { parseFeedbackMarkdown } from '@/utils/feedbackUtils';
-import ReactMarkdown from 'react-markdown';
-import FeedbackSection from '@/components/feedback/FeedbackSection';
+import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/utils/feedbackUtils';
+
+// Lazy load heavy components
+const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
+  loading: () => <LoadingSpinner />,
+});
+
+const Layout = dynamic(() => import('@/components/layout/Layout'), {
+  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
+});
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
+  ssr: false,
+});
+
+const FeedbackSection = dynamic(() => import('@/components/feedback/FeedbackSection'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
+  ssr: false,
+});
 import { PlayIcon, PauseIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 // Helper component for the audio player
@@ -85,9 +101,9 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
   }, [audioUrl]);
 
   return (
-    <div className="mt-4 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="mt-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
       {error ? (
-        <div className="text-red-500 dark:text-red-400 py-2 text-sm">
+        <div className="text-red-500 dark:text-red-400 py-2 text-sm flex items-center justify-center">
           {error}
           <button 
             onClick={() => {
@@ -97,14 +113,19 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
                 audioRef.current.load(); // Attempt to reload
               }
             }}
-            className="ml-2 underline"
+            className="ml-2 text-primary-600 hover:text-primary-700 underline font-medium"
           >
             Try again
           </button>
         </div>
       ) : loading ? (
-        <div className="flex justify-center items-center py-4">
-          <div className="animate-pulse text-gray-500 dark:text-gray-400">Loading audio...</div>
+        <div className="flex justify-center items-center py-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '100ms' }}></div>
+            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+            <span className="ml-2 text-gray-500 dark:text-gray-400">Loading audio...</span>
+          </div>
         </div>
       ) : null}
       
@@ -118,33 +139,45 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
         onError={handleError}
         preload="metadata" // Important for getting duration quickly
       />
-      <div className="flex items-center">
-        <button 
-          onClick={handlePlayPause}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-primary-600 hover:bg-primary-700 flex items-center justify-center text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-          disabled={!!error || loading}
-        >
-          {isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
-        </button>
-        <div className="ml-4 flex-1">
-          <input 
-            type="range" 
-            min="0" 
-            max={duration || 0}
-            step="0.1"
-            value={currentTime} 
-            onChange={handleSeek}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-primary-600 focus:outline-none disabled:opacity-50"
-            aria-label="Audio progress"
+      {!error && !loading && (
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={handlePlayPause}
+            className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-500/30 disabled:opacity-50"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
             disabled={!!error || loading}
-          />
-          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+          >
+            {isPlaying ? <PauseIcon className="h-6 w-6" /> : <PlayIcon className="h-6 w-6 ml-0.5" />}
+          </button>
+          <div className="flex-1 space-y-2">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full transition-all duration-300"
+                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max={duration || 0}
+                step="0.1"
+                value={currentTime} 
+                onChange={handleSeek}
+                className="relative w-full h-2 opacity-0 cursor-pointer z-10"
+                aria-label="Audio progress"
+                disabled={!!error || loading}
+              />
+            </div>
+            <div className="flex justify-between items-center text-sm font-medium">
+              <span className="text-gray-600 dark:text-gray-400">{formatTime(currentTime)}</span>
+              <span className="text-gray-500 dark:text-gray-500">{formatTime(duration)}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -227,8 +260,27 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
     return typeMappings[type] || type.charAt(0).toUpperCase() + type.slice(1);
   };
   
-  // Parse the feedback when available
-  const parsedFeedbackSections = parseFeedbackMarkdown(feedback?.feedback?.overall);
+  // Parse the feedback when available - handle both old and new formats
+  let parsedFeedbackSections: { [key: string]: string } = {};
+  
+  if (feedback?.feedback) {
+    // Check if it's the new structured format
+    if (feedback.feedback.speakerScore !== undefined && feedback.feedback.structureOrganization) {
+      // New structured format
+      parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
+    } else if (feedback.feedback.overall) {
+      // Old format with overall string
+      parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overall);
+    } else if (feedback.feedback.overallSummary) {
+      // New format but might be missing some fields - convert what we have
+      try {
+        parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
+      } catch (e) {
+        // Fallback to treating overallSummary as markdown
+        parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overallSummary);
+      }
+    }
+  }
   
   // Add a function to handle exporting feedback
   const handleExportFeedback = () => {
@@ -237,7 +289,22 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
     // Create content for export
     const title = `## Speech Feedback: ${feedback.topic}\n`;
     const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
-    const content = feedback.feedback?.overall || '';
+    
+    let content = '';
+    
+    // Export based on format
+    if (Object.keys(parsedFeedbackSections).length > 0) {
+      // Export parsed sections
+      for (const [heading, sectionContent] of Object.entries(parsedFeedbackSections)) {
+        content += `### ${heading}\n\n${sectionContent}\n\n`;
+      }
+    } else if (feedback.feedback?.overall) {
+      // Old format
+      content = feedback.feedback.overall;
+    } else if (feedback.feedback?.overallSummary) {
+      // New format - export as structured text
+      content = feedback.feedback.overallSummary;
+    }
     
     // Combine all content
     const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
@@ -368,8 +435,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                 'Clarity & Conciseness',
                 'Persuasiveness & Impact',
                 'Delivery Style (Inferred)',
-                'Relevance to Speech Type(s)',
-                'Actionable Suggestions'
+                'Strategic success Speech Type(s)'
               ].map(heading => {
                 const content = parsedFeedbackSections[heading];
                 if (!content) return null;
@@ -378,9 +444,9 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                 
                 // Determine accent color based on section type (example logic)
                 let accentColor = 'primary-500'; // Default
-                if (['Strengths'].includes(heading)) accentColor = 'green-500';
-                if (['Areas for Improvement', 'Actionable Suggestions'].includes(heading)) accentColor = 'yellow-500';
-                if (['Overall Summary', 'Next Steps'].includes(heading)) accentColor = 'blue-500'; 
+                if (['Strengths'].includes(heading)) accentColor = 'primary-500';
+                if (['Areas for Improvement', 'Actionable Suggestions'].includes(heading)) accentColor = 'secondary-500';
+                if (['Overall Summary', 'Next Steps'].includes(heading)) accentColor = 'primary-500'; 
 
                 return (
                   <FeedbackSection
@@ -394,71 +460,31 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
               })}
 
               {/* Fallback or message if parsing fails or no sections found */}
-              {Object.keys(parsedFeedbackSections).length === 0 && feedback.feedback?.overall && (
+              {Object.keys(parsedFeedbackSections).length === 0 && (feedback.feedback?.overall || feedback.feedback?.overallSummary) && (
                  <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
                    <div className="px-4 py-5 sm:px-6">
                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Feedback Assessment</h2>
                      <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
-                       <ReactMarkdown>{feedback.feedback.overall}</ReactMarkdown>
+                       <ReactMarkdown>{feedback.feedback.overall || feedback.feedback.overallSummary}</ReactMarkdown>
                      </div>
-                     <p className="mt-4 text-sm text-yellow-600 dark:text-yellow-400">
+                     <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                        Note: Could not automatically parse feedback into sections. Displaying raw content.
-                       <button
-                         onClick={() => {
-                           // Try to extract at least some sections using regex as a last resort
-                           const overallText = feedback.feedback?.overall || '';
-                           const emergencyParsed: {[key: string]: string} = {};
-                           
-                           // Extract any section content between headings (simple regex fallback)
-                           const headingMatches = overallText.match(/#{1,3}\s+([^\n]+)/g) || [];
-                           
-                           headingMatches.forEach((heading, index) => {
-                             const cleanHeading = heading.replace(/^#{1,3}\s+/, '');
-                             
-                             // Get content between this heading and the next (or the end)
-                             const startIndex = overallText.indexOf(heading) + heading.length;
-                             const nextHeadingIndex = index < headingMatches.length - 1 
-                               ? overallText.indexOf(headingMatches[index + 1])
-                               : overallText.length;
-                               
-                             const content = overallText.substring(startIndex, nextHeadingIndex).trim();
-                             
-                             if (cleanHeading && content) {
-                               emergencyParsed[cleanHeading] = content;
-                             }
-                           });
-                           
-                           // If we found any sections, update the parsed sections
-                           if (Object.keys(emergencyParsed).length > 0) {
-                             setFeedback(prev => {
-                               if (!prev) return null;
-                               return {
-                                 ...prev,
-                                 parsed_sections: emergencyParsed
-                               };
-                             });
-                           }
-                         }}
-                         className="ml-2 text-primary-600 dark:text-primary-400 hover:underline"
-                       >
-                         Try to fix
-                       </button>
                      </p>
                    </div>
                  </div>
               )}
 
               {/* Message if no feedback content at all */}
-              {!feedback.feedback?.overall && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-md p-4">
-                  <p className="text-sm text-yellow-700 dark:text-yellow-200">Feedback is still processing or was not generated for this speech.</p>
+              {!feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
+                <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-300 dark:border-gray-700 rounded-md p-4">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Feedback is still processing or was not generated for this speech.</p>
                 </div>
               )}
             </div>
           )}
           
           {/* Case where feedback object exists but no URL and no overall text */}
-          {feedback && !feedback.audio_url && !feedback.feedback?.overall && (
+          {feedback && !feedback.audio_url && !feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
              <div className="mt-6 bg-gray-50 dark:bg-gray-800 shadow-md rounded-lg p-6 text-center">
                <p className="text-gray-600 dark:text-gray-400">No audio recording or feedback text is available for this entry.</p>
              </div>

@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
+import { openAIService } from '@/backend/services/openaiService';
 import { SearchResult } from './retrievalService'; // Import the SearchResult type
+import { aiLogger as logger } from '@/lib/monitoring/logger';
 
 // Define the structure for the generated response
 export interface GeneratedAnswer {
@@ -17,16 +19,19 @@ export interface GeneratedAnswer {
  * @returns A promise that resolves to a GeneratedAnswer object.
  */
 export const generateAnswerFromContext = async (
-  openai: OpenAI,
+  openai: OpenAI | null,
   model: string,
   query: string,
   contextChunks: SearchResult[]
 ): Promise<GeneratedAnswer> => {
-  console.log(`Generating answer for query: "${query}" using ${contextChunks.length} context chunks.`);
+  logger.info('Generating answer from context', {
+    query,
+    contextChunks: contextChunks.length,
+    model
+  });
 
   if (contextChunks.length === 0) {
-    console.log('No context provided, returning generic response.');
-    // Handle cases with no retrieved context - maybe a specific message or attempt generation without context?
+    logger.warn('No context chunks provided for generation');
     return {
       answer: "I couldn't find specific information in the provided documents to answer that query.",
       sources: [],
@@ -54,23 +59,50 @@ Query: ${query}
 
 Answer:`;
 
-  console.log("System Prompt:", systemPrompt);
-  console.log("User Prompt Snippet:", userPrompt.substring(0, 500) + "..."); // Log snippet for brevity
+  logger.debug('Generation prompts prepared', {
+    queryLength: query.length,
+    contextLength: contextString.length
+  });
 
   try {
-    // --- Call OpenAI Chat Completion API --- 
-    const completion = await openai.chat.completions.create({
-      model: model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.2, // Lower temperature for more factual, less creative answers
-      max_tokens: 500, // Adjust as needed
+    // Use centralized service if openai client not provided
+    const fallbackAnswer = "I'm unable to generate a comprehensive answer at the moment. Based on the available context, please refer to the source documents for more information.";
+    
+    let generatedAnswer: string;
+    
+    if (openai) {
+      // Use provided OpenAI client (for backward compatibility)
+      const completion = await openai.chat.completions.create({
+        model: model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 500,
+      });
+      generatedAnswer = completion.choices[0]?.message?.content?.trim() || fallbackAnswer;
+    } else {
+      // Use centralized service with error recovery
+      const completion = await openAIService.createChatCompletion({
+        model: model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 500,
+      }, {
+        fallbackResponse: fallbackAnswer,
+        validateResponse: (response) => response.length > 10
+      });
+      generatedAnswer = completion.choices[0]?.message?.content?.trim() || fallbackAnswer;
+    }
+    
+    logger.info('Answer generated successfully', {
+      answerLength: generatedAnswer.length,
+      model
     });
-
-    const generatedAnswer = completion.choices[0]?.message?.content?.trim() || 'No answer generated.';
-    console.log("Generated Answer:", generatedAnswer);
 
     // --- Extract Used Sources (Simple approach: check which sources were mentioned) ---
     // This is a basic way to identify sources. More robust methods could involve analyzing citations.
@@ -90,7 +122,16 @@ Answer:`;
     };
 
   } catch (error) {
-    console.error('Error generating answer from context:', error);
-    throw new Error('Failed to generate answer using OpenAI API.');
+    logger.error('Failed to generate answer from context', {
+      error,
+      query,
+      contextChunks: contextChunks.length
+    });
+    
+    // Return a fallback response instead of throwing
+    return {
+      answer: "I encountered an error while generating an answer. Please try again or refer to the source documents directly.",
+      sources: contextChunks.map(chunk => ({ source: chunk.source })).filter(s => s.source),
+    };
   }
 }; 

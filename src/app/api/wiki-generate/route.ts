@@ -4,10 +4,13 @@
  * and generates a synthesized answer using an LLM.
  */
 
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { NextRequest, NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { withRateLimit, wikiSearchRateLimiter } from '@/middleware/rateLimiter';
+import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
+import { openAIManager } from '@/backend/services/openaiClientManager';
+import { apiLogger as logger } from '@/lib/monitoring/logger';
 import {
   searchVectorStore,
   SearchResult,
@@ -18,95 +21,147 @@ import {
 } from '@/backend/modules/wikiSearch/generationService';
 
 // Get environment variables
-const openaiApiKey = process.env.OPENAI_API_KEY;
 const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
-const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o'; // Allow configuring the model
-
-// Initialize OpenAI client - moved inside handler
-let openai: OpenAI | null = null;
+const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini';
 
 /**
  * POST handler for generating an answer using RAG.
  * Expects a JSON body with { query: string, maxResults?: number }.
  */
-export async function POST(request: Request) {
-  // --- Authentication Check ---
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    return NextResponse.json({ 
-      error: 'Authentication required' 
-    }, { status: 401 });
-  }
-  
-  // --- Environment Variable Check ---
-  if (!openaiApiKey) {
-    console.error('OPENAI_API_KEY environment variable is not set.');
-    return NextResponse.json({ error: 'Server configuration error: OpenAI API key missing.' }, { status: 500 });
-  }
-  if (!vectorStoreId) {
-    console.error('OPENAI_VECTOR_STORE_ID environment variable is not set.');
-    return NextResponse.json({ error: 'Server configuration error: OpenAI Vector Store ID missing.' }, { status: 500 });
-  }
+export async function POST(request: NextRequest) {
+  // Apply rate limiting with handler function
+  const result = await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    try {
+      // Authentication check
+      const cookieStore = cookies();
+      const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+        );
+      }
+      
+      // Environment variable check
+      if (!vectorStoreId) {
+        logger.error('OPENAI_VECTOR_STORE_ID environment variable is not set');
+        return addSecurityHeaders(
+          NextResponse.json({ error: 'Server configuration error: Vector Store ID missing' }, { status: 500 })
+        );
+      }
 
-  // --- Initialize OpenAI Client (if not already) ---
-  if (!openai) {
-      openai = new OpenAI({ apiKey: openaiApiKey });
-  }
+      // Validate request body
+      const validation = await validateRequest(request, validationSchemas.wikiGenerate, { sanitize: true });
+      
+      if (!validation.success) {
+        return addSecurityHeaders(
+          NextResponse.json({ 
+            error: 'Invalid request data', 
+            details: validation.details || validation.error
+          }, { status: 400 })
+        );
+      }
 
-  try {
-    // --- Request Body Parsing and Validation ---
-    const body = await request.json();
-    const { query, maxResults } = body;
+      const { query, maxResults, context } = validation.data;
+      
+      logger.info('Processing wiki generation request', {
+        userId: user.id,
+        query: query.substring(0, 50) + '...',
+        maxResults
+      });
 
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Invalid request body. Required field: query (string).' }, { status: 400 });
-    }
-    // Validate optional maxResults for retrieval step
-    if (maxResults !== undefined && (typeof maxResults !== 'number' || !Number.isInteger(maxResults) || maxResults <= 0)) {
-      return NextResponse.json({ error: 'Invalid request body. Optional field maxResults must be a positive integer.' }, { status: 400 });
-    }
+      // Get OpenAI client from pool
+      const openai = await openAIManager.getRawClient();
+      
+      // Step 1: Use provided context or retrieve from vector store
+      let contextChunks: SearchResult[];
+      
+      if (context && context.length > 0) {
+        // Use provided context (for cases where search was done separately)
+        contextChunks = context.map((ctx, idx) => ({
+          content: ctx.content,
+          source: ctx.source || `Context ${idx + 1}`,
+          score: ctx.relevance || 0.8
+        }));
+        logger.info('Using provided context', { contextCount: context.length });
+      } else {
+        // Retrieve context chunks from vector store
+        contextChunks = await searchVectorStore(
+          openai,
+          vectorStoreId,
+          query,
+          maxResults
+        );
+        logger.info('Retrieved context from vector store', { 
+          chunksFound: contextChunks.length 
+        });
+      }
 
-    // Process RAG generation request
-
-    // --- Step 1: Retrieve Context Chunks ---
-    const contextChunks: SearchResult[] = await searchVectorStore(
-        openai,
-        vectorStoreId,
-        query,
-        maxResults // Pass optional maxResults or undefined (defaults in retrievalService)
-    );
-
-    // --- Step 2: Generate Answer from Context ---
-    const generatedResult: GeneratedAnswer = await generateAnswerFromContext(
-        openai,
-        generationModel, // Use the configured generation model
+      // Step 2: Generate answer from context
+      const generatedResult: GeneratedAnswer = await generateAnswerFromContext(
+        null, // Pass null to use centralized service
+        generationModel,
         query,
         contextChunks
-    );
+      );
+      
+      logger.info('Wiki generation completed', {
+        userId: user.id,
+        answerLength: generatedResult.answer.length,
+        sourcesCount: generatedResult.sources.length
+      });
 
-    // --- Return Generated Answer --- 
-    return NextResponse.json(generatedResult, { status: 200 });
+      // Return generated answer
+      return addSecurityHeaders(
+        NextResponse.json({
+          success: true,
+          ...generatedResult
+        })
+      );
 
-  } catch (error) {
-    // --- General Error Handling ---
-    console.error('Error in wiki-generate POST handler:', error);
-    if (error instanceof SyntaxError) {
-        return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
-    }
-    // Check for errors from underlying services
-    if (error instanceof Error) {
+    } catch (error) {
+      logger.error('Wiki generation failed', {
+        error,
+        userId: 'unknown'
+      });
+      
+      if (error instanceof SyntaxError) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+        );
+      }
+      
+      // Check for specific errors from underlying services
+      if (error instanceof Error) {
         if (error.message.includes('Failed to perform search') || error.message.includes('Assistant run failed')) {
-            return NextResponse.json({ error: `RAG failed during retrieval step: ${error.message}` }, { status: 500 });
+          return addSecurityHeaders(
+            NextResponse.json({ 
+              error: 'Search service temporarily unavailable',
+              message: 'Unable to search the knowledge base. Please try again in a moment.'
+            }, { status: 503 })
+          );
         }
         if (error.message.includes('Failed to generate answer')) {
-            return NextResponse.json({ error: `RAG failed during generation step: ${error.message}` }, { status: 500 });
+          return addSecurityHeaders(
+            NextResponse.json({ 
+              error: 'Generation service temporarily unavailable',
+              message: 'Unable to generate an answer. Please try again in a moment.'
+            }, { status: 503 })
+          );
         }
+      }
+      
+      // Generic server error
+      return addSecurityHeaders(
+        NextResponse.json({ 
+          error: 'Internal server error',
+          message: 'An unexpected error occurred. Please try again later.'
+        }, { status: 500 })
+      );
     }
-    // Generic server error
-    return NextResponse.json({ error: 'Internal Server Error during RAG generation.' }, { status: 500 });
-  }
+  });
+  
+  return result;
 } 

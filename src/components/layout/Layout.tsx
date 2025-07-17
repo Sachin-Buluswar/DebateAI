@@ -2,8 +2,11 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import Navbar from './Navbar';
+import EnhancedNavbar from './EnhancedNavbar';
 import Sidebar from './Sidebar';
+import PageTransition from '@/components/ui/PageTransition';
 import { usePathname } from 'next/navigation';
+import { usePreferences } from '@/components/providers/PreferencesProvider';
 
 // Define paths where sidebar should be hidden
 const pathsWithoutSidebar = ['/auth', '/', '/auth-test']; // Add landing page, auth pages etc.
@@ -24,11 +27,16 @@ export const useSidebar = () => {
 
 type LayoutProps = {
   children: React.ReactNode;
+  useEnhancedNavbar?: boolean;
 };
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, useEnhancedNavbar }: LayoutProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { preferences, loading } = usePreferences();
+  
+  // Use enhanced navbar from preferences if not explicitly overridden
+  const shouldUseEnhancedNavbar = useEnhancedNavbar !== undefined ? useEnhancedNavbar : preferences.enhancedNavbar;
   
   // Determine if sidebar should be shown based on current path
   const showSidebar = !!pathname && !pathsWithoutSidebar.includes(pathname);
@@ -44,14 +52,14 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarContext.Provider value={sidebarContextValue}>
-      {/* Use ThemeProvider context for dark mode class on html/body */}
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <Navbar />
-        <div className="flex pt-16"> {/* Add padding-top to account for fixed Navbar height */}
+      {/* Minimalist background */}
+      <div className="min-h-screen bg-white dark:bg-gray-950">
+        {shouldUseEnhancedNavbar ? <EnhancedNavbar /> : <Navbar />}
+        <div className="flex pt-20"> {/* Add padding-top to account for fixed Navbar height */}
           {showSidebar && (
-            // Add a wrapper div for fixed positioning and styling
-            <div className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:pt-16 lg:z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
-              isCollapsed ? 'lg:w-16' : 'lg:w-64'
+            // Minimalist sidebar styling
+            <div className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:pt-20 lg:z-30 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ${
+              isCollapsed ? 'lg:w-20' : 'lg:w-64'
             }`}>
               <Sidebar />
             </div>
@@ -60,12 +68,13 @@ export default function Layout({ children }: LayoutProps) {
           <main className={`flex-1 transition-all duration-300 ease-in-out ${
             showSidebar 
               ? isCollapsed 
-                ? 'lg:ml-16' 
+                ? 'lg:ml-20' 
                 : 'lg:ml-64' 
               : ''
-          } p-4 sm:p-6 lg:p-8`}>
-            {/* Future: Add Breadcrumbs component here based on Pillar 1.5 */}
-            {children}
+          } px-8 py-12 lg:px-16 lg:py-16`}>
+            <PageTransition>
+              {children}
+            </PageTransition>
           </main>
         </div>
       </div>

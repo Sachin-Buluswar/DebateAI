@@ -1,21 +1,45 @@
 'use client';
 
-import { useEffect, useState, useRef, FormEvent } from 'react';
+import { useEffect, useState, useRef, FormEvent, useMemo, useCallback, memo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import {
   Participant,
   DebateState,
 } from '@/backend/modules/realtimeDebate/debate-types';
 import { debateConfig } from '@/backend/modules/realtimeDebate/debate.config';
-import ParticipantPanel from '../../components/debate/ParticipantPanel';
-import { WikiSearchPanel } from '@/components/debate/WikiSearchPanel';
-import StreamingAudioPlayer from '../../components/debate/StreamingAudioPlayer';
-import AudioRecorder from '../../components/debate/AudioRecorder';
-import CrossfireController from '../../components/debate/CrossfireControls';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import Layout from '@/components/layout/Layout';
+
+// Lazy load heavy components for better initial load performance
+const ParticipantPanel = dynamic(() => import('../../components/debate/ParticipantPanel'), {
+  loading: () => <LoadingSpinner text="Loading participants..." />,
+  ssr: false,
+});
+
+const WikiSearchPanel = dynamic(() => import('@/components/debate/WikiSearchPanel').then(mod => ({ default: mod.WikiSearchPanel })), {
+  loading: () => <LoadingSpinner text="Loading research panel..." />,
+  ssr: false,
+});
+
+const StreamingAudioPlayer = dynamic(() => import('../../components/debate/StreamingAudioPlayer'), {
+  loading: () => <LoadingSpinner text="Loading audio player..." />,
+  ssr: false,
+});
+
+const AudioRecorder = dynamic(() => import('../../components/debate/AudioRecorder'), {
+  loading: () => <LoadingSpinner text="Loading recorder..." />,
+  ssr: false,
+});
+
+const CrossfireController = dynamic(() => import('../../components/debate/CrossfireControls'), {
+  loading: () => <LoadingSpinner text="Loading controls..." />,
+  ssr: false,
+});
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Textarea } from '@/components/ui/Textarea';
+import EnhancedButton from '@/components/ui/EnhancedButton';
+import EnhancedInput from '@/components/ui/EnhancedInput';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { PlayIcon, PauseIcon, ForwardIcon, BookmarkIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -28,6 +52,7 @@ type DebateSetup = {
   selectedAIDebaters: string[]; // Array of 3 selected AI debater names
 };
 
+// Create participants function outside component for performance
 const createParticipants = (setup: DebateSetup): Participant[] => {
   const participants: Participant[] = [];
   
@@ -59,9 +84,13 @@ export default function DebatePage() {
   const [isResearchPanelVisible, setIsResearchPanelVisible] = useState(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isCrossfireActive, setIsCrossfireActive] = useState<boolean>(false);
   const socketRef = useRef<Socket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [setup, setSetup] = useState<DebateSetup | null>(null);
   const [speechText, setSpeechText] = useState<string>('');
@@ -89,10 +118,15 @@ export default function DebatePage() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  // Get available AI debaters from config
-  const availableAIDebaters = Object.values(debateConfig.personalities);
+  // Memoize available AI debaters to avoid recreating array on each render
+  const availableAIDebaters = useMemo(() => Object.values(debateConfig.personalities), []);
 
-  const handleAIDebaterToggle = (debaterName: string) => {
+  // Memoize participants array to avoid recreating on each render
+  const participants = useMemo(() => {
+    return setup ? createParticipants(setup) : [];
+  }, [setup]);
+
+  const handleAIDebaterToggle = useCallback((debaterName: string) => {
     setFormData(prev => {
       const currentSelected = prev.selectedAIDebaters;
       if (currentSelected.includes(debaterName)) {
@@ -111,7 +145,77 @@ export default function DebatePage() {
       // If already 3 selected, don't add more
       return prev;
     });
-  };
+  }, []);
+
+  const handleSetupSubmit = useCallback((e: FormEvent) => {
+    e.preventDefault();
+    const topic = formData.topic?.trim();
+    if (!topic) {
+      alert('Please enter a debate topic');
+      return;
+    }
+    if (formData.selectedAIDebaters.length < 3) {
+      alert('Please select exactly 3 AI debaters');
+      return;
+    }
+    setSetup({ topic, side: formData.side, aiPartner: formData.aiPartner, selectedAIDebaters: formData.selectedAIDebaters });
+  }, [formData]);
+
+  const startDebate = useCallback(() => {
+    if (!setup) return;
+    if (!isConnected) {
+      alert('Not connected to server. Please refresh the page.');
+      return;
+    }
+    console.log('Starting debate with participants:', participants);
+    socketRef.current?.emit('startDebate', { topic: setup.topic, participants });
+  }, [setup, isConnected, participants]);
+  
+  const handleUserSpeech = useCallback((text: string) => {
+    console.log('User speech transcribed:', text);
+    setCurrentSpeaker('You');
+    
+    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
+    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
+      socketRef.current.emit('userSpeech', { 
+        text, 
+        speakerId: userSpeakerId,
+        phase: debateState?.phase 
+      });
+    }
+  }, [setup, debateState]);
+
+  const skipUserTurn = useCallback(() => {
+    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
+    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
+      const mockSpeech = `Thank you for this opportunity. I believe my fellow debater has already made our key points well, and I yield the remainder of my time.`;
+      handleUserSpeech(mockSpeech);
+    }
+  }, [setup, debateState, handleUserSpeech]);
+
+  const getPhaseDisplayName = useCallback((phase: string) => {
+    return phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }, []);
+
+  const getTotalPhases = useCallback(() => 11, []);
+  const getCurrentPhaseIndex = useCallback(() => {
+    const phases = ['PRO_CONSTRUCTIVE', 'CON_CONSTRUCTIVE', 'CROSSFIRE_1', 'PRO_REBUTTAL', 'CON_REBUTTAL', 'CROSSFIRE_2', 'PRO_SUMMARY', 'CON_SUMMARY', 'GRAND_CROSSFIRE', 'PRO_FINAL_FOCUS', 'CON_FINAL_FOCUS'];
+    return phases.indexOf(debateState?.phase || '') + 1;
+  }, [debateState?.phase]);
+
+  const pauseDebate = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('pauseDebate');
+      setIsPaused(true);
+    }
+  }, []);
+
+  const resumeDebate = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.emit('resumeDebate');
+      setIsPaused(false);
+    }
+  }, []);
 
   useEffect(() => {
     // Initialize socket with authentication
@@ -121,12 +225,23 @@ export default function DebatePage() {
       
       if (error || !session) {
         console.error('No authenticated session found');
-        alert('You must be logged in to participate in debates');
+        setConnectionError('You must be logged in to participate in debates');
+        setIsConnecting(false);
         return;
       }
       
       // This fetch call is necessary to initialize the socket.io server on the backend.
-      fetch('/api/socketio');
+      try {
+        setIsConnecting(true);
+        setConnectionError(null);
+        
+        await fetch('/api/socketio');
+      } catch (error) {
+        console.error('Failed to initialize socket server:', error);
+        setConnectionError('Failed to connect to debate server. Please try again.');
+        setIsConnecting(false);
+        return;
+      }
 
       const socket: Socket = io({
         path: '/api/socketio',
@@ -145,26 +260,48 @@ export default function DebatePage() {
       socketRef.current = socket;
 
     socket.on('connect', () => {
+      console.log('Socket connected successfully');
       setIsConnected(true);
+      setIsConnecting(false);
+      setConnectionError(null);
+      setReconnectAttempt(0);
     });
     
     socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
       setIsConnected(false);
       
       // Handle different disconnect reasons
       if (reason === 'io server disconnect') {
-        // Server disconnected, need to manually reconnect
+        setConnectionError('Disconnected by server. Attempting to reconnect...');
         socket.connect();
+      } else if (reason === 'transport close' || reason === 'transport error') {
+        setConnectionError('Connection lost. Attempting to reconnect...');
+      } else if (reason === 'ping timeout') {
+        setConnectionError('Connection timeout. Check your internet connection.');
       }
     });
     
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error.message);
       setIsConnected(false);
+      setIsConnecting(false);
+      
+      // Provide user-friendly error messages
+      if (error.message.includes('Authentication')) {
+        setConnectionError('Authentication failed. Please log in again.');
+      } else if (error.message.includes('timeout')) {
+        setConnectionError('Connection timeout. Please check your internet connection.');
+      } else {
+        setConnectionError(`Connection failed: ${error.message}`);
+      }
     });
     
     socket.on('reconnect', (attemptNumber) => {
+      console.log('Socket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
+      setConnectionError(null);
+      setReconnectAttempt(0);
       
       // Re-join debate if one was in progress
       if (debateState && debateState.phase !== 'ENDED') {
@@ -174,12 +311,20 @@ export default function DebatePage() {
     });
     
     socket.on('reconnect_attempt', (attemptNumber) => {
-      // Reconnection in progress
+      console.log('Socket reconnection attempt', attemptNumber);
+      setReconnectAttempt(attemptNumber);
+      setConnectionError(`Reconnecting... (Attempt ${attemptNumber}/5)`);
     });
     
     socket.on('reconnect_failed', () => {
       console.error('Socket reconnection failed');
-      alert('Connection to the debate server lost. Please refresh the page to reconnect.');
+      setIsConnected(false);
+      setConnectionError('Failed to reconnect. Please refresh the page to try again.');
+      
+      // Offer manual reconnection after a delay
+      reconnectTimeoutRef.current = setTimeout(() => {
+        setConnectionError('Connection lost. Click "Reconnect" to try again.');
+      }, 2000);
     });
 
     socket.on('debateStateUpdate', (newState: DebateState, mode: string) => {
@@ -193,7 +338,6 @@ export default function DebatePage() {
         setIsCrossfireActive(false);
         // Find and set current speaker name
         if (setup && newState.currentSpeakerId && newState.currentSpeakerId !== 'CROSSFIRE') {
-          const participants = createParticipants(setup);
           const speaker = participants.find(p => p.id === newState.currentSpeakerId);
           if (speaker) {
             setCurrentSpeaker(speaker.name);
@@ -236,6 +380,35 @@ export default function DebatePage() {
       const buffer = audioBuffer instanceof ArrayBuffer ? audioBuffer : 
                      new Uint8Array(audioBuffer).buffer;
       setAudioQueue(prev => [...prev, new Blob([buffer], { type: 'audio/mpeg' })]);
+    });
+
+    // WebSocket streaming audio handlers
+    let audioChunks: Uint8Array[] = [];
+    
+    socket.on('aiSpeechAudioChunk', (chunk: Buffer) => {
+      // Collect audio chunks as they arrive
+      const uint8Array = new Uint8Array(chunk);
+      audioChunks.push(uint8Array);
+    });
+    
+    socket.on('aiSpeechAudioEnd', () => {
+      // Combine all chunks and add to audio queue
+      if (audioChunks.length > 0) {
+        const totalLength = audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const combinedChunks = new Uint8Array(totalLength);
+        let offset = 0;
+        
+        for (const chunk of audioChunks) {
+          combinedChunks.set(chunk, offset);
+          offset += chunk.length;
+        }
+        
+        const audioBlob = new Blob([combinedChunks.buffer], { type: 'audio/mpeg' });
+        setAudioQueue(prev => [...prev, audioBlob]);
+        
+        // Clear chunks for next stream
+        audioChunks = [];
+      }
     });
 
     socket.on('debateError', (error: { message: string; error: string }) => {
@@ -283,98 +456,60 @@ export default function DebatePage() {
         socketRef.current.disconnect();
       }
     };
-  }, [setup]);
-
-  const handleSetupSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const topic = formData.topic?.trim();
-    if (!topic) {
-      alert('Please enter a debate topic');
-      return;
-    }
-    if (formData.selectedAIDebaters.length < 3) {
-      alert('Please select exactly 3 AI debaters');
-      return;
-    }
-    setSetup({ topic, side: formData.side, aiPartner: formData.aiPartner, selectedAIDebaters: formData.selectedAIDebaters });
-  };
-
-  const startDebate = () => {
-    if (!setup) return;
-    if (!isConnected) {
-      alert('Not connected to server. Please refresh the page.');
-      return;
-    }
-    const participants = createParticipants(setup);
-    console.log('Starting debate with participants:', participants);
-    socketRef.current?.emit('startDebate', { topic: setup.topic, participants });
-  };
-  
-  const handleUserSpeech = (text: string) => {
-    console.log('User speech transcribed:', text);
-    setCurrentSpeaker('You');
-    
-    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
-    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
-      socketRef.current.emit('userSpeech', { 
-        text, 
-        speakerId: userSpeakerId,
-        phase: debateState?.phase 
-      });
-    }
-  };
-
-  const skipUserTurn = () => {
-    const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
-    if (socketRef.current && debateState?.currentSpeakerId === userSpeakerId) {
-      const mockSpeech = `Thank you for this opportunity. I believe my fellow debater has already made our key points well, and I yield the remainder of my time.`;
-      handleUserSpeech(mockSpeech);
-    }
-  };
-
-  const getPhaseDisplayName = (phase: string) => {
-    return phase.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const getTotalPhases = () => 11;
-  const getCurrentPhaseIndex = () => {
-    const phases = ['PRO_CONSTRUCTIVE', 'CON_CONSTRUCTIVE', 'CROSSFIRE_1', 'PRO_REBUTTAL', 'CON_REBUTTAL', 'CROSSFIRE_2', 'PRO_SUMMARY', 'CON_SUMMARY', 'GRAND_CROSSFIRE', 'PRO_FINAL_FOCUS', 'CON_FINAL_FOCUS'];
-    return phases.indexOf(debateState?.phase || '') + 1;
-  };
-
-  const pauseDebate = () => {
-    if (socketRef.current) {
-      socketRef.current.emit('pauseDebate');
-      setIsPaused(true);
-    }
-  };
-
-  const resumeDebate = () => {
-    if (socketRef.current) {
-      socketRef.current.emit('resumeDebate');
-      setIsPaused(false);
-    }
-  };
+  }, [setup, participants]);
 
   return (
     <Layout>
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+        <div className="mb-8 space-y-4 animate-fade-in">
+          <h1>
             Live Debate Simulator
           </h1>
-          <p className="mt-2 text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Practice your debate skills with AI opponents in real-time
           </p>
+          
+          {/* Connection Status Alert */}
+          {connectionError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center justify-between animate-fade-in">
+              <div className="flex items-center space-x-3">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="text-sm text-red-800 dark:text-red-200">{connectionError}</span>
+              </div>
+              {connectionError.includes('Click "Reconnect"') && (
+                <EnhancedButton
+                  onClick={() => {
+                    setConnectionError(null);
+                    setIsConnecting(true);
+                    socketRef.current?.connect();
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Reconnect
+                </EnhancedButton>
+              )}
+            </div>
+          )}
+          
+          {/* Connecting Indicator */}
+          {isConnecting && !connectionError && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center space-x-3 animate-fade-in">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-blue-800 dark:text-blue-200">Connecting to debate server...</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Setup and Participants Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             {/* Participants Panel */}
-            <Card variant="default">
+            <Card variant="default" className="animate-fade-in stagger-1">
               <CardHeader>
-                <h2 className="text-xl font-semibold">Participants</h2>
+                <h3>Participants</h3>
                                  {!isConnected && (
                    <Badge variant="error" className="w-fit">
                      Disconnected
@@ -393,7 +528,7 @@ export default function DebatePage() {
               </CardHeader>
               <CardContent>
                 <ParticipantPanel
-                  participants={setup ? createParticipants(setup) : []}
+                  participants={participants}
                   currentSpeakerId={debateState?.currentSpeakerId || null}
                 />
               </CardContent>
@@ -401,42 +536,48 @@ export default function DebatePage() {
 
             {/* Debate Setup */}
             {!setup ? (
-              <Card variant="gradient">
+              <Card variant="gradient" className="animate-fade-in stagger-2">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Setup Debate</h2>
+                  <h3>Setup Debate</h3>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSetupSubmit} className="space-y-6">
-                    <Textarea
-                      label="Debate Topic"
-                      value={formData.topic}
-                      onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
-                      placeholder="e.g., Should autonomous vehicles be implemented on a large scale?"
-                      rows={3}
-                      required
-                    />
+                    <div className="w-full">
+                      <EnhancedInput
+                        label="Debate Topic"
+                        value={formData.topic}
+                        onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                        placeholder="e.g., Should autonomous vehicles be implemented on a large scale?"
+                        multiline
+                        rows={3}
+                        required
+                        className="resize-none"
+                      />
+                    </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Choose Your Side
                       </label>
                       <div className="grid grid-cols-2 gap-3">
-                        <Button
+                        <EnhancedButton
                           type="button"
-                          variant={formData.side === 'PRO' ? 'success' : 'outline'}
+                          variant={formData.side === 'PRO' ? 'primary' : 'outline'}
                           onClick={() => setFormData(prev => ({ ...prev, side: 'PRO' }))}
                           className="w-full"
+                          icon={<span className="text-xl">👍</span>}
                         >
-                          👍 PRO
-                        </Button>
-                        <Button
+                          PRO
+                        </EnhancedButton>
+                        <EnhancedButton
                           type="button"
                           variant={formData.side === 'CON' ? 'danger' : 'outline'}
                           onClick={() => setFormData(prev => ({ ...prev, side: 'CON' }))}
                           className="w-full"
+                          icon={<span className="text-xl">👎</span>}
                         >
-                          👎 CON
-                        </Button>
+                          CON
+                        </EnhancedButton>
                       </div>
                     </div>
                     
@@ -444,55 +585,100 @@ export default function DebatePage() {
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Select 3 AI Debaters (Currently selected: {formData.selectedAIDebaters.length}/3)
                       </label>
-                      <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
                         {availableAIDebaters.map((debater) => (
                           <button
                             key={debater.id}
                             type="button"
                             onClick={() => handleAIDebaterToggle(debater.name)}
-                            className={`p-2 text-xs rounded-lg border transition-all text-left ${
+                            className={`p-3 rounded-lg border-2 transition-all duration-200 text-left group relative overflow-hidden box-border min-w-0 ${
                               formData.selectedAIDebaters.includes(debater.name)
-                                ? 'border-blue-400 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                                : 'border-gray-300 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-gray-400 dark:hover:border-gray-600'
+                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 shadow-md'
+                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-sm'
                             } ${formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name) 
                                 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             disabled={formData.selectedAIDebaters.length >= 3 && !formData.selectedAIDebaters.includes(debater.name)}
                           >
-                            <div className="font-medium">{debater.name}</div>
-                            <div className="text-xs opacity-75 truncate">{debater.description}</div>
+                            <div className="flex items-start justify-between w-full">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                                  {debater.name}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2 break-words">
+                                  {debater.description}
+                                </div>
+                              </div>
+                              {formData.selectedAIDebaters.includes(debater.name) && (
+                                <div className="ml-2 flex-shrink-0">
+                                  <div className="w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center">
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} 
+                                        d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className={`absolute inset-0 bg-gradient-to-r from-primary-500/10 to-primary-600/10 transform transition-transform duration-300 ${
+                              formData.selectedAIDebaters.includes(debater.name) ? 'translate-x-0' : '-translate-x-full'
+                            }`} />
                           </button>
                         ))}
                       </div>
                       {formData.selectedAIDebaters.length < 3 && (
-                        <p className="text-xs text-yellow-200 mt-2">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                           Please select {3 - formData.selectedAIDebaters.length} more AI debater{3 - formData.selectedAIDebaters.length !== 1 ? 's' : ''}
                         </p>
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        id="aiPartner"
-                        checked={formData.aiPartner}
-                        onChange={(e) => setFormData(prev => ({ ...prev, aiPartner: e.target.checked }))}
-                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                      />
-                      <label htmlFor="aiPartner" className="text-sm text-gray-900 dark:text-white">
+                    <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer"
+                         onClick={() => setFormData(prev => ({ ...prev, aiPartner: !prev.aiPartner }))}>
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id="aiPartner"
+                          checked={formData.aiPartner}
+                          onChange={(e) => setFormData(prev => ({ ...prev, aiPartner: e.target.checked }))}
+                          className="sr-only"
+                        />
+                        <div className={`w-10 h-6 rounded-full transition-colors ${
+                          formData.aiPartner ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}>
+                          <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+                            formData.aiPartner ? 'translate-x-4' : 'translate-x-0'
+                          }`} />
+                        </div>
+                      </div>
+                      <label htmlFor="aiPartner" className="text-sm text-gray-900 dark:text-white cursor-pointer flex-1">
                         Include AI Partner on my team
+                        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Get assistance from an AI teammate during the debate
+                        </span>
                       </label>
                     </div>
                     
-                    <Button type="submit" variant="primary" size="lg" className="w-full">
+                    <EnhancedButton 
+                      type="submit" 
+                      variant="primary" 
+                      size="lg" 
+                      className="w-full"
+                      icon={
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      }
+                    >
                       Configure Debate
-                    </Button>
+                    </EnhancedButton>
                   </form>
                 </CardContent>
               </Card>
             ) : (
-              <Card variant="default">
+              <Card variant="default" className="animate-fade-in stagger-2">
                 <CardHeader>
-                  <h2 className="text-xl font-semibold">Debate Ready</h2>
+                  <h3>Debate Ready</h3>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -511,25 +697,39 @@ export default function DebatePage() {
                       <Badge variant="primary">Enabled</Badge>
                     </div>
                   )}
-                  <Button
+                  <EnhancedButton
                     onClick={startDebate}
                     disabled={!isConnected || !!debateState}
                     variant="primary"
                     size="lg"
                     className="w-full"
+                    loading={!isConnected}
+                    icon={
+                      debateState ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                            d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                        </svg>
+                      )
+                    }
                   >
                     {!isConnected ? 'Connecting...' : debateState ? 'Debate Active' : 'Start Debate'}
-                  </Button>
+                  </EnhancedButton>
                 </CardContent>
               </Card>
             )}
 
             {/* Phase Progress */}
             {debateState && (
-              <Card variant="glass">
+              <Card variant="glass" className="animate-fade-in stagger-3">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Phase Progress</h3>
+                    <h4>Phase Progress</h4>
                     <Badge variant="primary">
                       {getCurrentPhaseIndex()}/{getTotalPhases()}
                     </Badge>
@@ -572,7 +772,7 @@ export default function DebatePage() {
           {/* Main Debate Area */}
           <div className="lg:col-span-2 space-y-6">
             {/* Debate Stage */}
-            <Card variant="elevated" className="min-h-[400px]">
+            <Card variant="elevated" className="min-h-[400px] animate-fade-in stagger-1">
               <CardContent className="flex flex-col items-center justify-center h-full py-16">
                 {debateState ? (
                   <div className="text-center space-y-8 w-full max-w-2xl">
@@ -580,9 +780,9 @@ export default function DebatePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-center gap-3 bg-primary-50 dark:bg-primary-900/20 px-6 py-4 rounded-full">
                         <div className={`w-3 h-3 rounded-full ${currentSpeaker ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                        <h2 className="text-xl font-semibold">
+                        <h4>
                           {currentSpeaker || 'Waiting for speaker...'}
-                        </h2>
+                        </h4>
                       </div>
                       
                       {/* Audio Waveform Visualization */}
@@ -616,63 +816,45 @@ export default function DebatePage() {
                     {/* Debate Controls */}
                     {debateState.phase !== 'ENDED' && (
                       <div className="flex flex-wrap justify-center gap-4">
-                                                 <Button
+                         <EnhancedButton
                            onClick={!isPaused ? pauseDebate : resumeDebate}
                            variant="secondary"
                            size="lg"
+                           icon={!isPaused ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5" />}
                          >
-                           {!isPaused ? (
-                             <>
-                               <PauseIcon className="w-5 h-5 mr-2" />
-                               Pause
-                             </>
-                           ) : (
-                             <>
-                               <PlayIcon className="w-5 h-5 mr-2" />
-                               Resume
-                             </>
-                           )}
-                         </Button>
+                           {!isPaused ? 'Pause' : 'Resume'}
+                         </EnhancedButton>
                          
-                         <Button
+                         <EnhancedButton
                            onClick={() => socketRef.current?.emit('skipTurn')}
                            variant="ghost"
                            size="lg"
+                           icon={<ForwardIcon className="w-5 h-5" />}
                          >
-                           <ForwardIcon className="w-5 h-5 mr-2" />
                            Skip Turn
-                         </Button>
+                         </EnhancedButton>
                          
-                         <Button
+                         <EnhancedButton
                            onClick={() => {
                              socketRef.current?.emit('saveDebate');
                              setSaveStatus('saving');
                            }}
                            disabled={saveStatus === 'saving'}
-                           variant="accent"
+                           variant="primary"
                            size="lg"
-                           isLoading={saveStatus === 'saving'}
+                           loading={saveStatus === 'saving'}
+                           icon={saveStatus === 'saved' ? <CheckIcon className="w-5 h-5" /> : <BookmarkIcon className="w-5 h-5" />}
                          >
-                           {saveStatus === 'saved' ? (
-                             <>
-                               <CheckIcon className="w-5 h-5 mr-2" />
-                               Saved!
-                             </>
-                           ) : (
-                             <>
-                               <BookmarkIcon className="w-5 h-5 mr-2" />
-                               Save Progress
-                             </>
-                           )}
-                         </Button>
+                           {saveStatus === 'saved' ? 'Saved!' : 'Save Progress'}
+                         </EnhancedButton>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="text-center space-y-4">
-                    <h2 className="text-2xl font-bold text-muted-foreground">
+                    <h3 className="text-muted-foreground">
                       Ready to begin your debate
-                    </h2>
+                    </h3>
                     <p className="text-muted-foreground">
                       Configure your debate settings and click "Start Debate" to begin
                     </p>
@@ -683,20 +865,33 @@ export default function DebatePage() {
 
                          {/* User Turn Notification */}
              {debateState?.currentSpeakerId === (setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1') && (
-               <Card variant="default" className="border-success-200 bg-success-50 dark:border-success-800 dark:bg-success-900/20">
+               <Card variant="default" className="border-2 border-primary-400 bg-gradient-to-r from-primary-50 to-primary-100 dark:border-primary-600 dark:from-primary-900/30 dark:to-primary-800/30 shadow-lg animate-pulse-subtle">
                  <CardContent>
                    <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="font-semibold text-success-800 dark:text-success-200 mb-1">
-                         🎤 Your Turn to Speak!
-                       </h4>
-                       <p className="text-sm text-success-700 dark:text-success-300">
-                         Phase: {getPhaseDisplayName(debateState.phase)}
-                       </p>
+                     <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center animate-bounce">
+                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                             d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                         </svg>
+                       </div>
+                       <div>
+                         <h4 className="font-bold text-lg text-primary-800 dark:text-primary-200">
+                           Your Turn to Speak!
+                         </h4>
+                         <p className="text-sm text-primary-700 dark:text-primary-300">
+                           {getPhaseDisplayName(debateState.phase)} • {Math.floor(debateState.remainingTime / 60)}:{(debateState.remainingTime % 60).toString().padStart(2, '0')} remaining
+                         </p>
+                       </div>
                      </div>
-                     <Button onClick={skipUserTurn} variant="ghost" size="sm">
+                     <EnhancedButton 
+                       onClick={skipUserTurn} 
+                       variant="ghost" 
+                       size="sm"
+                       icon={<ForwardIcon className="w-4 h-4" />}
+                     >
                        Skip My Turn
-                     </Button>
+                     </EnhancedButton>
                    </div>
                  </CardContent>
                </Card>
@@ -705,9 +900,9 @@ export default function DebatePage() {
             {/* Audio and Recording Controls */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Audio Player */}
-              <Card variant="default">
+              <Card variant="default" className="animate-fade-in stagger-2">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">Audio Output</h3>
+                  <h4>Audio Output</h4>
                 </CardHeader>
                 <CardContent>
                   <StreamingAudioPlayer audioQueue={audioQueue} setAudioQueue={setAudioQueue} />
@@ -715,9 +910,9 @@ export default function DebatePage() {
               </Card>
               
               {/* Recording Controls */}
-              <Card variant="default">
+              <Card variant="default" className="animate-fade-in stagger-3">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">Voice Input</h3>
+                  <h4>Voice Input</h4>
                 </CardHeader>
                 <CardContent>
                   <AudioRecorder 
@@ -736,17 +931,23 @@ export default function DebatePage() {
           </div>
         </div>
 
-        {/* Research Panel Toggle */}
+        {/* Advice Panel Toggle */}
         {setup && (
           <div className="fixed bottom-6 right-6 z-40">
-            <Button
+            <EnhancedButton
               onClick={() => setIsResearchPanelVisible(!isResearchPanelVisible)}
               variant="primary"
               size="lg"
               className="rounded-full shadow-lg"
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              }
             >
-              {isResearchPanelVisible ? 'Close Research' : 'Open Research'}
-            </Button>
+              {isResearchPanelVisible ? 'Close Advice' : 'Get Advice'}
+            </EnhancedButton>
           </div>
         )}
       </div>
@@ -764,16 +965,16 @@ export default function DebatePage() {
             <Card variant="gradient">
               <CardContent>
                 <div className="flex items-center justify-between text-gray-900 dark:text-white">
-                  <h3 className="text-lg font-semibold">
+                  <h4>
                     Overall Performance Score
-                  </h3>
+                  </h4>
                   <div className="text-3xl font-bold">
                     {debateAnalysis.overallScore}/100
                   </div>
                 </div>
                 <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <div 
-                    className="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-500"
+                    className="bg-primary-500 dark:bg-primary-400 h-3 rounded-full transition-all duration-500"
                     style={{ width: `${debateAnalysis.overallScore}%` }}
                   />
                 </div>
@@ -807,7 +1008,7 @@ export default function DebatePage() {
             {/* Detailed Feedback */}
             <Card variant="default">
               <CardHeader>
-                <h3 className="text-lg font-semibold">📝 Detailed Feedback</h3>
+                <h4>📝 Detailed Feedback</h4>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">
@@ -818,17 +1019,17 @@ export default function DebatePage() {
 
                          {/* Strengths and Improvements */}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <Card variant="default" className="border-success-200 bg-success-50 dark:border-success-800 dark:bg-success-900/20">
+               <Card variant="default" className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/20">
                  <CardHeader>
-                   <h3 className="text-lg font-semibold text-success-800 dark:text-success-200">
+                   <h4 className="text-primary-800 dark:text-primary-200">
                      ✅ Strengths
-                   </h3>
+                   </h4>
                  </CardHeader>
                  <CardContent>
                    <ul className="space-y-2">
                      {Array.isArray(debateAnalysis.strengthsAreas) && debateAnalysis.strengthsAreas.map((strength: string, index: number) => (
                        <li key={index} className="text-sm flex items-start">
-                         <span className="text-success-500 mr-2">•</span>
+                         <span className="text-primary-500 mr-2">•</span>
                          {strength}
                        </li>
                      ))}
@@ -836,17 +1037,17 @@ export default function DebatePage() {
                  </CardContent>
                </Card>
                
-               <Card variant="default" className="border-warning-200 bg-warning-50 dark:border-warning-800 dark:bg-warning-900/20">
+               <Card variant="default" className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/20">
                  <CardHeader>
-                   <h3 className="text-lg font-semibold text-warning-800 dark:text-warning-200">
+                   <h4 className="text-gray-800 dark:text-gray-200">
                      🎯 Areas for Improvement
-                   </h3>
+                   </h4>
                  </CardHeader>
                  <CardContent>
                    <ul className="space-y-2">
                      {Array.isArray(debateAnalysis.improvementAreas) && debateAnalysis.improvementAreas.map((improvement: string, index: number) => (
                        <li key={index} className="text-sm flex items-start">
-                         <span className="text-warning-500 mr-2">•</span>
+                         <span className="text-gray-500 mr-2">•</span>
                          {improvement}
                        </li>
                      ))}
@@ -859,7 +1060,7 @@ export default function DebatePage() {
             {Array.isArray(debateAnalysis.keyMoments) && debateAnalysis.keyMoments.length > 0 && (
               <Card variant="default">
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">🌟 Key Moments</h3>
+                  <h4>🌟 Key Moments</h4>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
@@ -878,13 +1079,13 @@ export default function DebatePage() {
             {/* Next Steps */}
             <Card variant="default">
               <CardHeader>
-                <h3 className="text-lg font-semibold">🚀 Recommended Next Steps</h3>
+                <h4>🚀 Recommended Next Steps</h4>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {Array.isArray(debateAnalysis.recommendedNextSteps) && debateAnalysis.recommendedNextSteps.map((step: string, index: number) => (
                     <li key={index} className="text-sm flex items-start">
-                      <span className="text-accent-500 mr-2">•</span>
+                      <span className="text-primary-500 mr-2">•</span>
                       {step}
                     </li>
                   ))}
@@ -894,7 +1095,7 @@ export default function DebatePage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <Button
+              <EnhancedButton
                 onClick={() => {
                   setShowAnalysis(false);
                   // Reset for new debate
@@ -904,16 +1105,28 @@ export default function DebatePage() {
                 }}
                 variant="primary"
                 className="flex-1"
+                icon={
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                      d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                }
               >
                 Start New Debate
-              </Button>
-              <Button
+              </EnhancedButton>
+              <EnhancedButton
                 onClick={() => setShowAnalysis(false)}
                 variant="secondary"
                 className="flex-1"
+                icon={
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                      d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                }
               >
                 Close Analysis
-              </Button>
+              </EnhancedButton>
             </div>
           </div>
         </Modal>
@@ -926,8 +1139,9 @@ export default function DebatePage() {
           userPerspective={setup.side}
           isVisible={isResearchPanelVisible}
           onToggle={() => setIsResearchPanelVisible(!isResearchPanelVisible)}
+          currentSpeaker={currentSpeaker}
         />
       )}
     </Layout>
   );
-} 
+}

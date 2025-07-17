@@ -14,6 +14,9 @@ NC='\033[0m' # No Color
 # Default to development environment
 ENVIRONMENT=${1:-development}
 
+# Enable BuildKit for better caching
+export DOCKER_BUILDKIT=1
+
 echo -e "${GREEN}Building DebateAI Docker image for ${ENVIRONMENT}...${NC}"
 
 # Check if .env file exists
@@ -45,6 +48,8 @@ if [ "$ENVIRONMENT" == "production" ]; then
     docker build \
         --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
         --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+        --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.debateai.com}" \
+        --target runner \
         -t debateai:production \
         -t debateai:latest \
         -f Dockerfile \
@@ -54,6 +59,7 @@ else
     docker build \
         --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
         --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+        --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:3001}" \
         -t debateai:development \
         -f Dockerfile \
         .

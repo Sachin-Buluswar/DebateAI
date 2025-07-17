@@ -104,7 +104,7 @@ function AuthPageContent() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
         {error && (
           <div className="text-red-600 bg-red-100 p-3 rounded text-sm max-w-md text-center mt-4">
@@ -139,7 +139,7 @@ function AuthPageContent() {
 function LoadingFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 }

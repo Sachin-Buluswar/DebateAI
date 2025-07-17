@@ -1,102 +1,146 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { SparklesIcon, BookOpenIcon, MicrophoneIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import Navbar from '@/components/layout/Navbar';
 
 const features = [
   {
-    name: 'AI Debate Simulator',
-    description: 'Practice against intelligent AI opponents in structured debate formats. Get real-time feedback and improve your skills.',
-    icon: MicrophoneIcon,
+    name: 'ai debate simulator',
+    description: 'practice against intelligent ai opponents. get real-time feedback. improve your skills through structured formats.',
     href: '/debate'
   },
   {
-    name: 'AI Speech Feedback',
-    description: 'Upload or record your speeches and receive detailed analysis on delivery, pacing, and argument clarity.',
-    icon: SparklesIcon,
+    name: 'speech feedback',
+    description: 'upload or record your speeches. receive detailed analysis on delivery, pacing, and clarity. refine your technique.',
     href: '/speech-feedback'
   },
   {
-    name: 'Wiki Evidence Search',
-    description: 'Find relevant debate evidence and articles using our powerful RAG-based search engine, powered by vector search.',
-    icon: BookOpenIcon,
+    name: 'evidence search',
+    description: 'find relevant debate evidence using our vector-based search. access comprehensive wiki articles instantly.',
     href: '/search'
   },
   {
-    name: 'Secure & Private',
-    description: 'Your data is protected. We use Supabase for secure authentication and storage, with row-level security.',
-    icon: ShieldCheckIcon,
+    name: 'secure platform',
+    description: 'your data is protected with row-level security. authenticated access. private practice environment.',
     href: '/auth'
   },
 ]
 
 export default function HomePage() {
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
       <Navbar />
+      
       <main>
-        {/* Hero section */}
-        <div className="pt-8 overflow-hidden sm:pt-12 lg:pt-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-              <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
-                <h1>
-                  <span className="mt-1 block text-4xl font-bold tracking-tight sm:text-5xl xl:text-6xl">
-                    <span className="block text-gray-900 dark:text-white">The Future of Debate</span>
-                    <span className="block text-primary-600 dark:text-primary-400">is Here</span>
-                  </span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 dark:text-gray-300 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                  Welcome to DebateAI, the AI-powered platform that transforms debate training with real-time feedback, evidence search, and interactive simulations.
-                </p>
-                <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:mx-0 lg:text-left">
-                  <Link href="/debate" className="btn btn-primary btn-lg">
-                    Start Debating
-                  </Link>
-                </div>
-              </div>
-              <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-                <div className="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
-                  <Image className="w-full" src="/file.svg" alt="" width={500} height={500} />
-                </div>
-              </div>
+        {/* Hero section - Minimal with focus on typography */}
+        <section className="breathing-room max-w-6xl mx-auto">
+          <div className="space-y-8">
+            <h1 className="animate-fade-in">
+              <span className="block text-gray-900 dark:text-gray-100">
+                master the art
+              </span>
+              <span className="block text-primary-500 mt-2">
+                of debate
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl animate-fade-in stagger-1">
+              a distraction-free platform for developing your debate skills through ai-powered practice and analysis
+            </p>
+            
+            <div className="animate-fade-in stagger-2 space-x-4">
+              <Link href="/debate" className="btn btn-primary">
+                begin practice
+              </Link>
+              <Link href="/about" className="btn btn-ghost">
+                learn more →
+              </Link>
             </div>
           </div>
+        </section>
+
+        {/* Divider */}
+        <div className="max-w-6xl mx-auto px-8">
+          <div className="divider"></div>
         </div>
 
-        {/* Feature section */}
-        <div className="py-16 sm:py-24 lg:py-32">
-          <div className="mx-auto max-w-md px-4 text-center sm:max-w-3xl sm:px-6 lg:max-w-7xl lg:px-8">
-            <h2 className="text-base font-semibold uppercase tracking-wider text-primary-600">Develop Your Skills</h2>
-            <p className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight sm:text-4xl">
-              Everything you need to become a master debater
-            </p>
-            <div className="mt-12">
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-                {features.map((feature) => (
-                  <div key={feature.name} className="pt-6">
-                    <div className="flow-root rounded-lg bg-white dark:bg-gray-800 px-6 pb-8 shadow-lg">
-                      <div className="-mt-6">
-                        <div>
-                          <span className="inline-flex items-center justify-center rounded-md bg-primary-500 p-3 shadow-lg">
-                            <feature.icon className="h-6 w-6 text-white" aria-hidden="true" />
-                          </span>
-                        </div>
-                        <h3 className="mt-8 text-lg font-medium text-gray-900 dark:text-white tracking-tight">{feature.name}</h3>
-                        <p className="mt-5 text-base text-gray-500 dark:text-gray-400">{feature.description}</p>
-                        <Link href={feature.href} className="mt-6 inline-block text-primary-600 dark:text-primary-400 hover:underline">
-                          Learn More &rarr;
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Features section - Text-focused, no icons */}
+        <section className="breathing-room max-w-6xl mx-auto">
+          <div className="space-y-section">
+            <div className="space-y-4">
+              <h2 className="text-gray-900 dark:text-gray-100">
+                everything you need
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
+                focused tools for deliberate practice
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mt-16">
+              {features.map((feature, index) => (
+                <div 
+                  key={feature.name} 
+                  className={`space-y-4 animate-fade-in stagger-${index + 1}`}
+                >
+                  <h3 className="text-primary-500">
+                    {feature.name}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {feature.description}
+                  </p>
+                  <Link 
+                    href={feature.href} 
+                    className="inline-block text-gray-900 dark:text-gray-100 hover:text-primary-500 transition-colors"
+                  >
+                    explore →
+                  </Link>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* Call to action - Minimal and centered */}
+        <section className="breathing-room max-w-4xl mx-auto text-center">
+          <div className="space-y-8">
+            <h2 className="text-gray-900 dark:text-gray-100">
+              ready to elevate your debate skills?
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              join thousands practicing with focused, ai-powered tools
+            </p>
+            <div className="space-x-4">
+              <Link href="/auth" className="btn btn-primary">
+                get started
+              </Link>
+              <Link href="/debate" className="btn btn-ghost">
+                try a demo
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer - Ultra minimal */}
+        <footer className="border-t border-gray-200 dark:border-gray-800">
+          <div className="max-w-6xl mx-auto px-8 py-12">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <p className="text-sm text-gray-500 dark:text-gray-500">
+                debateai. focused practice for better debates.
+              </p>
+              <nav className="flex space-x-8">
+                <Link href="/about" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-100">
+                  about
+                </Link>
+                <Link href="/privacy" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-100">
+                  privacy
+                </Link>
+                <Link href="/terms" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-100">
+                  terms
+                </Link>
+              </nav>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
   )

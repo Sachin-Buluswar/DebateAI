@@ -40,13 +40,13 @@ export async function POST(req: NextRequest) {
       sessionId,
       userId,
       topic, 
-      speechTypes, 
+      speechType, 
       userSide,
       customInstructions
     } = data;
 
     // Validate required fields
-    if (!filename || !contentType || !totalSize || !totalChunks || !sessionId || !userId || !topic || !speechTypes || !userSide) {
+    if (!filename || !contentType || !totalSize || !totalChunks || !sessionId || !userId || !topic || !speechType || !userSide) {
       // Custom instructions are optional, so not validated here
       return NextResponse.json({ error: 'Missing required fields for init' }, { status: 400 });
     }
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       sessionId,
       userId,
       topic: topic || '',
-      speechTypes: speechTypes || [],
+      speechType: speechType || 'debate',
       userSide: userSide || 'None',
       customInstructions: customInstructions || '',
       uploadedChunks: 0,
