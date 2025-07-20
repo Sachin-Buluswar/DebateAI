@@ -915,7 +915,7 @@ export default function SpeechFeedback() {
 
                 {!isRecording ? (
                   <EnhancedButton
-                    variant="accent"
+                    variant="primary"
                     fullWidth
                     onClick={startRecording}
                     disabled={submitting}
@@ -975,7 +975,9 @@ export default function SpeechFeedback() {
                         size="sm"
                         onClick={handlePreviewPlayPause}
                         icon={previewPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
-                      />
+                      >
+                        {previewPlaying ? 'Pause' : 'Play'}
+                      </EnhancedButton>
                       <div className="flex-1">
                         <input 
                           type="range" 

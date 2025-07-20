@@ -194,7 +194,7 @@ const HistoryItem = memo(({ data, index, style }: { data: HistoryItemData[], ind
               <div className="ml-3 flex-shrink-0">
                 {(() => {
                   const feedback = (item as SpeechFeedback).feedback;
-                  const score = feedback.speakerScore || feedback.scores?.overall || feedback.score;
+                  const score = feedback?.speakerScore || feedback?.scores?.overall || feedback?.score;
                   if (score !== undefined && score !== null) {
                     const scoreColor = score >= 80 ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' :
                                      score >= 60 ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' :

@@ -30,8 +30,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "DebateAI",
-  description: "AI-powered debate practice and speech feedback platform",
+  title: "Atlas Debate - AI-Powered Debate Practice",
+  description: "Master debate skills with AI-powered practice sessions, real-time speech feedback, and comprehensive argument analysis",
+  keywords: ["debate", "AI debate", "speech practice", "argument analysis", "debate training"],
+  authors: [{ name: "Atlas Debate" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Atlas Debate",
+  },
 };
 
 export const viewport: Viewport = {

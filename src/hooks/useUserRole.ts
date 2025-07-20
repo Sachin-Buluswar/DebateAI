@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react';
+import { supabase } from '@/lib/supabaseClient';
 import { UserRole, hasRolePermission } from '@/types/auth';
+import type { Session } from '@supabase/supabase-js';
 
 interface UseUserRoleReturn {
   role: UserRole | null;
@@ -19,11 +20,10 @@ export function useUserRole(): UseUserRoleReturn {
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const supabase = useSupabaseClient();
-  const session = useSession();
+  const [session, setSession] = useState<Session | null>(null);
 
-  const fetchUserRole = async () => {
-    if (!session?.user?.id) {
+  const fetchUserRole = async (userId?: string) => {
+    if (!userId) {
       setRole('user'); // Default role for non-authenticated users
       setLoading(false);
       return;
@@ -52,8 +52,22 @@ export function useUserRole(): UseUserRoleReturn {
   };
 
   useEffect(() => {
-    fetchUserRole();
-  }, [session?.user?.id]);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      fetchUserRole(session?.user?.id);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      fetchUserRole(session?.user?.id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const hasRole = (requiredRole: UserRole): boolean => {
     if (!role) return false;
@@ -65,7 +79,7 @@ export function useUserRole(): UseUserRoleReturn {
     loading,
     error,
     hasRole,
-    refetch: fetchUserRole,
+    refetch: () => fetchUserRole(session?.user?.id),
   };
 }
 

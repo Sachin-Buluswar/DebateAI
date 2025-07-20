@@ -32,6 +32,9 @@ async function performEnhancedRagSearch(
   query: string,
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
+  let tempAssistant: any;
+  let thread: any;
+  
   try {
     // Check cache first
     const cacheKey = crypto.createHash('md5').update(query).digest('hex');
@@ -41,7 +44,7 @@ async function performEnhancedRagSearch(
     }
 
     // Create a temporary assistant for vector search
-    const tempAssistant = await openai.beta.assistants.create({
+    tempAssistant = await openai.beta.assistants.create({
       name: 'Enhanced RAG Search Assistant',
       instructions: `You are a document search assistant. Search for relevant information and return the exact document chunks that match the query.`,
       model: 'gpt-4o',
@@ -54,7 +57,7 @@ async function performEnhancedRagSearch(
     });
 
     // Create thread and run search
-    const thread = await openai.beta.threads.create();
+    thread = await openai.beta.threads.create();
 
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',

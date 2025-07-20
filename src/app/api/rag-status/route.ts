@@ -83,20 +83,29 @@ export async function GET() {
     // Check search capabilities
     try {
       // Check if pg_trgm extension exists
-      const { data: extensions } = await supabase
-        .rpc('get_installed_extensions' as any)
-        .catch(() => ({ data: [] }));
+      let extensions: any[] = [];
+      try {
+        const result = await supabase.rpc('get_installed_extensions' as any);
+        extensions = result.data || [];
+      } catch (error) {
+        console.error('Failed to get extensions:', error);
+      }
       
       if (Array.isArray(extensions)) {
         status.search.trigramEnabled = extensions.some(ext => ext.extname === 'pg_trgm');
       }
 
       // Check if search indexes exist
-      const { data: indexes } = await supabase
-        .from('pg_indexes' as any)
-        .select('indexname')
-        .eq('tablename', 'document_chunks')
-        .catch(() => ({ data: [] }));
+      let indexes: any[] = [];
+      try {
+        const result = await supabase
+          .from('pg_indexes' as any)
+          .select('indexname')
+          .eq('tablename', 'document_chunks');
+        indexes = result.data || [];
+      } catch (error) {
+        console.error('Failed to get indexes:', error);
+      }
       
       if (indexes && indexes.length > 0) {
         status.search.fullTextEnabled = indexes.some(idx => 

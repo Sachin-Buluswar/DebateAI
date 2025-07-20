@@ -6,7 +6,7 @@ import Layout from '@/components/layout/Layout';
 import { supabase } from '@/lib/supabaseClient';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import EnhancedButton from '@/components/ui/EnhancedButton';
-import Toast from '@/components/ui/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { DocumentTextIcon, ArrowPathIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { Document } from '@/types/documents';
 
@@ -18,7 +18,7 @@ function AdminDocumentsContent() {
   const [indexing, setIndexing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     loadDocuments();
@@ -36,7 +36,7 @@ function AdminDocumentsContent() {
       setDocuments(data || []);
     } catch (error) {
       console.error('Error loading documents:', error);
-      setToast({ message: 'Failed to load documents', type: 'error' });
+      addToast({ message: 'Failed to load documents', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -59,12 +59,12 @@ function AdminDocumentsContent() {
       if (!response.ok) throw new Error('Upload failed');
 
       const result = await response.json();
-      setToast({ message: `Document uploaded: ${result.fileName}`, type: 'success' });
+      addToast({ message: `Document uploaded: ${result.fileName}`, type: 'success' });
       setSelectedFile(null);
       await loadDocuments();
     } catch (error) {
       console.error('Error uploading file:', error);
-      setToast({ message: 'Failed to upload document', type: 'error' });
+      addToast({ message: 'Failed to upload document', type: 'error' });
     } finally {
       setUploadingFile(false);
     }
@@ -81,11 +81,11 @@ function AdminDocumentsContent() {
 
       if (!response.ok) throw new Error('Reindex failed');
 
-      setToast({ message: 'Document reindexed successfully', type: 'success' });
+      addToast({ message: 'Document reindexed successfully', type: 'success' });
       await loadDocuments();
     } catch (error) {
       console.error('Error reindexing document:', error);
-      setToast({ message: 'Failed to reindex document', type: 'error' });
+      addToast({ message: 'Failed to reindex document', type: 'error' });
     } finally {
       setIndexing(false);
     }
@@ -103,11 +103,11 @@ function AdminDocumentsContent() {
 
       if (!response.ok) throw new Error('Delete failed');
 
-      setToast({ message: 'Document deleted successfully', type: 'success' });
+      addToast({ message: 'Document deleted successfully', type: 'success' });
       await loadDocuments();
     } catch (error) {
       console.error('Error deleting document:', error);
-      setToast({ message: 'Failed to delete document', type: 'error' });
+      addToast({ message: 'Failed to delete document', type: 'error' });
     }
   };
 
@@ -120,7 +120,7 @@ function AdminDocumentsContent() {
 
       if (!response.ok) throw new Error('Scraping failed');
 
-      setToast({ message: 'OpenCaseList scraping started', type: 'info' });
+      addToast({ message: 'OpenCaseList scraping started', type: 'info' });
       
       // Poll for status
       const checkStatus = setInterval(async () => {
@@ -130,23 +130,20 @@ function AdminDocumentsContent() {
         if (status.pending === 0) {
           clearInterval(checkStatus);
           setScraping(false);
-          setToast({ 
-            message: `Scraping complete: ${status.completed} files processed`, 
-            type: 'success' 
-          });
+          addToast({ message: `Scraping complete: ${status.completed} files processed`, type: 'success' });
           await loadDocuments();
         }
       }, 5000);
     } catch (error) {
       console.error('Error starting scrape:', error);
-      setToast({ message: 'Failed to start scraping', type: 'error' });
+      addToast({ message: 'Failed to start scraping', type: 'error' });
       setScraping(false);
     }
   };
 
   if (loading) {
     return (
-      <Layout user={null}>
+      <Layout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -155,7 +152,7 @@ function AdminDocumentsContent() {
   }
 
   return (
-    <Layout user={null}>
+    <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -304,13 +301,6 @@ function AdminDocumentsContent() {
           </div>
         </div>
 
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
       </div>
     </Layout>
   );

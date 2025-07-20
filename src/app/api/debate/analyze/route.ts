@@ -62,8 +62,10 @@ export async function POST(request: NextRequest) {
 
       logger.info('Generating debate analysis', {
         userId: user.id,
-        transcriptEntries: transcript.length,
-        userParticipantId
+        metadata: {
+          transcriptEntries: transcript.length,
+          userParticipantId
+        }
       });
       
       const fallbackAnalysis = `
@@ -87,7 +89,9 @@ export async function POST(request: NextRequest) {
       
       logger.info('Debate analysis generated successfully', {
         userId: user.id,
-        analysisLength: analysis.length
+        metadata: {
+          analysisLength: analysis.length
+        }
       });
 
       return addSecurityHeaders(
@@ -97,8 +101,7 @@ export async function POST(request: NextRequest) {
         })
       );
     } catch (error) {
-      logger.error('Debate analysis generation failed', {
-        error,
+      logger.error('Debate analysis generation failed', error as Error, {
         userId: 'unknown'
       });
       

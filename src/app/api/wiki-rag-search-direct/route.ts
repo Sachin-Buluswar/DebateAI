@@ -145,27 +145,27 @@ async function performDirectRagSearch(
         const beforeChunks = contextChunks?.filter(c => c.chunk_index < chunk.chunk_index) || [];
         const afterChunks = contextChunks?.filter(c => c.chunk_index > chunk.chunk_index) || [];
         
-        const document = chunk.documents;
+        const document = Array.isArray(chunk.documents) ? chunk.documents[0] : chunk.documents;
         const pdfPageAnchor = chunk.page_number ? `#page=${chunk.page_number}` : '';
         
         return {
           content: chunk.content,
-          source: document.file_name,
+          source: document?.file_name || 'Unknown',
           score: Math.min(1.0, score / 100), // Normalize score to 0-1
           chunk_id: chunk.id,
-          document_id: document.id,
+          document_id: document?.id || chunk.document_id,
           page_number: chunk.page_number,
-          pdf_url: document.file_url,
+          pdf_url: document?.file_url || null,
           pdf_page_anchor: pdfPageAnchor,
           context: {
             before: beforeChunks.map(c => c.content).join('\n\n'),
             after: afterChunks.map(c => c.content).join('\n\n'),
           },
           metadata: {
-            title: document.title,
+            title: document?.title || 'Untitled',
             section: chunk.section_title,
-            source_type: document.source_type,
-            indexed_at: document.indexed_at,
+            source_type: document?.source_type || 'unknown',
+            indexed_at: document?.indexed_at || null,
           },
         };
       })

@@ -98,8 +98,10 @@ export async function POST(request: NextRequest) {
       // Call OpenAI with error recovery
       logger.info('Generating debate advice', {
         userId: user.id,
-        adviceType,
-        topic: debateTopic.substring(0, 50) + '...'
+        metadata: {
+          adviceType,
+          topic: debateTopic.substring(0, 50) + '...'
+        }
       });
       
       const fallbackAdvice = `Based on your ${userPerspective} position on "${debateTopic}", focus on: 1) Clearly stating your main arguments, 2) Anticipating counterarguments, and 3) Using evidence to support your claims. Remember to maintain a respectful tone and engage directly with opposing arguments.`;
@@ -153,8 +155,7 @@ export async function POST(request: NextRequest) {
       );
 
     } catch (error) {
-      logger.error('Debate advice generation failed', {
-        error,
+      logger.error('Debate advice generation failed', error as Error, {
         userId: 'unknown'
       });
       

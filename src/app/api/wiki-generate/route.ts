@@ -68,8 +68,10 @@ export async function POST(request: NextRequest) {
       
       logger.info('Processing wiki generation request', {
         userId: user.id,
-        query: query.substring(0, 50) + '...',
-        maxResults
+        metadata: {
+          query: query.substring(0, 50) + '...',
+          maxResults
+        }
       });
 
       // Get OpenAI client from pool
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
           source: ctx.source || `Context ${idx + 1}`,
           score: ctx.relevance || 0.8
         }));
-        logger.info('Using provided context', { contextCount: context.length });
+        logger.info('Using provided context', { metadata: { contextCount: context.length } });
       } else {
         // Retrieve context chunks from vector store
         contextChunks = await searchVectorStore(
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
           maxResults
         );
         logger.info('Retrieved context from vector store', { 
-          chunksFound: contextChunks.length 
+          metadata: { chunksFound: contextChunks.length }
         });
       }
 
@@ -109,8 +111,10 @@ export async function POST(request: NextRequest) {
       
       logger.info('Wiki generation completed', {
         userId: user.id,
-        answerLength: generatedResult.answer.length,
-        sourcesCount: generatedResult.sources.length
+        metadata: {
+          answerLength: generatedResult.answer.length,
+          sourcesCount: generatedResult.sources.length
+        }
       });
 
       // Return generated answer
@@ -122,8 +126,7 @@ export async function POST(request: NextRequest) {
       );
 
     } catch (error) {
-      logger.error('Wiki generation failed', {
-        error,
+      logger.error('Wiki generation failed', error as Error, {
         userId: 'unknown'
       });
       

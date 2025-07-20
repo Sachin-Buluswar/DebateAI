@@ -96,7 +96,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
         }
         
         // Remove sensitive query params
-        if (event.request.query_string) {
+        if (event.request.query_string && typeof event.request.query_string === 'string') {
           event.request.query_string = event.request.query_string.replace(
             /token=[^&]+/g,
             'token=***'
@@ -184,11 +184,11 @@ export const sentryServer = {
       
       try {
         const result = await handler(...args);
-        transaction?.finish();
+        transaction?.end();
         return result;
       } catch (error) {
-        sentryServer.captureException(error);
-        transaction?.finish();
+        sentryServer.captureException(error as Error);
+        transaction?.end();
         throw error;
       }
     }) as T;

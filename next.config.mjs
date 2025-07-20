@@ -102,5 +102,9 @@ const sentryWebpackPluginOptions = {
   automaticVercelMonitors: true,
 };
 
-// Export the config wrapped with Sentry
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
+// Export the config wrapped with Sentry only if auth token is available
+const shouldUseSentry = process.env.SENTRY_AUTH_TOKEN && process.env.NODE_ENV === 'production';
+
+export default shouldUseSentry 
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : nextConfig;
