@@ -1,119 +1,104 @@
-# 📚 DebateAI Documentation
+# Documentation Index
 
-Welcome to the DebateAI documentation! This guide will help you navigate through all available documentation.
+## Setup and Configuration
 
-## 🚀 Quick Links
+- `docs/getting-started/installation.md` - System requirements, prerequisites, installation steps
+- `docs/getting-started/configuration.md` - Environment variables, API keys, email templates
+- `docs/getting-started/quick-start.md` - First run instructions, creating account, running first debate
 
-- **[Getting Started](./getting-started/)** - Installation, setup, and first steps
-- **[Architecture](./architecture/)** - System design and technical architecture
-- **[Development](./development/)** - Developer guides and best practices
-- **[Deployment](./deployment/)** - Production deployment and operations
-- **[API Reference](./api/)** - API documentation and integration guides
-- **[Project Info](./project/)** - Roadmap, status, and requirements
+## Architecture
 
-## 📖 Documentation Overview
+- `docs/architecture/overview.md` - System components, technology stack, design principles
+- `docs/architecture/frontend.md` - Next.js structure, components, state management
+- `docs/architecture/backend.md` - API design, service layer, error handling
+- `docs/architecture/database.md` - Supabase schema, RLS policies, migrations
+- `docs/architecture/enhanced-rag.md` - PDF storage, vector search, RAG implementation
+- `docs/architecture/openai-improvements.md` - OpenAI client architecture, retry logic
+- `docs/architecture/techstack.md` - Complete technology list with versions
+- `docs/architecture/ui-ux-system-design.md` - Design system, component patterns
 
-### Getting Started
-Perfect for new users and developers who want to quickly get up and running.
+## Development
 
-- **[Installation Guide](./getting-started/installation.md)** - System requirements and setup instructions
-- **[Configuration](./getting-started/configuration.md)** - Environment variables and initial configuration
-- **[Quick Start Tutorial](./getting-started/quick-start.md)** - Your first debate with DebateAI
+- `docs/development/setup.md` - Local development environment setup
+- `docs/development/workflow.md` - Git branching, commit messages, PR process
+- `docs/development/patterns.md` - Code patterns for APIs, components, services
+- `docs/development/testing.md` - Testing requirements, manual test procedures
+- `docs/development/troubleshooting.md` - Common errors and solutions
+- `docs/development/integration-testing.md` - Integration test procedures
+- `docs/development/performance-baseline.md` - Performance metrics and benchmarks
 
-### Architecture
-Understand how DebateAI is built and how components interact.
+## API Reference
 
-- **[System Overview](./architecture/overview.md)** - High-level architecture and design principles
-- **[Frontend Architecture](./architecture/frontend.md)** - Next.js app structure and UI components
-- **[Backend Architecture](./architecture/backend.md)** - API design and service layer
-- **[Database Design](./architecture/database.md)** - Supabase schema and RLS policies
-- **[Enhanced RAG System](./architecture/enhanced-rag.md)** - PDF search and evidence management
+- `docs/api/rest.md` - All REST endpoints with request/response formats
+- `docs/api/websocket.md` - Socket.IO events and message formats
+- `docs/api/integrations/openai.md` - OpenAI API integration details
+- `docs/api/integrations/elevenlabs.md` - ElevenLabs TTS/STT integration
+- `docs/api/integrations/elevenlabs-websocket.md` - ElevenLabs WebSocket API
+- `docs/api/integrations/supabase.md` - Supabase client usage
 
-### Development
-Everything you need to contribute to DebateAI.
+## Deployment
 
-- **[Development Setup](./development/setup.md)** - Local development environment
-- **[Git Workflow](./development/workflow.md)** - Branching strategy and contribution guidelines
-- **[Code Patterns](./development/patterns.md)** - Best practices and code examples
-- **[Testing Guide](./development/testing.md)** - Testing strategies and tools
-- **[Troubleshooting](./development/troubleshooting.md)** - Common issues and solutions
+- `docs/deployment/blockers.md` - Critical issues that must be fixed before deployment
+- `docs/deployment/checklist.md` - Pre-deployment verification steps
+- `docs/deployment/docker.md` - Docker setup and configuration
+- `docs/deployment/ci-cd.md` - GitHub Actions workflows
+- `docs/deployment/monitoring.md` - OpenTelemetry and Sentry setup
+- `docs/deployment/security.md` - Security audit findings and fixes
+- `docs/deployment/environment-secrets.md` - Secret management
+- `docs/deployment/deployment-process.md` - Step-by-step deployment guide
+- `docs/deployment/email-setup.md` - Email template configuration
+- `docs/deployment/alert-response.md` - Alert handling procedures
 
-### Deployment
-Deploy and operate DebateAI in production.
+## Project Management
 
-- **[Docker Setup](./deployment/docker.md)** - Containerization and orchestration
-- **[CI/CD Pipeline](./deployment/ci-cd.md)** - GitHub Actions and automated deployment
-- **[Monitoring](./deployment/monitoring.md)** - Observability with OpenTelemetry and Sentry
-- **[Security Guide](./deployment/security.md)** - Security best practices and audit findings
-- **[Deployment Checklist](./deployment/checklist.md)** - Pre-deployment verification
+- `docs/project/status.md` - Current project status and completion percentage
+- `docs/project/roadmap.md` - UI improvements and feature roadmap
+- `docs/project/requirements.md` - Original project requirements
 
-### API Documentation
-Detailed API references and integration guides.
+## File Paths
 
-- **[REST API](./api/rest.md)** - HTTP endpoints and usage examples
-- **[WebSocket API](./api/websocket.md)** - Real-time communication with Socket.IO
-- **Integration Guides**:
-  - **[OpenAI](./api/integrations/openai.md)** - AI debate generation and analysis
-  - **[ElevenLabs](./api/integrations/elevenlabs.md)** - Text-to-speech and speech-to-text
-  - **[Supabase](./api/integrations/supabase.md)** - Database and authentication
+### API Routes
+- `src/app/api/auth/` - Authentication endpoints
+- `src/app/api/debate/` - Debate-related endpoints
+- `src/app/api/feedback/` - Speech feedback endpoints
+- `src/app/api/wiki-search/` - Search endpoints
+- `src/pages/api/socketio.ts` - WebSocket server
 
-### Project Information
-Project management and planning documents.
+### Services
+- `src/backend/services/openaiService.ts` - OpenAI integration
+- `src/backend/services/elevenLabsService.ts` - Voice services
+- `src/backend/services/supabaseService.ts` - Database operations
 
-- **[Current Status](./project/status.md)** - Production readiness and deployment blockers
-- **[Development Roadmap](./project/roadmap.md)** - Feature roadmap and priorities
-- **[Original Requirements](./project/requirements.md)** - Initial project specifications
+### Components
+- `src/components/ui/` - Reusable UI components
+- `src/components/debate/` - Debate-specific components
+- `src/components/layout/` - Layout components
 
-## 🔍 Finding Information
+### Configuration
+- `.env.local` - Environment variables
+- `next.config.js` - Next.js configuration
+- `tailwind.config.js` - Tailwind CSS configuration
+- `tsconfig.json` - TypeScript configuration
 
-### By Role
+## Database
 
-**👤 Users**
-- Start with [Getting Started](./getting-started/)
-- Check [Current Status](./project/status.md) for available features
+### Tables
+- `profiles` - User profiles
+- `debate_sessions` - Debate session records
+- `debate_speeches` - Individual speeches in debates
+- `speech_feedback` - Analysis results
+- `saved_searches` - User's saved searches
+- `audio_recordings` - Audio file metadata
 
-**💻 Developers**
-- Read [Development Setup](./development/setup.md)
-- Review [Code Patterns](./development/patterns.md)
-- Understand [Git Workflow](./development/workflow.md)
+### Migrations
+- `supabase/migrations/` - All database migrations
 
-**🚀 DevOps/SRE**
-- Focus on [Deployment](./deployment/)
-- Review [Monitoring](./deployment/monitoring.md)
-- Check [Security Guide](./deployment/security.md)
+## Current Issues
 
-**🏗️ Architects**
-- Study [Architecture](./architecture/)
-- Review [System Overview](./architecture/overview.md)
-- Understand [Database Design](./architecture/database.md)
+1. CORS origin hardcoded in `src/pages/api/socketio.ts:30`
+2. Missing viewport meta tag in `src/app/layout.tsx`
+3. Debug endpoint exposed in production
+4. Path traversal risk in file uploads
+5. Information leakage in auth errors
 
-### By Task
-
-**Setting up locally?**
-→ [Installation Guide](./getting-started/installation.md) → [Development Setup](./development/setup.md)
-
-**Deploying to production?**
-→ [Deployment Checklist](./deployment/checklist.md) → [Docker Setup](./deployment/docker.md)
-
-**Adding a new feature?**
-→ [Git Workflow](./development/workflow.md) → [Code Patterns](./development/patterns.md)
-
-**Debugging an issue?**
-→ [Troubleshooting](./development/troubleshooting.md) → [Monitoring](./deployment/monitoring.md)
-
-## 📝 Documentation Standards
-
-- All documentation uses Markdown format
-- Code examples include language hints for syntax highlighting
-- File paths are relative to project root unless specified
-- Screenshots and diagrams are stored in `docs/assets/`
-- Keep documentation up-to-date with code changes
-
-## 🤝 Contributing to Docs
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on improving documentation.
-
----
-
-**Last Updated**: July 17, 2025  
-**Documentation Version**: 2.0
+See `docs/deployment/blockers.md` for complete list and fixes.

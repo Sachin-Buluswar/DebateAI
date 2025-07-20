@@ -158,18 +158,51 @@ async function performEnhancedRagSearch(
       }
     }
 
-    // Cleanup
-    await openai.beta.threads.delete(thread.id).catch(() => {});
-    await openai.beta.assistants.delete(tempAssistant.id).catch(() => {});
-
-    // Cache results
+    // Cache results before cleanup to ensure we have data
     if (enhancedResults.length > 0) {
-      await documentStorage.setSearchResultsCache(query, enhancedResults);
+      try {
+        await documentStorage.setSearchResultsCache(query, enhancedResults);
+      } catch (cacheError) {
+        console.warn('[enhanced-rag-search] Failed to cache results:', cacheError);
+        // Continue - caching is not critical
+      }
+    }
+
+    // Cleanup resources
+    const cleanupErrors = [];
+    
+    try {
+      await openai.beta.threads.delete(thread.id);
+    } catch (error) {
+      cleanupErrors.push(`Failed to delete thread ${thread.id}: ${error}`);
+    }
+    
+    try {
+      await openai.beta.assistants.delete(tempAssistant.id);
+    } catch (error) {
+      cleanupErrors.push(`Failed to delete assistant ${tempAssistant.id}: ${error}`);
+    }
+    
+    if (cleanupErrors.length > 0) {
+      console.warn('[enhanced-rag-search] Cleanup errors:', cleanupErrors);
     }
 
     return enhancedResults;
   } catch (error) {
     console.error('[enhanced-rag-search] Search error:', error);
+    
+    // Attempt cleanup on error
+    if (tempAssistant?.id) {
+      await openai.beta.assistants.delete(tempAssistant.id).catch(err => 
+        console.warn('[enhanced-rag-search] Failed to cleanup assistant on error:', err)
+      );
+    }
+    if (thread?.id) {
+      await openai.beta.threads.delete(thread.id).catch(err => 
+        console.warn('[enhanced-rag-search] Failed to cleanup thread on error:', err)
+      );
+    }
+    
     throw error;
   }
 }

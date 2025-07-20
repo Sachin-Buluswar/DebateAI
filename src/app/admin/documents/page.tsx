@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import { supabase } from '@/lib/supabaseClient';
+import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import EnhancedButton from '@/components/ui/EnhancedButton';
 import Toast from '@/components/ui/Toast';
-import { DocumentTextIcon, ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ArrowPathIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { Document } from '@/types/documents';
 
-export default function AdminDocumentsPage() {
+function AdminDocumentsContent() {
   const router = useRouter();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,38 +21,12 @@ export default function AdminDocumentsPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
-    checkAdminAndLoadDocuments();
+    loadDocuments();
   }, []);
-
-  const checkAdminAndLoadDocuments = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/auth');
-        return;
-      }
-
-      // Check if user is admin (you can implement your own logic)
-      const isAdmin = session.user.email === 'admin@debateai.com' || 
-                      session.user.email === 'claudecode@gmail.com';
-      
-      if (!isAdmin) {
-        router.push('/');
-        return;
-      }
-
-      await loadDocuments();
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-      setToast({ message: 'Error loading documents', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadDocuments = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -62,8 +37,11 @@ export default function AdminDocumentsPage() {
     } catch (error) {
       console.error('Error loading documents:', error);
       setToast({ message: 'Failed to load documents', type: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
@@ -335,5 +313,36 @@ export default function AdminDocumentsPage() {
         )}
       </div>
     </Layout>
+  );
+}
+
+export default function AdminDocumentsPage() {
+  return (
+    <RoleProtectedRoute 
+      requiredRole="admin"
+      unauthorizedComponent={
+        <Layout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                You don't have permission to access this page.
+              </p>
+              <EnhancedButton
+                onClick={() => window.location.href = '/'}
+                variant="primary"
+              >
+                Return to Home
+              </EnhancedButton>
+            </div>
+          </div>
+        </Layout>
+      }
+    >
+      <AdminDocumentsContent />
+    </RoleProtectedRoute>
   );
 }

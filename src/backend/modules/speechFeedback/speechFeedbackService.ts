@@ -192,7 +192,9 @@ Analyze the transcription and provide feedback in JSON format with these exact f
 export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise<SpeechFeedbackResult> {
   const { audioBuffer, filename, topic, userId, speechType = 'debate', userSide } = input;
   
-  console.log(`[speechFeedbackService] Processing ${filename} for user ${userId}`);
+  // Sanitize filename for logging (prevent log injection)
+  const sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
+  console.log(`[speechFeedbackService] Processing ${sanitizedFilename} for user ${userId}`);
   
   // Validate file size
   if (audioBuffer.length > MAX_UPLOAD_SIZE_BYTES) {
@@ -208,7 +210,9 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   // For now, skip complex audio processing and work with the original buffer
   // In a production environment, you'd want FFmpeg for proper audio processing
   const fileId = `speech_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const tempFilePath = `/tmp/${fileId}.mp3`;
+  // Sanitize fileId to prevent path traversal
+  const sanitizedFileId = fileId.replace(/[^a-zA-Z0-9_-]/g, '');
+  const tempFilePath = `/tmp/${sanitizedFileId}.mp3`;
   
   // Write buffer to temporary file
   await fs.writeFile(tempFilePath, audioBuffer);

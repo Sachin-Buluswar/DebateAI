@@ -197,7 +197,7 @@ export default function SearchPage() {
 
       // Call the appropriate search API based on mode
       const searchEndpoint = searchMode === 'rag' 
-        ? '/api/wiki-rag-search-enhanced' 
+        ? '/api/wiki-document-search' 
         : '/api/wiki-search';
       const searchResponse = await fetch(searchEndpoint, {
         method: 'POST',
@@ -344,7 +344,7 @@ export default function SearchPage() {
                 size="sm"
                 icon={<span>📎</span>}
               >
-                RAG Search
+                Document Search
               </EnhancedButton>
               <EnhancedButton
                 onClick={() => setSearchMode('assistant')}
@@ -352,13 +352,13 @@ export default function SearchPage() {
                 size="sm"
                 icon={<span>🤖</span>}
               >
-                Assistant Search
+                AI Assistant
               </EnhancedButton>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
               {searchMode === 'rag'
-                ? 'Direct document search with PDF links and surrounding context'
-                : 'AI-powered search with generated summaries and analysis'}
+                ? 'Search documents directly and view full context'
+                : 'AI analyzes documents and generates comprehensive answers'}
             </div>
           </div>
 
@@ -385,8 +385,8 @@ export default function SearchPage() {
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={
                       searchMode === 'rag'
-                        ? 'Search for specific document content...'
-                        : 'Search for debate evidence or facts...'
+                        ? 'Search documents directly...'
+                        : 'Ask the AI assistant a question...'
                     }
                     label="Search query"
                     className="text-lg resize-none"
@@ -499,7 +499,7 @@ export default function SearchPage() {
                   </p>
                 </div>
                 <span className="px-3 py-1.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200">
-                  RAG-powered
+                  AI-Generated
                 </span>
               </div>
 
@@ -567,7 +567,7 @@ export default function SearchPage() {
             {results.length > 0 && (
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {searchMode === 'rag' ? 'RAG Search Results' : 'Assistant Search Results'} (
+                  {searchMode === 'rag' ? 'Document Search Results' : 'AI Assistant Results'} (
                   {results.length})
                 </h3>
                 <span

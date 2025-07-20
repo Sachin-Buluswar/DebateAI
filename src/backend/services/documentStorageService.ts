@@ -171,10 +171,13 @@ export class DocumentStorageService {
   }
 
   async searchDocuments(query: string): Promise<Document[]> {
+    // Sanitize the query to prevent SQL injection
+    const sanitizedQuery = query.replace(/[%_]/g, '\\$&');
+    
     const { data, error } = await supabase
       .from('documents')
       .select()
-      .or(`title.ilike.%${query}%,file_name.ilike.%${query}%`)
+      .or(`title.ilike.%${sanitizedQuery}%,file_name.ilike.%${sanitizedQuery}%`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

@@ -4,6 +4,7 @@ import { DocumentStorageService } from './documentStorageService';
 import { DocumentChunk } from '@/types/documents';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as stream from 'stream';
 import fetch from 'node-fetch';
 
 const openai = new OpenAI({
@@ -41,11 +42,51 @@ export class EnhancedIndexingService {
       // Download PDF
       const pdfBuffer = await this.downloadPDF(pdfUrl);
       
-      // Parse PDF
-      const pdfData = await pdfParse(pdfBuffer);
+      // Parse PDF with custom page renderer to extract page-by-page content
+      const pages: Array<{ pageNumber: number; text: string }> = [];
+      let totalPages = 0;
       
-      // Extract chunks with metadata
-      const chunks = await this.extractChunksWithMetadata(pdfData, fileName);
+      const pdfData = await pdfParse(pdfBuffer, {
+        pagerender: (pageData: any) => {
+          return pageData.getTextContent()
+            .then((textContent: any) => {
+              let text = '';
+              for (const item of textContent.items) {
+                text += item.str + ' ';
+              }
+              return text;
+            });
+        },
+        renderTextLayer: false,
+      });
+      
+      // Get total pages
+      totalPages = pdfData.numpages;
+      
+      // Parse PDF again to extract page-by-page content
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const pagePdfData = await pdfParse(pdfBuffer, {
+          max: pageNum,
+          pagerender: (pageData: any) => {
+            const currentPage = pageData.pageNumber || pageData.pageIndex + 1;
+            if (currentPage === pageNum) {
+              return pageData.getTextContent()
+                .then((textContent: any) => {
+                  let text = '';
+                  for (const item of textContent.items) {
+                    text += item.str + ' ';
+                  }
+                  pages.push({ pageNumber: pageNum, text: text.trim() });
+                  return text;
+                });
+            }
+            return '';
+          },
+        });
+      }
+      
+      // Extract chunks with proper page metadata
+      const chunks = await this.extractChunksWithPageMetadata(pages, fileName);
       
       // Upload chunks to OpenAI
       const openaiFileIds = await this.uploadChunksToOpenAI(chunks, documentId, fileName);
@@ -70,7 +111,7 @@ export class EnhancedIndexingService {
       // Update document as indexed
       await this.documentStorage.updateDocumentIndexStatus(documentId);
       
-      console.log(`Successfully indexed ${fileName} with ${chunks.length} chunks`);
+      console.log(`Successfully indexed ${fileName} with ${chunks.length} chunks from ${totalPages} pages`);
       
     } catch (error) {
       console.error(`Error indexing document ${fileName}:`, error);
@@ -86,18 +127,24 @@ export class EnhancedIndexingService {
     return Buffer.from(await response.arrayBuffer());
   }
 
-  private async extractChunksWithMetadata(
-    pdfData: any,
+  private async extractChunksWithPageMetadata(
+    pages: Array<{ pageNumber: number; text: string }>,
     fileName: string
   ): Promise<Array<{ content: string; metadata: ChunkMetadata }>> {
     const chunks: Array<{ content: string; metadata: ChunkMetadata }> = [];
-    const pages = pdfData.text.split('\n\n'); // Simple page splitting
     let docCharOffset = 0;
+    let chunkIndex = 0;
     
     // Process each page
-    for (let pageNum = 0; pageNum < pages.length; pageNum++) {
-      const pageText = pages[pageNum];
-      const pageStartChar = docCharOffset;
+    for (const page of pages) {
+      const pageText = page.text;
+      const pageNumber = page.pageNumber;
+      const pageStartChar = 0;
+      
+      // Skip empty pages
+      if (!pageText.trim()) {
+        continue;
+      }
       
       // Extract sections from page
       const sections = this.extractSections(pageText);
@@ -109,19 +156,24 @@ export class EnhancedIndexingService {
           this.chunkOverlap
         );
         
+        let sectionCharOffset = 0;
+        
         for (const chunkText of sectionChunks) {
-          const chunkStartChar = pageText.indexOf(chunkText);
+          const chunkStartChar = section.content.indexOf(chunkText, sectionCharOffset);
           const chunkEndChar = chunkStartChar + chunkText.length;
+          
+          // Update section offset for next search
+          sectionCharOffset = chunkStartChar + 1;
           
           chunks.push({
             content: this.formatChunkWithMetadata(
               chunkText,
               fileName,
-              pageNum + 1,
+              pageNumber,
               section.title
             ),
             metadata: {
-              pageNumber: pageNum + 1,
+              pageNumber: pageNumber,
               pageStartChar: chunkStartChar,
               pageEndChar: chunkEndChar,
               docStartChar: docCharOffset + chunkStartChar,
@@ -129,10 +181,12 @@ export class EnhancedIndexingService {
               sectionTitle: section.title,
             },
           });
+          
+          chunkIndex++;
         }
       }
       
-      docCharOffset += pageText.length + 2; // +2 for \n\n
+      docCharOffset += pageText.length;
     }
     
     return chunks;
@@ -249,12 +303,20 @@ export class EnhancedIndexingService {
         const chunkIndex = i + batchIndex;
         const chunkFileName = `${fileName}_chunk_${chunkIndex}_page_${chunk.metadata.pageNumber}.txt`;
         
-        // Create file-like object
-        const file = new File([chunk.content], chunkFileName, { type: 'text/plain' });
+        // Create a file-like object for OpenAI upload
+        // OpenAI SDK accepts a stream with name property
+        const buffer = Buffer.from(chunk.content, 'utf-8');
+        const readableStream = new stream.Readable();
+        readableStream.push(buffer);
+        readableStream.push(null);
+        
+        // Add required properties for OpenAI SDK
+        (readableStream as any).name = chunkFileName;
+        (readableStream as any).size = buffer.length;
         
         // Upload to OpenAI
         const fileObject = await openai.files.create({
-          file: file,
+          file: readableStream as any,
           purpose: 'assistants',
         });
         

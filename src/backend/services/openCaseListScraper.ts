@@ -13,12 +13,20 @@ const supabase = createClient(
 
 export class OpenCaseListScraper {
   private documentStorage: DocumentStorageService;
-  private email = 'claudecode@gmail.com';
-  private password = 'Claudecode';
+  private email: string;
+  private password: string;
   private baseUrl = 'https://opencaselist.com';
   
   constructor() {
     this.documentStorage = new DocumentStorageService();
+    
+    // Get credentials from environment variables
+    this.email = process.env.OPENCASELIST_EMAIL || '';
+    this.password = process.env.OPENCASELIST_PASSWORD || '';
+    
+    if (!this.email || !this.password) {
+      throw new Error('OpenCaseList credentials not configured. Please set OPENCASELIST_EMAIL and OPENCASELIST_PASSWORD environment variables.');
+    }
   }
 
   async scrapeWikiFiles(): Promise<void> {

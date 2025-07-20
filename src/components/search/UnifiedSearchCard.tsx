@@ -9,12 +9,17 @@ interface UnifiedSearchResult {
   content: string;
   source?: string;
   score?: number;
-  // PDF metadata (available in both RAG and Assistant modes)
+  // PDF metadata (available in both Document Search and AI Assistant modes)
   pdfUrl?: string;
+  pdf_url?: string; // Support both naming conventions
   pageNumber?: number;
+  page_number?: number; // Support both naming conventions
   documentId?: string;
+  document_id?: string; // Support both naming conventions
   chunkId?: string;
-  // Enhanced RAG specific
+  chunk_id?: string; // Support both naming conventions
+  pdf_page_anchor?: string;
+  // Document Search specific
   context?: {
     before: string;
     after: string;
@@ -46,8 +51,14 @@ export default function UnifiedSearchCard({
   const [showContext, setShowContext] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
 
+  // Support both naming conventions
+  const pdfUrl = result.pdfUrl || result.pdf_url;
+  const pageNumber = result.pageNumber || result.page_number;
+  const documentId = result.documentId || result.document_id;
+  const chunkId = result.chunkId || result.chunk_id;
+
   const hasContext = result.context && (result.context.before || result.context.after);
-  const hasPdfLink = result.pdfUrl && result.pdfUrl.length > 0;
+  const hasPdfLink = pdfUrl && pdfUrl.length > 0;
 
   return (
     <>
@@ -79,9 +90,9 @@ export default function UnifiedSearchCard({
             
             {/* Badges */}
             <div className="flex items-center gap-2">
-              {result.pageNumber && (
+              {pageNumber && (
                 <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                  Page {result.pageNumber}
+                  Page {pageNumber}
                 </span>
               )}
               {result.score && (
@@ -134,7 +145,7 @@ export default function UnifiedSearchCard({
             )}
           </div>
           
-          {/* Surrounding Context (RAG mode only) */}
+          {/* Surrounding Context (Document Search mode only) */}
           {showContext && hasContext && searchMode === 'rag' && (
             <div className="mt-4 space-y-3 animate-fade-in">
               {result.context!.before && (
@@ -201,8 +212,8 @@ export default function UnifiedSearchCard({
       {/* PDF Viewer Modal */}
       {showPdfViewer && hasPdfLink && (
         <SimplePDFViewer
-          pdfUrl={result.pdfUrl!}
-          pageNumber={result.pageNumber}
+          pdfUrl={pdfUrl!}
+          pageNumber={pageNumber}
           onClose={() => setShowPdfViewer(false)}
         />
       )}

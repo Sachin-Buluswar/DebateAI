@@ -1,90 +1,100 @@
 # DebateAI
 
-An AI-powered debate platform for practicing argumentation skills with intelligent opponents.
+AI debate platform. Next.js application with real-time debates, speech analysis, and evidence search.
 
-## ✨ Features
+## Project Structure
 
-- **🎙️ Real-time AI Debates** - Engage with 10 unique AI personalities in structured debates
-- **📊 Speech Analysis** - Get AI-powered feedback on your arguments and delivery
-- **🔊 Voice Integration** - Natural text-to-speech and speech-to-text capabilities
-- **🔍 Evidence Search** - Find supporting evidence with enhanced RAG search
-- **📱 Mobile Ready** - Responsive design for practice on any device
+```
+src/app/              # Next.js 13+ App Router pages
+src/backend/          # Business logic and services  
+src/components/       # React components
+src/lib/             # Utilities and helpers
+```
 
-## 🚀 Quick Start
+## Setup Instructions
+
+### Required Environment Variables
+
+Create `.env.local` with:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/debateai.git
-cd debateai
+NEXT_PUBLIC_SUPABASE_URL=<supabase_project_url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase_anon_key>
+SUPABASE_SERVICE_ROLE_KEY=<supabase_service_role_key>
+OPENAI_API_KEY=<openai_api_key>
+ELEVENLABS_API_KEY=<elevenlabs_api_key>
+OPENAI_VECTOR_STORE_ID=<vector_store_id>
+```
 
-# Install dependencies
+### Installation Commands
+
+```bash
 npm install
-
-# Configure environment
 cp .env.example .env.local
-# Add your API keys to .env.local
-
-# Start development server
+# Add API keys to .env.local
 npm run dev
 ```
 
-Visit `http://localhost:3001` to start debating!
+Server runs on `http://localhost:3001`
 
-## 📚 Documentation
+## Key Files
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+- `src/app/api/` - REST API endpoints
+- `src/pages/api/socketio.ts` - WebSocket server
+- `src/backend/services/` - External service integrations
+- `src/lib/supabase/` - Database client and types
+- `supabase/migrations/` - Database schema
 
-- **[Getting Started Guide](docs/getting-started/)** - Installation, configuration, and first steps
-- **[Architecture Overview](docs/architecture/)** - System design and technical architecture
-- **[Development Guide](docs/development/)** - Setup, workflow, and best practices
-- **[API Reference](docs/api/)** - REST and WebSocket API documentation
-- **[Deployment Guide](docs/deployment/)** - Docker, CI/CD, and production deployment
+## Development Commands
 
-For a complete documentation index, see **[docs/README.md](docs/README.md)**.
+```bash
+npm run dev          # Start development server
+npm run build        # Production build
+npm run lint         # Run ESLint
+npm run typecheck    # TypeScript validation
+```
 
-## 🛠️ Tech Stack
+## API Endpoints
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Socket.IO, Supabase
-- **AI**: OpenAI GPT-4, ElevenLabs TTS/STT
-- **Infrastructure**: Docker, GitHub Actions, Sentry
+### Authentication
+- `POST /api/auth/signup` - Create account
+- `POST /api/auth/signin` - Sign in
+- `POST /api/auth/signout` - Sign out
+- `GET /api/auth/callback` - OAuth callback
 
-## 🤝 Contributing
+### Debate
+- `POST /api/generate-debate-speech` - Generate AI speech
+- `POST /api/start-debate` - Initialize debate session
+- `WebSocket /api/socketio` - Real-time debate communication
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+### Speech Analysis
+- `POST /api/feedback/upload` - Upload audio for analysis (chunked)
+- `POST /api/feedback` - Get speech feedback
 
-- Code of conduct
-- Development setup
-- Pull request process
-- Coding standards
+### Search
+- `POST /api/wiki-search` - AI Assistant search (true RAG)
+- `POST /api/wiki-document-search` - Direct document search with context
 
-## 📊 Project Status
+## Documentation
 
-**Current Version**: 1.0-beta  
-**Status**: 95% complete - Production ready with mobile optimization in progress
+- `docs/getting-started/` - Setup and configuration
+- `docs/architecture/` - System design
+- `docs/development/` - Development guides
+- `docs/deployment/` - Production deployment
+- `docs/api/` - API reference
 
-See [Project Status](docs/project/status.md) for detailed information.
+## Current Status
 
-## 🔒 Security
+- Version: 1.0-beta
+- Completion: 95%
+- Remaining: Mobile optimization
 
-- End-to-end encryption for user data
-- Row-level security on all database tables
-- Rate limiting on all API endpoints
-- Regular security audits
+See `docs/project/status.md` for details.
 
-For security concerns, please email security@debateai.com
+## Critical Issues Before Deployment
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- OpenAI for GPT-4 integration
-- ElevenLabs for voice synthesis
-- Supabase for backend infrastructure
-- The open-source community
-
----
-
-**Questions?** Check our [documentation](docs/) or open an issue on GitHub.
+See `docs/deployment/blockers.md`:
+- Fix CORS origin in `src/pages/api/socketio.ts`
+- Add viewport meta tag in `src/app/layout.tsx`
+- Secure debug endpoints
+- Configure GitHub secrets

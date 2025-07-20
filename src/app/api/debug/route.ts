@@ -29,6 +29,15 @@ interface Diagnostics {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Check IP restriction
+  const allowedIPs = process.env.DEBUG_ALLOWED_IPS?.split(',') || [];
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  const clientIP = forwardedFor ? forwardedFor.split(',')[0].trim() : request.headers.get('x-real-ip');
+  
+  if (allowedIPs.length > 0 && clientIP && !allowedIPs.includes(clientIP)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  
   const searchParams = request.nextUrl.searchParams;
   const rawParams = Object.fromEntries(searchParams.entries());
   const parseParams = debugQuerySchema.safeParse(rawParams);

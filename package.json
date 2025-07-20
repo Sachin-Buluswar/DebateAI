@@ -32,7 +32,9 @@
     "test:coverage": "jest --config=config/jest.config.js --coverage",
     "copy-email": "node scripts/copy-email-template.js",
     "preview-email": "node scripts/preview-email-template.js",
-    "setup-emails": "node scripts/setup-email-templates.js"
+    "setup-emails": "node scripts/setup-email-templates.js",
+    "validate-rag": "node scripts/validate-rag-setup.js",
+    "setup-storage": "node scripts/setup-storage-buckets.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -78,7 +80,7 @@
     "joi": "^17.13.3",
     "multer": "^1.4.5-lts.2",
     "next": "^14.2.30",
-    "node-fetch": "^3.3.2",
+    "node-fetch": "^2.7.0",
     "openai": "^5.8.2",
     "path": "^0.12.7",
     "react": "^18.2.0",

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "@/styles/mobile-fixes.css";
@@ -32,6 +32,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "DebateAI",
   description: "AI-powered debate practice and speech feedback platform",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

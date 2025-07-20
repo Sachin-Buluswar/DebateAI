@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error('[auth-callback] Authentication error:', error, errorDescription)
-    // Redirect to auth page with error
-    return NextResponse.redirect(`${requestUrl.origin}/auth?error=${encodeURIComponent(error)}&error_description=${encodeURIComponent(errorDescription || '')}`)
+    // Redirect to auth page with generic error message
+    return NextResponse.redirect(`${requestUrl.origin}/auth?error=authentication_failed`)
   }
 
   if (code) {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       
       if (exchangeError) {
         console.error('[auth-callback] Code exchange error:', exchangeError)
-        return NextResponse.redirect(`${requestUrl.origin}/auth?error=${encodeURIComponent(exchangeError.message)}`)
+        return NextResponse.redirect(`${requestUrl.origin}/auth?error=authentication_failed`)
       }
 
       if (data.session) {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (error) {
       console.error('[auth-callback] Unexpected error:', error)
-      return NextResponse.redirect(`${requestUrl.origin}/auth?error=${encodeURIComponent('Authentication failed')}`)
+      return NextResponse.redirect(`${requestUrl.origin}/auth?error=authentication_failed`)
     }
   }
 

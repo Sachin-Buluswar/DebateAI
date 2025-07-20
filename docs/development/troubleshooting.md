@@ -1,457 +1,307 @@
-# DebateAI Troubleshooting Guide
+# Troubleshooting
 
-## 🎯 **OVERVIEW**
+## Console Errors
 
-This guide provides solutions for common issues with the DebateAI application. **Current Status: Production-Ready (95% Complete)** - Most critical issues have been resolved in the latest implementation.
+### Error: Content Security Policy blocks the use of 'eval'
 
----
+This error appears in development when Next.js dev tools or monitoring libraries (like Sentry) use eval. Fixed by custom CSP headers in `src/middleware.ts`:
 
-## 🚀 **QUICK START TROUBLESHOOTING**
+1. The middleware sets appropriate CSP headers for development vs production
+2. Development allows 'unsafe-eval' for dev tools
+3. Production has stricter CSP without eval
 
-### ✅ **Application Status Check**
-Before troubleshooting, verify the current application status:
+If you still see this error:
+- Ensure `src/middleware.ts` exists and is properly configured
+- Restart the development server
+- Clear browser cache
+
+### Error: @import rules must be at the top of the stylesheet
+
+CSS @import statements must come before any other CSS rules:
+
+```css
+/* Correct order */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import '../styles/layout-system.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### Warning: Unsupported metadata viewport is configured in metadata export
+
+In Next.js 14+, viewport configuration must be a separate export, not part of metadata:
+
+```typescript
+// ❌ Wrong - viewport in metadata
+export const metadata: Metadata = {
+  title: "App",
+  viewport: "width=device-width, initial-scale=1",
+};
+
+// ✅ Correct - separate exports
+export const metadata: Metadata = {
+  title: "App",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+```
+
+### 404: /.well-known/appspecific/com.chrome.devtools.json
+
+Chrome DevTools looks for this configuration file. Create it to avoid 404 errors:
 
 ```bash
-# Check application health
-curl http://localhost:3001/api/health
+mkdir -p public/.well-known/appspecific
+echo '{"version": "1.0"}' > public/.well-known/appspecific/com.chrome.devtools.json
+```
 
-# Expected response:
+## Environment Issues
+
+### Error: Cannot find module '@/lib/supabase/client'
+
+```bash
+npm install
+npm run build
+```
+
+### Error: NEXT_PUBLIC_SUPABASE_URL is not defined
+
+1. Check `.env.local` exists
+2. Verify format:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+3. Restart server:
+```bash
+kill -9 $(lsof -ti:3001)
+npm run dev
+```
+
+## Build Errors
+
+### Error: Type error in src/app/api/*/route.ts
+
+```bash
+npm run typecheck
+# Fix errors shown
+npm run lint -- --fix
+```
+
+### Error: Cannot resolve 'openai'
+
+```bash
+npm install openai@latest
+```
+
+## Database Errors
+
+### Error: permission denied for table
+
+1. Check RLS policies:
+```sql
+SELECT * FROM pg_policies WHERE tablename = 'your_table';
+```
+
+2. Enable RLS:
+```sql
+ALTER TABLE your_table ENABLE ROW LEVEL SECURITY;
+```
+
+3. Add policy:
+```sql
+CREATE POLICY "Users can view own data" ON your_table
+FOR SELECT USING (auth.uid() = user_id);
+```
+
+### Error: relation does not exist
+
+```bash
+npx supabase db push
+npx supabase db reset
+```
+
+## API Errors
+
+### Error: 429 Too Many Requests
+
+Rate limit hit. Add delay:
+```typescript
+await new Promise(resolve => setTimeout(resolve, 1000));
+```
+
+### Error: fetch failed
+
+Check:
+1. API endpoint URL correct
+2. CORS headers set
+3. Network connectivity
+
+Fix CORS in `src/pages/api/socketio.ts`:
+```typescript
+cors: {
+  origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
+  methods: ["GET", "POST"]
+}
+```
+
+## Socket.IO Errors
+
+### Error: WebSocket connection failed
+
+1. Check Socket.IO server running:
+```bash
+lsof -i :3001
+```
+
+2. Fix in `src/hooks/useRealtimeDebate.ts`:
+```typescript
+const socket = io(window.location.origin, {
+  path: '/api/socketio',
+  transports: ['websocket', 'polling']
+});
+```
+
+### Error: JWT token invalid
+
+Check token generation in `src/pages/api/socketio.ts`:
+```typescript
+const token = socket.handshake.auth.token;
+const decoded = jwt.verify(token, process.env.JWT_SECRET);
+```
+
+## Audio Errors
+
+### Error: MediaRecorder is not supported
+
+Browser issue. Use Chrome or Edge.
+
+### Error: No audio input detected
+
+```javascript
+navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(stream => console.log('Audio access granted'))
+  .catch(err => console.error('Audio access denied', err));
+```
+
+## OpenAI Errors
+
+### Error: 401 Unauthorized
+
+Check API key in `.env.local`:
+```
+OPENAI_API_KEY=sk-...
+```
+
+### Error: Model not found
+
+Use correct model name:
+```typescript
+model: "gpt-4o-mini"  // Not "gpt-4-mini"
+```
+
+## ElevenLabs Errors
+
+### Error: Voice not found
+
+Valid voice IDs:
+```typescript
+const VOICE_IDS = {
+  sarah: "EXAVITQu4vr4xnSDxMaL",
+  laura: "FGY2WhTYpPnrIDTdsKH5", 
+  charlie: "IKne3meq5aSn9XLyUdCD",
+  george: "JBFqnCBsd6RMkjVDRZzb",
+  callum: "N2lVS1w4EtoT3dr4eOWO",
+  charlotte: "XB0fDUnXU5powFXDhCwa",
+  alice: "Xb7hH8MSUJpSbSDYk0k2",
+  matilda: "XrExE9yKIg1WjnnlVkGX",
+  will: "bIHbv24MWmeRgasZH58o",
+  jessica: "cgSgspJ2msm6clMCkdW9"
+};
+```
+
+## TypeScript Errors
+
+### Error: Property does not exist on type
+
+Add type definition:
+```typescript
+interface YourType {
+  property: string;
+}
+```
+
+### Error: Cannot find namespace
+
+Add to `tsconfig.json`:
+```json
 {
-  "status": "healthy",
-  "timestamp": "2025-07-06T...",
-  "version": "1.0.0",
-  "database": "connected",
-  "services": {
-    "openai": "operational",
-    "elevenlabs": "operational",
-    "supabase": "connected"
+  "compilerOptions": {
+    "types": ["node", "@types/react"]
   }
 }
 ```
 
-### 🔧 **Environment Validation**
-```bash
-# Run environment check script
-npm run check-env
+## Production Issues
 
-# This validates all required environment variables
-```
+### Error: CORS blocked in production
 
----
-
-## 🛠️ **DEVELOPMENT SETUP ISSUES**
-
-### Issue: Build Failures or TypeScript Errors
-**Status**: ✅ **RESOLVED** - Zero TypeScript errors in current implementation
-
-**Solution**:
-```bash
-# Clean install and rebuild
-rm -rf node_modules package-lock.json .next
-npm install
-npm run build
-
-# Check for any remaining issues
-npm run lint
-npm run typecheck
-```
-
-### Issue: Environment Variables Not Loading
-**Status**: ✅ **RESOLVED** - Comprehensive environment validation implemented
-
-**Root Cause**: Missing or incorrectly formatted environment variables
-
-**Solution**:
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env.local
-   ```
-
-2. Fill in required values:
-   ```env
-   # Required for core functionality
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-   OPENAI_API_KEY=your_openai_key
-   ELEVENLABS_API_KEY=your_elevenlabs_key
-   
-   # Optional for full functionality
-   OPENAI_VECTOR_STORE_ID=your_vector_store_id
-   DEBUG_API_KEY=your_debug_key
-   ```
-
-3. Validate configuration:
-   ```bash
-   npm run check-env
-   ```
-
-### Issue: Port Already in Use
-**Solution**:
-```bash
-# Kill process on port 3001
-lsof -ti:3001 | xargs kill -9
-
-# Or use a different port
-PORT=3002 npm run dev
-```
-
----
-
-## 🔐 **AUTHENTICATION ISSUES**
-
-### Issue: Sign-In Loop or Redirect Problems
-**Status**: ✅ **RESOLVED** - Complete authentication flow implemented
-
-**Root Cause**: Session management and callback handling fixed in current implementation
-
-**Verification**:
-1. Check auth callback route exists: `src/app/auth/callback/route.ts`
-2. Verify Supabase configuration in dashboard
-3. Test complete auth flow:
-   ```bash
-   # Check auth endpoints
-   curl http://localhost:3001/api/health_check
-   ```
-
-### Issue: Email Verification Not Working
-**Status**: ✅ **RESOLVED** - Email verification fully operational
-
-**Solution**:
-1. Check Supabase email settings in dashboard
-2. Verify email templates are configured
-3. Check spam folder for verification emails
-4. Test with different email providers
-
-### Issue: Session Persistence Problems
-**Status**: ✅ **RESOLVED** - Unified Supabase client with auth-helpers
-
-**Root Cause**: Previously had mixed client implementations - now unified
-
-**Current Implementation**: Uses `@supabase/auth-helpers-nextjs` for consistent session management
-
----
-
-## 🤖 **AI SERVICE ISSUES**
-
-### Issue: OpenAI API Failures
-**Status**: ✅ **RESOLVED** - Comprehensive error handling and retry logic
-
-**Troubleshooting**:
-```bash
-# Test OpenAI connection
-curl -H "Authorization: Bearer $OPENAI_API_KEY" \
-     https://api.openai.com/v1/models
-
-# Check API key validity
-node -e "console.log('API Key:', process.env.OPENAI_API_KEY?.substring(0, 10) + '...')"
-```
-
-**Current Safeguards**:
-- Retry logic with exponential backoff
-- Graceful degradation for non-critical features
-- Comprehensive error messages
-
-### Issue: ElevenLabs TTS/STT Failures
-**Status**: ✅ **RESOLVED** - Production-ready implementation with retry logic
-
-**Troubleshooting**:
-```bash
-# Test ElevenLabs API
-curl -H "xi-api-key: $ELEVENLABS_API_KEY" \
-     https://api.elevenlabs.io/v1/voices
-
-# Check audio format support
-# Current implementation supports: MP3, WAV, OGG, WebM
-```
-
-**Current Features**:
-- Multiple audio format support
-- Browser compatibility checks
-- Fallback error handling
-- Retry logic for transient failures
-
-### Issue: Vector Search Failures
-**Status**: ✅ **RESOLVED** - Exponential backoff retry logic implemented
-
-**Root Cause**: Previously missing `OPENAI_VECTOR_STORE_ID` environment variable
-
-**Solution**:
-1. Ensure environment variable is set:
-   ```env
-   OPENAI_VECTOR_STORE_ID=vs_your_vector_store_id
-   ```
-
-2. Test vector search:
-   ```bash
-   curl -X POST http://localhost:3001/api/wiki-search \
-        -H "Content-Type: application/json" \
-        -d '{"query": "test search", "maxResults": 5}'
-   ```
-
----
-
-## 🎵 **AUDIO ISSUES**
-
-### Issue: Audio Recording Not Working
-**Status**: ✅ **RESOLVED** - Comprehensive browser compatibility implemented
-
-**Current Implementation**:
-- Browser compatibility checks for MediaRecorder API
-- Multiple audio format support
-- Microphone permission handling
-- Graceful fallback to file upload
-
-**Troubleshooting**:
-1. Check browser support:
-   ```javascript
-   console.log('MediaRecorder supported:', !!window.MediaRecorder);
-   console.log('getUserMedia supported:', !!navigator.mediaDevices?.getUserMedia);
-   ```
-
-2. Grant microphone permissions in browser
-3. Try different browsers (Chrome, Firefox, Safari supported)
-4. Use file upload as fallback
-
-### Issue: Audio Playback Problems
-**Status**: ✅ **RESOLVED** - MediaSource API implementation
-
-**Current Features**:
-- Streaming audio playback
-- Multiple format support
-- Progress tracking and seeking
-- Error recovery and retry logic
-
-**Troubleshooting**:
-1. Check browser audio codec support
-2. Verify network connectivity for streaming
-3. Check browser console for specific errors
-
----
-
-## 💾 **DATABASE ISSUES**
-
-### Issue: Supabase Connection Failures
-**Status**: ✅ **RESOLVED** - Comprehensive connection handling
-
-**Troubleshooting**:
-```bash
-# Test database connection
-curl -X GET "https://your-project.supabase.co/rest/v1/users" \
-     -H "apikey: your_anon_key" \
-     -H "Authorization: Bearer your_anon_key"
-```
-
-**Current Safeguards**:
-- Connection retry logic
-- Proper error handling
-- Health check endpoints
-
-### Issue: Row Level Security (RLS) Errors
-**Status**: ✅ **RESOLVED** - Complete RLS policies implemented
-
-**Root Cause**: All RLS policies are now properly configured
-
-**Verification**:
-```sql
--- Check RLS policies in Supabase dashboard
-SELECT * FROM pg_policies WHERE tablename IN (
-  'users', 'user_preferences', 'debate_history', 
-  'speech_feedback', 'search_history'
-);
-```
-
----
-
-## 🌐 **NETWORK AND API ISSUES**
-
-### Issue: CORS Errors
-**Status**: ✅ **RESOLVED** - Proper CORS configuration implemented
-
-**Current Configuration**:
-- Proper CORS headers on all API routes
-- Security headers for production
-- Rate limiting with proper error responses
-
-### Issue: Rate Limiting Errors
-**Status**: ✅ **IMPLEMENTED** - Production-ready rate limiting
-
-**Current Limits**:
-- Speech feedback: 5 requests per minute
-- Wiki search: 10 requests per minute
-- General API: 100 requests per minute
-
-**Error Response**:
-```json
-{
-  "error": "Rate limit exceeded",
-  "retryAfter": 60,
-  "limit": 5,
-  "remaining": 0
+Fix in `next.config.js`:
+```javascript
+async headers() {
+  return [
+    {
+      source: "/api/:path*",
+      headers: [
+        { key: "Access-Control-Allow-Origin", value: process.env.NEXT_PUBLIC_APP_URL },
+      ],
+    },
+  ];
 }
 ```
 
----
+### Error: Environment variables undefined
 
-## 🔄 **REAL-TIME COMMUNICATION ISSUES**
+Ensure variables in Vercel/hosting platform:
+- Go to Settings > Environment Variables
+- Add all from `.env.local`
+- Redeploy
 
-### Issue: Socket.IO Connection Problems
-**Status**: ✅ **RESOLVED** - Robust WebSocket implementation
-
-**Troubleshooting**:
-```javascript
-// Check WebSocket connection in browser console
-const socket = io();
-socket.on('connect', () => console.log('Connected:', socket.id));
-socket.on('disconnect', () => console.log('Disconnected'));
-```
-
-**Current Features**:
-- Automatic reconnection
-- Connection error handling
-- Session isolation
-- Proper cleanup on disconnect
-
-### Issue: Debate State Synchronization
-**Status**: ✅ **RESOLVED** - Comprehensive state management
-
-**Current Implementation**:
-- Real-time state synchronization
-- Proper phase transitions
-- Timer management with pause/resume
-- Error recovery and state restoration
-
----
-
-## 📱 **MOBILE AND BROWSER COMPATIBILITY**
-
-### Issue: Mobile Audio Recording
-**Status**: 🔄 **IN PROGRESS** - Desktop fully working, mobile optimization ongoing
-
-**Current Status**:
-- Desktop: ✅ Full functionality
-- Mobile: 🔄 Basic functionality, optimization in progress
-
-**Workarounds**:
-1. Use file upload instead of recording on mobile
-2. Test on different mobile browsers
-3. Ensure HTTPS for microphone access
-
-### Issue: Browser Compatibility
-**Status**: ✅ **RESOLVED** - Comprehensive browser support
-
-**Supported Browsers**:
-- ✅ Chrome 90+ (Full support)
-- ✅ Firefox 88+ (Full support)
-- ✅ Safari 14+ (Full support)
-- ✅ Edge 90+ (Full support)
-
----
-
-## 🔍 **DEBUGGING TOOLS**
-
-### Debug API Endpoint
-**Status**: ✅ **AVAILABLE** - Secure debug endpoint implemented
+## Debug Commands
 
 ```bash
-# Check system status (requires DEBUG_API_KEY)
-curl -X POST http://localhost:3001/api/debug \
-     -H "Content-Type: application/json" \
-     -H "x-debug-key: your_debug_key" \
-     -d '{"action": "health_check"}'
-```
+# Check Node version
+node --version  # Should be 18+
 
-### Logging and Monitoring
-**Current Implementation**:
-- Structured error logging
-- Request/response logging
-- Performance monitoring
-- Health check endpoints
-
-**Access Logs**:
-```bash
-# Check application logs
-tail -f logs/application.log
-
-# Check specific service logs
-grep "elevenlabs" logs/application.log
-grep "openai" logs/application.log
-```
-
----
-
-## 🆘 **EMERGENCY PROCEDURES**
-
-### Complete Application Reset
-```bash
-# Nuclear option - complete reset
-rm -rf node_modules .next package-lock.json
+# Clear cache
+rm -rf .next
+rm -rf node_modules
 npm install
-npm run build
-npm run dev
+
+# Check port usage
+lsof -i :3001
+
+# Database connection
+npx supabase status
+
+# Type checking
+npx tsc --noEmit
+
+# Find TypeScript errors
+npm run typecheck
+
+# Auto-fix linting
+npm run lint -- --fix
 ```
 
-### Database Reset (Development Only)
-```sql
--- Reset user data (DEVELOPMENT ONLY)
-TRUNCATE TABLE debate_history CASCADE;
-TRUNCATE TABLE speech_feedback CASCADE;
-TRUNCATE TABLE search_history CASCADE;
--- Note: Do not truncate users table unless necessary
-```
+## File Locations
 
-### Service Status Check
-```bash
-# Check all services
-npm run health-check
-
-# Individual service checks
-curl http://localhost:3001/api/health
-curl http://localhost:3001/api/debug/status
-```
-
----
-
-## 📞 **GETTING HELP**
-
-### Current Status: Production Ready ✅
-- **95% Complete**: All core features operational
-- **Zero Critical Bugs**: All major issues resolved
-- **Production Security**: RLS policies and rate limiting implemented
-- **Comprehensive Testing**: All major flows tested and working
-
-### When to Seek Help
-1. **New Issues**: If you encounter issues not covered in this guide
-2. **Performance Problems**: Unexpected slowdowns or failures
-3. **Security Concerns**: Any potential security vulnerabilities
-4. **Feature Requests**: Suggestions for improvements
-
-### Quick Resolution Steps
-1. **Check Current Status**: Verify application health endpoint
-2. **Review Logs**: Check browser console and application logs
-3. **Environment Check**: Run `npm run check-env`
-4. **Restart Services**: Try restarting the development server
-5. **Check Documentation**: Review updated documentation in `/instructions`
-
----
-
-## 🎯 **CONCLUSION**
-
-**DebateAI is now production-ready with comprehensive error handling and troubleshooting capabilities.** Most historical issues have been resolved in the current implementation:
-
-### ✅ **Resolved Issues**
-- Authentication and session management
-- AI service integration and error handling
-- Database security and RLS policies
-- Audio recording and playback
-- Real-time communication
-- Build and deployment issues
-
-### 🔄 **Ongoing Optimization**
-- Mobile responsiveness (final 5%)
-- Performance optimization for scale
-- Advanced monitoring and alerting
-
-**Application URL**: http://localhost:3001
-
-The application is stable, secure, and ready for production use. This troubleshooting guide will be updated as new issues are identified and resolved. 
+- Logs: Check browser console and terminal
+- Database logs: Supabase Dashboard > Logs
+- API logs: `console.error` statements in route handlers
+- Socket logs: `src/pages/api/socketio.ts`

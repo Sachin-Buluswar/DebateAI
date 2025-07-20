@@ -1,312 +1,226 @@
-# Claude Development Guide for DebateAI
+# AI Agent Instructions for DebateAI
 
-This guide provides development guidelines, code patterns, and workflow instructions for AI assistants and contributors working on DebateAI.
+## Critical Rules
 
-**Important**: This is a production application. Always prioritize stability, security, and user experience. Never merge to main without explicit user approval.
+1. NEVER merge to main branch without explicit user approval
+2. NEVER commit directly to main branch
+3. ALWAYS create feature branches for changes
+4. ALWAYS run `npm run lint` and `npm run typecheck` before committing
+5. NEVER expose API keys in client-side code
+6. ALWAYS use existing patterns - do not create new patterns
 
----
+## Project Information
 
-## 📁 Project Structure
+- Type: Next.js 14 application
+- Language: TypeScript
+- Database: Supabase (PostgreSQL with RLS)
+- Real-time: Socket.IO
+- AI: OpenAI GPT-4, ElevenLabs TTS/STT
+
+## File Structure
 
 ```
 src/
-├── app/                    # Next.js 13+ App Router
-│   ├── api/               # REST API endpoints
-│   ├── (auth)/            # Authentication pages
-│   ├── debate/            # Real-time debate UI
-│   ├── speech-feedback/   # Speech analysis interface
-│   └── search/            # Wiki search interface
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes (route.ts files)
+│   ├── (auth)/            # Auth pages
+│   ├── debate/            # Debate UI
+│   ├── speech-feedback/   # Speech analysis UI
+│   └── search/            # Search UI
 ├── backend/
-│   ├── modules/           # Core business logic
-│   │   └── realtimeDebate/   # Debate orchestration
+│   ├── modules/           # Business logic
+│   │   └── realtimeDebate/
 │   └── services/          # External integrations
-│       ├── openaiService.ts       # Centralized OpenAI client
-│       ├── elevenLabsService.ts   # TTS/STT service
-│       └── supabaseService.ts     # Database operations
+│       ├── openaiService.ts
+│       ├── elevenLabsService.ts
+│       └── supabaseService.ts
 ├── components/
-│   ├── ui/                # Enhanced UI components
+│   ├── ui/                # Reusable UI components
 │   ├── debate/            # Debate-specific components
-│   └── layout/            # App layout components
-└── lib/                   # Utilities and helpers
-    ├── errorRecovery.ts   # Retry logic & error handling
-    └── rateLimit.ts       # API rate limiting
-
+│   └── layout/            # Layout components
+└── lib/
+    ├── errorRecovery.ts   # Retry logic patterns
+    └── rateLimit.ts       # Rate limiting
 ```
 
-## 🚀 Key Development Areas
-
-### 1. Enhanced RAG System
-- PDF documents stored in Supabase Storage with direct viewing
-- Three search modes: Assistant (AI-enhanced), RAG (raw chunks), Enhanced RAG (with PDF context)
-- OpenCaseList integration for debate evidence
-- Admin dashboard at `/admin/documents` for document management
-
-### 2. OpenAI API Architecture
-- Centralized client management via `OpenAIClientManager`
-- Exponential backoff and circuit breakers for reliability
-- Comprehensive Zod schemas for type safety
-- Request tracking and cost estimation
-
-### 3. UI Components
-- Enhanced components with loading states and animations
-- Minimalist design system with consistent styling
-- Toast notifications for user feedback
-- Progressive enhancement for accessibility
-
-### 4. Production Infrastructure
-- Docker multi-stage builds (~150MB production image)
-- 9 GitHub Actions workflows for CI/CD
-- OpenTelemetry and Sentry monitoring
-- Comprehensive health checks
-
----
-
-## 🔧 Development Workflow
-
-### Before Starting
-1. Read the [README.md](README.md) for project overview
-2. Review [PRODUCTION_STATUS.md](docs/project/status.md) for current state
-3. Check [UI_IMPROVEMENTS_ROADMAP.md](docs/project/roadmap.md) for remaining work
-4. Understand the [architecture](docs/architecture/overview.md)
-
-### Local Development
-```bash
-# Setup
-npm install
-cp .env.example .env.local
-npm run check-env
-
-# Development
-npm run dev          # Start dev server (http://localhost:3001)
-npm run lint         # Check code style
-npm run typecheck    # Validate TypeScript
-
-# Testing
-npm run test:manual  # Manual test scripts
-npm run test:socket  # Socket.IO connection test
-```
-
----
-
-## 🌿 Git Workflow
-
-### Branch Strategy
-- `main` - Production-ready code
-- `ui-improvements` - Active UI/UX enhancements (current)
-- `feature/*` - New feature development
-- `fix/*` - Bug fixes
-
-### Development Process
-1. **Always create a feature branch** - Never commit directly to main
-2. **Test thoroughly** - Run lint, typecheck, and manual tests
-3. **User approval required** - All changes need explicit approval before merging
-4. **Use descriptive commits** - Clear, actionable commit messages
-
-### Merging Protocol
-```bash
-# IMPORTANT: Claude should NEVER merge without user approval
-
-# For user to test changes:
-git checkout [branch-name]
-npm run dev
-
-# For user to approve:
-git checkout main
-git merge [branch-name]
-```
-
-## 💻 Code Patterns & Best Practices
+## Required Patterns
 
 ### API Route Pattern
+
+File: `src/app/api/[endpoint]/route.ts`
+
 ```typescript
-// src/app/api/[endpoint]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { withRateLimit } from '@/lib/rateLimit';
-import { validateRequest } from '@/lib/validation';
+import { z } from 'zod';
 
-export async function POST(request: Request) {
-  // 1. Rate limiting
-  const { success, response } = await withRateLimit(request);
-  if (!success) return response;
+const requestSchema = z.object({
+  // Define schema
+});
 
-  // 2. Validation with Zod
-  const { data, error } = await validateRequest(request, schema);
-  if (error) return NextResponse.json({ error }, { status: 400 });
+export async function POST(request: NextRequest) {
+  // 1. Rate limit
+  const rateLimitResult = await withRateLimit(request);
+  if (!rateLimitResult.success) return rateLimitResult.response;
 
-  // 3. Business logic with error recovery
+  // 2. Parse and validate
   try {
-    const result = await serviceCall(data);
-    return NextResponse.json(result);
+    const body = await request.json();
+    const validated = requestSchema.parse(body);
   } catch (error) {
-    logger.error('API Error', { error, endpoint: '/api/[endpoint]' });
-    return NextResponse.json(
-      { error: 'Internal server error' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
+
+  // 3. Execute with error handling
+  try {
+    // Business logic
+    return NextResponse.json({ data: result });
+  } catch (error) {
+    console.error(`API Error [${request.url}]:`, error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
 
 ### Component Pattern
-```typescript
-// Use server components by default, client components only when needed
-'use client'; // Only if using hooks, state, or browser APIs
 
-export function Component() {
+```typescript
+'use client'; // Only if using hooks/state/browser APIs
+
+interface ComponentProps {
+  // Define props
+}
+
+export function Component({ props }: ComponentProps) {
+  // For async operations, always include loading and error states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Error handling with user-friendly messages
+  // Error must be user-friendly
   const handleAction = async () => {
     try {
       setLoading(true);
-      await apiCall();
+      setError(null);
+      // Action
     } catch (err) {
-      setError(getUserFriendlyError(err));
+      setError('Failed to perform action. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Always show loading and error states
-  if (loading) return <Spinner />;
-  if (error) return <ErrorMessage error={error} onRetry={handleAction} />;
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
-  return <div>{/* Component content */}</div>;
+  return <div>{/* Content */}</div>;
 }
 ```
 
-### Service Integration Pattern
+### Service Pattern with Retry
+
 ```typescript
-// Centralized service with retry logic
-class OpenAIService {
-  async generateSpeech(params: SpeechParams): Promise<SpeechResult> {
+import { withRetry } from '@/lib/errorRecovery';
+
+class ServiceName {
+  async methodName(params: ParamType): Promise<ReturnType> {
     return withRetry(
       async () => {
-        const validated = speechSchema.parse(params);
-        const response = await this.client.chat.completions.create(validated);
-        return this.processSpeechResponse(response);
+        // Validate inputs
+        const validated = schema.parse(params);
+        
+        // Make request
+        const response = await fetch(...);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        return response.json();
       },
-      { maxRetries: 3, backoff: 'exponential' }
+      { 
+        maxRetries: 3,
+        backoffMs: 1000,
+        backoffMultiplier: 2
+      }
     );
   }
 }
 ```
 
-## 🧪 Testing & Debugging
+## Environment Variables
 
-### Health Checks
-```bash
-# API health
-curl http://localhost:3001/api/health
+Required in `.env.local`:
 
-# Debug endpoint (requires DEBUG_API_KEY)
-curl http://localhost:3001/api/debug \
-  -H "x-api-key: $DEBUG_API_KEY"
-
-# Socket.IO connection test
-npm run test:socket
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+ELEVENLABS_API_KEY=
+OPENAI_VECTOR_STORE_ID=
 ```
 
-### Common Issues
-1. **WebSocket Connection**: Check JWT token and Socket.IO initialization
-2. **API Rate Limiting**: Monitor rate limit headers in responses
-3. **Audio Processing**: Verify ElevenLabs API key and model IDs
-4. **Database**: Check Supabase RLS policies and connection pool
+## Git Workflow
 
-### Debugging Tools
-- Browser DevTools for client-side issues
-- Structured logs with request IDs for tracing
-- Supabase dashboard for database queries
-- OpenTelemetry traces for performance
+```bash
+# Create feature branch
+git checkout -b feature/description
 
----
+# Make changes
+# Run checks
+npm run lint
+npm run typecheck
 
-## 🚨 Critical Guidelines
+# Commit with descriptive message
+git add .
+git commit -m "feat: add specific feature
 
-### Security
-- **Never expose API keys** in client-side code
-- **Always validate input** with Zod schemas
-- **Use RLS policies** for all user data access
-- **Implement rate limiting** on all endpoints
+- Detail 1
+- Detail 2"
 
-### Performance
-- **Lazy load** heavy components
-- **Optimize images** with Next.js Image
-- **Use server components** where possible
-- **Cache API responses** appropriately
+# Push branch
+git push origin feature/description
 
-### Error Handling
-- **Always catch errors** in async operations
-- **Provide fallback UI** for error states
-- **Log errors** with context for debugging
-- **Implement retry logic** for transient failures
+# DO NOT MERGE - User will handle merging
+```
 
-## 📊 Development Status
+## Common File Locations
 
-### What's Working
-- ✅ All core features operational
-- ✅ Production infrastructure ready
-- ✅ Enhanced RAG system with PDF support
-- ✅ CI/CD and monitoring configured
+- API routes: `src/app/api/*/route.ts`
+- Page components: `src/app/*/page.tsx`
+- Shared components: `src/components/`
+- Database types: `src/lib/supabase/types.ts`
+- Service integrations: `src/backend/services/`
+- Utilities: `src/lib/`
 
-### What Needs Work
-- 🚧 Mobile optimization (see [UI_IMPROVEMENTS_ROADMAP.md](docs/project/roadmap.md))
-- 🚧 Final deployment configuration
-- 🚧 Load testing and security audit
+## Testing Requirements
 
-### Active Development
-- Current focus: Mobile responsiveness
-- Next priority: Production deployment
-- See [PRODUCTION_STATUS.md](docs/project/status.md) for details
+Before marking any task complete:
 
----
+1. Code compiles: `npm run build`
+2. No lint errors: `npm run lint`
+3. No type errors: `npm run typecheck`
+4. Feature works in browser
+5. No console errors in browser
+6. Works on mobile viewport (375px width)
 
-## 🎯 Key Principles
+## Error Messages
 
-1. **User Approval Required**: Never merge to main without explicit user approval
-2. **Test Everything**: Run lint, typecheck, and manual tests before committing
-3. **Follow Patterns**: Use existing code patterns and structures
-4. **Error Recovery**: All external APIs must have retry logic
-5. **Security First**: Validate inputs, use RLS, implement rate limiting
+When errors occur, check:
 
----
+1. Browser console for client errors
+2. Terminal for server errors
+3. Network tab for API failures
+4. Supabase dashboard for database errors
 
-## 📚 Key Documentation
+## Current Issues
 
-### Architecture & Design
-- [System Architecture](docs/architecture/overview.md) - Component design and interactions
-- [Enhanced RAG Architecture](docs/architecture/rag-system.md) - PDF search system
-- [OpenAI API Improvements](docs/architecture/openai-integration.md) - API architecture
+See `docs/deployment/blockers.md` for critical issues that must be fixed.
 
-### Operations & Deployment
-- [CI/CD Setup](docs/deployment/ci-cd.md) - GitHub Actions workflows
-- [Deployment Process](docs/deployment/production.md) - Production deployment
-- [Monitoring Guide](docs/deployment/monitoring.md) - Observability setup
+## Do Not
 
-### API References
-- [Supabase API](docs/api/supabase.md) - Database and auth
-- [OpenAI API](docs/api/openai.md) - AI services
-- [ElevenLabs API](docs/api/elevenlabs.md) - Voice services
-- [Socket.IO API](docs/api/socketio.md) - Real-time communication
-
-### Development Resources
-- [Troubleshooting](docs/development/troubleshooting.md) - Common issues and solutions
-- [Environment Secrets](docs/development/environment.md) - Configuration guide
-- [Performance Baseline](docs/performance/baseline.md) - Benchmarks
-
----
-
-## 🤖 AI Assistant Guidelines
-
-When working on this codebase:
-
-1. **Never merge without approval** - Always create feature branches
-2. **Test everything** - Run lint, typecheck, and manual tests
-3. **Follow existing patterns** - Consistency is key
-4. **Document changes** - Update relevant documentation
-5. **Consider mobile** - All UI changes must work on mobile
-6. **Handle errors gracefully** - Implement retry logic for external APIs
-7. **Secure by default** - Validate inputs, use RLS, rate limit endpoints
-8. **Note necessary human action** - Give the human a list of ALL the tasks they must do to complete the changes
-
-Remember: This is a production application with real users. Quality matters.
+1. Create new files unless necessary - prefer editing existing files
+2. Add console.log statements - use existing logging
+3. Change established patterns
+4. Install new dependencies without approval
+5. Modify database schema without migrations
+6. Expose sensitive data in responses
+7. Skip error handling
+8. Ignore TypeScript errors

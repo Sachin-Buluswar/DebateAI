@@ -1,13 +1,8 @@
-# Code Patterns and Best Practices
+# Code Patterns
 
-This guide outlines the coding patterns, conventions, and best practices for the DebateAI codebase.
+## API Routes
 
-## API Route Patterns
-
-### Standard API Route Structure
-
-All API routes should follow this pattern for consistency:
-
+### POST Route
 ```typescript
 // src/app/api/[endpoint]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,40 +11,32 @@ import { validateRequest } from '@/lib/validation';
 import { logger } from '@/lib/monitoring/logger';
 import { z } from 'zod';
 
-// Define request schema
 const requestSchema = z.object({
   field1: z.string(),
   field2: z.number().optional(),
 });
 
 export async function POST(request: NextRequest) {
-  // 1. Rate limiting
   const { success, response } = await withRateLimit(request);
   if (!success) return response;
 
-  // 2. Input validation
   const { data, error } = await validateRequest(request, requestSchema);
   if (error) {
     return NextResponse.json({ error }, { status: 400 });
   }
 
-  // 3. Business logic with error recovery
   try {
     const result = await serviceCall(data);
-    
-    // 4. Success response
     return NextResponse.json({ 
       success: true,
       data: result 
     });
   } catch (error) {
-    // 5. Error handling
     logger.error('API Error', { 
       error, 
       endpoint: '/api/[endpoint]',
       method: 'POST' 
     });
-    
     return NextResponse.json(
       { error: 'Internal server error' }, 
       { status: 500 }
@@ -58,15 +45,13 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-### Protected Routes
-
-For authenticated endpoints:
-
+### Protected Route
 ```typescript
+// src/app/api/protected/[endpoint]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabaseClient';
 
 export async function GET(request: NextRequest) {
-  // Get auth session
   const supabase = createClient();
   const { data: { session }, error } = await supabase.auth.getSession();
   
@@ -77,55 +62,49 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Continue with authenticated logic
   const userId = session.user.id;
-  // ...
+  // Protected logic here
 }
 ```
 
-## React Component Patterns
+## Components
 
-### Server Components (Default)
-
-Use server components by default for better performance:
-
+### Server Component
 ```typescript
-// No 'use client' directive - this is a server component
+// src/app/[page]/page.tsx
 import { createClient } from '@/lib/supabaseClient';
 
-export default async function DashboardPage() {
+export default async function PageName() {
   const supabase = createClient();
   const { data } = await supabase
-    .from('debates')
+    .from('table_name')
     .select('*')
     .order('created_at', { ascending: false });
 
   return (
     <div className="container mx-auto p-4">
-      <h1>Dashboard</h1>
+      <h1>Title</h1>
       {/* Render data */}
     </div>
   );
 }
 ```
 
-### Client Components
-
-Only use client components when necessary:
-
+### Client Component
 ```typescript
-'use client'; // Required for hooks, state, or browser APIs
+// src/components/[component]/ComponentName.tsx
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from '@/components/ui/Toast';
 
-interface ComponentProps {
+interface ComponentNameProps {
   initialData?: string;
   onSubmit: (data: string) => Promise<void>;
 }
 
-export function InteractiveComponent({ initialData = '', onSubmit }: ComponentProps) {
+export function ComponentName({ initialData = '', onSubmit }: ComponentNameProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState(initialData);
@@ -145,13 +124,11 @@ export function InteractiveComponent({ initialData = '', onSubmit }: ComponentPr
     }
   };
 
-  // Always handle loading and error states
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage error={error} onRetry={handleSubmit} />;
 
   return (
     <div>
-      {/* Component UI */}
       <Button onClick={handleSubmit} disabled={loading}>
         Submit
       </Button>
@@ -160,17 +137,15 @@ export function InteractiveComponent({ initialData = '', onSubmit }: ComponentPr
 }
 ```
 
-## Service Layer Patterns
+## Services
 
-### Service Class Structure
-
+### Service Class
 ```typescript
-// src/backend/services/exampleService.ts
+// src/backend/services/serviceName.ts
 import { withRetry } from '@/lib/errorRecovery';
 import { logger } from '@/lib/monitoring/logger';
 import { z } from 'zod';
 
-// Define schemas
 const inputSchema = z.object({
   query: z.string().min(1),
   options: z.object({
@@ -180,20 +155,18 @@ const inputSchema = z.object({
 
 type ServiceInput = z.infer<typeof inputSchema>;
 
-class ExampleService {
-  private client: SomeClient;
+class ServiceName {
+  private client: ClientType;
 
   constructor() {
-    this.client = new SomeClient({
-      // Configuration
+    this.client = new ClientType({
+      apiKey: process.env.API_KEY!,
     });
   }
 
   async performOperation(params: ServiceInput): Promise<Result> {
-    // Validate input
     const validated = inputSchema.parse(params);
 
-    // Use retry wrapper for external calls
     return withRetry(
       async () => {
         const response = await this.client.call(validated);
@@ -210,22 +183,20 @@ class ExampleService {
   }
 
   private processResponse(response: any): Result {
-    // Process and transform response
     return transformedResult;
   }
 }
 
-// Export singleton instance
-export const exampleService = new ExampleService();
+export const serviceName = new ServiceName();
 ```
 
-### OpenAI Integration Pattern
-
+### OpenAI Integration
 ```typescript
-// Using the centralized OpenAI client
+// src/backend/modules/[module]/aiOperations.ts
 import { openAIService } from '@/backend/services/openaiService';
+import { logger } from '@/lib/monitoring/logger';
 
-async function generateContent(prompt: string) {
+export async function generateContent(prompt: string): Promise<string> {
   try {
     const response = await openAIService.generateCompletion({
       prompt,
@@ -242,12 +213,11 @@ async function generateContent(prompt: string) {
 }
 ```
 
-## Error Handling Patterns
+## Error Handling
 
-### Comprehensive Error Handling
-
+### Custom Errors
 ```typescript
-// Define custom error types
+// src/lib/errors.ts
 export class ValidationError extends Error {
   constructor(message: string, public fields?: Record<string, string>) {
     super(message);
@@ -266,7 +236,6 @@ export class ExternalServiceError extends Error {
   }
 }
 
-// Error handler utility
 export function handleError(error: unknown): ErrorResponse {
   if (error instanceof ValidationError) {
     return {
@@ -287,7 +256,6 @@ export function handleError(error: unknown): ErrorResponse {
     };
   }
   
-  // Unknown errors
   logger.error('Unhandled error', { error });
   return {
     error: 'Internal server error',
@@ -296,13 +264,12 @@ export function handleError(error: unknown): ErrorResponse {
 }
 ```
 
-### Using Error Recovery
-
+### Error Recovery
 ```typescript
+// src/lib/resilientCall.ts
 import { withRetry, withTimeout, withCircuitBreaker } from '@/lib/errorRecovery';
 
-// Combine multiple error recovery strategies
-async function resilientApiCall(data: any) {
+export async function resilientApiCall(data: any) {
   return withCircuitBreaker(
     'external-api',
     async () => {
@@ -322,21 +289,21 @@ async function resilientApiCall(data: any) {
           },
           { maxRetries: 3 }
         ),
-        5000 // 5 second timeout
+        5000
       );
     }
   );
 }
 ```
 
-## Database Patterns
+## Database
 
-### Supabase Query Pattern
-
+### Query Pattern
 ```typescript
+// src/lib/db/queries.ts
 import { createClient } from '@/lib/supabaseClient';
+import { logger } from '@/lib/monitoring/logger';
 
-// Always use RLS and handle errors
 export async function getUserDebates(userId: string) {
   const supabase = createClient();
   
@@ -364,9 +331,11 @@ export async function getUserDebates(userId: string) {
 ```
 
 ### Transaction Pattern
-
 ```typescript
-// For complex operations requiring consistency
+// src/lib/db/transactions.ts
+import { createClient } from '@/lib/supabaseClient';
+import { logger } from '@/lib/monitoring/logger';
+
 export async function createDebateWithMessages(
   debateData: DebateInput,
   messages: MessageInput[]
@@ -374,7 +343,6 @@ export async function createDebateWithMessages(
   const supabase = createClient();
   
   try {
-    // Start transaction
     const { data: debate, error: debateError } = await supabase
       .from('debates')
       .insert(debateData)
@@ -383,7 +351,6 @@ export async function createDebateWithMessages(
 
     if (debateError) throw debateError;
 
-    // Insert related data
     const messagesWithDebateId = messages.map(msg => ({
       ...msg,
       debate_id: debate.id,
@@ -394,7 +361,6 @@ export async function createDebateWithMessages(
       .insert(messagesWithDebateId);
 
     if (messagesError) {
-      // Rollback by deleting the debate
       await supabase.from('debates').delete().eq('id', debate.id);
       throw messagesError;
     }
@@ -407,13 +373,13 @@ export async function createDebateWithMessages(
 }
 ```
 
-## Real-time Patterns
+## Socket.IO
 
-### Socket.IO Event Handling
-
+### Event Handlers
 ```typescript
-// Consistent event handling with typing
+// src/backend/socket/handlers.ts
 import { Server, Socket } from 'socket.io';
+import { logger } from '@/lib/monitoring/logger';
 
 interface DebateEvents {
   'debate:join': (debateId: string) => void;
@@ -423,31 +389,24 @@ interface DebateEvents {
 
 export function setupSocketHandlers(io: Server) {
   io.on('connection', (socket: Socket) => {
-    // Authenticate socket
     const userId = authenticateSocket(socket);
     if (!userId) {
       socket.disconnect();
       return;
     }
 
-    // Join user room
     socket.join(`user:${userId}`);
 
-    // Handle events with error boundaries
     socket.on('debate:join', async (debateId: string) => {
       try {
-        // Validate access
         const hasAccess = await validateDebateAccess(userId, debateId);
         if (!hasAccess) {
           socket.emit('error', { message: 'Access denied' });
           return;
         }
 
-        // Join debate room
         socket.join(`debate:${debateId}`);
         socket.emit('debate:joined', { debateId });
-        
-        // Notify others
         socket.to(`debate:${debateId}`).emit('user:joined', { userId });
       } catch (error) {
         logger.error('Socket error', { error, event: 'debate:join' });
@@ -458,68 +417,20 @@ export function setupSocketHandlers(io: Server) {
 }
 ```
 
-## Testing Patterns
-
-### Unit Test Structure
-
-```typescript
-// __tests__/services/exampleService.test.ts
-import { exampleService } from '@/backend/services/exampleService';
-import { mockClient } from '@/__mocks__/client';
-
-describe('ExampleService', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('performOperation', () => {
-    it('should handle successful response', async () => {
-      // Arrange
-      const input = { query: 'test query' };
-      const expectedResponse = { result: 'success' };
-      mockClient.call.mockResolvedValue(expectedResponse);
-
-      // Act
-      const result = await exampleService.performOperation(input);
-
-      // Assert
-      expect(result).toEqual(expectedResponse);
-      expect(mockClient.call).toHaveBeenCalledWith(input);
-    });
-
-    it('should retry on failure', async () => {
-      // Test retry logic
-      mockClient.call
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce({ result: 'success' });
-
-      const result = await exampleService.performOperation({ query: 'test' });
-
-      expect(mockClient.call).toHaveBeenCalledTimes(2);
-      expect(result).toEqual({ result: 'success' });
-    });
-  });
-});
-```
-
-## Security Patterns
+## Security
 
 ### Input Validation
-
-Always validate and sanitize inputs:
-
 ```typescript
+// src/lib/validation/userInput.ts
 import { z } from 'zod';
 import DOMPurify from 'isomorphic-dompurify';
 
-// Define strict schemas
 const userInputSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   email: z.string().email(),
   message: z.string().max(1000).transform(val => DOMPurify.sanitize(val)),
 });
 
-// Validate before processing
 export function processUserInput(rawInput: unknown) {
   const result = userInputSchema.safeParse(rawInput);
   
@@ -531,10 +442,11 @@ export function processUserInput(rawInput: unknown) {
 }
 ```
 
-### Authentication & Authorization
-
+### Auth Middleware
 ```typescript
-// Middleware for protected routes
+// src/middleware/auth.ts
+import { NextRequest, NextResponse } from 'next/server';
+
 export async function requireAuth(request: NextRequest) {
   const session = await getSession(request);
   
@@ -542,14 +454,12 @@ export async function requireAuth(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   
-  // Add user context to request
   request.headers.set('x-user-id', session.user.id);
   request.headers.set('x-user-role', session.user.role);
   
   return session;
 }
 
-// Role-based access
 export async function requireRole(request: NextRequest, requiredRole: string) {
   const session = await requireAuth(request);
   
@@ -561,53 +471,99 @@ export async function requireRole(request: NextRequest, requiredRole: string) {
 }
 ```
 
-## Performance Patterns
+## Performance
 
-### Lazy Loading
-
+### Dynamic Imports
 ```typescript
-// Dynamic imports for code splitting
+// src/components/[component]/index.tsx
+import dynamic from 'next/dynamic';
+
 const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
   loading: () => <LoadingSpinner />,
-  ssr: false, // Disable SSR for client-only components
+  ssr: false,
 });
 
-// Lazy load libraries
-async function processWithHeavyLib(data: any) {
+export async function processWithHeavyLib(data: any) {
   const { processData } = await import('heavy-processing-lib');
   return processData(data);
 }
 ```
 
-### Caching Strategy
-
+### Caching
 ```typescript
+// src/lib/cache/operations.ts
 import { unstable_cache } from 'next/cache';
 
-// Cache expensive operations
 export const getCachedData = unstable_cache(
   async (userId: string) => {
-    // Expensive operation
     const data = await fetchUserAnalytics(userId);
     return data;
   },
-  ['user-analytics'], // Cache key
+  ['user-analytics'],
   {
-    revalidate: 3600, // 1 hour
+    revalidate: 3600,
     tags: ['analytics'],
   }
 );
 ```
 
-## Summary
+## Next.js App Router Patterns
 
-Key principles to follow:
+### Metadata and Viewport Configuration
+```typescript
+// src/app/layout.tsx
+import type { Metadata, Viewport } from "next";
 
-1. **Consistency** - Use established patterns
-2. **Error Handling** - Always handle errors gracefully
-3. **Type Safety** - Leverage TypeScript fully
-4. **Security** - Validate inputs, use RLS, implement rate limiting
-5. **Performance** - Optimize for user experience
-6. **Maintainability** - Write clear, documented code
+// Metadata export - DO NOT include viewport here
+export const metadata: Metadata = {
+  title: "DebateAI",
+  description: "AI-powered debate practice and speech feedback platform",
+  // viewport should NOT be in metadata
+};
 
-Remember: This is a production application. Every line of code should be written with reliability, security, and user experience in mind.
+// Viewport should be a separate export in Next.js 14+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+```
+
+## Testing
+
+### Unit Test
+```typescript
+// __tests__/services/serviceName.test.ts
+import { serviceName } from '@/backend/services/serviceName';
+import { mockClient } from '@/__mocks__/client';
+
+describe('ServiceName', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('performOperation', () => {
+    it('should handle successful response', async () => {
+      const input = { query: 'test query' };
+      const expectedResponse = { result: 'success' };
+      mockClient.call.mockResolvedValue(expectedResponse);
+
+      const result = await serviceName.performOperation(input);
+
+      expect(result).toEqual(expectedResponse);
+      expect(mockClient.call).toHaveBeenCalledWith(input);
+    });
+
+    it('should retry on failure', async () => {
+      mockClient.call
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce({ result: 'success' });
+
+      const result = await serviceName.performOperation({ query: 'test' });
+
+      expect(mockClient.call).toHaveBeenCalledTimes(2);
+      expect(result).toEqual({ result: 'success' });
+    });
+  });
+});
+```

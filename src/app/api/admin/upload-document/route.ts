@@ -16,28 +16,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user || (user.email !== 'admin@debateai.com' && user.email !== 'claudecode@gmail.com')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user has admin role using RBAC
+    const { data: hasAdminRole } = await supabase
+      .rpc('check_user_role', { required_role: 'admin' });
+    
+    if (!hasAdminRole) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
-    if (!file || !file.name.endsWith('.pdf')) {
-      return NextResponse.json({ error: 'Invalid file. Only PDFs are supported.' }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    const isPDF = file.name.endsWith('.pdf');
+    const isTXT = file.name.endsWith('.txt');
+    
+    if (!isPDF && !isTXT) {
+      return NextResponse.json({ error: 'Invalid file type. Only PDF and TXT files are supported.' }, { status: 400 });
     }
 
     const documentStorage = new DocumentStorageService();
     const indexingService = new EnhancedIndexingService();
 
-    // Upload PDF to Supabase Storage
+    // Upload file to Supabase Storage
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const { url: fileUrl } = await documentStorage.uploadPDF(fileBuffer, file.name);
 
     // Create document record
     const document = await documentStorage.createDocument(
-      file.name.replace('.pdf', ''),
+      file.name.replace(/\.(pdf|txt)$/i, ''),
       file.name,
       fileUrl,
       file.size,
@@ -46,8 +62,32 @@ export async function POST(request: NextRequest) {
       'upload'
     );
 
-    // Start indexing process
-    await indexingService.indexPDFDocument(document.id, fileUrl, file.name);
+    if (isPDF) {
+      // Start PDF indexing process
+      await indexingService.indexPDFDocument(document.id, fileUrl, file.name);
+    } else if (isTXT) {
+      // For text files, create chunks directly
+      const textContent = new TextDecoder().decode(fileBuffer);
+      const chunks = textContent
+        .split('\n\n')
+        .filter(chunk => chunk.trim().length > 50)
+        .map((content, index) => ({
+          document_id: document.id,
+          chunk_index: index,
+          content: content.trim(),
+          page_number: 1,
+          metadata: {}
+        }));
+        
+      if (chunks.length > 0) {
+        await supabase
+          .from('document_chunks')
+          .insert(chunks);
+      }
+      
+      // Mark as indexed
+      await documentStorage.updateDocumentIndexStatus(document.id);
+    }
 
     return NextResponse.json({
       success: true,

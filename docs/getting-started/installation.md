@@ -1,174 +1,103 @@
-# Installation Guide
+# Installation
 
-This guide walks you through installing DebateAI on your local development environment.
+## Prerequisites
+Node.js 18.0+
+npm 8.0+
+Git
+macOS/Linux/Windows WSL
 
-## System Requirements
-
-### Prerequisites
-
-- **Node.js**: Version 18.0 or higher
-- **npm**: Version 8.0 or higher (comes with Node.js)
-- **Git**: For cloning the repository
-- **Operating System**: macOS, Linux, or Windows with WSL
-
-### Required Accounts
-
-Before you begin, you'll need to create accounts for the following services:
-
-1. **[Supabase](https://supabase.com)** - For database and authentication
-2. **[OpenAI](https://platform.openai.com)** - For AI debate opponents and speech analysis
-3. **[ElevenLabs](https://elevenlabs.io)** - For text-to-speech and speech-to-text
+## Required Accounts
+Create accounts:
+1. https://supabase.com
+2. https://platform.openai.com
+3. https://elevenlabs.io
 
 ## Installation Steps
 
-### 1. Clone the Repository
-
+### 1. Clone Repository
 ```bash
 git clone <repository-url>
 cd debatetest2
 ```
 
 ### 2. Install Dependencies
-
 ```bash
 npm install
 ```
 
-This will install all required packages including:
-- Next.js 14.2.30 and React 18
-- TypeScript and Tailwind CSS
-- Socket.IO for real-time communication
-- Supabase client libraries
-- OpenAI and ElevenLabs SDKs
-
-### 3. Set Up Environment Variables
-
-Create a local environment file from the template:
-
+### 3. Create Environment File
 ```bash
 cp .env.example .env.local
 ```
 
-You'll configure these variables in the next step. See the [Configuration Guide](./configuration.md) for detailed instructions.
-
 ### 4. Database Setup
 
 #### Create Supabase Project
-
-1. Sign in to [Supabase Dashboard](https://app.supabase.com)
+1. Sign in https://app.supabase.com
 2. Click "New Project"
-3. Choose your organization
-4. Enter project details:
-   - **Name**: DebateAI (or your preferred name)
-   - **Database Password**: Generate a strong password
-   - **Region**: Choose closest to your users
-5. Click "Create Project"
+3. Enter:
+   - Name: DebateAI
+   - Database Password: [generate strong password]
+   - Region: [closest to users]
+4. Click "Create Project"
 
-#### Run Database Migrations
+#### Run Migrations
+1. Open SQL Editor in Supabase Dashboard
+2. Execute each file in order from /Users/sachinbuluswar/Documents/debatetest2/supabase/migrations/
+3. Verify tables exist: profiles, debates, speeches, search_history
 
-Once your project is ready:
-
-1. Navigate to the SQL Editor in Supabase Dashboard
-2. Run each migration file in order from `supabase/migrations/`
-3. Verify tables are created:
-   - `profiles`
-   - `debates`
-   - `speeches`
-   - `search_history`
-
-#### Enable Row Level Security
-
+#### Enable RLS
 For each table:
-
-1. Go to Table Editor
-2. Click on the table
-3. Navigate to "RLS" tab
-4. Enable RLS
-5. Add the appropriate policies (included in migration files)
+1. Table Editor → [table_name] → RLS tab
+2. Enable RLS
+3. Policies already included in migrations
 
 ### 5. Verify Installation
-
-Run the environment check script:
-
 ```bash
 npm run check-env
 ```
 
-This will verify:
-- All required environment variables are set
-- API keys are in the correct format
-- Node.js version meets requirements
-
-### 6. Start Development Server
-
+### 6. Start Server
 ```bash
 npm run dev
 ```
+Access: http://localhost:3001
 
-The application will start on:
-- **Application**: http://localhost:3001
-- **Socket.IO Server**: http://localhost:3001 (integrated)
+## Error Resolution
 
-## Troubleshooting Installation
-
-### Common Issues
-
-#### Port Already in Use
-If port 3001 is already in use:
+### Port 3001 in use
 ```bash
-# Find process using port
-lsof -ti:3001 
-
-# Or use a different port
+lsof -ti:3001 | xargs kill -9
+# OR
 PORT=3002 npm run dev
 ```
 
-#### Module Not Found Errors
-Clear the cache and reinstall:
+### Module not found
 ```bash
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-#### TypeScript Errors
-Ensure TypeScript is properly configured:
+### TypeScript errors
 ```bash
 npm run typecheck
 ```
 
-#### Permission Errors (macOS/Linux)
-If you encounter permission errors:
+### Permission errors (macOS/Linux)
 ```bash
 sudo npm install --unsafe-perm
 ```
 
-### Verification Steps
+## Verification Commands
+```bash
+# API health check
+curl http://localhost:3001/api/health
 
-After installation, verify everything is working:
+# Expected response
+{"status":"ok","timestamp":"[ISO_DATE]"}
+```
 
-1. **Check API Health**:
-   ```bash
-   curl http://localhost:3001/api/health
-   ```
-
-2. **Test Database Connection**:
-   - Navigate to http://localhost:3001
-   - The page should load without connection errors
-
-3. **Verify WebSocket**:
-   - Open browser console
-   - Should see "Socket connected" message when accessing debate page
-
-## Next Steps
-
-Once installation is complete:
-
-1. [Configure your environment](./configuration.md) with API keys and settings
-2. Follow the [Quick Start Guide](./quick-start.md) to create your first debate
-3. Review the [Development Guide](../../CLAUDE.md) for best practices
-
-## Additional Resources
-
-- [Architecture Overview](../architecture.md)
-- [Troubleshooting Guide](../../TROUBLESHOOTING.md)
-- [Production Deployment](../DEPLOYMENT_PROCESS.md)
+## File Locations
+Project root: /Users/sachinbuluswar/Documents/debatetest2
+Migrations: /Users/sachinbuluswar/Documents/debatetest2/supabase/migrations/
+Environment: /Users/sachinbuluswar/Documents/debatetest2/.env.local
