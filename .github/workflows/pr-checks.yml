@@ -148,7 +148,7 @@ jobs:
         id: deploy
         run: |
           echo "Preview deployment would happen here"
-          echo "preview_url=https://pr-${{ github.event.pull_request.number }}.preview.debateai.com" >> $GITHUB_OUTPUT
+          echo "preview_url=https://pr-${{ github.event.pull_request.number }}.preview.erisdebate.com" >> $GITHUB_OUTPUT
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
