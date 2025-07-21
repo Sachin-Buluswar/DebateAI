@@ -12,7 +12,7 @@ export default function AboutPage() {
         <article className="space-y-12">
           <header className="space-y-4 animate-fade-in">
             <h1 className="text-gray-900 dark:text-gray-100">
-              about debateai
+              about atlas debate
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-400">
               empowering the next generation of debaters through ai-powered practice
@@ -24,7 +24,7 @@ export default function AboutPage() {
           <section className="space-y-6 animate-fade-in stagger-1">
             <h2 className="text-gray-900 dark:text-gray-100">our mission</h2>
             <p>
-              debateai was created to democratize access to high-quality debate practice. 
+              atlas debate was created to democratize access to high-quality debate practice. 
               we believe every student should have the opportunity to develop critical thinking 
               and communication skills, regardless of their school's resources or geographic location.
             </p>
@@ -54,7 +54,7 @@ export default function AboutPage() {
               <div>
                 <h3 className="text-primary-500 mb-2">intelligent practice</h3>
                 <p>
-                  our ai opponents use gpt-4 to generate substantive arguments, respond to your 
+                  our ai opponents generate substantive arguments, respond to your 
                   points, and engage in realistic crossfire exchanges.
                 </p>
               </div>
@@ -89,7 +89,7 @@ export default function AboutPage() {
 
           <footer className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-500">
-              debateai. focused practice for better debates.
+              atlas debate. focused practice for better debates.
             </p>
           </footer>
         </article>

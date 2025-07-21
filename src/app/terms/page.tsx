@@ -3,8 +3,8 @@ import Navbar from '@/components/layout/Navbar';
 import BackButton from '@/components/ui/BackButton';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | DebateAI',
-  description: 'Read the terms and conditions for using DebateAI platform.',
+  title: 'Terms of Service | Atlas Debate',
+  description: 'Read the terms and conditions for using Atlas Debate platform.',
 };
 
 export default function TermsOfServicePage() {
@@ -30,7 +30,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">acceptance of terms</h2>
             <p>
-              by accessing or using debateai, you agree to be bound by these terms of service. 
+              by accessing or using atlas debate, you agree to be bound by these terms of service. 
               if you do not agree to these terms, please do not use our service.
             </p>
           </section>
@@ -38,7 +38,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">description of service</h2>
             <p>
-              debateai provides ai-powered debate training tools including simulated debates, 
+              atlas debate provides ai-powered debate training tools including simulated debates, 
               speech analysis, and research assistance for educational purposes.
             </p>
           </section>
@@ -80,7 +80,7 @@ export default function TermsOfServicePage() {
               
               <h3 className="text-primary-500 mt-4">our content</h3>
               <p>
-                debateai and its licensors own all rights to the service, including ai models, 
+                atlas debate and its licensors own all rights to the service, including ai models, 
                 software, and educational materials.
               </p>
             </div>
@@ -105,7 +105,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">limitation of liability</h2>
             <p>
-              to the fullest extent permitted by law, debateai shall not be liable for any 
+              to the fullest extent permitted by law, atlas debate shall not be liable for any 
               indirect, incidental, or consequential damages arising from your use of the service.
             </p>
           </section>
@@ -113,7 +113,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">indemnification</h2>
             <p>
-              you agree to indemnify and hold harmless debateai from any claims arising from 
+              you agree to indemnify and hold harmless atlas debate from any claims arising from 
               your use of the service or violation of these terms.
             </p>
           </section>
@@ -147,7 +147,7 @@ export default function TermsOfServicePage() {
 
           <footer className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-500">
-              debateai. focused practice for better debates.
+              atlas debate. focused practice for better debates.
             </p>
           </footer>
         </article>

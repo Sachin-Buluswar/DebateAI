@@ -1,4 +1,4 @@
-# DebateAI
+# Atlas Debate
 
 AI-powered debate platform with real-time debates, speech analysis, and evidence search. Built with Next.js 14, TypeScript, and production-ready infrastructure.
 
@@ -35,8 +35,8 @@ AI-powered debate platform with real-time debates, speech analysis, and evidence
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/debateai.git
-cd debateai
+git clone https://github.com/yourusername/atlas-debate.git
+cd atlas-debate
 
 # Install dependencies
 npm install

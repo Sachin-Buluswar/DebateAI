@@ -1,4 +1,4 @@
-# DebateAI Alert Response Playbook
+# Atlas Debate Alert Response Playbook
 
 ## Overview
 
@@ -14,7 +14,7 @@ This playbook provides step-by-step instructions for responding to production al
 
 ### 🔴 ApplicationDown
 
-**Description**: The DebateAI application is not responding to health checks.
+**Description**: The Atlas Debate application is not responding to health checks.
 
 **Impact**: Complete service outage - users cannot access the application.
 
@@ -23,7 +23,7 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Immediate Actions** (< 5 min)
    ```bash
    # Check application status
-   curl -I https://debateai.com/api/health
+   curl -I https://atlasdebate.com/api/health
    
    # Check server logs
    kubectl logs -n production -l app=debateai --tail=100

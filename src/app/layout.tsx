@@ -5,6 +5,7 @@ import "@/styles/mobile-fixes.css";
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Lazy load providers and error boundary for better initial load
 const ThemeProvider = dynamic(() => import('@/components/providers/ThemeProvider').then(mod => ({ default: mod.ThemeProvider })), {
@@ -71,6 +72,7 @@ export default function RootLayout({
                 </div>
               }>
                 {children}
+                <SpeedInsights />
               </ErrorBoundary>
               </ToastProvider>
             </PreferencesProvider>

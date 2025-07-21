@@ -3,8 +3,8 @@ import Navbar from '@/components/layout/Navbar';
 import BackButton from '@/components/ui/BackButton';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | DebateAI',
-  description: 'Learn how DebateAI collects, uses, and protects your personal information.',
+  title: 'Privacy Policy | Atlas Debate',
+  description: 'Learn how Atlas Debate collects, uses, and protects your personal information.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">introduction</h2>
             <p>
-              this privacy policy explains how debateai collects, uses, and protects your information. 
+              this privacy policy explains how atlas debate collects, uses, and protects your information. 
               by using our platform, you agree to the collection and use of information in accordance 
               with this policy.
             </p>
@@ -139,7 +139,7 @@ export default function PrivacyPolicyPage() {
 
           <footer className="text-center">
             <p className="text-sm text-gray-500 dark:text-gray-500">
-              debateai. focused practice for better debates.
+              atlas debate. focused practice for better debates.
             </p>
           </footer>
         </article>
