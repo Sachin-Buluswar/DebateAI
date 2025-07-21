@@ -89,7 +89,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     environment:
       name: staging
-      url: https://staging.debateai.com
+      url: https://staging.erisdebate.com
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
           
           # Deploy using docker-compose
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/staging_key $STAGING_USER@$STAGING_HOST << 'EOF'
-            cd /opt/debateai
+            cd /opt/eris-debate
             docker-compose pull
             docker-compose up -d --no-deps --build web
             docker system prune -f
@@ -127,7 +127,7 @@ jobs:
         run: |
           echo "Waiting for staging deployment to be ready..."
           for i in {1..30}; do
-            if curl -s -f https://staging.debateai.com/api/health > /dev/null; then
+            if curl -s -f https://staging.erisdebate.com/api/health > /dev/null; then
               echo "Staging deployment successful"
               exit 0
             fi
@@ -147,7 +147,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     environment:
       name: production
-      url: https://debateai.com
+      url: https://erisdebate.com
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -184,7 +184,7 @@ jobs:
           
           # Deploy using docker-compose with zero-downtime
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/production_key $PRODUCTION_USER@$PRODUCTION_HOST << 'EOF'
-            cd /opt/debateai
+            cd /opt/eris-debate
             
             # Pull new image
             docker-compose pull
@@ -213,7 +213,7 @@ jobs:
         run: |
           echo "Waiting for production deployment to be ready..."
           for i in {1..30}; do
-            if curl -s -f https://debateai.com/api/health > /dev/null; then
+            if curl -s -f https://erisdebate.com/api/health > /dev/null; then
               echo "Production deployment successful"
               break
             fi
@@ -231,7 +231,7 @@ jobs:
               repo: context.repo.repo,
               deployment_id: ${{ steps.deployment.outputs.result }},
               state: '${{ job.status }}',
-              environment_url: 'https://debateai.com',
+              environment_url: 'https://erisdebate.com',
               description: 'Deployment ${{ job.status }}'
             });
 
@@ -259,10 +259,10 @@ jobs:
         id: test-url
         run: |
           if [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
-            echo "url=https://debateai.com" >> $GITHUB_OUTPUT
+            echo "url=https://erisdebate.com" >> $GITHUB_OUTPUT
             echo "env=production" >> $GITHUB_OUTPUT
           else
-            echo "url=https://staging.debateai.com" >> $GITHUB_OUTPUT
+            echo "url=https://staging.erisdebate.com" >> $GITHUB_OUTPUT
             echo "env=staging" >> $GITHUB_OUTPUT
           fi
 

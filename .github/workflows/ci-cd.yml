@@ -179,9 +179,9 @@ jobs:
       - name: Check application health
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            URL="https://debateai.com/api/health"
+            URL="https://erisdebate.com/api/health"
           else
-            URL="https://staging.debateai.com/api/health"
+            URL="https://staging.erisdebate.com/api/health"
           fi
           
           for i in {1..30}; do
