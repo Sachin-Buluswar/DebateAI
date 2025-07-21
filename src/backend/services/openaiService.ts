@@ -54,7 +54,7 @@ export type EmbeddingParams = z.infer<typeof openAISchemas.embedding>;
 
 class OpenAIService {
   private readonly defaultModels = {
-    chat: env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini',
+    chat: process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini',
     embedding: 'text-embedding-3-small',
     transcription: 'whisper-1',
   };
@@ -75,9 +75,11 @@ class OpenAIService {
     // Log token estimation for cost tracking
     const estimatedTokens = this.estimateTokens(validated.messages);
     logger.info('Creating chat completion', {
-      model: validated.model,
-      estimatedTokens,
-      temperature: validated.temperature,
+      metadata: {
+        model: validated.model,
+        estimatedTokens,
+        temperature: validated.temperature,
+      }
     });
 
     try {
@@ -103,8 +105,10 @@ class OpenAIService {
         const content = response.choices[0]?.message?.content;
         if (content && !options.validateResponse(content)) {
           logger.warn('Chat completion response failed validation', {
-            model: validated.model,
-            response: content.substring(0, 100),
+            metadata: {
+              model: validated.model,
+              response: content.substring(0, 100),
+            }
           });
         }
       }
@@ -112,19 +116,22 @@ class OpenAIService {
       // Log actual usage for cost tracking
       if (response.usage) {
         logger.info('Chat completion usage', {
-          model: validated.model,
-          promptTokens: response.usage.prompt_tokens,
-          completionTokens: response.usage.completion_tokens,
-          totalTokens: response.usage.total_tokens,
+          metadata: {
+            model: validated.model,
+            promptTokens: response.usage.prompt_tokens,
+            completionTokens: response.usage.completion_tokens,
+            totalTokens: response.usage.total_tokens,
+          }
         });
       }
 
       return response;
     } catch (error) {
-      logger.error('Chat completion failed', {
-        error,
-        model: validated.model,
-        messageCount: validated.messages.length,
+      logger.error('Chat completion failed', error as Error, {
+        metadata: {
+          model: validated.model,
+          messageCount: validated.messages.length,
+        }
       });
       throw error;
     }
@@ -144,9 +151,11 @@ class OpenAIService {
     const validated = openAISchemas.transcription.parse({ ...restParams, file });
 
     logger.info('Creating transcription', {
-      model: validated.model,
-      language: validated.language,
-      responseFormat: validated.response_format,
+      metadata: {
+        model: validated.model,
+        language: validated.language,
+        responseFormat: validated.response_format,
+      }
     });
 
     try {
@@ -169,7 +178,11 @@ class OpenAIService {
 
       return response;
     } catch (error) {
-      logger.error('Transcription failed', { error });
+      logger.error('Transcription failed', error as Error, {
+        metadata: {
+          model: validated.model
+        }
+      });
       throw error;
     }
   }
@@ -177,14 +190,16 @@ class OpenAIService {
   /**
    * Create embeddings (for future use with vector stores)
    */
-  async createEmbedding(params: EmbeddingParams): Promise<OpenAI.Embeddings> {
+  async createEmbedding(params: EmbeddingParams): Promise<OpenAI.CreateEmbeddingResponse> {
     const validated = openAISchemas.embedding.parse(params);
     const client = await openAIManager.getRawClient();
 
     logger.info('Creating embeddings', {
-      model: validated.model,
-      inputCount: Array.isArray(validated.input) ? validated.input.length : 1,
-      dimensions: validated.dimensions,
+      metadata: {
+        model: validated.model,
+        inputCount: Array.isArray(validated.input) ? validated.input.length : 1,
+        dimensions: validated.dimensions,
+      }
     });
 
     try {
@@ -195,13 +210,19 @@ class OpenAIService {
 
       // Log usage for cost tracking
       logger.info('Embedding usage', {
-        model: validated.model,
-        totalTokens: response.usage.total_tokens,
+        metadata: {
+          model: validated.model,
+          totalTokens: response.usage.total_tokens,
+        }
       });
 
       return response;
     } catch (error) {
-      logger.error('Embedding creation failed', { error });
+      logger.error('Embedding creation failed', error as Error, {
+        metadata: {
+          model: validated.model
+        }
+      });
       throw error;
     }
   }
@@ -244,9 +265,10 @@ class OpenAIService {
       
       return parsed as T;
     } catch (error) {
-      logger.error('Failed to parse structured output', {
-        error,
-        content: content.substring(0, 200),
+      logger.error('Failed to parse structured output', error as Error, {
+        metadata: {
+          content: content.substring(0, 200),
+        }
       });
       throw new Error('Invalid JSON response from OpenAI');
     }

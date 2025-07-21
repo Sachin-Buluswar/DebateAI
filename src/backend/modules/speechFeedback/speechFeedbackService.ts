@@ -308,9 +308,11 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   try {
     logger.info('Starting audio transcription', {
-      fileId: processedAudio.fileId,
-      duration: processedAudio.durationSeconds,
-      userId
+      userId,
+      metadata: {
+        fileId: processedAudio.fileId,
+        duration: processedAudio.durationSeconds
+      }
     });
     
     const audioFileStream = createReadStream(processedAudio.filePath);
@@ -319,24 +321,26 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       file: audioFileStream,
       model: 'whisper-1',
       response_format: 'verbose_json',
-      timestamp_granularities: ['segment'],
     }, {
       fallbackResponse: fallbackTranscription
     });
     
     transcription = {
       ...whisperResponse,
-      duration: whisperResponse.duration || processedAudio.durationSeconds
+      duration: (whisperResponse as any).duration || processedAudio.durationSeconds
     };
     
     logger.info('Transcription completed successfully', {
-      textLength: transcription.text?.length,
-      segments: transcription.segments?.length
+      metadata: {
+        textLength: transcription.text?.length,
+        segments: transcription.segments?.length
+      }
     });
   } catch (error) {
-    logger.error('Transcription failed', {
-      error,
-      fileId: processedAudio.fileId
+    logger.error('Transcription failed', error as Error, {
+      metadata: {
+        fileId: processedAudio.fileId
+      }
     });
     
     transcription = fallbackTranscription;
@@ -387,9 +391,11 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions);
     
     logger.info('Generating AI feedback', {
-      speechType,
-      topic,
-      transcriptionLength: transcription.text?.length
+      metadata: {
+        speechType,
+        topic,
+        transcriptionLength: transcription.text?.length
+      }
     });
     
     const feedbackCompletion = await openAIService.createChatCompletion({
@@ -412,12 +418,15 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     try {
       feedback = JSON.parse(feedbackContent || '{}');
       logger.info('AI feedback generated successfully', {
-        speakerScore: feedback.speakerScore
+        metadata: {
+          speakerScore: feedback.speakerScore
+        }
       });
     } catch (parseError) {
-      logger.error('Failed to parse AI feedback', {
-        error: parseError,
-        contentSnippet: feedbackContent?.substring(0, 200)
+      logger.error('Failed to parse AI feedback', parseError as Error, {
+        metadata: {
+          contentSnippet: feedbackContent?.substring(0, 200)
+        }
       });
         feedback = {
           speakerScore: 25,
@@ -542,7 +551,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     transcription: transcription ? {
       text: transcription.text,
       duration: transcription.duration || 0,
-      segments: transcription.segments?.map(seg => ({
+      segments: transcription.segments?.map((seg: any) => ({
         start: seg.start,
         end: seg.end,
         text: seg.text

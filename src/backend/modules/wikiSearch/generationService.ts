@@ -25,13 +25,19 @@ export const generateAnswerFromContext = async (
   contextChunks: SearchResult[]
 ): Promise<GeneratedAnswer> => {
   logger.info('Generating answer from context', {
-    query,
-    contextChunks: contextChunks.length,
-    model
+    metadata: {
+      query,
+      contextChunks: contextChunks.length,
+      model
+    }
   });
 
   if (contextChunks.length === 0) {
-    logger.warn('No context chunks provided for generation');
+    logger.warn('No context chunks provided for generation', {
+      metadata: {
+        query: query
+      }
+    });
     return {
       answer: "I couldn't find specific information in the provided documents to answer that query.",
       sources: [],
@@ -60,8 +66,10 @@ Query: ${query}
 Answer:`;
 
   logger.debug('Generation prompts prepared', {
-    queryLength: query.length,
-    contextLength: contextString.length
+    metadata: {
+      queryLength: query.length,
+      contextLength: contextString.length
+    }
   });
 
   try {
@@ -100,8 +108,10 @@ Answer:`;
     }
     
     logger.info('Answer generated successfully', {
-      answerLength: generatedAnswer.length,
-      model
+      metadata: {
+        answerLength: generatedAnswer.length,
+        model
+      }
     });
 
     // --- Extract Used Sources (Simple approach: check which sources were mentioned) ---
@@ -122,10 +132,11 @@ Answer:`;
     };
 
   } catch (error) {
-    logger.error('Failed to generate answer from context', {
-      error,
-      query,
-      contextChunks: contextChunks.length
+    logger.error('Failed to generate answer from context', error as Error, {
+      metadata: {
+        query,
+        contextChunks: contextChunks.length
+      }
     });
     
     // Return a fallback response instead of throwing

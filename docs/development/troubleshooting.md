@@ -85,12 +85,27 @@ npm run dev
 
 ## Build Errors
 
-### Error: Type error in src/app/api/*/route.ts
+### ✅ UPDATE: All TypeScript errors have been fixed
+
+The project now builds successfully without TypeScript compilation errors. Logger usage has been standardized across the codebase to use the proper LogContext interface.
+
+### If you encounter new type errors:
 
 ```bash
 npm run typecheck
 # Fix errors shown
 npm run lint -- --fix
+```
+
+### Common TypeScript patterns:
+
+**Logger usage**:
+```typescript
+// ✅ Correct - wrap custom properties in metadata
+logger.info('Message', { metadata: { customProp: value } });
+
+// ❌ Wrong - properties directly on context
+logger.info('Message', { customProp: value });
 ```
 
 ### Error: Cannot resolve 'openai'

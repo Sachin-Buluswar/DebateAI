@@ -97,8 +97,8 @@ export class SocketMonitor {
 
     // Log connection
     socketLogger.info('Socket connected', {
-      socketId: socket.id,
       metadata: {
+        socketId: socket.id,
         address: socket.handshake.address,
         transport: socket.conn.transport.name,
       },
@@ -124,7 +124,9 @@ export class SocketMonitor {
     // Monitor errors
     socket.on('error', (error: Error) => {
       socketLogger.error('Socket error', error, {
-        socketId: socket.id,
+        metadata: {
+          socketId: socket.id,
+        },
       });
       sentryServer.captureException(error, {
         tags: { 
@@ -157,8 +159,8 @@ export class SocketMonitor {
       this.connectionStartTimes.delete(socket.id);
 
       socketLogger.info('Socket disconnected', {
-        socketId: socket.id,
         metadata: {
+          socketId: socket.id,
           reason,
           duration: `${duration}ms`,
           sessionDuration: `${Math.floor(duration / 1000)}s`,
@@ -207,16 +209,15 @@ export class SocketMonitor {
       }
     };
 
-    // Track received events
-    const onevent = socket.onevent;
-    socket.onevent = function(packet: any) {
-      const event = packet.data[0];
+    // Track received events using middleware
+    socket.use((eventData, next) => {
+      const event = eventData[0];
       if (typeof event === 'string') {
         this.trackEvent('received', event);
         this.eventTimestamps.push(Date.now());
       }
-      onevent.call(socket, packet);
-    }.bind(this);
+      next();
+    });
 
     // Monitor room operations
     const originalJoin = socket.join.bind(socket);
@@ -255,8 +256,10 @@ export class SocketMonitor {
         // Log high latency
         if (latency > 1000) {
           socketLogger.warn('High socket latency detected', {
-            socketId: socket.id,
-            metadata: { latency: `${latency}ms` },
+            metadata: {
+              socketId: socket.id,
+              latency: `${latency}ms`,
+            },
           });
         }
       }

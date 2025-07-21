@@ -1,4 +1,4 @@
-import * as pdfParse from 'pdf-parse';
+const pdfParse = require('pdf-parse');
 import { OpenAI } from 'openai';
 import { DocumentStorageService } from './documentStorageService';
 import { DocumentChunk } from '@/types/documents';
@@ -57,7 +57,7 @@ export class EnhancedIndexingService {
               return text;
             });
         },
-        renderTextLayer: false,
+        // renderTextLayer: false, // This option doesn't exist in pdf-parse
       });
       
       // Get total pages

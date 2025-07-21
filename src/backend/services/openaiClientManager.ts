@@ -68,10 +68,14 @@ class OpenAIClientManager {
         timeout: 30000, // 30 second timeout
       });
 
-      logger.info('OpenAI client initialized successfully');
+      logger.info('OpenAI client initialized successfully', {
+        metadata: {}
+      });
       return client;
     } catch (error) {
-      logger.error('Failed to initialize OpenAI client', error);
+      logger.error('Failed to initialize OpenAI client', error as Error, {
+        metadata: {}
+      });
       throw error;
     }
   }
@@ -90,6 +94,7 @@ class OpenAIClientManager {
     const client = await this.getClient();
     
     return globalErrorRecovery.executeWithRecovery(
+      'openai-chat-completion',
       async () => {
         // Use trackAPICall to automatically handle timing and logging
         return await openaiPerformance.trackAPICall(
@@ -100,13 +105,12 @@ class OpenAIClientManager {
             messages: params.messages.length,
             maxTokens: params.max_tokens
           }
-        );
+        ) as OpenAI.ChatCompletion;
       },
       {
-        operation: 'openai-chat-completion',
         retryOptions: {
           maxRetries: options?.maxRetries ?? 3,
-          shouldRetry: options?.shouldRetry ?? ((error) => {
+          shouldRetry: options?.shouldRetry ?? ((error: any) => {
             // Retry on rate limits, timeouts, and server errors
             if (error?.status >= 500) return true;
             if (error?.status === 429) return true;
@@ -115,13 +119,10 @@ class OpenAIClientManager {
             return false;
           }),
         },
-        circuitBreakerOptions: {
-          operation: 'openai-api',
-          threshold: 5, // Open circuit after 5 failures
-          timeout: 60000, // Try again after 1 minute
-        },
-        fallbackOptions: options?.fallbackResponse ? {
-          fallback: async () => ({
+        useCircuitBreaker: true,
+        useRetryQueue: true,
+        fallbacks: options?.fallbackResponse ? [
+          async () => ({
             id: 'fallback',
             object: 'chat.completion' as const,
             created: Date.now(),
@@ -130,8 +131,10 @@ class OpenAIClientManager {
               index: 0,
               message: {
                 role: 'assistant' as const,
-                content: options.fallbackResponse,
+                content: options.fallbackResponse || null,
+                refusal: null,
               },
+              logprobs: null,
               finish_reason: 'stop' as const,
             }],
             usage: {
@@ -140,7 +143,7 @@ class OpenAIClientManager {
               total_tokens: 0,
             },
           }),
-        } : undefined,
+        ] : undefined,
       }
     );
   }
@@ -159,11 +162,12 @@ class OpenAIClientManager {
     const client = await this.getClient();
     
     return globalErrorRecovery.executeWithRecovery(
+      'openai-transcription',
       async () => {
         // Use trackAPICall to automatically handle timing and logging
         return await openaiPerformance.trackAPICall(
           'audio.transcriptions',
-          async () => await client.audio.transcriptions.create(params),
+          async () => await client.audio.transcriptions.create(params as any),
           {
             model: params.model,
             responseFormat: params.response_format
@@ -171,10 +175,9 @@ class OpenAIClientManager {
         );
       },
       {
-        operation: 'openai-transcription',
         retryOptions: {
           maxRetries: options?.maxRetries ?? 3,
-          shouldRetry: options?.shouldRetry ?? ((error) => {
+          shouldRetry: options?.shouldRetry ?? ((error: any) => {
             // Same retry logic as chat completions
             if (error?.status >= 500) return true;
             if (error?.status === 429) return true;
@@ -183,14 +186,11 @@ class OpenAIClientManager {
             return false;
           }),
         },
-        circuitBreakerOptions: {
-          operation: 'openai-whisper',
-          threshold: 3, // Lower threshold for Whisper
-          timeout: 30000, // 30 seconds
-        },
-        fallbackOptions: options?.fallbackResponse ? {
-          fallback: async () => options.fallbackResponse,
-        } : undefined,
+        useCircuitBreaker: true,
+        useRetryQueue: true,
+        fallbacks: options?.fallbackResponse ? [
+          async () => options.fallbackResponse,
+        ] : undefined,
       }
     );
   }
@@ -209,7 +209,9 @@ class OpenAIClientManager {
   reset(): void {
     this.client = null;
     this.initializationPromise = null;
-    logger.info('OpenAI client reset');
+    logger.info('OpenAI client reset', {
+      metadata: {}
+    });
   }
 
   /**

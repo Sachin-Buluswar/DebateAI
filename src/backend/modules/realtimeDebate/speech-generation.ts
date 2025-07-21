@@ -51,7 +51,7 @@ export async function generateSpeech(
   });
 
   // Define fallback response based on phase and personality
-  const fallbackResponse = `As ${personality?.name || speaker.name} representing the ${speaker.team} side, I ${phase === 'Opening' ? 'believe that' : 'argue that'} "${topic}" is ${speaker.team === 'Proposition' ? 'an important issue that deserves our support' : 'a matter that requires careful consideration'}. ${phase === 'Rebuttal' ? 'While the opposition has made some points, I maintain my position.' : ''}`;
+  const fallbackResponse = `As ${personality?.name || speaker.name} representing the ${speaker.team} side, I ${phase === 'Opening' ? 'believe that' : 'argue that'} "${topic}" is ${speaker.team === 'PRO' ? 'an important issue that deserves our support' : 'a matter that requires careful consideration'}. ${phase === 'Rebuttal' ? 'While the opposition has made some points, I maintain my position.' : ''}`;
 
   try {
     const response = await openAIService.createChatCompletion({
@@ -76,9 +76,11 @@ export async function generateSpeech(
     
     if (!speech) {
       logger.warn('OpenAI returned empty speech', {
-        phase,
-        speaker: speaker.name,
-        topic
+        metadata: {
+          phase,
+          speaker: speaker.name,
+          topic
+        }
       });
       return fallbackResponse;
     }
@@ -87,20 +89,23 @@ export async function generateSpeech(
     const sanitizedSpeech = speech.replace(/[\*#]/g, '').trim();
     
     logger.info('Speech generated successfully', {
-      phase,
-      speaker: speaker.name,
-      speechLength: sanitizedSpeech.length,
-      difficulty
+      metadata: {
+        phase,
+        speaker: speaker.name,
+        speechLength: sanitizedSpeech.length,
+        difficulty
+      }
     });
     
     return sanitizedSpeech;
 
   } catch (error) {
-    logger.error('Failed to generate speech', {
-      error,
-      phase,
-      speaker: speaker.name,
-      topic
+    logger.error('Failed to generate speech', error as Error, {
+      metadata: {
+        phase,
+        speaker: speaker.name,
+        topic
+      }
     });
     
     // Return a more contextual fallback based on the phase

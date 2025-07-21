@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import puppeteer, { type Page } from 'puppeteer';
 import { DocumentStorageService } from './documentStorageService';
 import { createClient } from '@supabase/supabase-js';
 import fetch from 'node-fetch';
@@ -70,7 +70,7 @@ export class OpenCaseListScraper {
     }
   }
 
-  private async login(page: puppeteer.Page): Promise<void> {
+  private async login(page: Page): Promise<void> {
     console.log('Logging in to OpenCaseList...');
     
     // Go to login page
@@ -89,7 +89,7 @@ export class OpenCaseListScraper {
     console.log('Login successful');
   }
 
-  private async extractWikiLinks(page: puppeteer.Page): Promise<string[]> {
+  private async extractWikiLinks(page: Page): Promise<string[]> {
     return await page.evaluate(() => {
       const links: string[] = [];
       const linkElements = document.querySelectorAll('a[href*="/openev/"]');
@@ -105,7 +105,7 @@ export class OpenCaseListScraper {
     });
   }
 
-  private async processWikiFile(page: puppeteer.Page, fileLink: string): Promise<void> {
+  private async processWikiFile(page: Page, fileLink: string): Promise<void> {
     try {
       const fullUrl = fileLink.startsWith('http') ? fileLink : `${this.baseUrl}${fileLink}`;
       const fileName = path.basename(fileLink);
@@ -189,10 +189,10 @@ export class OpenCaseListScraper {
     }
   }
 
-  private async downloadFile(page: puppeteer.Page, url: string): Promise<Buffer> {
+  private async downloadFile(page: Page, url: string): Promise<Buffer> {
     // Get cookies from puppeteer
     const cookies = await page.cookies();
-    const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const cookieString = cookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
     
     // Download file using fetch with cookies
     const response = await fetch(url, {

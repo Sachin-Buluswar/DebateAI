@@ -47,9 +47,11 @@ export async function generatePostDebateAnalysis(
 
   try {
     logger.info('Generating debate analysis', {
-      topic,
-      userName,
-      transcriptLength: transcript.length
+      metadata: {
+        topic,
+        userName,
+        transcriptLength: transcript.length
+      }
     });
 
     const analysis = await openAIService.createStructuredOutput<DebateAnalysis>({
@@ -65,16 +67,19 @@ export async function generatePostDebateAnalysis(
     });
 
     logger.info('Debate analysis generated successfully', {
-      overallScore: analysis.overallScore,
-      userName
+      metadata: {
+        overallScore: analysis.overallScore,
+        userName
+      }
     });
 
     return analysis;
   } catch (error) {
-    logger.error('Failed to generate debate analysis', {
-      error,
-      userName,
-      topic
+    logger.error('Failed to generate debate analysis', error as Error, {
+      metadata: {
+        userName,
+        topic
+      }
     });
     
     // Return a fallback analysis

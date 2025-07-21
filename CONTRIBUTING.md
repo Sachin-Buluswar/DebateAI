@@ -23,9 +23,11 @@ Follow patterns in `CLAUDE.md`
 ### 3. Test
 ```bash
 npm run lint
-npm run typecheck
-npm run build
+npm run typecheck  # All TypeScript errors have been fixed
+npm run build      # Project builds successfully
 ```
+
+**Note**: The project currently builds without TypeScript errors. Please ensure your changes maintain this status.
 
 ### 4. Commit
 ```bash

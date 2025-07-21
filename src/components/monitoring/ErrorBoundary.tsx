@@ -22,6 +22,7 @@ interface State {
   error: Error | null;
   errorInfo: ErrorInfo | null;
   errorBoundaryKey: number;
+  previousResetKeys?: Array<string | number>;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -35,6 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
       errorBoundaryKey: 0,
+      previousResetKeys: props.resetKeys,
     };
     
     if (props.resetKeys) {
@@ -44,14 +46,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromProps(props: Props, state: State): Partial<State> | null {
     if (props.resetKeys && state.hasError && state.previousResetKeys) {
-      if (props.resetKeys.some((key, idx) => key !== state.previousResetKeys[idx])) {
+      if (props.resetKeys.some((key, idx) => key !== state.previousResetKeys![idx])) {
         return {
           hasError: false,
           error: null,
           errorInfo: null,
           errorBoundaryKey: state.errorBoundaryKey + 1,
+          previousResetKeys: props.resetKeys,
         };
       }
+    }
+    if (props.resetKeys && !state.previousResetKeys) {
+      return { previousResetKeys: props.resetKeys };
     }
     return null;
   }
@@ -216,7 +222,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={this.resetErrorBoundary}
                   variant="secondary"
-                  size="small"
+                  size="sm"
                   className="mt-3"
                 >
                   Retry

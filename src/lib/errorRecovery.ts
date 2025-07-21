@@ -274,7 +274,7 @@ export class ErrorRecoveryManager {
       return await protectedFn();
     } catch (error) {
       // Add to retry queue if enabled and circuit breaker is not open
-      if (useRetryQueue && !error.message.includes('Circuit breaker is open')) {
+      if (useRetryQueue && error instanceof Error && !error.message.includes('Circuit breaker is open')) {
         return this.getRetryQueue<T>(key).add(fn);
       }
       throw error;
