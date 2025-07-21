@@ -7,7 +7,7 @@ The Eris Debate platform provides a comprehensive REST API for all client-server
 ## Base URL
 
 - Development: `http://localhost:3001/api`
-- Production: `https://api.erisdebate.com/api`
+- Production: `https://api.atlasdebate.com/api`
 
 ## Authentication
 
@@ -596,7 +596,7 @@ All responses include security headers:
 
 CORS is configured per environment:
 - Development: `Access-Control-Allow-Origin: *`
-- Production: `Access-Control-Allow-Origin: https://erisdebate.com`
+- Production: `Access-Control-Allow-Origin: https://atlasdebate.com`
 
 ## WebSocket Endpoints
 

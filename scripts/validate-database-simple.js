@@ -106,7 +106,7 @@ async function validateDatabaseSimple() {
   log('\n4. Testing authenticated operations...', YELLOW);
   
   // Try to sign in with test account
-  const testEmail = 'dbtest@erisdebate.com';
+  const testEmail = 'dbtest@atlasdebate.com';
   const testPassword = 'dbtestpass123';
   
   let session = null;

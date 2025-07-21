@@ -12,7 +12,7 @@ groups:
         annotations:
           summary: "Eris Debate application is down"
           description: "The Eris Debate application has been down for more than 2 minutes."
-          runbook: "https://wiki.erisdebate.com/runbooks/application-down"
+          runbook: "https://wiki.atlasdebate.com/runbooks/application-down"
 
       # High memory usage
       - alert: HighMemoryUsage
@@ -24,7 +24,7 @@ groups:
         annotations:
           summary: "High memory usage detected"
           description: "Memory usage is above 90% for more than 5 minutes. Current: {{ $value }}%"
-          runbook: "https://wiki.erisdebate.com/runbooks/high-memory"
+          runbook: "https://wiki.atlasdebate.com/runbooks/high-memory"
 
       # High CPU usage
       - alert: HighCPUUsage

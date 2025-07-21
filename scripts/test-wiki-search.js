@@ -124,7 +124,7 @@ async function runWikiSearchTests() {
   
   // Try to use existing session or create test account
   let session = null;
-  const testEmail = 'wikitest@erisdebate.com';
+  const testEmail = 'wikitest@atlasdebate.com';
   const testPassword = 'wikitestpass123';
   
   try {

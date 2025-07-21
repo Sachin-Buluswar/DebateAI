@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { debugQuerySchema, DebugQueryParams } from '@/utils/validators';
+import { validateEnvironment } from '@/lib/envValidation';
 
 // Create a Supabase admin client with service role
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -13,6 +14,27 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 
 interface Diagnostics {
   timestamp: string;
+  deployment: {
+    environment: string;
+    vercel: {
+      isVercel: boolean;
+      region?: string;
+      url?: string;
+    };
+    host?: string;
+    protocol?: string;
+  };
+  envValidation: {
+    isValid: boolean;
+    missing: string[];
+    warnings: string[];
+    variables: Record<string, boolean | string | undefined>;
+  };
+  socketIO: {
+    pollingSupported: boolean;
+    websocketSupported: boolean;
+    recommendedTransport: string;
+  };
   supabase_url: string;
   service_role_key: string;
   tables: Record<string, unknown>;
@@ -53,8 +75,38 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
+  const envValidation = validateEnvironment();
+  
   const diagnostics: Diagnostics = {
     timestamp: new Date().toISOString(),
+    deployment: {
+      environment: process.env.NODE_ENV || 'unknown',
+      vercel: {
+        isVercel: process.env.VERCEL === '1',
+        region: process.env.VERCEL_REGION,
+        url: process.env.VERCEL_URL,
+      },
+      host: request.headers.get('host') || undefined,
+      protocol: request.headers.get('x-forwarded-proto') || 'http',
+    },
+    envValidation: {
+      ...envValidation,
+      variables: {
+        NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+        ELEVENLABS_API_KEY: !!process.env.ELEVENLABS_API_KEY,
+        OPENAI_VECTOR_STORE_ID: !!process.env.OPENAI_VECTOR_STORE_ID,
+        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+        ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+      },
+    },
+    socketIO: {
+      pollingSupported: true,
+      websocketSupported: !process.env.VERCEL,
+      recommendedTransport: process.env.VERCEL ? 'polling' : 'websocket',
+    },
     supabase_url: supabaseUrl ? "Set" : "Missing",
     service_role_key: serviceRoleKey ? "Available" : "Missing",
     tables: {},

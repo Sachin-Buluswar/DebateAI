@@ -114,7 +114,7 @@ if (!hasPermission) {
 
 Before:
 ```typescript
-const isAdmin = session.user.email === 'admin@erisdebate.com';
+const isAdmin = session.user.email === 'admin@atlasdebate.com';
 ```
 
 After:

@@ -50,7 +50,7 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - https://erisdebate.com/api/health
+          - https://atlasdebate.com/api/health
           - https://api.openai.com/v1/models
           - https://api.elevenlabs.io/v1/models
     relabel_configs:

@@ -48,7 +48,7 @@ if [ "$ENVIRONMENT" == "production" ]; then
     docker build \
         --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
         --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
-        --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.erisdebate.com}" \
+        --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.atlasdebate.com}" \
         --target runner \
         -t eris-debate:production \
         -t eris-debate:latest \

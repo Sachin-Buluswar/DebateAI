@@ -320,9 +320,9 @@ export function addSecurityHeaders(response: Response): Response {
 // CORS configuration for production
 export const corsConfig = {
   allowedOrigins: [
-    'https://erisdebate.com',
-    'https://www.erisdebate.com',
-    'https://app.erisdebate.com',
+    'https://atlasdebate.com',
+    'https://www.atlasdebate.com',
+    'https://app.atlasdebate.com',
     ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3001'] : []),
   ],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

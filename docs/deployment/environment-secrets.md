@@ -59,7 +59,7 @@ For running tests in CI:
 ##### Staging Deployment
 | Secret Name | Description | Example |
 |------------|-------------|---------|
-| `STAGING_HOST` | Staging server hostname | `staging.erisdebate.com` |
+| `STAGING_HOST` | Staging server hostname | `staging.atlasdebate.com` |
 | `STAGING_USER` | SSH username for staging | `deploy` |
 | `STAGING_SSH_KEY` | Private SSH key for staging | See SSH key setup below |
 | `STAGING_DATABASE_URL` | Staging database connection | `postgresql://...` |
@@ -67,7 +67,7 @@ For running tests in CI:
 ##### Production Deployment
 | Secret Name | Description | Example |
 |------------|-------------|---------|
-| `PRODUCTION_HOST` | Production server hostname | `erisdebate.com` |
+| `PRODUCTION_HOST` | Production server hostname | `atlasdebate.com` |
 | `PRODUCTION_USER` | SSH username for production | `deploy` |
 | `PRODUCTION_SSH_KEY` | Private SSH key for production | See SSH key setup below |
 | `PRODUCTION_DATABASE_URL` | Production database connection | `postgresql://...` |

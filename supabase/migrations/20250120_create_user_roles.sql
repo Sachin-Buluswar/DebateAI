@@ -138,7 +138,7 @@ SELECT
   'super_admin'::user_role,
   u.id -- self-granted for initial setup
 FROM auth.users u
-WHERE u.email IN ('admin@erisdebate.com', 'claudecode@gmail.com')
+WHERE u.email IN ('admin@atlasdebate.com', 'claudecode@gmail.com')
 ON CONFLICT (user_id) DO UPDATE
 SET role = 'super_admin'::user_role,
     updated_at = NOW();

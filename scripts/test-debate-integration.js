@@ -60,7 +60,7 @@ async function runDebateTests() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
   // Use a test account or create one
-  const testEmail = 'test@erisdebate.com';
+  const testEmail = 'test@atlasdebate.com';
   const testPassword = 'testpassword123';
   
   let session = null;

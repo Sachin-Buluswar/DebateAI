@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef, FormEvent, useMemo, useCallback, memo } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
+import { createSocket, isVercel } from '@/lib/socket/socketConfig';
+import { showRealtimeWarning } from '@/lib/socket/socketFallback';
 import {
   Participant,
   DebateState,
@@ -230,32 +232,30 @@ export default function DebatePage() {
         return;
       }
       
-      // This fetch call is necessary to initialize the socket.io server on the backend.
+      // Initialize socket with proper configuration for Vercel
+      let socket: Socket;
       try {
         setIsConnecting(true);
         setConnectionError(null);
         
-        await fetch('/api/socketio');
+        // Check Socket.IO configuration first
+        const socketInitResponse = await fetch('/api/socket-init');
+        const socketInfo = await socketInitResponse.json();
+        console.log('Socket.IO configuration:', socketInfo);
+        
+        // Show warning if on Vercel about potential limitations
+        if (isVercel()) {
+          console.log('Running on Vercel - using HTTP polling for real-time features');
+          showRealtimeWarning();
+        }
+        
+        socket = await createSocket(session.access_token);
       } catch (error) {
-        console.error('Failed to initialize socket server:', error);
+        console.error('Failed to initialize socket:', error);
         setConnectionError('Failed to connect to debate server. Please try again.');
         setIsConnecting(false);
         return;
       }
-
-      const socket: Socket = io({
-        path: '/api/socketio',
-        auth: {
-          token: session.access_token
-        },
-        // Reconnection options
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
-        transports: ['websocket', 'polling']
-      });
       
       socketRef.current = socket;
 
@@ -292,6 +292,10 @@ export default function DebatePage() {
         setConnectionError('Authentication failed. Please log in again.');
       } else if (error.message.includes('timeout')) {
         setConnectionError('Connection timeout. Please check your internet connection.');
+      } else if (error.message.includes('websocket error') && isVercel()) {
+        // This is expected on Vercel - Socket.IO should fall back to polling
+        console.log('WebSocket error on Vercel - falling back to polling');
+        setConnectionError(null); // Don't show error if it's just WebSocket failing on Vercel
       } else {
         setConnectionError(`Connection failed: ${error.message}`);
       }

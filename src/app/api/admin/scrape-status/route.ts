@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user || (user.email !== 'admin@erisdebate.com' && user.email !== 'claudecode@gmail.com')) {
+    if (!user || (user.email !== 'admin@atlasdebate.com' && user.email !== 'claudecode@gmail.com')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

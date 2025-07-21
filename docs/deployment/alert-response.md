@@ -23,7 +23,7 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Immediate Actions** (< 5 min)
    ```bash
    # Check application status
-   curl -I https://erisdebate.com/api/health
+   curl -I https://atlasdebate.com/api/health
    
    # Check server logs
    kubectl logs -n production -l app=eris-debate --tail=100
@@ -124,7 +124,7 @@ This playbook provides step-by-step instructions for responding to production al
    kubectl top pods -n production
    
    # Check for memory leaks
-   curl https://erisdebate.com/api/monitoring/metrics | jq '.resources.memory'
+   curl https://atlasdebate.com/api/monitoring/metrics | jq '.resources.memory'
    ```
 
 2. **Immediate Actions**
@@ -149,7 +149,7 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Identify Slow Endpoints**
    ```bash
    # Check performance metrics
-   curl https://erisdebate.com/api/monitoring/metrics?period=15m | \
+   curl https://atlasdebate.com/api/monitoring/metrics?period=15m | \
      jq '.performance.api.slowRequests'
    ```
 
@@ -175,7 +175,7 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Analyze Connections**
    ```bash
    # Get connection metrics
-   curl https://erisdebate.com/api/monitoring/metrics | \
+   curl https://atlasdebate.com/api/monitoring/metrics | \
      jq '.resources.connections.websocket'
    ```
 
@@ -262,7 +262,7 @@ The Eris Debate Team
 ## Tools and Resources
 
 ### Monitoring Dashboards
-- Grafana: https://grafana.erisdebate.com
+- Grafana: https://grafana.atlasdebate.com
 - Sentry: https://sentry.io/organizations/eris-debate
 - Supabase: https://app.supabase.com/project/[PROJECT_ID]
 

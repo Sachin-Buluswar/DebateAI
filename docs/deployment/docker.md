@@ -215,7 +215,7 @@ ELEVENLABS_API_KEY=your-elevenlabs-key
 # Optional
 DEBUG_API_KEY=your-debug-key
 NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_SITE_URL=https://erisdebate.com
+NEXT_PUBLIC_SITE_URL=https://atlasdebate.com
 ```
 
 ### Environment-specific Configuration
@@ -237,7 +237,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key
 OPENAI_API_KEY=your_openai_key
 OPENAI_VECTOR_STORE_ID=your_vector_store_id
 ELEVENLABS_API_KEY=your_elevenlabs_key
-NEXT_PUBLIC_SITE_URL=https://erisdebate.com
+NEXT_PUBLIC_SITE_URL=https://atlasdebate.com
 ```
 
 ## Building Images
