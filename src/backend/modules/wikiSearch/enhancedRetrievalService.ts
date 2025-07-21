@@ -135,7 +135,7 @@ export const enhancedSearchVectorStore = async (
           const textVal = closingIndex > -1 ? part.substring(closingIndex + 1).trim() : part.trim();
           if (!textVal) continue;
 
-          let result: EnhancedSearchResult = { content: textVal };
+          const result: EnhancedSearchResult = { content: textVal };
 
           // Extract file citation if available
           if (content.text.annotations?.length) {

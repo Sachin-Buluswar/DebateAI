@@ -217,7 +217,7 @@ export default function SearchPage() {
 
       const searchData = await searchResponse.json();
       // Determine search results from response: direct array, wrapper.results, or empty
-      let searchResults = Array.isArray(searchData)
+      const searchResults = Array.isArray(searchData)
         ? searchData
         : Array.isArray(searchData.results)
           ? searchData.results

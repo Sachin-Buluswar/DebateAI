@@ -1,4 +1,3 @@
-const pdfParse = require('pdf-parse');
 import { OpenAI } from 'openai';
 import { DocumentStorageService } from './documentStorageService';
 import { DocumentChunk } from '@/types/documents';
@@ -41,6 +40,9 @@ export class EnhancedIndexingService {
       
       // Download PDF
       const pdfBuffer = await this.downloadPDF(pdfUrl);
+      
+      // Dynamically import pdf-parse to avoid module-level execution
+      const pdfParse = await import('pdf-parse').then(m => m.default || m);
       
       // Parse PDF with custom page renderer to extract page-by-page content
       const pages: Array<{ pageNumber: number; text: string }> = [];

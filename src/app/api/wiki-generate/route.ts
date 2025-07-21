@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, wikiSearchRateLimiter } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
 import { openAIManager } from '@/backend/services/openaiClientManager';
@@ -33,8 +32,7 @@ export async function POST(request: NextRequest) {
   const result = await withRateLimit(request, wikiSearchRateLimiter, async () => {
     try {
       // Authentication check
-      const cookieStore = cookies();
-      const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+      const supabase = createClient();
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       

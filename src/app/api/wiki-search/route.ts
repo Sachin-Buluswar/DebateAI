@@ -12,8 +12,7 @@ import {
 } from '@/backend/modules/wikiSearch/enhancedRetrievalService';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 // Get environment variables
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -30,8 +29,7 @@ export async function POST(request: Request) {
   // Apply rate limiting
   const rateLimitResult = await withRateLimit(request, wikiSearchRateLimiter, async () => {
     // Check authentication
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createClient();
     
     const { data: { session } } = await supabase.auth.getSession();
     

@@ -5,8 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { processAndIndexDocument } from '@/backend/modules/wikiSearch/indexingService';
 
 // Get environment variables
@@ -27,8 +26,7 @@ let openai: OpenAI | null = null;
  */
 export async function POST(request: Request) {
   // --- Authentication Check ---
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  const supabase = createClient();
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   

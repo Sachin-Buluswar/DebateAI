@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
 import { openAIService } from '@/backend/services/openaiService';
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
   const result = await withRateLimit(request, debateRateLimiter, async () => {
     try {
       // Authentication check
-      const supabase = createRouteHandlerClient({ cookies });
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Build the prompt based on advice type
-      let systemPrompt = `You are an expert debate coach providing strategic advice during a live debate. Be concise, practical, and specific.`;
+      const systemPrompt = `You are an expert debate coach providing strategic advice during a live debate. Be concise, practical, and specific.`;
       
       let userPrompt = `${context}\n\nThe debater asks: "${query}"\n\n`;
       
@@ -124,8 +123,8 @@ export async function POST(request: NextRequest) {
       // Parse the response
       const lines = responseText.split('\n').filter(line => line.trim());
       let advice = '';
-      let keyPoints: string[] = [];
-      let suggestedArguments: string[] = [];
+      const keyPoints: string[] = [];
+      const suggestedArguments: string[] = [];
       
       let currentSection = 'main';
       

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 /**
  * User preferences endpoint to handle Supabase client requests
@@ -10,8 +9,7 @@ export const dynamic = 'force-dynamic'; // Add this to properly mark as dynamic 
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createClient();
     
     // Get user ID from the URL
     const searchParams = request.nextUrl.searchParams;
@@ -68,8 +66,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createClient();
     
     // Get current authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();

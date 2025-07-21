@@ -94,7 +94,7 @@ Return up to ${maxResults} results ordered by relevance.`,
       content: `Search for information about: "${query}". Return detailed document chunks with metadata.`,
     });
 
-    let run = await openai.beta.threads.runs.create(thread.id, {
+    const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: tempAssistant.id,
       response_format: { type: 'json_object' },
     });
@@ -119,7 +119,7 @@ Return up to ${maxResults} results ordered by relevance.`,
     const messages = await openai.beta.threads.messages.list(thread.id, { order: 'desc' });
     const assistantMessage = messages.data.find((msg) => msg.role === 'assistant');
 
-    let results: RagSearchResult[] = [];
+    const results: RagSearchResult[] = [];
 
     if (assistantMessage) {
       for (const content of assistantMessage.content) {

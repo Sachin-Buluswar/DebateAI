@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/utils/supabase/server';
 
 /**
  * Health check endpoint to verify connection to Supabase
@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabaseClient';
 export async function GET(): Promise<NextResponse> {
   try {
     // Try to connect to Supabase
+    const supabase = createClient();
     const { data, error } = await supabase
       .from('health_check')
       .select('*')
