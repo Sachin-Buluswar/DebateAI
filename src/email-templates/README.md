@@ -1,4 +1,4 @@
-# 📧 DebateAI Email Templates
+# 📧 Eris Debate Email Templates
 
 Beautiful, minimalist email templates that match your site's design aesthetic.
 

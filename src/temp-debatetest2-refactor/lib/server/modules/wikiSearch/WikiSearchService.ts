@@ -276,7 +276,7 @@ export class WikiSearchService {
   /**
    * Initialize vector store if it doesn't exist (placeholder for future implementation)
    */
-  async initializeVectorStore(name: string = 'DebateAI Knowledge Base'): Promise<string> {
+  async initializeVectorStore(name: string = 'Eris Debate Knowledge Base'): Promise<string> {
     console.log(`Vector store ${name} initialization coming soon`);
     // TODO: Implement when OpenAI vector stores are stable
     return 'placeholder-vector-store-id';

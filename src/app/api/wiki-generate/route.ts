@@ -1,5 +1,5 @@
 /**
- * DebateAI - Wiki RAG Generation API Endpoint
+ * Eris Debate - Wiki RAG Generation API Endpoint
  * Receives a query, retrieves relevant context from the Vector Store,
  * and generates a synthesized answer using an LLM.
  */

@@ -99,7 +99,7 @@ export default function PreferencesPage() {
               <div className="px-4 sm:px-0">
                 <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Personal Settings</h3>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Customize how you experience Atlas Debate with these settings.
+                  Customize how you experience Eris Debate with these settings.
                 </p>
               </div>
             </div>

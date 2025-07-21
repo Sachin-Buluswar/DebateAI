@@ -1,5 +1,5 @@
 /**
- * DebateAI - Speech Feedback Module Tests
+ * Eris Debate - Speech Feedback Module Tests
  * 
  * Tests for the Speech Feedback module that processes user audio
  * and provides feedback on delivery, content, and structure.

@@ -1,4 +1,4 @@
--- Initial database schema migration for Atlas Debate
+-- Initial database schema migration for Eris Debate
 -- Run this SQL in the Supabase SQL Editor directly
 
 -- Enable necessary extensions

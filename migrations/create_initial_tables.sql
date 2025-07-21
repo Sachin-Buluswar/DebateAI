@@ -1,4 +1,4 @@
--- Initial database schema migration for DebateAI
+-- Initial database schema migration for Eris Debate
 -- Creates the core tables needed for the application
 
 -- Users table

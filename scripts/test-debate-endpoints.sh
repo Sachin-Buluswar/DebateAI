@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Atlas Debate - Debate Endpoints Test Script
+# Eris Debate - Debate Endpoints Test Script
 # Tests debate-related API endpoints
 
-echo "🧪 Atlas Debate Debate Endpoints Test"
+echo "🧪 Eris Debate Debate Endpoints Test"
 echo "================================="
 
 # Colors for output

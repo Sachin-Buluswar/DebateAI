@@ -1,5 +1,5 @@
 /**
- * DebateAI - Environment Validation Utility
+ * Eris Debate - Environment Validation Utility
  * Validates that required environment variables are set on startup
  */
 

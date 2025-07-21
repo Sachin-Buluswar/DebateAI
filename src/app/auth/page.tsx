@@ -119,7 +119,7 @@ function AuthPageContent() {
     <main className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       <div className="bg-glass max-w-md w-full p-8 rounded-xl shadow-lg">
         <Link href="/" className="block text-center mb-6">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Atlas Debate</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Eris Debate</h1>
         </Link>
         <p className="text-sm text-gray-700 dark:text-gray-300 text-center mb-6">
           Sign in or create an account to get started

@@ -1,5 +1,5 @@
 /**
- * DebateAI - Pure RAG Search API Endpoint
+ * Eris Debate - Pure RAG Search API Endpoint
  * Returns raw vector search results with PDF context and chunk metadata.
  * This allows users to see the original document context around search results.
  */
@@ -307,7 +307,7 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : 'https://debateai.com',
+          process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

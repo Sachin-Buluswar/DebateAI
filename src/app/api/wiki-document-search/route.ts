@@ -1,5 +1,5 @@
 /**
- * DebateAI - Direct Document Search API Endpoint
+ * Eris Debate - Direct Document Search API Endpoint
  * Returns search results directly from the database for document chunks with context
  */
 
@@ -265,7 +265,7 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : 'https://debateai.com',
+          process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

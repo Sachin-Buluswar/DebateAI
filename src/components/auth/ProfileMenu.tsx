@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 export default function ProfileMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -24,9 +25,13 @@ export default function ProfileMenu() {
           const email = session.user.email || '';
           const name = email.split('@')[0] || 'user';
           setUserName(name.toLowerCase());
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error fetching user info:', error);
+        setIsAuthenticated(false);
       }
     };
     
@@ -90,34 +95,49 @@ export default function ProfileMenu() {
           aria-labelledby="user-menu-button"
           tabIndex={-1}
         >
-          <Link 
-            href="/dashboard" 
-            className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            role="menuitem"
-            onClick={() => setIsOpen(false)}
-          >
-            dashboard
-          </Link>
-          
-          <Link 
-            href="/preferences" 
-            className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            role="menuitem"
-            onClick={() => setIsOpen(false)}
-          >
-            settings
-          </Link>
-          
-          <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
-          
-          <button
-            className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors"
-            role="menuitem"
-            onClick={handleLogoutClick}
-            disabled={isLoggingOut}
-          >
-            {isLoggingOut ? 'signing out...' : 'sign out'}
-          </button>
+          {isAuthenticated ? (
+            <>
+              <Link 
+                href="/dashboard" 
+                className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                role="menuitem"
+                onClick={() => setIsOpen(false)}
+              >
+                dashboard
+              </Link>
+              
+              <Link 
+                href="/preferences" 
+                className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                role="menuitem"
+                onClick={() => setIsOpen(false)}
+              >
+                settings
+              </Link>
+              
+              <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
+              
+              <button
+                className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors"
+                role="menuitem"
+                onClick={handleLogoutClick}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? 'signing out...' : 'sign out'}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link 
+                href="/auth" 
+                className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                role="menuitem"
+                onClick={() => setIsOpen(false)}
+              >
+                sign in
+              </Link>
+            </>
+          )}
         </div>
       )}
       

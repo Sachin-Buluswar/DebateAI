@@ -1,5 +1,5 @@
 /**
- * DebateAI - Wiki Index API Endpoint
+ * Eris Debate - Wiki Index API Endpoint
  * Processes debate documents and adds them to OpenAI Vector Storage for later retrieval
  */
 

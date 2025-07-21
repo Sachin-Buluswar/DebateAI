@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Atlas Debate Comprehensive Feature Testing Script
+# Eris Debate Comprehensive Feature Testing Script
 # This script tests all major features to verify integration
 
-echo "🧪 Atlas Debate Feature Testing Script"
+echo "🧪 Eris Debate Feature Testing Script"
 echo "=================================="
 
 # Colors for output

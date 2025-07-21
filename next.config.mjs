@@ -69,7 +69,7 @@ const sentryWebpackPluginOptions = {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: process.env.SENTRY_ORG || "debateai",
+  org: process.env.SENTRY_ORG || "eris-debate",
   project: process.env.SENTRY_PROJECT || "javascript-nextjs",
 
   // Only upload source maps in production

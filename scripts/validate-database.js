@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Atlas Debate - Database Schema and RLS Validation
+ * Eris Debate - Database Schema and RLS Validation
  * Validates database tables, columns, and RLS policies
  */
 

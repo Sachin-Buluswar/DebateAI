@@ -1,5 +1,5 @@
 /**
- * Centralized Logging System for DebateAI
+ * Centralized Logging System for Eris Debate
  * Production-ready structured logging with multiple transport options
  */
 
@@ -50,7 +50,7 @@ class ConsoleTransport implements LogTransport {
 class FileTransport implements LogTransport {
   private logDirectory: string;
 
-  constructor(logDirectory: string = '/tmp/debateai-logs') {
+  constructor(logDirectory: string = '/tmp/eris-debate-logs') {
     this.logDirectory = logDirectory;
   }
 
@@ -73,7 +73,7 @@ class FileTransport implements LogTransport {
 
       const logLine = JSON.stringify(entry) + '\n';
       const date = new Date().toISOString().split('T')[0];
-      const logFile = path.join(this.logDirectory, `debateai-${date}.log`);
+      const logFile = path.join(this.logDirectory, `eris-debate-${date}.log`);
       
       await fs.appendFile(logFile, logLine);
     } catch (error) {

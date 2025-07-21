@@ -1,5 +1,5 @@
 /**
- * Sentry edge runtime configuration for Atlas Debate
+ * Sentry edge runtime configuration for Eris Debate
  * Handles error tracking in Edge functions and middleware
  */
 

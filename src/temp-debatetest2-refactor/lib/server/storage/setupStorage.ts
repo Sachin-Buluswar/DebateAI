@@ -1,5 +1,5 @@
 /**
- * DebateAI - Storage Setup Utility
+ * Eris Debate - Storage Setup Utility
  * Ensures required storage buckets exist in Supabase with proper configuration and RLS policies
  */
 

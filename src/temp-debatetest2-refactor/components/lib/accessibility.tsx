@@ -1,5 +1,5 @@
 /**
- * Accessibility utilities and components for DebateAI
+ * Accessibility utilities and components for Eris Debate
  * WCAG 2.1 AA compliance helpers
  */
 

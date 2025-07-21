@@ -1,4 +1,4 @@
-// DebateAI - Configuration File
+// Eris Debate - Configuration File
 // Contains environment variable placeholders for external API integrations
 import dotenv from 'dotenv';
 import path from 'path';

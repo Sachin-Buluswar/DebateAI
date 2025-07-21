@@ -1,5 +1,5 @@
 /**
- * OpenTelemetry instrumentation setup for DebateAI
+ * OpenTelemetry instrumentation setup for Eris Debate
  * Provides distributed tracing and metrics collection
  */
 
@@ -19,7 +19,7 @@ import { apiLogger } from './logger';
 
 // Configuration
 const OTEL_EXPORTER_OTLP_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318';
-const SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'debateai';
+const SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'eris-debate';
 const SERVICE_VERSION = process.env.npm_package_version || '0.1.0';
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
 
@@ -229,7 +229,7 @@ import { metrics } from '@opentelemetry/api';
 
 const meter = metrics.getMeter(SERVICE_NAME, SERVICE_VERSION);
 
-// Custom metrics for DebateAI
+// Custom metrics for Eris Debate
 export const debateMetrics = {
   // Counter for debate sessions
   debateSessions: meter.createCounter('debate.sessions.total', {

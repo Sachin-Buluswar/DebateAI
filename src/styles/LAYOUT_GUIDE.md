@@ -1,6 +1,6 @@
 # Layout System Guide
 
-This guide provides consistent layout patterns for the DebateAI application to ensure uniform spacing, responsive design, and visual consistency across all pages.
+This guide provides consistent layout patterns for the Eris Debate application to ensure uniform spacing, responsive design, and visual consistency across all pages.
 
 ## Quick Reference
 

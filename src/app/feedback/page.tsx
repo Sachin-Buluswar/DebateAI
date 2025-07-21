@@ -18,7 +18,7 @@ export default function FeedbackPage() {
               <div className="px-4 sm:px-0">
                 <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Help Us Improve</h3>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Your feedback is valuable and helps us make Atlas Debate better for everyone.
+                  Your feedback is valuable and helps us make Eris Debate better for everyone.
                   Whether you&apos;ve found a bug, have a feature suggestion, or just want to share
                   your thoughts, we&apos;d love to hear from you.
                 </p>

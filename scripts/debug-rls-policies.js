@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Atlas Debate - Debug RLS Policies
+ * Eris Debate - Debug RLS Policies
  * Detailed debugging of RLS policy behavior
  */
 

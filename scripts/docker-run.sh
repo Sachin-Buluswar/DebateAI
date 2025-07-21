@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Docker run script for Atlas Debate
+# Docker run script for Eris Debate
 # Usage: ./scripts/docker-run.sh [environment]
 
 set -e
@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Default to development environment
 ENVIRONMENT=${1:-development}
 
-echo -e "${GREEN}Starting Atlas Debate in ${ENVIRONMENT} mode...${NC}"
+echo -e "${GREEN}Starting Eris Debate in ${ENVIRONMENT} mode...${NC}"
 
 # Check if .env file exists
 if [ ! -f .env.local ]; then
@@ -93,4 +93,4 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-echo -e "\n${GREEN}Atlas Debate is running successfully!${NC}"
+echo -e "\n${GREEN}Eris Debate is running successfully!${NC}"

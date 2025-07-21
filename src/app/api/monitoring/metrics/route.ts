@@ -242,9 +242,9 @@ nodejs_external_memory_bytes ${memUsage.external}
 # TYPE process_uptime_seconds counter
 process_uptime_seconds ${uptime}
 
-# HELP debateai_version_info DebateAI version information
-# TYPE debateai_version_info gauge
-debateai_version_info{version="${process.env.npm_package_version || '0.1.0'}",environment="${process.env.NODE_ENV}"} 1
+# HELP eris_debate_version_info Eris Debate version information
+# TYPE eris_debate_version_info gauge
+eris_debate_version_info{version="${process.env.npm_package_version || '0.1.0'}",environment="${process.env.NODE_ENV}"} 1
 `;
 
   return new NextResponse(prometheusMetrics, {

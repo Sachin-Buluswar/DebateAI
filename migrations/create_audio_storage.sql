@@ -1,4 +1,4 @@
--- Create audio storage buckets with appropriate settings for DebateAI
+-- Create audio storage buckets with appropriate settings for Eris Debate
 -- This script ensures that speech_audio and debate_audio buckets exist
 -- with appropriate permissions and file size limits
 

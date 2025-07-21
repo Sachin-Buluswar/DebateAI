@@ -2,7 +2,7 @@ global:
   scrape_interval: 30s
   evaluation_interval: 30s
   external_labels:
-    monitor: 'atlas-debate'
+    monitor: 'eris-debate'
     environment: 'production'
 
 # Alertmanager configuration
@@ -18,14 +18,14 @@ rule_files:
 
 # Scrape configurations
 scrape_configs:
-  # Atlas Debate application metrics
-  - job_name: 'atlas-debate'
+  # Eris Debate application metrics
+  - job_name: 'eris-debate'
     metrics_path: '/api/monitoring/metrics'
     scrape_interval: 30s
     static_configs:
-      - targets: ['atlas-debate:3001']
+      - targets: ['eris-debate:3001']
         labels:
-          service: 'atlas-debate-app'
+          service: 'eris-debate-app'
           component: 'backend'
 
   # OpenTelemetry Collector metrics
@@ -50,7 +50,7 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - https://atlasdebate.com/api/health
+          - https://erisdebate.com/api/health
           - https://api.openai.com/v1/models
           - https://api.elevenlabs.io/v1/models
     relabel_configs:
@@ -67,7 +67,7 @@ scrape_configs:
       - targets: ['postgres-exporter:9187']
         labels:
           service: 'postgresql'
-          database: 'atlas-debate'
+          database: 'eris-debate'
 
 # Remote write for long-term storage
 remote_write:

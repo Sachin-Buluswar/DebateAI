@@ -1,5 +1,5 @@
 /**
- * DebateAI - WikiSearch Module Tests
+ * Eris Debate - WikiSearch Module Tests
  * 
  * Tests for the WikiSearch module that handles RAG-based evidence retrieval
  * using OpenAI embeddings and Pinecone vector database.

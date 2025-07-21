@@ -21,7 +21,7 @@ const templates = [
   { name: 'change-email', description: 'Email address change confirmation' }
 ];
 
-console.log('\n🎨 Atlas Debate Email Template Setup Assistant\n');
+console.log('\n🎨 Eris Debate Email Template Setup Assistant\n');
 console.log('This guide will help you configure custom email templates in Supabase.\n');
 
 let currentStep = 0;
@@ -32,7 +32,7 @@ function showStep() {
     console.log('📝 Final steps:\n');
     console.log('1. Go to Supabase Dashboard → Authentication → Email Settings');
     console.log('2. Set Sender email (e.g., noreply@yourdomain.com)');
-    console.log('3. Set Sender name to "Atlas Debate"');
+    console.log('3. Set Sender name to "Eris Debate"');
     console.log('4. Consider configuring custom SMTP for better deliverability\n');
     console.log('🎉 Your email templates are now beautifully branded!\n');
     rl.close();

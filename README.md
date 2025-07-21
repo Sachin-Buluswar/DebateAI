@@ -1,4 +1,4 @@
-# Atlas Debate
+# Eris Debate
 
 AI-powered debate platform with real-time debates, speech analysis, and evidence search. Built with Next.js 14, TypeScript, and production-ready infrastructure.
 
@@ -35,8 +35,8 @@ AI-powered debate platform with real-time debates, speech analysis, and evidence
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/atlas-debate.git
-cd atlas-debate
+git clone https://github.com/yourusername/eris-debate.git
+cd eris-debate
 
 # Install dependencies
 npm install
@@ -112,8 +112,8 @@ npm run build
 npm run start
 
 # Docker production build
-docker build -t debateai:latest .
-docker run -p 3001:3001 debateai:latest
+docker build -t eris-debate:latest .
+docker run -p 3001:3001 eris-debate:latest
 ```
 
 ## 🚀 Deployment
@@ -129,10 +129,10 @@ docker run -p 3001:3001 debateai:latest
 
 ```bash
 # Build production image
-docker build -t debateai:prod .
+docker build -t eris-debate:prod .
 
 # Run with environment variables
-docker run -p 3001:3001 --env-file .env.local debateai:prod
+docker run -p 3001:3001 --env-file .env.local eris-debate:prod
 ```
 
 ### Manual Deployment

@@ -1,5 +1,5 @@
 /**
- * Input Validation Middleware for DebateAI
+ * Input Validation Middleware for Eris Debate
  * Provides comprehensive input sanitization and validation
  */
 
@@ -320,9 +320,9 @@ export function addSecurityHeaders(response: Response): Response {
 // CORS configuration for production
 export const corsConfig = {
   allowedOrigins: [
-    'https://debateai.com',
-    'https://www.debateai.com',
-    'https://app.debateai.com',
+    'https://erisdebate.com',
+    'https://www.erisdebate.com',
+    'https://app.erisdebate.com',
     ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3001'] : []),
   ],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

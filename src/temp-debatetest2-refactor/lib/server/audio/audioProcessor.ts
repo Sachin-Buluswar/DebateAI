@@ -1,5 +1,5 @@
 /**
- * DebateAI - Audio Processing Utility
+ * Eris Debate - Audio Processing Utility
  * Handles audio file conversion and optimization for storage.
  */
 

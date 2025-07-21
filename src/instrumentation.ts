@@ -15,7 +15,7 @@ export async function register() {
     initializeMonitoring();
     
     // Log server startup
-    console.log('DebateAI server instrumentation initialized');
+    console.log('Eris Debate server instrumentation initialized');
     
     // Register shutdown handlers
     process.on('SIGTERM', async () => {

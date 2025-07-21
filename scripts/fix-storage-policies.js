@@ -1,5 +1,5 @@
 /**
- * Atlas Debate - Fix Supabase Storage Policies
+ * Eris Debate - Fix Supabase Storage Policies
  * This script will ensure the speech_audio and debate_audio buckets have proper RLS policies
  */
 

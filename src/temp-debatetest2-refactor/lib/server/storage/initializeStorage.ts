@@ -1,5 +1,5 @@
 /**
- * DebateAI - Storage Initialization Utility
+ * Eris Debate - Storage Initialization Utility
  * Initializes storage buckets and policies on server startup
  */
 

@@ -1,5 +1,5 @@
 /**
- * DebateAI - Realtime AI Debate Simulator Module
+ * Eris Debate - Realtime AI Debate Simulator Module
  * Provides a live, interactive debate environment with realistic turn-based conversation flow.
  * Captures real-time audio input from the user, processes it with OpenAI's GPT-4o Realtime API,
  * and returns the AI's response in both text and audio formats.

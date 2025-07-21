@@ -1,5 +1,5 @@
 /**
- * Rate Limiting Middleware for DebateAI
+ * Rate Limiting Middleware for Eris Debate
  * Implements token bucket algorithm for API rate limiting
  */
 

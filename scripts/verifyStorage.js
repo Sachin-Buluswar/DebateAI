@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Atlas Debate - Storage Configuration Verification Tool
+ * Eris Debate - Storage Configuration Verification Tool
  * Manually check and report on storage configuration
  * 
  * Usage:

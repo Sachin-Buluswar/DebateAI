@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Atlas Debate Demo Test Script
+ * Eris Debate Demo Test Script
  * Tests all major functionality and demonstrates working features
  */
 
@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 
-console.log('🎯 Atlas Debate Comprehensive Feature Demo\n');
+console.log('🎯 Eris Debate Comprehensive Feature Demo\n');
 
 // Helper function for colored output
 const colors = {
@@ -86,7 +86,7 @@ async function runDemo() {
     'POST', 
     '/api/prototype/elevenlabs-tts',
     {
-      text: 'Hello, this is a test of the text-to-speech system for Atlas Debate.',
+      text: 'Hello, this is a test of the text-to-speech system for Eris Debate.',
       voiceId: 'pNInz6obpgDQGcFmaJgB' // Adam voice
     }
   );
@@ -172,7 +172,7 @@ async function runDemo() {
   
   section('✨ DEMO COMPLETE');
   
-  log('green', '🎉 Atlas Debate is functional and ready for comprehensive testing!');
+  log('green', '🎉 Eris Debate is functional and ready for comprehensive testing!');
   console.log('\nTo start using the system:');
   console.log('1. Visit ' + BASE_URL + '/debate');
   console.log('2. Enter a debate topic (e.g., "Should schools ban smartphones?")');

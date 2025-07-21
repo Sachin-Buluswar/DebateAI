@@ -1,5 +1,5 @@
 /**
- * DebateAI - Wiki Search API Endpoint
+ * Eris Debate - Wiki Search API Endpoint
  * Receives a query and returns relevant document chunks from the OpenAI Vector Store.
  * Production-ready with rate limiting, input validation, and security features.
  */
@@ -162,7 +162,7 @@ export async function OPTIONS() {
     new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://debateai.com',
+        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nginx:
     image: nginx:alpine
-    container_name: atlas-debate-nginx
+    container_name: eris-debate-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -16,7 +16,7 @@ services:
       app:
         condition: service_healthy
     networks:
-      - atlas-debate-network
+      - eris-debate-network
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -39,11 +39,11 @@ services:
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.atlasdebate.com}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.erisdebate.com}
       cache_from:
         - node:20-alpine
-    image: atlas-debate:production
-    container_name: atlas-debate-app
+    image: eris-debate:production
+    container_name: eris-debate-app
     expose:
       - "3001"
     environment:
@@ -59,8 +59,8 @@ services:
       - OPENAI_VECTOR_STORE_ID=${OPENAI_VECTOR_STORE_ID}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       # Production URLs
-      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://atlasdebate.com}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.atlasdebate.com}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://erisdebate.com}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.erisdebate.com}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
       interval: 30s
@@ -69,7 +69,7 @@ services:
       start_period: 40s
     restart: unless-stopped
     networks:
-      - atlas-debate-network
+      - eris-debate-network
     volumes:
       # Persistent volumes for uploads and temp files
       - uploads:/app/uploads
@@ -112,7 +112,7 @@ volumes:
     driver: local
 
 networks:
-  atlas-debate-network:
+  eris-debate-network:
     driver: bridge
     ipam:
       config:

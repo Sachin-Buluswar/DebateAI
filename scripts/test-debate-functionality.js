@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Comprehensive test script for Atlas Debate core functionality
+ * Comprehensive test script for Eris Debate core functionality
  * Tests Socket.IO communication, AI speech generation, and debate flow
  */
 
@@ -46,7 +46,7 @@ class DebateTester {
   }
 
   async runAllTests() {
-    console.log(colors.bold(colors.cyan('\n🎯 Atlas Debate Core Functionality Test Suite\n')));
+    console.log(colors.bold(colors.cyan('\n🎯 Eris Debate Core Functionality Test Suite\n')));
     
     try {
       // Test 1: Socket.IO Connection
@@ -355,7 +355,7 @@ async function checkServerHealth() {
 
 // Main execution
 async function main() {
-  console.log(colors.bold('🚀 Atlas Debate Core Functionality Tester'));
+  console.log(colors.bold('🚀 Eris Debate Core Functionality Tester'));
   console.log(colors.gray(`Testing against: ${BASE_URL}\n`));
   
   // Check server health first

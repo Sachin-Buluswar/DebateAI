@@ -1,5 +1,5 @@
 /**
- * DebateAI - Enhanced RAG Search API Endpoint
+ * Eris Debate - Enhanced RAG Search API Endpoint
  * Returns search results with PDF links, page numbers, and surrounding context
  */
 
@@ -307,7 +307,7 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : 'https://debateai.com',
+          process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

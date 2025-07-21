@@ -1,5 +1,5 @@
 /**
- * Sentry client-side configuration for DebateAI
+ * Sentry client-side configuration for Eris Debate
  * Handles error tracking and performance monitoring on the client
  */
 
@@ -37,7 +37,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
       
       // Custom integration for debate events
       {
-        name: 'DebateAI',
+        name: 'Eris Debate',
         setupOnce() {
           // Track debate-specific events
           if (typeof window !== 'undefined') {

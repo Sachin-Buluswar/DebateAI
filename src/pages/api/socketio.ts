@@ -27,7 +27,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
   try {
     // Determine allowed origins based on environment
     const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://debateai.com', 'https://www.debateai.com'])
+      ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://erisdebate.com', 'https://www.erisdebate.com'])
       : (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001']);
     
     const io = new Server(res.socket.server, {

@@ -101,7 +101,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "up{job=\"atlas-debate\"}",
+          "expr": "up{job=\"eris-debate\"}",
           "refId": "A"
         }
       ],
@@ -185,7 +185,7 @@
       },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"atlas-debate\"}[5m]) * 100",
+          "expr": "rate(process_cpu_seconds_total{job=\"eris-debate\"}[5m]) * 100",
           "legendFormat": "CPU Usage",
           "refId": "A"
         }
@@ -247,7 +247,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "(nodejs_heap_size_used_bytes{job=\"atlas-debate\"} / nodejs_heap_size_total_bytes{job=\"atlas-debate\"}) * 100",
+          "expr": "(nodejs_heap_size_used_bytes{job=\"eris-debate\"} / nodejs_heap_size_total_bytes{job=\"eris-debate\"}) * 100",
           "refId": "A"
         }
       ],
@@ -302,7 +302,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "process_uptime_seconds{job=\"atlas-debate\"}",
+          "expr": "process_uptime_seconds{job=\"eris-debate\"}",
           "refId": "A"
         }
       ],
@@ -356,7 +356,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "connections_active{job=\"atlas-debate\"}",
+          "expr": "connections_active{job=\"eris-debate\"}",
           "refId": "A"
         }
       ],
@@ -453,7 +453,7 @@
       },
       "targets": [
         {
-          "expr": "rate(http_requests_total{job=\"atlas-debate\"}[5m])",
+          "expr": "rate(http_requests_total{job=\"eris-debate\"}[5m])",
           "legendFormat": "{{method}} {{route}}",
           "refId": "A"
         }
@@ -538,12 +538,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"atlas-debate\"}[5m])) by (le, route)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"eris-debate\"}[5m])) by (le, route)) * 1000",
           "legendFormat": "p95 {{route}}",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"atlas-debate\"}[5m])) by (le, route)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"eris-debate\"}[5m])) by (le, route)) * 1000",
           "legendFormat": "p50 {{route}}",
           "refId": "B"
         }
@@ -596,7 +596,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(increase(debate_sessions_total{job=\"atlas-debate\"}[24h])) by (debate_topic)",
+          "expr": "sum(increase(debate_sessions_total{job=\"eris-debate\"}[24h])) by (debate_topic)",
           "legendFormat": "{{debate_topic}}",
           "refId": "A"
         }
@@ -651,7 +651,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(increase(ai_responses_total{job=\"atlas-debate\"}[24h]))",
+          "expr": "sum(increase(ai_responses_total{job=\"eris-debate\"}[24h]))",
           "refId": "A"
         }
       ],
@@ -701,7 +701,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(errors_total{job=\"atlas-debate\"}[24h])) by (error_type)",
+          "expr": "sum(increase(errors_total{job=\"eris-debate\"}[24h])) by (error_type)",
           "legendFormat": "{{error_type}}",
           "refId": "A"
         }
@@ -756,7 +756,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(increase(speech_feedback_total{job=\"atlas-debate\"}[24h]))",
+          "expr": "sum(increase(speech_feedback_total{job=\"eris-debate\"}[24h]))",
           "refId": "A"
         }
       ],
@@ -811,7 +811,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(ai_response_time_bucket{job=\"atlas-debate\",ai_service=\"openai\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(ai_response_time_bucket{job=\"eris-debate\",ai_service=\"openai\"}[5m])) by (le))",
           "refId": "A"
         }
       ],
@@ -865,7 +865,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "expr": "sum(increase(wiki_searches_total{job=\"atlas-debate\"}[24h]))",
+          "expr": "sum(increase(wiki_searches_total{job=\"eris-debate\"}[24h]))",
           "refId": "A"
         }
       ],
@@ -875,7 +875,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 38,
-  "tags": ["atlas-debate", "monitoring"],
+  "tags": ["eris-debate", "monitoring"],
   "templating": {
     "list": [
       {
@@ -904,8 +904,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Atlas Debate Overview",
-  "uid": "debateai-overview",
+  "title": "Eris Debate Overview",
+  "uid": "eris-debate-overview",
   "version": 1,
   "weekStart": ""
 }

@@ -1,5 +1,5 @@
 /**
- * DebateAI - Realtime Debate Module Tests
+ * Eris Debate - Realtime Debate Module Tests
  * 
  * Tests for the Realtime Debate module that handles interactive
  * debate simulations with turn-based interactions.

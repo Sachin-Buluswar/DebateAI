@@ -71,7 +71,7 @@ export default function Navbar() {
                 href="/" 
                 className="text-2xl font-light tracking-wide text-gray-900 dark:text-gray-100 hover:text-primary-500 transition-colors"
               >
-                atlas
+                eris
               </Link>
             </div>
             

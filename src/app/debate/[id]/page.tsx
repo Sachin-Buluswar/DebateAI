@@ -102,7 +102,7 @@ export default function DebateDetail() {
             <div className="flex justify-between h-16">
               <div className="flex">
                 <Link href="/dashboard" className="flex-shrink-0 flex items-center">
-                  <h2 className="text-primary-700">Atlas</h2>
+                  <h2 className="text-primary-700">Eris</h2>
                 </Link>
               </div>
               <div className="flex items-center">
@@ -152,7 +152,7 @@ export default function DebateDetail() {
           <div className="flex justify-between h-16">
             <div className="flex">
               <Link href="/dashboard" className="flex-shrink-0 flex items-center">
-                <h2 className="text-primary-700">Atlas</h2>
+                <h2 className="text-primary-700">Eris</h2>
               </Link>
             </div>
             <div className="flex items-center">

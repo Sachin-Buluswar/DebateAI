@@ -1,4 +1,4 @@
-# AI Agent Instructions for Atlas Debate
+# AI Agent Instructions for Eris Debate
 
 ## Critical Rules
 

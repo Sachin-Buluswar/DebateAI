@@ -1,5 +1,5 @@
 /**
- * DebateAI - Speech Feedback Module
+ * Eris Debate - Speech Feedback Module
  * Processes user-uploaded speech audio and provides AI feedback on delivery and content.
  * 
  * Reference: requirements.md section 2.2.2

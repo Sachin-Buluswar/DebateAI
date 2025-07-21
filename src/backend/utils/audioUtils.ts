@@ -1,5 +1,5 @@
 /**
- * Audio utility functions for DebateAI
+ * Audio utility functions for Eris Debate
  */
 
 /**

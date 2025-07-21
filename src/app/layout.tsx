@@ -31,14 +31,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Atlas Debate - AI-Powered Debate Practice",
+  title: "Eris Debate - AI-Powered Debate Practice",
   description: "Master debate skills with AI-powered practice sessions, real-time speech feedback, and comprehensive argument analysis",
   keywords: ["debate", "AI debate", "speech practice", "argument analysis", "debate training"],
-  authors: [{ name: "Atlas Debate" }],
+  authors: [{ name: "Eris Debate" }],
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "Atlas Debate",
+    siteName: "Eris Debate",
   },
 };
 

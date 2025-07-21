@@ -1,8 +1,8 @@
-# Email Template Setup Guide for DebateAI
+# Email Template Setup Guide for Eris Debate
 
 ## 🎨 **Custom Email Templates - Minimalist Design**
 
-Your DebateAI email templates have been designed to match your site's minimalist aesthetic. These templates replace the generic Supabase emails with beautifully branded communications.
+Your Eris Debate email templates have been designed to match your site's minimalist aesthetic. These templates replace the generic Supabase emails with beautifully branded communications.
 
 ## 📋 **Available Templates**
 
@@ -17,7 +17,7 @@ Your DebateAI email templates have been designed to match your site's minimalist
 ### **Step 1: Access Supabase Dashboard**
 
 1. Go to your [Supabase Dashboard](https://app.supabase.com)
-2. Select your DebateAI project
+2. Select your Eris Debate project
 3. Navigate to **Authentication** → **Email Templates**
 
 ### **Step 2: Configure Each Template**
@@ -33,9 +33,9 @@ For each email type, you'll need to:
    - Paste into the Supabase template editor
 
 3. **Configure Subject Lines**
-   - **Confirm signup**: "Confirm your DebateAI account"
-   - **Reset password**: "Reset your DebateAI password"
-   - **Magic link**: "Your DebateAI login link"
+   - **Confirm signup**: "Confirm your Eris Debate account"
+   - **Reset password**: "Reset your Eris Debate password"
+   - **Magic link**: "Your Eris Debate login link"
    - **Change email**: "Confirm your new email address"
 
 ### **Step 3: Template Variables**
@@ -52,7 +52,7 @@ These are already included in the templates.
 In **Authentication** → **Email Settings**:
 
 1. **Sender Email**: Set a professional email like `noreply@yourdomain.com`
-2. **Sender Name**: "DebateAI"
+2. **Sender Name**: "Eris Debate"
 3. **Reply-To**: Your support email
 
 ### **Step 5: SMTP Configuration (Recommended)**

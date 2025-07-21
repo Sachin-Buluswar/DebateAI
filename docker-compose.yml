@@ -11,8 +11,8 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
       cache_from:
         - node:20-alpine
-    image: atlas-debate:development
-    container_name: atlas-debate-app-dev
+    image: eris-debate:development
+    container_name: eris-debate-app-dev
     ports:
       - "${PORT:-3001}:3001"
     environment:
@@ -38,7 +38,7 @@ services:
       start_period: 40s
     restart: unless-stopped
     networks:
-      - atlas-debate-network
+      - eris-debate-network
     volumes:
       # Development volumes for hot reload
       - ./src:/app/src:ro
@@ -66,6 +66,6 @@ volumes:
     driver: local
 
 networks:
-  atlas-debate-network:
+  eris-debate-network:
     driver: bridge
-    name: atlas-debate-dev-network
+    name: eris-debate-dev-network
