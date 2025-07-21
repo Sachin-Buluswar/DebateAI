@@ -2,12 +2,12 @@
 
 ## Overview
 
-The DebateAI platform provides a comprehensive REST API for all client-server interactions. All endpoints follow RESTful conventions and return JSON responses.
+The Eris Debate platform provides a comprehensive REST API for all client-server interactions. All endpoints follow RESTful conventions and return JSON responses.
 
 ## Base URL
 
 - Development: `http://localhost:3001/api`
-- Production: `https://api.debateai.com/api`
+- Production: `https://api.erisdebate.com/api`
 
 ## Authentication
 
@@ -596,7 +596,7 @@ All responses include security headers:
 
 CORS is configured per environment:
 - Development: `Access-Control-Allow-Origin: *`
-- Production: `Access-Control-Allow-Origin: https://debateai.com`
+- Production: `Access-Control-Allow-Origin: https://erisdebate.com`
 
 ## WebSocket Endpoints
 

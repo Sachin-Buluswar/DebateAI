@@ -1,4 +1,4 @@
-# DebateAI Frontend Architecture
+# Eris Debate Frontend Architecture
 
 ## Next.js App Router Structure
 

@@ -1,4 +1,4 @@
-# 🌿 Minimalist UI/UX Improvement Plan for DebateAI
+# 🌿 Minimalist UI/UX Improvement Plan for Eris Debate
 
 ## 📋 Executive Summary
 
@@ -403,4 +403,4 @@ The minimalist design improvement plan focuses on:
 4. **Accessible simplicity** that works for everyone
 5. **Performance-first** approach to interactions
 
-By following this plan, DebateAI will achieve a sophisticated minimalist design that feels effortless to use while providing powerful functionality for high school debaters.
+By following this plan, Eris Debate will achieve a sophisticated minimalist design that feels effortless to use while providing powerful functionality for high school debaters.

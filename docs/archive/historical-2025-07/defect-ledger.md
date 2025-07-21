@@ -1,4 +1,4 @@
-# DebateAI Defect Ledger (Initial Audit)
+# Eris Debate Defect Ledger (Initial Audit)
 
 > This ledger tracks the mission-critical defects and incomplete integrations that block core user journeys as of **2025-07-03**.
 

@@ -1,7 +1,7 @@
-# DebateAI Critical Fixes Summary - July 3, 2025
+# Eris Debate Critical Fixes Summary - July 3, 2025
 
 ## Overview
-This document summarizes the mission-critical fixes applied to bring DebateAI from ~85% to ~90% completion. All major blocking issues have been resolved.
+This document summarizes the mission-critical fixes applied to bring Eris Debate from ~85% to ~90% completion. All major blocking issues have been resolved.
 
 ## 1. Wiki Search Module ✅
 

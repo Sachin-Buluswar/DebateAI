@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This roadmap consolidates all **unimplemented** UI/UX improvements for DebateAI, with **mobile optimization as the #1 priority**. The app already has a strong minimalist foundation through the completed ui-improvements branch. This document focuses exclusively on what remains to be done.
+This roadmap consolidates all **unimplemented** UI/UX improvements for Eris Debate, with **mobile optimization as the #1 priority**. The app already has a strong minimalist foundation through the completed ui-improvements branch. This document focuses exclusively on what remains to be done.
 
 **Current Status**: Core minimalist UI system implemented, mobile experience critically broken.
 

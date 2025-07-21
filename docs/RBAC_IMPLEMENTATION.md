@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the Role-Based Access Control (RBAC) system implemented in DebateAI to replace hardcoded admin checks and provide a secure, scalable permission system.
+This document describes the Role-Based Access Control (RBAC) system implemented in Eris Debate to replace hardcoded admin checks and provide a secure, scalable permission system.
 
 ## Architecture
 
@@ -114,7 +114,7 @@ if (!hasPermission) {
 
 Before:
 ```typescript
-const isAdmin = session.user.email === 'admin@debateai.com';
+const isAdmin = session.user.email === 'admin@erisdebate.com';
 ```
 
 After:

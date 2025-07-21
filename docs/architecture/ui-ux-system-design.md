@@ -1,7 +1,7 @@
 # UI/UX System Design Document
 
 ## Purpose
-This living document captures the core design decisions, structure, and guidelines for the DebateAI user interface and experience. It focuses on the foundational UI pillars (Information Architecture, Key User Flows, Design System & Component Library, Visual Language & Branding) and will be updated iteratively as the product evolves.
+This living document captures the core design decisions, structure, and guidelines for the Eris Debate user interface and experience. It focuses on the foundational UI pillars (Information Architecture, Key User Flows, Design System & Component Library, Visual Language & Branding) and will be updated iteratively as the product evolves.
 
 ## Version History
 - **v0.2** (2024-06-XX): Implemented foundational UI elements (Pillars 2, 4, 5) - Layout, Navigation, Core Styles & Tokens.

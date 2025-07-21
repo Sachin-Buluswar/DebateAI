@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DebateAI platform now features an enhanced Retrieval-Augmented Generation (RAG) system that allows users to:
+The Eris Debate platform now features an enhanced Retrieval-Augmented Generation (RAG) system that allows users to:
 - Search through debate evidence with semantic understanding
 - View original PDF documents with direct page navigation
 - See surrounding context for each search result

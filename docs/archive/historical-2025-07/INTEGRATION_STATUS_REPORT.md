@@ -1,4 +1,4 @@
-# DebateAI Integration Status Report
+# Eris Debate Integration Status Report
 
 **Date**: July 9, 2025  
 **Status**: Multiple integration issues identified and partially resolved

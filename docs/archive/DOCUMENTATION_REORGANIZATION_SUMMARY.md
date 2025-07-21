@@ -145,4 +145,4 @@ The documentation is now:
 - **Maintainable** - Clear structure for updates
 - **Professional** - Clean, organized presentation
 
-This reorganization makes DebateAI's documentation as polished and professional as the application itself.
+This reorganization makes Eris Debate's documentation as polished and professional as the application itself.

@@ -1,8 +1,8 @@
-# DebateAI Deployment Process
+# Eris Debate Deployment Process
 
 ## Overview
 
-This document outlines the deployment process for DebateAI, including staging and production deployments, rollback procedures, and best practices.
+This document outlines the deployment process for Eris Debate, including staging and production deployments, rollback procedures, and best practices.
 
 ## Table of Contents
 
@@ -64,7 +64,7 @@ git push origin main
    ```
 
 3. **Verification**
-   - Check staging URL: https://staging.debateai.com
+   - Check staging URL: https://staging.erisdebate.com
    - Review deployment logs in GitHub Actions
    - Test core functionality
 
@@ -138,10 +138,10 @@ ssh-keygen        # SSH keys
 
 ```bash
 # SSH to staging server
-ssh deploy@staging.debateai.com
+ssh deploy@staging.erisdebate.com
 
 # Navigate to application directory
-cd /opt/debateai
+cd /opt/eris-debate
 
 # Pull latest changes
 git pull origin main
@@ -161,10 +161,10 @@ docker-compose logs -f web
 
 ```bash
 # SSH to production server
-ssh deploy@debateai.com
+ssh deploy@erisdebate.com
 
 # Navigate to application directory
-cd /opt/debateai
+cd /opt/eris-debate
 
 # Create backup
 ./scripts/backup.sh
@@ -183,7 +183,7 @@ docker-compose up -d --scale web=1 --no-recreate web
 docker-compose exec web npm run migrate:deploy
 
 # Verify deployment
-curl https://debateai.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 ## Rollback Procedures
@@ -201,25 +201,25 @@ The CI/CD pipeline automatically rolls back if:
 
 ```bash
 # SSH to server
-ssh deploy@debateai.com
+ssh deploy@erisdebate.com
 
 # List available images
-docker images | grep debateai
+docker images | grep eris-debate
 
 # Rollback to previous version
 docker-compose down
-docker tag ghcr.io/your-org/debateai:v1.2.2 ghcr.io/your-org/debateai:latest
+docker tag ghcr.io/your-org/eris-debate:v1.2.2 ghcr.io/your-org/eris-debate:latest
 docker-compose up -d
 
 # Verify
-curl https://debateai.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 #### Database Rollback
 
 ```bash
 # Only if migrations were applied
-cd /opt/debateai
+cd /opt/eris-debate
 docker-compose exec web npm run migrate:rollback
 
 # Restore from backup if needed
@@ -249,10 +249,10 @@ All environments expose health check endpoints:
 curl http://localhost:3001/api/health
 
 # Staging
-curl https://staging.debateai.com/api/health
+curl https://staging.erisdebate.com/api/health
 
 # Production
-curl https://debateai.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 ### Health Check Response
@@ -279,7 +279,7 @@ curl https://debateai.com/api/health
 - name: Health Check
   run: |
     for i in {1..30}; do
-      if curl -f https://debateai.com/api/health; then
+      if curl -f https://erisdebate.com/api/health; then
         echo "Health check passed"
         exit 0
       fi
@@ -295,7 +295,7 @@ curl https://debateai.com/api/health
 1. **Response Times**
    ```bash
    # Check API response times
-   curl -w "@curl-format.txt" -o /dev/null -s https://debateai.com/api/health
+   curl -w "@curl-format.txt" -o /dev/null -s https://erisdebate.com/api/health
    ```
 
 2. **Container Health**
@@ -389,7 +389,7 @@ docker-compose up web
 
 ```bash
 # Check certificate expiry
-echo | openssl s_client -servername debateai.com -connect debateai.com:443 2>/dev/null | openssl x509 -noout -dates
+echo | openssl s_client -servername erisdebate.com -connect erisdebate.com:443 2>/dev/null | openssl x509 -noout -dates
 
 # Renew certificates
 certbot renew --nginx

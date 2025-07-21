@@ -1,4 +1,4 @@
-# 🚨 Deployment Blockers - DebateAI
+# 🚨 Deployment Blockers - Eris Debate
 
 **Last Updated**: 2025-07-20
 **Critical Issues**: 2 (remaining)

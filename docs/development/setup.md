@@ -1,6 +1,6 @@
 # Development Environment Setup
 
-This guide provides step-by-step instructions for setting up the DebateAI development environment.
+This guide provides step-by-step instructions for setting up the Eris Debate development environment.
 
 ## Prerequisites
 

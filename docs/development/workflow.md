@@ -1,6 +1,6 @@
 # Git Workflow and Branching Strategy
 
-This guide outlines the Git workflow and branching strategy for the DebateAI project.
+This guide outlines the Git workflow and branching strategy for the Eris Debate project.
 
 ## Branch Strategy
 

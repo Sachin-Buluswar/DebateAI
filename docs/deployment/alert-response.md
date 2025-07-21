@@ -1,4 +1,4 @@
-# Atlas Debate Alert Response Playbook
+# Eris Debate Alert Response Playbook
 
 ## Overview
 
@@ -14,7 +14,7 @@ This playbook provides step-by-step instructions for responding to production al
 
 ### 🔴 ApplicationDown
 
-**Description**: The Atlas Debate application is not responding to health checks.
+**Description**: The Eris Debate application is not responding to health checks.
 
 **Impact**: Complete service outage - users cannot access the application.
 
@@ -23,13 +23,13 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Immediate Actions** (< 5 min)
    ```bash
    # Check application status
-   curl -I https://atlasdebate.com/api/health
+   curl -I https://erisdebate.com/api/health
    
    # Check server logs
-   kubectl logs -n production -l app=debateai --tail=100
+   kubectl logs -n production -l app=eris-debate --tail=100
    
    # Check recent deployments
-   kubectl rollout history deployment/debateai -n production
+   kubectl rollout history deployment/eris-debate -n production
    ```
 
 2. **Diagnosis** (5-10 min)
@@ -41,7 +41,7 @@ This playbook provides step-by-step instructions for responding to production al
 3. **Remediation**
    - If recent deployment: Rollback immediately
      ```bash
-     kubectl rollout undo deployment/debateai -n production
+     kubectl rollout undo deployment/eris-debate -n production
      ```
    - If infrastructure issue: Contact cloud provider
    - If database issue: Check Supabase status page
@@ -124,7 +124,7 @@ This playbook provides step-by-step instructions for responding to production al
    kubectl top pods -n production
    
    # Check for memory leaks
-   curl https://debateai.com/api/monitoring/metrics | jq '.resources.memory'
+   curl https://erisdebate.com/api/monitoring/metrics | jq '.resources.memory'
    ```
 
 2. **Immediate Actions**
@@ -149,7 +149,7 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Identify Slow Endpoints**
    ```bash
    # Check performance metrics
-   curl https://debateai.com/api/monitoring/metrics?period=15m | \
+   curl https://erisdebate.com/api/monitoring/metrics?period=15m | \
      jq '.performance.api.slowRequests'
    ```
 
@@ -175,7 +175,7 @@ This playbook provides step-by-step instructions for responding to production al
 1. **Analyze Connections**
    ```bash
    # Get connection metrics
-   curl https://debateai.com/api/monitoring/metrics | \
+   curl https://erisdebate.com/api/monitoring/metrics | \
      jq '.resources.connections.websocket'
    ```
 
@@ -242,7 +242,7 @@ Subject: Service Disruption - [DATE]
 
 Dear Customer,
 
-On [DATE] between [START] and [END], DebateAI experienced [ISSUE].
+On [DATE] between [START] and [END], Eris Debate experienced [ISSUE].
 
 Impact:
 - [IMPACT POINT 1]
@@ -256,34 +256,34 @@ Prevention:
 
 We apologize for any inconvenience.
 
-The DebateAI Team
+The Eris Debate Team
 ```
 
 ## Tools and Resources
 
 ### Monitoring Dashboards
-- Grafana: https://grafana.debateai.com
-- Sentry: https://sentry.io/organizations/debateai
+- Grafana: https://grafana.erisdebate.com
+- Sentry: https://sentry.io/organizations/eris-debate
 - Supabase: https://app.supabase.com/project/[PROJECT_ID]
 
 ### Useful Commands
 
 ```bash
 # Get application logs
-kubectl logs -n production -l app=debateai --tail=1000
+kubectl logs -n production -l app=eris-debate --tail=1000
 
 # Check pod status
 kubectl get pods -n production
 
 # Force restart
-kubectl rollout restart deployment/debateai -n production
+kubectl rollout restart deployment/eris-debate -n production
 
 # Scale deployment
-kubectl scale deployment/debateai --replicas=5 -n production
+kubectl scale deployment/eris-debate --replicas=5 -n production
 
 # Get recent errors from Sentry
 curl -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
-  "https://sentry.io/api/0/projects/debateai/web/issues/"
+  "https://sentry.io/api/0/projects/eris-debate/web/issues/"
 
 # Check Supabase health
 curl -H "apikey: $SUPABASE_SERVICE_KEY" \

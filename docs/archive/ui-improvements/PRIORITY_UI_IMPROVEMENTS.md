@@ -1,4 +1,4 @@
-# 🎯 DebateAI Priority UI/UX Improvements
+# 🎯 Eris Debate Priority UI/UX Improvements
 
 ## Top 5 Most Impactful Changes to Make NOW
 

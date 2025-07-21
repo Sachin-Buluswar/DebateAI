@@ -44,7 +44,7 @@ Repeat for:
 In Supabase Dashboard → Authentication → Email Settings:
 
 - [ ] **Sender Email**: Set to `noreply@yourdomain.com` (or your domain email)
-- [ ] **Sender Name**: Set to "DebateAI"
+- [ ] **Sender Name**: Set to "Eris Debate"
 - [ ] **Reply-To Email**: Your support email (optional)
 
 ### 3️⃣ **Optional: Configure Custom SMTP**

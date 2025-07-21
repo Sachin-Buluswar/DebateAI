@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the comprehensive improvements made to OpenAI API usage across the DebateAI application. These changes were implemented to improve reliability, performance, security, and maintainability.
+This document outlines the comprehensive improvements made to OpenAI API usage across the Eris Debate application. These changes were implemented to improve reliability, performance, security, and maintainability.
 
 ## 🎯 Key Improvements Summary
 

@@ -1,4 +1,4 @@
-# DebateAI Database Architecture
+# Eris Debate Database Architecture
 
 ## Supabase Schema Overview
 

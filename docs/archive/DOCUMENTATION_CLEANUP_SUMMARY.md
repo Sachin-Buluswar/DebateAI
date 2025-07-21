@@ -96,4 +96,4 @@ The documentation is now:
 - **Actionable** - Clear next steps in DEPLOYMENT_BLOCKERS.md
 - **Organized** - Logical structure with proper archiving
 
-This cleanup ensures developers and users can quickly find accurate, up-to-date information about the DebateAI project.
+This cleanup ensures developers and users can quickly find accurate, up-to-date information about the Eris Debate project.

@@ -1,8 +1,8 @@
-# DebateAI Architecture Overview
+# Eris Debate Architecture Overview
 
 ## System Overview
 
-DebateAI is a production-ready AI debate platform built with modern web technologies. The system enables real-time debates with AI opponents, provides speech analysis capabilities, and offers semantic search for debate evidence.
+Eris Debate is a production-ready AI debate platform built with modern web technologies. The system enables real-time debates with AI opponents, provides speech analysis capabilities, and offers semantic search for debate evidence.
 
 ### Core Components
 
@@ -126,4 +126,4 @@ DebateAI is a production-ready AI debate platform built with modern web technolo
 
 ---
 
-This architecture documentation represents the current state of the DebateAI platform as of 2025-07. It should be updated as the system evolves and new architectural decisions are made.
+This architecture documentation represents the current state of the Eris Debate platform as of 2025-07. It should be updated as the system evolves and new architectural decisions are made.

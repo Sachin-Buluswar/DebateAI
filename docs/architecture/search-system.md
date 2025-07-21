@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DebateAI platform features two distinct search modes:
+The Eris Debate platform features two distinct search modes:
 1. **Document Search** - Direct document chunk retrieval with context
 2. **AI Assistant** - True RAG (Retrieval-Augmented Generation) with AI-generated responses
 

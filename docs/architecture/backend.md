@@ -1,4 +1,4 @@
-# DebateAI Backend Architecture
+# Eris Debate Backend Architecture
 
 ## Service Layer Architecture
 

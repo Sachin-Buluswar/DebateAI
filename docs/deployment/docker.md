@@ -1,6 +1,6 @@
-# Docker Setup Guide for DebateAI
+# Docker Setup Guide for Eris Debate
 
-This guide provides comprehensive instructions for containerizing and deploying the DebateAI Next.js application using Docker.
+This guide provides comprehensive instructions for containerizing and deploying the Eris Debate Next.js application using Docker.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ This guide provides comprehensive instructions for containerizing and deploying 
 
 ## Quick Start
 
-This section provides concise instructions for quickly deploying DebateAI using Docker.
+This section provides concise instructions for quickly deploying Eris Debate using Docker.
 
 ### Quick Build & Run
 
@@ -48,20 +48,20 @@ This section provides concise instructions for quickly deploying DebateAI using 
 
 ```bash
 # Build the image manually
-docker build -t debateai:latest .
+docker build -t eris-debate:latest .
 
 # Build with build arguments
 docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL=your_url \
   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key \
-  -t debateai:latest .
+  -t eris-debate:latest .
 
 # Run standalone container
 docker run -d \
-  --name debateai \
+  --name eris-debate \
   -p 3001:3001 \
   --env-file .env.local \
-  debateai:latest
+  eris-debate:latest
 ```
 
 #### Using Docker Compose
@@ -91,14 +91,14 @@ The application includes health checks:
 
 ```bash
 # Check logs
-docker logs debateai-app
+docker logs eris-debate-app
 
 # Check container status
 docker ps -a
 
 # Clean Docker cache and rebuild
 docker system prune -a
-docker build --no-cache -t debateai:latest .
+docker build --no-cache -t eris-debate:latest .
 
 # Check resource usage
 docker stats
@@ -112,7 +112,7 @@ For detailed setup instructions and advanced configurations, continue reading be
 
 ```bash
 # Build the image
-docker build -t debateai:development .
+docker build -t eris-debate:development .
 
 # Or use docker-compose
 docker-compose build
@@ -147,10 +147,10 @@ docker-compose down
 
 ```bash
 # Build production image
-docker build -t debateai:production --target runner .
+docker build -t eris-debate:production --target runner .
 
 # Tag for registry
-docker tag debateai:production your-registry/debateai:latest
+docker tag eris-debate:production your-registry/eris-debate:latest
 ```
 
 ### Running in Production
@@ -215,7 +215,7 @@ ELEVENLABS_API_KEY=your-elevenlabs-key
 # Optional
 DEBUG_API_KEY=your-debug-key
 NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_SITE_URL=https://debateai.com
+NEXT_PUBLIC_SITE_URL=https://erisdebate.com
 ```
 
 ### Environment-specific Configuration
@@ -237,7 +237,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key
 OPENAI_API_KEY=your_openai_key
 OPENAI_VECTOR_STORE_ID=your_vector_store_id
 ELEVENLABS_API_KEY=your_elevenlabs_key
-NEXT_PUBLIC_SITE_URL=https://debateai.com
+NEXT_PUBLIC_SITE_URL=https://erisdebate.com
 ```
 
 ## Building Images
@@ -258,7 +258,7 @@ The Dockerfile uses a 4-stage build process:
 docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key \
-  -t debateai:custom .
+  -t eris-debate:custom .
 ```
 
 ### Build Caching
@@ -270,7 +270,7 @@ Enable BuildKit for improved caching:
 export DOCKER_BUILDKIT=1
 
 # Build with cache mount
-docker build --progress=plain -t debateai:latest .
+docker build --progress=plain -t eris-debate:latest .
 ```
 
 ## Deployment
@@ -282,10 +282,10 @@ docker build --progress=plain -t debateai:latest .
 docker swarm init
 
 # Deploy stack
-docker stack deploy -c docker-compose.prod.yml debateai
+docker stack deploy -c docker-compose.prod.yml eris-debate
 
 # Update service
-docker service update --image debateai:latest debateai_app
+docker service update --image eris-debate:latest eris-debate_app
 ```
 
 ### Kubernetes Deployment
@@ -295,20 +295,20 @@ docker service update --image debateai:latest debateai_app
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: debateai
+  name: eris-debate
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: debateai
+      app: eris-debate
   template:
     metadata:
       labels:
-        app: debateai
+        app: eris-debate
     spec:
       containers:
       - name: app
-        image: debateai:production
+        image: eris-debate:production
         ports:
         - containerPort: 3001
         env:
@@ -329,19 +329,19 @@ spec:
 ```bash
 # Push to ECR
 aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_URI
-docker tag debateai:production $ECR_URI/debateai:latest
-docker push $ECR_URI/debateai:latest
+docker tag eris-debate:production $ECR_URI/eris-debate:latest
+docker push $ECR_URI/eris-debate:latest
 ```
 
 **Google Cloud Run:**
 ```bash
 # Push to GCR
 gcloud auth configure-docker
-docker tag debateai:production gcr.io/$PROJECT_ID/debateai:latest
-docker push gcr.io/$PROJECT_ID/debateai:latest
+docker tag eris-debate:production gcr.io/$PROJECT_ID/eris-debate:latest
+docker push gcr.io/$PROJECT_ID/eris-debate:latest
 
 # Deploy
-gcloud run deploy debateai --image gcr.io/$PROJECT_ID/debateai:latest
+gcloud run deploy eris-debate --image gcr.io/$PROJECT_ID/eris-debate:latest
 ```
 
 ## Monitoring & Maintenance
@@ -355,7 +355,7 @@ The application includes built-in health checks:
 curl http://localhost:3001/api/health
 
 # Docker health status
-docker inspect --format='{{.State.Health.Status}}' debateai-app
+docker inspect --format='{{.State.Health.Status}}' eris-debate-app
 ```
 
 ### Logging
@@ -374,10 +374,10 @@ docker-compose logs app > app.log
 
 ```bash
 # Backup volumes
-docker run --rm -v debateai_uploads:/data -v $(pwd):/backup alpine tar czf /backup/uploads-backup.tar.gz -C /data .
+docker run --rm -v eris-debate_uploads:/data -v $(pwd):/backup alpine tar czf /backup/uploads-backup.tar.gz -C /data .
 
 # Restore volumes
-docker run --rm -v debateai_uploads:/data -v $(pwd):/backup alpine tar xzf /backup/uploads-backup.tar.gz -C /data
+docker run --rm -v eris-debate_uploads:/data -v $(pwd):/backup alpine tar xzf /backup/uploads-backup.tar.gz -C /data
 ```
 
 ### Updates
@@ -441,7 +441,7 @@ docker-compose exec app env
 docker-compose exec app node -e "console.log('DB connected')"
 
 # Monitor resource usage
-docker stats debateai-app
+docker stats eris-debate-app
 ```
 
 ### Performance Optimization
@@ -454,7 +454,7 @@ docker stats debateai-app
 
 2. **Use multi-platform builds**:
    ```bash
-   docker buildx build --platform linux/amd64,linux/arm64 -t debateai:latest .
+   docker buildx build --platform linux/amd64,linux/arm64 -t eris-debate:latest .
    ```
 
 3. **Optimize layer caching**:
@@ -473,7 +473,7 @@ docker stats debateai-app
 7. **Use HTTPS**: In production with valid certificates
 8. **Scan for vulnerabilities**:
    ```bash
-   docker scan debateai:production
+   docker scan eris-debate:production
    ```
 
 ## Additional Features
@@ -482,7 +482,7 @@ docker stats debateai-app
 
 ```bash
 # Build for multiple architectures
-docker buildx build --platform linux/amd64,linux/arm64 -t debateai:latest .
+docker buildx build --platform linux/amd64,linux/arm64 -t eris-debate:latest .
 ```
 
 ### Development with Hot Reload
@@ -523,8 +523,8 @@ For production monitoring, consider:
 
 ```bash
 # Tag and push to registry
-docker tag debateai:production your-registry.com/debateai:v1.0.0
-docker push your-registry.com/debateai:v1.0.0
+docker tag eris-debate:production your-registry.com/eris-debate:v1.0.0
+docker push your-registry.com/eris-debate:v1.0.0
 ```
 
 ## Additional Resources

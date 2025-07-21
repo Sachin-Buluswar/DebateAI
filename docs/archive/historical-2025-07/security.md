@@ -1,6 +1,6 @@
 # Security Improvements
 
-This document outlines the recent security hardening steps applied to the DebateAI project and instructions for additional configuration inside Supabase.
+This document outlines the recent security hardening steps applied to the Eris Debate project and instructions for additional configuration inside Supabase.
 
 ## 1. Row-Level Security (RLS)
 

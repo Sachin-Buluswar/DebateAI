@@ -155,4 +155,4 @@ function MyComponent() {
 - [x] No unnecessary re-renders detected
 - [x] Bundle size reduced compared to baseline
 
-The React performance optimizations have been successfully implemented across all major pages of the DebateAI application, resulting in improved load times, smoother interactions, and better resource utilization.
+The React performance optimizations have been successfully implemented across all major pages of the Eris Debate application, resulting in improved load times, smoother interactions, and better resource utilization.

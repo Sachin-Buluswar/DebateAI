@@ -1,4 +1,4 @@
-# DebateAI Authentication Testing Summary
+# Eris Debate Authentication Testing Summary
 
 ## 🎉 Authentication System Status: FULLY OPERATIONAL
 

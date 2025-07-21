@@ -1,8 +1,8 @@
-# DebateAI CI/CD Setup Guide
+# Eris Debate CI/CD Setup Guide
 
 ## Overview
 
-This document provides a comprehensive guide to the CI/CD pipeline setup for DebateAI. The pipeline uses GitHub Actions to automate testing, building, security scanning, and deployment processes.
+This document provides a comprehensive guide to the CI/CD pipeline setup for Eris Debate. The pipeline uses GitHub Actions to automate testing, building, security scanning, and deployment processes.
 
 ## Table of Contents
 
@@ -123,12 +123,12 @@ graph TD
 ### Required GitHub Environments
 
 1. **staging**
-   - URL: `https://staging.debateai.com`
+   - URL: `https://staging.erisdebate.com`
    - Required reviewers: None
    - Deployment branch: `main`
 
 2. **production**
-   - URL: `https://debateai.com`
+   - URL: `https://erisdebate.com`
    - Required reviewers: 1-2 team members
    - Deployment branch: `main` (tags only)
 
@@ -138,11 +138,11 @@ Create these environments in your repository settings:
 
 ```yaml
 # Staging Environment
-STAGING_HOST: staging.debateai.com
+STAGING_HOST: staging.erisdebate.com
 STAGING_DATABASE_URL: postgresql://...
 
 # Production Environment
-PRODUCTION_HOST: debateai.com
+PRODUCTION_HOST: erisdebate.com
 PRODUCTION_DATABASE_URL: postgresql://...
 ```
 
@@ -233,14 +233,14 @@ SLACK_WEBHOOK_URL                 # Team notifications
 
 ```bash
 # SSH to production server
-ssh user@debateai.com
+ssh user@erisdebate.com
 
 # List recent images
-docker images | grep debateai
+docker images | grep eris-debate
 
 # Rollback to previous version
 docker-compose down
-docker-compose up -d debateai:v1.2.2
+docker-compose up -d eris-debate:v1.2.2
 ```
 
 ## Monitoring and Alerts
@@ -248,8 +248,8 @@ docker-compose up -d debateai:v1.2.2
 ### Health Checks
 
 All deployments include health check endpoints:
-- Staging: `https://staging.debateai.com/api/health`
-- Production: `https://debateai.com/api/health`
+- Staging: `https://staging.erisdebate.com/api/health`
+- Production: `https://erisdebate.com/api/health`
 
 ### Workflow Notifications
 
@@ -280,7 +280,7 @@ Access GitHub Actions insights:
 
 ```bash
 # Check Docker build locally
-docker build -t debateai:test .
+docker build -t eris-debate:test .
 
 # Debug with build arguments
 docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=test .
@@ -302,10 +302,10 @@ npm test -- --verbose --detectOpenHandles
 
 ```bash
 # Check deployment logs
-ssh user@server "docker logs debateai_web_1"
+ssh user@server "docker logs eris-debate_web_1"
 
 # Verify environment variables
-ssh user@server "docker exec debateai_web_1 env | grep NEXT_"
+ssh user@server "docker exec eris-debate_web_1 env | grep NEXT_"
 
 # Check disk space
 ssh user@server "df -h"

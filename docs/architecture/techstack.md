@@ -1,4 +1,4 @@
-# DebateAI Tech Stack Specification
+# Eris Debate Tech Stack Specification
 
 ## 1. Guiding Principles
 - **Hybrid AI Model:** Combine the strengths of different AI services. Use a powerful Large Language Model (LLM) for high-quality, structured content generation and a specialized, low-latency conversational AI for real-time, interactive dialogue.
@@ -79,7 +79,7 @@
 
 ## 8. Final Remarks
 
-This tech stack specification is the master blueprint for building DebateAI with a focus on simplicity, cost efficiency, and high-quality user experience. All automated code generation and AI-driven improvements must use these guidelines as the source of truth.
+This tech stack specification is the master blueprint for building Eris Debate with a focus on simplicity, cost efficiency, and high-quality user experience. All automated code generation and AI-driven improvements must use these guidelines as the source of truth.
 
 *Begin code generation using these instructions and ensure all service integrations strictly follow the outlined APIs and integration patterns.*
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-This document collects the most frequently used Supabase API calls and patterns in **DebateAI**.
+This document collects the most frequently used Supabase API calls and patterns in **Eris Debate**.
 
 We rely on **Supabase v2 (`@supabase/supabase-js`)** for both client-side and server-side operations.
 

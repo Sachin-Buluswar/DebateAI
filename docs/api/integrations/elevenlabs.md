@@ -4,7 +4,7 @@
 
 ## Overview
 
-DebateAI uses ElevenLabs for all real-time voice capabilities:
+Eris Debate uses ElevenLabs for all real-time voice capabilities:
 
 1. **Text-to-Speech (TTS)** – Generate natural AI debate speeches with distinct voices
 2. **Speech-to-Text (STT)** – Transcribe user speech in real-time during debates

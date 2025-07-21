@@ -1,8 +1,8 @@
-# DebateAI Performance Baseline Documentation
+# Eris Debate Performance Baseline Documentation
 
 ## Overview
 
-This document establishes performance baselines for DebateAI based on load testing and production metrics. These baselines are used for monitoring, alerting, and capacity planning.
+This document establishes performance baselines for Eris Debate based on load testing and production metrics. These baselines are used for monitoring, alerting, and capacity planning.
 
 ## Testing Methodology
 

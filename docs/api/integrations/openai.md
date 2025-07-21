@@ -4,7 +4,7 @@
 
 ## Overview
 
-DebateAI uses OpenAI's API for three core capabilities:
+Eris Debate uses OpenAI's API for three core capabilities:
 
 1. **Chat Completions (GPT-4o)** – Generate structured speeches, rebuttals, and post-debate analysis
 2. **Embeddings** – Convert wiki documents into searchable vectors

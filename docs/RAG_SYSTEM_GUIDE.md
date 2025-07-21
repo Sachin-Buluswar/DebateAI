@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DebateAI Document Search system provides direct document search functionality using PostgreSQL full-text search with Supabase for efficient document retrieval. This is distinct from the AI Assistant mode which implements true RAG (Retrieval-Augmented Generation).
+The Eris Debate Document Search system provides direct document search functionality using PostgreSQL full-text search with Supabase for efficient document retrieval. This is distinct from the AI Assistant mode which implements true RAG (Retrieval-Augmented Generation).
 
 ## Architecture
 

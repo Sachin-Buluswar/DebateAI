@@ -1,4 +1,4 @@
-# DebateAI Integration Testing & Fix Plan
+# Eris Debate Integration Testing & Fix Plan
 
 ## Executive Summary
 

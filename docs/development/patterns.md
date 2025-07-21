@@ -516,7 +516,7 @@ import type { Metadata, Viewport } from "next";
 
 // Metadata export - DO NOT include viewport here
 export const metadata: Metadata = {
-  title: "DebateAI",
+  title: "Eris Debate",
   description: "AI-powered debate practice and speech feedback platform",
   // viewport should NOT be in metadata
 };

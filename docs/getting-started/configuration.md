@@ -66,7 +66,7 @@ Apply in Supabase:
 ### Email Settings
 Authentication → Email Settings:
 - Sender Email: noreply@yourdomain.com
-- Sender Name: DebateAI
+- Sender Name: Eris Debate
 
 ### SMTP Configuration
 Project Settings → Authentication → SMTP Settings:

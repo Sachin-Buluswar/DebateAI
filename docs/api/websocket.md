@@ -4,7 +4,7 @@
 
 ## Overview
 
-DebateAI uses Socket.IO for real-time, bidirectional communication during debate sessions. This enables:
+Eris Debate uses Socket.IO for real-time, bidirectional communication during debate sessions. This enables:
 
 1. **Real-time State Sync** – All participants see the same debate state
 2. **Audio Streaming** – Low-latency audio transmission

@@ -1,8 +1,8 @@
-# DebateAI Production Monitoring Guide
+# Eris Debate Production Monitoring Guide
 
 ## Overview
 
-DebateAI uses a comprehensive monitoring stack combining OpenTelemetry, Sentry, and custom instrumentation to ensure application reliability and performance.
+Eris Debate uses a comprehensive monitoring stack combining OpenTelemetry, Sentry, and custom instrumentation to ensure application reliability and performance.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Add the following to your `.env` file:
 ```env
 # OpenTelemetry
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-OTEL_SERVICE_NAME=debateai
+OTEL_SERVICE_NAME=eris-debate
 ENABLE_OTEL_DEV=false  # Set to true to enable in development
 
 # Sentry
@@ -211,7 +211,7 @@ Alerts are configured in `monitoring/alerts/rules.yml`. Key alerts include:
 ### Grafana Dashboards
 
 Import the provided dashboards:
-1. **DebateAI Overview** - System health and key metrics
+1. **Eris Debate Overview** - System health and key metrics
 2. **Performance Dashboard** - Response times and throughput
 3. **Business Metrics** - User activity and feature usage
 4. **Error Analysis** - Error trends and debugging

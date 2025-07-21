@@ -36,7 +36,7 @@ cp .env.example .env.local
 1. Sign in https://app.supabase.com
 2. Click "New Project"
 3. Enter:
-   - Name: DebateAI
+   - Name: Eris Debate
    - Database Password: [generate strong password]
    - Region: [closest to users]
 4. Click "Create Project"

@@ -100,14 +100,14 @@ npx supabase db test
 
 ```bash
 # Build production image
-docker build -t debateai:latest .
+docker build -t eris-debate:latest .
 
 # Test locally
-docker run -p 3000:3000 --env-file .env.production debateai:latest
+docker run -p 3000:3000 --env-file .env.production eris-debate:latest
 
 # Push to registry
-docker tag debateai:latest your-registry/debateai:latest
-docker push your-registry/debateai:latest
+docker tag eris-debate:latest your-registry/eris-debate:latest
+docker push your-registry/eris-debate:latest
 ```
 
 ## Deployment Steps
@@ -125,18 +125,18 @@ git push origin v1.0.0
 ssh user@production-server
 
 # Pull latest image
-docker pull your-registry/debateai:latest
+docker pull your-registry/eris-debate:latest
 
 # Stop current container
-docker stop debateai
+docker stop eris-debate
 
 # Start new container
 docker run -d \
-  --name debateai \
+  --name eris-debate \
   --restart always \
   -p 80:3000 \
   --env-file /path/to/.env.production \
-  your-registry/debateai:latest
+  your-registry/eris-debate:latest
 ```
 
 ## Post-deployment Verification
@@ -149,7 +149,7 @@ curl https://your-domain.com/api/health
 wscat -c wss://your-domain.com/api/socketio
 
 # Check logs
-docker logs debateai
+docker logs eris-debate
 
 # Monitor metrics
 curl https://your-domain.com/api/metrics
@@ -159,15 +159,15 @@ curl https://your-domain.com/api/metrics
 
 ```bash
 # Stop failed deployment
-docker stop debateai
+docker stop eris-debate
 
 # Start previous version
 docker run -d \
-  --name debateai \
+  --name eris-debate \
   --restart always \
   -p 80:3000 \
   --env-file /path/to/.env.production \
-  your-registry/debateai:previous-tag
+  your-registry/eris-debate:previous-tag
 ```
 
 ## Required Files Check

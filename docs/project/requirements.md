@@ -1,7 +1,7 @@
-# DebateAI – Product Requirements Document
+# Eris Debate – Product Requirements Document
 
 ## 1. Overview & Vision
-DebateAI is an AI-powered debate simulation platform designed to provide a realistic, educational, and engaging experience. Users can participate in structured debates with multiple AI-driven participants who present arguments in lifelike speech. The platform aims to cultivate critical thinking and communication skills by immersing users in dynamic debates on a wide range of topics, leveraging advanced AI for argument generation, real-time interaction, and post-debate analysis.
+Eris Debate is an AI-powered debate simulation platform designed to provide a realistic, educational, and engaging experience. Users can participate in structured debates with multiple AI-driven participants who present arguments in lifelike speech. The platform aims to cultivate critical thinking and communication skills by immersing users in dynamic debates on a wide range of topics, leveraging advanced AI for argument generation, real-time interaction, and post-debate analysis.
 
 ## 2. Objectives and Goals
 - **Skill Development:** Help users improve debating skills, critical thinking, and rhetoric through practice against AI opponents in formal debate formats.
@@ -12,7 +12,7 @@ DebateAI is an AI-powered debate simulation platform designed to provide a reali
 ## 3. Key Features and Functional Requirements
 
 ### 3.1 Structured Debate Format ✅ IMPLEMENTED
-DebateAI supports formal debate structures with timed segments, managed by a central **Debate Orchestrator**.
+Eris Debate supports formal debate structures with timed segments, managed by a central **Debate Orchestrator**.
 - **Opening Statements & Rebuttals:** AI-generated or user-provided monologues delivered in a natural voice via TTS.
 - **Crossfire (Interactive Dialogue):** Real-time, voice-to-voice Q&A sessions handled by a low-latency conversational AI. This includes 1-on-1 and "Grand Crossfire" with all participants.
 - **Closing Statements:** AI-generated or user-provided summaries to conclude the debate.
@@ -214,7 +214,7 @@ DEBUG_API_KEY=your_debug_key
 
 ## 11. Conclusion
 
-**DebateAI is now ~95% complete and production-ready.** All core features are fully implemented and operational:
+**Eris Debate is now ~95% complete and production-ready.** All core features are fully implemented and operational:
 
 - ✅ **Complete authentication system** with secure user management
 - ✅ **Real-time AI debate simulation** with voice synthesis and multiple AI personalities
