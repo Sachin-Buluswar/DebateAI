@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, FormEvent, useMemo, useCallback, memo } fr
 import { Socket } from 'socket.io-client';
 import { createSocket, isVercel } from '@/lib/socket/socketConfig';
 import { showRealtimeWarning } from '@/lib/socket/socketFallback';
+import { createRealtimeConnection, setupRealtimeHandlers, RealtimeSocket } from '@/lib/realtime/realtimeFactory';
 import {
   Participant,
   DebateState,
@@ -91,7 +92,7 @@ export default function DebatePage() {
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isCrossfireActive, setIsCrossfireActive] = useState<boolean>(false);
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<RealtimeSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [setup, setSetup] = useState<DebateSetup | null>(null);
@@ -232,26 +233,25 @@ export default function DebatePage() {
         return;
       }
       
-      // Initialize socket with proper configuration for Vercel
-      let socket: Socket;
+      // Initialize real-time connection (Socket.IO or Supabase)
+      let socket: RealtimeSocket;
       try {
         setIsConnecting(true);
         setConnectionError(null);
         
-        // Check Socket.IO configuration first
-        const socketInitResponse = await fetch('/api/socket-init');
-        const socketInfo = await socketInitResponse.json();
-        console.log('Socket.IO configuration:', socketInfo);
-        
-        // Show warning if on Vercel about potential limitations
+        // Show info about real-time mode
         if (isVercel()) {
-          console.log('Running on Vercel - using HTTP polling for real-time features');
-          showRealtimeWarning();
+          console.log('Running on Vercel - using Supabase Realtime for WebSocket features');
         }
         
-        socket = await createSocket(session.access_token);
+        // Create real-time connection (will use Supabase on Vercel)
+        socket = await createRealtimeConnection({
+          token: session.access_token,
+          useSupabase: isVercel() // Force Supabase on Vercel
+        });
+        
       } catch (error) {
-        console.error('Failed to initialize socket:', error);
+        console.error('Failed to initialize real-time connection:', error);
         setConnectionError('Failed to connect to debate server. Please try again.');
         setIsConnecting(false);
         return;
