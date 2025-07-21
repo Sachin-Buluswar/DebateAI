@@ -8,18 +8,18 @@ receivers:
         cors:
           allowed_origins:
             - "http://localhost:3001"
-            - "https://debateai.com"
+            - "https://atlas-debate.com"
 
   # Prometheus receiver for scraping metrics
   prometheus:
     config:
       scrape_configs:
-        - job_name: 'debateai'
+        - job_name: 'atlas-debate'
           scrape_interval: 30s
           static_configs:
-            - targets: ['debateai:3001']
+            - targets: ['atlas-debate:3001']
               labels:
-                service: 'debateai'
+                service: 'atlas-debate'
                 environment: '${ENVIRONMENT}'
 
   # Host metrics
@@ -37,7 +37,7 @@ processors:
   resource:
     attributes:
       - key: service.name
-        value: debateai
+        value: atlas-debate
         action: upsert
       - key: deployment.environment
         value: ${ENVIRONMENT}
@@ -94,7 +94,7 @@ exporters:
   # Prometheus exporter
   prometheus:
     endpoint: "0.0.0.0:8888"
-    namespace: debateai
+    namespace: atlas-debate
     const_labels:
       environment: ${ENVIRONMENT}
 

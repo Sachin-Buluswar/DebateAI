@@ -113,7 +113,7 @@ export default function EnhancedNavbar() {
                   isCompact ? 'text-xl' : 'text-2xl'
                 )}
               >
-                debateai
+                atlas
               </Link>
             </div>
             

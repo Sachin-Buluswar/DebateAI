@@ -1,10 +1,10 @@
 groups:
-  - name: debateai-health
+  - name: atlas-debate-health
     interval: 30s
     rules:
       # Application availability
       - alert: ApplicationDown
-        expr: up{job="debateai"} == 0
+        expr: up{job="atlas-debate"} == 0
         for: 2m
         labels:
           severity: critical
@@ -16,7 +16,7 @@ groups:
 
       # High memory usage
       - alert: HighMemoryUsage
-        expr: (nodejs_heap_size_used_bytes{job="debateai"} / nodejs_heap_size_total_bytes{job="debateai"}) * 100 > 90
+        expr: (nodejs_heap_size_used_bytes{job="atlas-debate"} / nodejs_heap_size_total_bytes{job="atlas-debate"}) * 100 > 90
         for: 5m
         labels:
           severity: warning
@@ -28,7 +28,7 @@ groups:
 
       # High CPU usage
       - alert: HighCPUUsage
-        expr: rate(process_cpu_seconds_total{job="debateai"}[5m]) * 100 > 80
+        expr: rate(process_cpu_seconds_total{job="atlas-debate"}[5m]) * 100 > 80
         for: 10m
         labels:
           severity: warning
@@ -37,12 +37,12 @@ groups:
           summary: "High CPU usage detected"
           description: "CPU usage is above 80% for more than 10 minutes. Current: {{ $value }}%"
 
-  - name: debateai-performance
+  - name: atlas-debate-performance
     interval: 1m
     rules:
       # Slow API responses
       - alert: SlowAPIResponses
-        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="debateai"}[5m])) by (le, route)) > 2
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="atlas-debate"}[5m])) by (le, route)) > 2
         for: 5m
         labels:
           severity: warning
@@ -53,7 +53,7 @@ groups:
 
       # High error rate
       - alert: HighErrorRate
-        expr: sum(rate(errors_total{job="debateai"}[5m])) > 10
+        expr: sum(rate(errors_total{job="atlas-debate"}[5m])) > 10
         for: 5m
         labels:
           severity: warning
@@ -64,7 +64,7 @@ groups:
 
       # AI service errors
       - alert: AIServiceErrors
-        expr: sum(rate(errors_total{job="debateai",error_type=~"AI_SERVICE_ERROR|TTS_SERVICE_ERROR"}[5m])) > 1
+        expr: sum(rate(errors_total{job="atlas-debate",error_type=~"AI_SERVICE_ERROR|TTS_SERVICE_ERROR"}[5m])) > 1
         for: 5m
         labels:
           severity: critical
@@ -73,12 +73,12 @@ groups:
           summary: "AI service errors detected"
           description: "AI services (OpenAI/ElevenLabs) are experiencing errors: {{ $value }} errors/sec"
 
-  - name: debateai-websocket
+  - name: atlas-debate-websocket
     interval: 30s
     rules:
       # Too many WebSocket connections
       - alert: HighWebSocketConnections
-        expr: connections_active{job="debateai"} > 5000
+        expr: connections_active{job="atlas-debate"} > 5000
         for: 5m
         labels:
           severity: warning
@@ -89,7 +89,7 @@ groups:
 
       # WebSocket connection spike
       - alert: WebSocketConnectionSpike
-        expr: rate(connections_active{job="debateai"}[5m]) > 100
+        expr: rate(connections_active{job="atlas-debate"}[5m]) > 100
         for: 2m
         labels:
           severity: warning
@@ -98,12 +98,12 @@ groups:
           summary: "Rapid increase in WebSocket connections"
           description: "WebSocket connections are increasing rapidly: {{ $value }} connections/sec"
 
-  - name: debateai-business
+  - name: atlas-debate-business
     interval: 1m
     rules:
       # Low debate activity
       - alert: LowDebateActivity
-        expr: sum(increase(debate_sessions_total{job="debateai"}[1h])) < 1
+        expr: sum(increase(debate_sessions_total{job="atlas-debate"}[1h])) < 1
         for: 2h
         labels:
           severity: info
@@ -115,8 +115,8 @@ groups:
       # Debate completion rate
       - alert: LowDebateCompletionRate
         expr: |
-          sum(increase(debate_sessions_total{job="debateai",status="completed"}[24h])) /
-          sum(increase(debate_sessions_total{job="debateai"}[24h])) < 0.5
+          sum(increase(debate_sessions_total{job="atlas-debate",status="completed"}[24h])) /
+          sum(increase(debate_sessions_total{job="atlas-debate"}[24h])) < 0.5
         for: 1h
         labels:
           severity: warning
@@ -125,7 +125,7 @@ groups:
           summary: "Low debate completion rate"
           description: "Less than 50% of debates are being completed: {{ $value }}%"
 
-  - name: debateai-dependencies
+  - name: atlas-debate-dependencies
     interval: 1m
     rules:
       # Database connection issues
@@ -161,12 +161,12 @@ groups:
           summary: "ElevenLabs API is unreachable"
           description: "Cannot reach ElevenLabs API for more than 5 minutes"
 
-  - name: debateai-capacity
+  - name: atlas-debate-capacity
     interval: 1m
     rules:
       # Rate limiting triggered
       - alert: RateLimitingActive
-        expr: sum(increase(http_requests_total{job="debateai",status="429"}[5m])) > 100
+        expr: sum(increase(http_requests_total{job="atlas-debate",status="429"}[5m])) > 100
         for: 5m
         labels:
           severity: warning
@@ -178,8 +178,8 @@ groups:
       # Memory leak detection
       - alert: PossibleMemoryLeak
         expr: |
-          (nodejs_heap_size_used_bytes{job="debateai"} - nodejs_heap_size_used_bytes{job="debateai"} offset 1h) /
-          nodejs_heap_size_used_bytes{job="debateai"} offset 1h > 0.5
+          (nodejs_heap_size_used_bytes{job="atlas-debate"} - nodejs_heap_size_used_bytes{job="atlas-debate"} offset 1h) /
+          nodejs_heap_size_used_bytes{job="atlas-debate"} offset 1h > 0.5
         for: 30m
         labels:
           severity: warning

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * DebateAI - Simple Database Validation
+ * Atlas Debate - Simple Database Validation
  * Tests database functionality through actual operations
  */
 
@@ -106,7 +106,7 @@ async function validateDatabaseSimple() {
   log('\n4. Testing authenticated operations...', YELLOW);
   
   // Try to sign in with test account
-  const testEmail = 'dbtest@debateai.com';
+  const testEmail = 'dbtest@atlasdebate.com';
   const testPassword = 'dbtestpass123';
   
   let session = null;

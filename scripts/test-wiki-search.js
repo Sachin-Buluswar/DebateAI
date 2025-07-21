@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * DebateAI - Wiki Search Integration Test
+ * Atlas Debate - Wiki Search Integration Test
  * Tests the wiki search and RAG functionality
  */
 
@@ -124,7 +124,7 @@ async function runWikiSearchTests() {
   
   // Try to use existing session or create test account
   let session = null;
-  const testEmail = 'wikitest@debateai.com';
+  const testEmail = 'wikitest@atlasdebate.com';
   const testPassword = 'wikitestpass123';
   
   try {

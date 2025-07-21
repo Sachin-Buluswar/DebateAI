@@ -7,6 +7,7 @@ import Layout from '@/components/layout/Layout';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import PreferencesSection from '@/components/preferences/PreferencesSection';
 import LogoutButton from '@/components/auth/LogoutButton';
+import ResetPasswordButton from '@/components/auth/ResetPasswordButton';
 import type { User } from '@/types';
 
 export default function PreferencesPage() {
@@ -69,6 +70,16 @@ export default function PreferencesPage() {
                   </div>
                   
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">Reset Password</h3>
+                    <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
+                      <p>Send a password reset link to your email address.</p>
+                    </div>
+                    <div className="mt-3">
+                      <ResetPasswordButton userEmail={user?.email} />
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                     <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">Sign Out</h3>
                     <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
                       <p>Sign out of your account.</p>
@@ -88,7 +99,7 @@ export default function PreferencesPage() {
               <div className="px-4 sm:px-0">
                 <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Personal Settings</h3>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Customize how you experience DebateAI with these settings.
+                  Customize how you experience Atlas Debate with these settings.
                 </p>
               </div>
             </div>

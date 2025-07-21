@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# DebateAI Comprehensive Feature Testing Script
+# Atlas Debate Comprehensive Feature Testing Script
 # This script tests all major features to verify integration
 
-echo "🧪 DebateAI Feature Testing Script"
+echo "🧪 Atlas Debate Feature Testing Script"
 echo "=================================="
 
 # Colors for output

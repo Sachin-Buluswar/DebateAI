@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * DebateAI - Debate Integration Test
+ * Atlas Debate - Debate Integration Test
  * Tests the full debate flow from start to finish
  */
 
@@ -44,7 +44,7 @@ function testFailed(testName, error) {
 
 // Main test function
 async function runDebateTests() {
-  log('\n🧪 DebateAI Integration Test', YELLOW);
+  log('\n🧪 Atlas Debate Integration Test', YELLOW);
   log('============================\n', YELLOW);
 
   // 1. Check environment
@@ -60,7 +60,7 @@ async function runDebateTests() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
   // Use a test account or create one
-  const testEmail = 'test@debateai.com';
+  const testEmail = 'test@atlasdebate.com';
   const testPassword = 'testpassword123';
   
   let session = null;

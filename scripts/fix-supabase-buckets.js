@@ -1,5 +1,5 @@
 /**
- * DebateAI - Fix Supabase Storage Buckets
+ * Atlas Debate - Fix Supabase Storage Buckets
  * This script will ensure the speech_audio and debate_audio buckets exist
  * with the correct settings for file size (60MB for 1 hour MP3) and MIME types
  */

@@ -1,5 +1,5 @@
 /**
- * Sentry server-side configuration for DebateAI
+ * Sentry server-side configuration for Atlas Debate
  * Handles error tracking and performance monitoring on the server
  */
 
@@ -24,7 +24,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
     release: process.env.npm_package_version || '0.1.0',
     
     // Server name
-    serverName: process.env.HOSTNAME || 'debateai-server',
+    serverName: process.env.HOSTNAME || 'atlas-debate-server',
     
     // Integrations
     integrations: [

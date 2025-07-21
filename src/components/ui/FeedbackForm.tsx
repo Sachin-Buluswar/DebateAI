@@ -66,7 +66,7 @@ export default function FeedbackForm() {
           Send Feedback
         </h3>
         <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
-          <p>We value your feedback to improve the DebateAI platform.</p>
+          <p>We value your feedback to improve the Atlas Debate platform.</p>
         </div>
         
         <form onSubmit={handleSubmit} className="mt-5">
@@ -105,7 +105,7 @@ export default function FeedbackForm() {
           )}
           
           {success && (
-            <AlertMessage type="success" message="Thank you for your feedback! We appreciate your help improving DebateAI." className="mb-4" />
+            <AlertMessage type="success" message="Thank you for your feedback! We appreciate your help improving Atlas Debate." className="mb-4" />
           )}
           
           <button

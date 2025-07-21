@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * DebateAI - Backend Connection Test Utility
+ * Atlas Debate - Backend Connection Test Utility
  * 
  * This script tests the connection to the backend API server.
  * It will report if the backend is reachable and if it's working correctly.
@@ -32,7 +32,7 @@ const colors = {
 };
 
 async function checkBackendConnection() {
-  console.log(`${colors.cyan}DebateAI Backend Connection Test${colors.reset}`);
+  console.log(`${colors.cyan}Atlas Debate Backend Connection Test${colors.reset}`);
   console.log('-----------------------------------');
   
   // Get the backend API URL from environment variables
