@@ -68,14 +68,16 @@ async function forwardStreamToMainEndpoint(sessionId: string, metadata: Metadata
     // In production/serverless environments, we need to use the full URL
     // For local development, we can use relative URLs
     let targetUrl: string;
-    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL) {
+    
+    // For Vercel deployments, use VERCEL_URL which is automatically provided
+    if (process.env.VERCEL_URL) {
+      targetUrl = `https://${process.env.VERCEL_URL}/api/speech-feedback`;
+    } else if (process.env.NEXT_PUBLIC_APP_URL) {
+      // Use configured app URL (for custom domains)
       targetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/speech-feedback`;
     } else {
-      // For local development or when NEXT_PUBLIC_APP_URL is not set
-      const host = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-      targetUrl = `${host}/api/speech-feedback`;
+      // Local development fallback
+      targetUrl = 'http://localhost:3001/api/speech-feedback';
     }
 
     console.log(`[finalize] Forwarding native FormData to: ${targetUrl}`);
@@ -105,6 +107,13 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     let sessionId: string | null = null; // Keep track of sessionId for error cleanup
     try {
       console.log('[finalize] Starting upload finalization');
+      console.log('[finalize] Environment:', {
+        NODE_ENV: process.env.NODE_ENV,
+        HAS_VERCEL_URL: !!process.env.VERCEL_URL,
+        VERCEL_URL: process.env.VERCEL_URL?.substring(0, 20) + '...',
+        HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
+      });
+      
       const data = await req.json() as { sessionId: string };
       sessionId = data.sessionId; // Assign sessionId here
 
@@ -230,13 +239,29 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    console.error('Error finalizing chunked upload:', error);
+    console.error('[finalize] Error finalizing chunked upload:', {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      sessionId,
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        HAS_VERCEL_URL: !!process.env.VERCEL_URL,
+        HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
+      }
+    });
+    
     if (sessionId) {
       const sessionDir = path.join(TEMP_DIR, sanitizeSessionId(sessionId));
       fs.rm(sessionDir, { recursive: true, force: true })
-        .catch(err => console.error(`Failed to clean up session directory ${sessionDir} on error:`, err));
+        .catch(err => console.error(`[finalize] Failed to clean up session directory ${sessionDir} on error:`, err));
     }
-    return NextResponse.json({ error: 'Failed to finalize upload', details: errorMessage }, { status: 500 });
+    
+    // Don't expose internal error details in production
+    const userError = process.env.NODE_ENV === 'production' 
+      ? 'Failed to finalize upload' 
+      : `Failed to finalize upload: ${errorMessage}`;
+    
+    return NextResponse.json({ error: userError }, { status: 500 });
   }
   });
 }
