@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs, createWriteStream, createReadStream, ReadStream, WriteStream } from 'fs';
-import path from 'path';
-import { pipeline } from 'stream/promises';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
-
-// Temporary directory to store chunks
-// Using a more specific path that's guaranteed to be writable
-const TEMP_DIR = process.env.NODE_ENV === 'production' 
-  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
-  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
+import { UploadSessionStore } from '@/lib/uploadSessionStore';
 
 interface Metadata {
   contentType: string;
@@ -31,29 +23,10 @@ function sanitizeSessionId(sessionId: string): string {
 }
 
 // Forward the reassembled file to the main speech‑feedback endpoint using native FormData
-async function forwardStreamToMainEndpoint(sessionId: string, metadata: Metadata, filePath: string): Promise<Response> {
-  let fileStream: ReadStream | null = null;
+async function forwardToMainEndpoint(sessionId: string, metadata: Metadata, fileBuffer: Buffer): Promise<Response> {
   try {
-    fileStream = createReadStream(filePath);
-
     // Use native FormData
     const form = new FormData();
-    
-    // Append the stream as a File object
-    // We need to read the stream into a blob/buffer first for native FormData
-    const fileBuffer = await new Promise<Buffer>((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      fileStream!.on('data', chunk => {
-        // Handle both string and Buffer chunks
-        if (Buffer.isBuffer(chunk)) {
-          chunks.push(chunk);
-        } else {
-          chunks.push(Buffer.from(chunk as string));
-        }
-      });
-      fileStream!.on('error', reject);
-      fileStream!.on('end', () => resolve(Buffer.concat(chunks)));
-    });
     
     const fileBlob = new Blob([fileBuffer], { type: metadata.contentType || 'audio/mpeg' });
     form.append('audio', fileBlob, metadata.filename);
@@ -93,11 +66,7 @@ async function forwardStreamToMainEndpoint(sessionId: string, metadata: Metadata
 
     return response;
   } catch (error: unknown) {
-    console.error('Error forwarding native FormData to main endpoint:', error);
-    // Ensure stream is destroyed on error if it exists and has a destroy method
-    if (fileStream && typeof fileStream.destroy === 'function') {
-        fileStream.destroy();
-    }
+    console.error('[finalize] Error forwarding to main endpoint:', error);
     throw error;
   }
 }
@@ -121,38 +90,14 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       return NextResponse.json({ error: 'Missing session ID' }, { status: 400 });
     }
 
-    const sessionDir = path.join(TEMP_DIR, sanitizeSessionId(sessionId));
-    console.log(`[finalize] Checking session directory: ${sessionDir}`);
+    const sanitizedSessionId = sanitizeSessionId(sessionId);
+    console.log(`[finalize] Checking session: ${sanitizedSessionId}`);
     
-    try {
-      // Check if directory exists and is readable
-      const stats = await fs.stat(sessionDir);
-      if (!stats.isDirectory()) {
-        throw new Error('Session path is not a directory');
-      }
-    } catch (error) {
-      console.error(`[finalize] Session directory not found or inaccessible: ${sessionDir}`, error);
-      
-      // List contents of parent directory for debugging
-      try {
-        const parentDir = path.dirname(sessionDir);
-        const contents = await fs.readdir(parentDir);
-        console.log(`[finalize] Parent directory contents (${parentDir}):`, contents);
-      } catch (listError) {
-        console.error('[finalize] Could not list parent directory:', listError);
-      }
-      
-      return NextResponse.json({ error: 'Upload session not found or inaccessible' }, { status: 404 });
-    }
-
-    const metadataPath = path.join(sessionDir, 'metadata.json');
-    let metadata: Metadata;
-    try {
-        const metadataJson = await fs.readFile(metadataPath, 'utf-8');
-        metadata = JSON.parse(metadataJson) as Metadata;
-    } catch (error) {
-        console.error(`Failed to read or parse metadata file: ${metadataPath}`, error);
-        return NextResponse.json({ error: 'Failed to read session metadata' }, { status: 500 });
+    // Get session metadata
+    const metadata = await UploadSessionStore.getSession(sanitizedSessionId) as Metadata;
+    if (!metadata) {
+      console.error(`[finalize] Session not found: ${sanitizedSessionId}`);
+      return NextResponse.json({ error: 'Upload session not found or expired' }, { status: 404 });
     }
 
     if (metadata.uploadedChunks !== metadata.totalChunks) {
@@ -162,67 +107,34 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       }, { status: 400 });
     }
 
-    const mergedFilePath = path.join(sessionDir, 'complete-file');
-    let writeStream: WriteStream | null = null;
-    try {
-      writeStream = createWriteStream(mergedFilePath);
-      // Increase max listeners significantly to prevent warning during chunk processing
-      writeStream.setMaxListeners(100); // Set a higher fixed limit 
-      
-      console.log(`Reassembling ${metadata.totalChunks} chunks for file ${metadata.filename} (size: ${metadata.totalSize})`);
-      
-      for (let i = 0; i < metadata.totalChunks; i++) {
-        const chunkPath = path.join(sessionDir, `chunk-${i}`);
-        let readStream: ReadStream | null = null;
-        try {
-          readStream = createReadStream(chunkPath);
-          // Use pipeline for better error handling and cleanup
-          await pipeline(readStream, writeStream!, { end: false }); 
-          if (i % 10 === 0 || i === metadata.totalChunks - 1) {
-            console.log(`Reassembled chunk ${i + 1}/${metadata.totalChunks}`);
-          }
-        } finally {
-          // Pipeline handles stream destruction on error/completion
-        }
-      }
-
-      // Finalize the write stream (ensure all data is flushed)
-      await new Promise<void>((resolve, reject) => {
-        writeStream!.end((err: NodeJS.ErrnoException | null) => {
-          if (err) reject(err); else resolve();
-        });
-      });
-
-    } finally {
-      if (writeStream && !writeStream.closed) {
-        writeStream.close();
-      }
-    }
-
-    console.log(`[finalize] File reassembly complete: ${mergedFilePath}`);
+    console.log(`[finalize] Reassembling ${metadata.totalChunks} chunks for file ${metadata.filename} (size: ${metadata.totalSize})`);
     
-    // Verify the merged file exists and has content
+    // Get merged buffer from memory store
+    let fileBuffer: Buffer;
     try {
-      const mergedStats = await fs.stat(mergedFilePath);
-      console.log(`[finalize] Merged file size: ${mergedStats.size} bytes`);
-      if (mergedStats.size === 0) {
+      fileBuffer = await UploadSessionStore.getMergedBuffer(sanitizedSessionId);
+      console.log(`[finalize] Merged file size: ${fileBuffer.length} bytes`);
+      
+      if (fileBuffer.length === 0) {
         throw new Error('Merged file is empty');
       }
+      
+      if (fileBuffer.length !== metadata.totalSize) {
+        console.warn(`[finalize] Size mismatch - expected: ${metadata.totalSize}, actual: ${fileBuffer.length}`);
+      }
     } catch (error) {
-      console.error('[finalize] Error verifying merged file:', error);
-      throw new Error('Failed to verify merged file');
+      console.error('[finalize] Error merging chunks:', error);
+      throw new Error('Failed to merge uploaded chunks');
     }
 
     // Forward the merged file to the main speech-feedback endpoint
     console.log('[finalize] Forwarding to main speech-feedback endpoint');
-    const response = await forwardStreamToMainEndpoint(sessionId, metadata, mergedFilePath);
+    const response = await forwardToMainEndpoint(sanitizedSessionId, metadata, fileBuffer);
 
     console.log(`Response from main endpoint: status=${response.status}`);
 
-    // Clean up
-    fs.rm(sessionDir, { recursive: true, force: true })
-      .then(() => console.log(`Cleaned up session directory ${sessionDir}`))
-      .catch(err => console.error(`Failed to clean up session directory ${sessionDir}:`, err));
+    // Clean up session from memory
+    await UploadSessionStore.deleteSession(sanitizedSessionId);
 
     let responseData;
     try {
@@ -251,9 +163,8 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     });
     
     if (sessionId) {
-      const sessionDir = path.join(TEMP_DIR, sanitizeSessionId(sessionId));
-      fs.rm(sessionDir, { recursive: true, force: true })
-        .catch(err => console.error(`[finalize] Failed to clean up session directory ${sessionDir} on error:`, err));
+      await UploadSessionStore.deleteSession(sanitizeSessionId(sessionId))
+        .catch(err => console.error(`[finalize] Failed to clean up session on error:`, err));
     }
     
     // Don't expose internal error details in production

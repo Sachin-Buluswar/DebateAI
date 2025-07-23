@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
-
-// Temporary directory to store chunks
-// Using a more specific path that's guaranteed to be writable
-const TEMP_DIR = process.env.NODE_ENV === 'production' 
-  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
-  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
+import { UploadSessionStore } from '@/lib/uploadSessionStore';
 
 // Helper function to sanitize session ID to prevent directory traversal
 function sanitizeSessionId(sessionId: string): string {
@@ -34,11 +27,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
     }
 
-    // Check if session directory exists
-    const sessionDir = path.join(TEMP_DIR, sanitizedSessionId);
-    try {
-      await fs.access(sessionDir);
-    } catch {
+    // Check if session exists
+    const exists = UploadSessionStore.sessionExists(sanitizedSessionId);
+    if (!exists) {
       // Session doesn't exist, but we consider this a success
       return NextResponse.json({ 
         success: true,
@@ -46,8 +37,8 @@ export async function DELETE(req: NextRequest) {
       });
     }
 
-    // Delete the session directory
-    await fs.rm(sessionDir, { recursive: true, force: true });
+    // Delete the session from memory
+    await UploadSessionStore.deleteSession(sanitizedSessionId);
 
     // Return success response
     return NextResponse.json({

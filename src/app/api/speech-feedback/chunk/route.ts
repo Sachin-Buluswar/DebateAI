@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
-
-// Temporary directory to store chunks
-// Using a more specific path that's guaranteed to be writable
-const TEMP_DIR = process.env.NODE_ENV === 'production' 
-  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
-  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
+import { UploadSessionStore } from '@/lib/uploadSessionStore';
 
 // Helper function to sanitize session ID to prevent directory traversal
 function sanitizeSessionId(sessionId: string): string {
@@ -43,18 +36,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chunk size exceeds maximum allowed' }, { status: 413 });
     }
 
-    // Check if session directory exists
-    const sessionDir = path.join(TEMP_DIR, sanitizedSessionId);
-    try {
-      await fs.access(sessionDir);
-    } catch {
+    // Get session metadata
+    const metadata = await UploadSessionStore.getSession(sanitizedSessionId);
+    if (!metadata) {
+      console.log(`[chunk] Session not found: ${sanitizedSessionId}`);
       return NextResponse.json({ error: 'Upload session not found' }, { status: 404 });
     }
-
-    // Read session metadata
-    const metadataPath = path.join(sessionDir, 'metadata.json');
-    const metadataJson = await fs.readFile(metadataPath, 'utf-8');
-    const metadata = JSON.parse(metadataJson);
 
     // Check if this chunk index is valid
     if (chunkIndex >= metadata.totalChunks) {
@@ -63,25 +50,25 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Save the chunk to disk
-    const chunkPath = path.join(sessionDir, `chunk-${chunkIndex}`);
+    // Save the chunk to memory store
     const chunkBuffer = Buffer.from(await chunk.arrayBuffer());
-    await fs.writeFile(chunkPath, chunkBuffer);
+    await UploadSessionStore.saveChunk(sanitizedSessionId, chunkIndex, chunkBuffer);
 
-    // Update metadata
-    metadata.uploadedChunks += 1;
+    // Update metadata if this is the final chunk
     if (finalChunk) {
-      metadata.completed = true;
+      await UploadSessionStore.updateSession(sanitizedSessionId, { completed: true });
     }
-    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    
+    // Get updated metadata
+    const updatedMetadata = await UploadSessionStore.getSession(sanitizedSessionId);
 
-    // Return success response
+    // Return success response with updated metadata
     return NextResponse.json({
       success: true,
       message: `Chunk ${chunkIndex} uploaded successfully`,
-      uploadedChunks: metadata.uploadedChunks,
-      totalChunks: metadata.totalChunks,
-      completed: metadata.completed
+      uploadedChunks: updatedMetadata?.uploadedChunks || chunkIndex + 1,
+      totalChunks: updatedMetadata?.totalChunks || metadata.totalChunks,
+      completed: updatedMetadata?.completed || false
     });
   } catch (error) {
     console.error('Error processing chunk upload:', error);
