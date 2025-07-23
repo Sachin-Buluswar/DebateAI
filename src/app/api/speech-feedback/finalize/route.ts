@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
+import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
 
 interface Metadata {
   contentType: string;
@@ -127,27 +128,38 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       throw new Error('Failed to merge uploaded chunks');
     }
 
-    // Forward the merged file to the main speech-feedback endpoint
-    console.log('[finalize] Forwarding to main speech-feedback endpoint');
-    const response = await forwardToMainEndpoint(sanitizedSessionId, metadata, fileBuffer);
+    // =============================================================
+    // NEW: Directly call the processing service in serverless envs
+    // =============================================================
 
-    console.log(`Response from main endpoint: status=${response.status}`);
+    // Vercel (and most serverless providers) impose a ~4.5 MB body
+    // limit on incoming requests. Re-posting the full audio file to a
+    // second route would easily exceed that limit and trigger a 500.
+    // Instead, we now invoke the underlying processing service
+    // directly, bypassing the extra HTTP hop entirely.
 
-    // Clean up session from memory
+    console.log('[finalize] Invoking processSpeechFeedback internally');
+
+    const serviceResult = await processSpeechFeedback({
+      audioBuffer: fileBuffer,
+      filename: metadata.filename,
+      mimeType: metadata.contentType || 'audio/mpeg',
+      topic: metadata.topic,
+      userId: metadata.userId,
+      speechType: metadata.speechType,
+      userSide: metadata.userSide,
+      customInstructions: metadata.customInstructions,
+    });
+
+    // Clean up session from memory as we are done.
     await UploadSessionStore.deleteSession(sanitizedSessionId);
 
-    let responseData;
-    try {
-      responseData = await response.json();
-    } catch (jsonError) {
-      console.error('[finalize] Failed to parse response JSON:', jsonError);
-      const responseText = await response.text();
-      console.error('[finalize] Response text:', responseText);
-      throw new Error('Invalid response from speech feedback endpoint');
-    }
-    
-    console.log('[finalize] Success, returning response');
-    return NextResponse.json(responseData, { status: response.status });
+    console.log('[finalize] Internal processing complete, returning');
+
+    return NextResponse.json({
+      id: serviceResult.feedbackId,
+      success: true,
+    }, { status: 200 });
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
