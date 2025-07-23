@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { env } from '@/shared/env';
+import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
 
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
 });
 
 export async function POST(request: Request) {
-  try {
-    const { topic, stance } = await request.json();
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      const { topic, stance } = await request.json();
 
     if (!topic || !stance) {
       return NextResponse.json(
@@ -43,4 +45,5 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+  });
 } 

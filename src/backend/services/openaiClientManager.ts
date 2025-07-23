@@ -87,7 +87,7 @@ class OpenAIClientManager {
     params: OpenAI.ChatCompletionCreateParams,
     options?: {
       fallbackResponse?: string;
-      shouldRetry?: (error: any) => boolean;
+      shouldRetry?: (error: unknown) => boolean;
       maxRetries?: number;
     }
   ): Promise<OpenAI.ChatCompletion> {
@@ -110,12 +110,13 @@ class OpenAIClientManager {
       {
         retryOptions: {
           maxRetries: options?.maxRetries ?? 3,
-          shouldRetry: options?.shouldRetry ?? ((error: any) => {
+          shouldRetry: options?.shouldRetry ?? ((error: unknown) => {
             // Retry on rate limits, timeouts, and server errors
-            if (error?.status >= 500) return true;
-            if (error?.status === 429) return true;
-            if (error?.code === 'ETIMEDOUT') return true;
-            if (error?.code === 'ECONNRESET') return true;
+            const err = error as any;
+            if (err?.status >= 500) return true;
+            if (err?.status === 429) return true;
+            if (err?.code === 'ETIMEDOUT') return true;
+            if (err?.code === 'ECONNRESET') return true;
             return false;
           }),
         },
@@ -155,7 +156,7 @@ class OpenAIClientManager {
     params: OpenAI.Audio.TranscriptionCreateParams,
     options?: {
       fallbackResponse?: any;
-      shouldRetry?: (error: any) => boolean;
+      shouldRetry?: (error: unknown) => boolean;
       maxRetries?: number;
     }
   ): Promise<OpenAI.Audio.Transcription> {
@@ -177,12 +178,13 @@ class OpenAIClientManager {
       {
         retryOptions: {
           maxRetries: options?.maxRetries ?? 3,
-          shouldRetry: options?.shouldRetry ?? ((error: any) => {
+          shouldRetry: options?.shouldRetry ?? ((error: unknown) => {
             // Same retry logic as chat completions
-            if (error?.status >= 500) return true;
-            if (error?.status === 429) return true;
-            if (error?.code === 'ETIMEDOUT') return true;
-            if (error?.code === 'ECONNRESET') return true;
+            const err = error as any;
+            if (err?.status >= 500) return true;
+            if (err?.status === 429) return true;
+            if (err?.code === 'ETIMEDOUT') return true;
+            if (err?.code === 'ECONNRESET') return true;
             return false;
           }),
         },

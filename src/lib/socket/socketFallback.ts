@@ -1,7 +1,8 @@
 // Fallback handler for environments where Socket.IO isn't available
 export interface FallbackDebateManager {
   startDebate: (topic: string, participants: any[]) => Promise<void>;
-  submitSpeech: (text: string, speakerId: string) => Promise<void>;
+  submitSpeech: (text: string, speakerId: string, side?: 'PRO' | 'CON') => Promise<void>;
+  endDebate: (winner?: 'PRO' | 'CON' | 'DRAW', reason?: string) => Promise<void>;
   pauseDebate: () => void;
   resumeDebate: () => void;
   isAvailable: () => boolean;
@@ -10,41 +11,97 @@ export interface FallbackDebateManager {
 export class SocketIOFallback implements FallbackDebateManager {
   private baseUrl: string;
   private token?: string;
+  private currentSessionId?: string;
+  private userId?: string;
 
-  constructor(token?: string) {
+  constructor(token?: string, userId?: string) {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
     this.token = token;
+    this.userId = userId;
   }
 
   async startDebate(topic: string, participants: any[]): Promise<void> {
+    if (!this.userId) {
+      throw new Error('User ID required to start debate');
+    }
+
+    const userSide = participants.find(p => p.id === this.userId)?.team || 'PRO';
+    
     // Use REST API fallback
     const response = await fetch(`${this.baseUrl}/api/debate/start`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.token}`
+        ...(this.token && { 'Authorization': `Bearer ${this.token}` })
       },
-      body: JSON.stringify({ topic, participants })
+      body: JSON.stringify({ 
+        topic, 
+        userSide,
+        userId: this.userId,
+        debaters: participants.map(p => p.name)
+      })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to start debate via REST API');
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to start debate via REST API');
     }
+
+    const data = await response.json();
+    this.currentSessionId = data.sessionId;
   }
 
-  async submitSpeech(text: string, speakerId: string): Promise<void> {
+  async submitSpeech(text: string, speakerId: string, side?: 'PRO' | 'CON'): Promise<void> {
+    if (!this.currentSessionId) {
+      throw new Error('No active debate session');
+    }
+
     const response = await fetch(`${this.baseUrl}/api/debate/speech`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.token}`
+        ...(this.token && { 'Authorization': `Bearer ${this.token}` })
       },
-      body: JSON.stringify({ text, speakerId })
+      body: JSON.stringify({ 
+        text, 
+        speakerId,
+        sessionId: this.currentSessionId,
+        side: side || 'PRO',
+        timestamp: new Date().toISOString()
+      })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to submit speech via REST API');
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to submit speech via REST API');
     }
+  }
+
+  async endDebate(winner?: 'PRO' | 'CON' | 'DRAW', reason?: string): Promise<void> {
+    if (!this.currentSessionId) {
+      throw new Error('No active debate session');
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/debate/end`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.token && { 'Authorization': `Bearer ${this.token}` })
+      },
+      body: JSON.stringify({ 
+        sessionId: this.currentSessionId,
+        winner,
+        reason
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to end debate via REST API');
+    }
+
+    // Clear session ID after ending
+    this.currentSessionId = undefined;
   }
 
   pauseDebate(): void {

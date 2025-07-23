@@ -100,7 +100,7 @@ export function usePerformanceMonitor({
         return () => {
           lcpObserver.disconnect();
         };
-      } catch (e) {
+      } catch (_e) {
         // Silently fail if observer is not supported
       }
     }
@@ -233,8 +233,8 @@ export function usePerformanceMonitor({
       }
       
       return lastMeasure?.duration;
-    } catch (e) {
-      console.error(`[Performance] Failed to measure ${name}:`, e);
+    } catch (_e) {
+      console.error(`[Performance] Failed to measure ${name}:`, _e);
       return null;
     }
   }, [componentName, reportThreshold]);

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 
 // Temporary directory to store chunks
-const TEMP_DIR = '/tmp/chunked_uploads';
+// Using a more specific path that's guaranteed to be writable
+const TEMP_DIR = process.env.NODE_ENV === 'production' 
+  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
+  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
 
 // Helper function to sanitize session ID to prevent directory traversal
 function sanitizeSessionId(sessionId: string): string {
@@ -12,9 +16,10 @@ function sanitizeSessionId(sessionId: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    // Parse the form data
-    const formData = await req.formData();
+  return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
+    try {
+      // Parse the form data
+      const formData = await req.formData();
     const chunk = formData.get('chunk') as File;
     const sessionId = formData.get('sessionId') as string;
     const chunkIndex = parseInt(formData.get('chunkIndex') as string, 10);
@@ -85,4 +90,5 @@ export async function POST(req: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+  });
 } 

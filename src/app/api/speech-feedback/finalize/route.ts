@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs, createWriteStream, createReadStream, ReadStream, WriteStream } from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';
+import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 
 // Temporary directory to store chunks
-const TEMP_DIR = '/tmp/chunked_uploads';
+// Using a more specific path that's guaranteed to be writable
+const TEMP_DIR = process.env.NODE_ENV === 'production' 
+  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
+  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
 
 interface Metadata {
   contentType: string;
@@ -61,15 +65,28 @@ async function forwardStreamToMainEndpoint(sessionId: string, metadata: Metadata
     form.append('customInstructions', metadata.customInstructions || '');
     form.append('userId', metadata.userId);
 
-    // Use the Next.js app URL instead of a separate backend server
-    const targetUrlBase = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
-    const targetUrl = `${targetUrlBase}/api/speech-feedback`;
+    // In production/serverless environments, we need to use the full URL
+    // For local development, we can use relative URLs
+    let targetUrl: string;
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_URL) {
+      targetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/speech-feedback`;
+    } else {
+      // For local development or when NEXT_PUBLIC_APP_URL is not set
+      const host = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+      targetUrl = `${host}/api/speech-feedback`;
+    }
 
-    console.log(`Forwarding native FormData to: ${targetUrl}`);
+    console.log(`[finalize] Forwarding native FormData to: ${targetUrl}`);
 
     const response = await fetch(targetUrl, {
       method: 'POST',
       body: form, // Pass native FormData directly
+      headers: {
+        // Forward any necessary headers but let fetch handle Content-Type for FormData
+        'x-forwarded-for': 'internal-api-call',
+      },
     });
 
     return response;
@@ -83,21 +100,39 @@ async function forwardStreamToMainEndpoint(sessionId: string, metadata: Metadata
   }
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  let sessionId: string | null = null; // Keep track of sessionId for error cleanup
-  try {
-    const data = await req.json() as { sessionId: string };
-    sessionId = data.sessionId; // Assign sessionId here
+export async function POST(req: NextRequest): Promise<NextResponse | Response> {
+  return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
+    let sessionId: string | null = null; // Keep track of sessionId for error cleanup
+    try {
+      console.log('[finalize] Starting upload finalization');
+      const data = await req.json() as { sessionId: string };
+      sessionId = data.sessionId; // Assign sessionId here
 
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing session ID' }, { status: 400 });
     }
 
     const sessionDir = path.join(TEMP_DIR, sanitizeSessionId(sessionId));
+    console.log(`[finalize] Checking session directory: ${sessionDir}`);
+    
     try {
-      await fs.access(sessionDir);
+      // Check if directory exists and is readable
+      const stats = await fs.stat(sessionDir);
+      if (!stats.isDirectory()) {
+        throw new Error('Session path is not a directory');
+      }
     } catch (error) {
-      console.error(`Session directory not found: ${sessionDir}`, error);
+      console.error(`[finalize] Session directory not found or inaccessible: ${sessionDir}`, error);
+      
+      // List contents of parent directory for debugging
+      try {
+        const parentDir = path.dirname(sessionDir);
+        const contents = await fs.readdir(parentDir);
+        console.log(`[finalize] Parent directory contents (${parentDir}):`, contents);
+      } catch (listError) {
+        console.error('[finalize] Could not list parent directory:', listError);
+      }
+      
       return NextResponse.json({ error: 'Upload session not found or inaccessible' }, { status: 404 });
     }
 
@@ -155,9 +190,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    console.log(`File reassembly complete: ${mergedFilePath}`);
+    console.log(`[finalize] File reassembly complete: ${mergedFilePath}`);
+    
+    // Verify the merged file exists and has content
+    try {
+      const mergedStats = await fs.stat(mergedFilePath);
+      console.log(`[finalize] Merged file size: ${mergedStats.size} bytes`);
+      if (mergedStats.size === 0) {
+        throw new Error('Merged file is empty');
+      }
+    } catch (error) {
+      console.error('[finalize] Error verifying merged file:', error);
+      throw new Error('Failed to verify merged file');
+    }
 
     // Forward the merged file to the main speech-feedback endpoint
+    console.log('[finalize] Forwarding to main speech-feedback endpoint');
     const response = await forwardStreamToMainEndpoint(sessionId, metadata, mergedFilePath);
 
     console.log(`Response from main endpoint: status=${response.status}`);
@@ -167,7 +215,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .then(() => console.log(`Cleaned up session directory ${sessionDir}`))
       .catch(err => console.error(`Failed to clean up session directory ${sessionDir}:`, err));
 
-    const responseData = await response.json();
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (jsonError) {
+      console.error('[finalize] Failed to parse response JSON:', jsonError);
+      const responseText = await response.text();
+      console.error('[finalize] Response text:', responseText);
+      throw new Error('Invalid response from speech feedback endpoint');
+    }
+    
+    console.log('[finalize] Success, returning response');
     return NextResponse.json(responseData, { status: response.status });
 
   } catch (error: unknown) {
@@ -180,4 +238,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     return NextResponse.json({ error: 'Failed to finalize upload', details: errorMessage }, { status: 500 });
   }
+  });
 }

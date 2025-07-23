@@ -17,13 +17,12 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   private debateId: string | null = null;
   private userId: string;
   private presence: any = {};
-  private connected = false;
+  public connected = false;  // Made public for Socket.IO compatibility
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
 
   // Socket.IO compatibility properties
   public id: string;
-  public connected$ = false;
   public io = {
     engine: {
       transport: {
@@ -61,11 +60,14 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
     this.setupChannelListeners();
 
     // Subscribe to channel
-    const status = await this.channel.subscribe();
+    const status = await new Promise<string>((resolve) => {
+      this.channel!.subscribe((status) => {
+        resolve(status);
+      });
+    });
     
     if (status === 'SUBSCRIBED') {
       this.connected = true;
-      this.connected$ = true;
       this.reconnectAttempts = 0;
       
       // Track presence
@@ -179,7 +181,6 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
     }
     
     this.connected = false;
-    this.connected$ = false;
     this.debateId = null;
     this.presence = {};
     
@@ -192,7 +193,6 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   private async handleConnectionError(error: Error): Promise<void> {
     console.error('Supabase Realtime error:', error);
     this.connected = false;
-    this.connected$ = false;
     
     this.emit('connect_error', error);
     
@@ -267,12 +267,11 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
 /**
  * Factory function to create Socket.IO-compatible adapter
  */
-export function createSupabaseRealtimeSocket(userId: string): SupabaseRealtimeAdapter & Partial<Socket> {
+export function createSupabaseRealtimeSocket(userId: string): SupabaseRealtimeAdapter {
   const adapter = new SupabaseRealtimeAdapter(userId);
   
-  // Add Socket.IO compatibility properties
-  (adapter as any).connected = () => adapter.connected$;
+  // Add Socket.IO compatibility methods
   (adapter as any).close = () => adapter.disconnect();
   
-  return adapter as SupabaseRealtimeAdapter & Partial<Socket>;
+  return adapter;
 }

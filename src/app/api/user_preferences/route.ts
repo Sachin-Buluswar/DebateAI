@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
 
 /**
  * User preferences endpoint to handle Supabase client requests
@@ -8,8 +9,9 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic'; // Add this to properly mark as dynamic route
 
 export async function GET(request: NextRequest) {
-  try {
-    const supabase = createClient();
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      const supabase = createClient();
     
     // Get user ID from the URL
     const searchParams = request.nextUrl.searchParams;
@@ -62,11 +64,13 @@ export async function GET(request: NextRequest) {
       preferences: {} 
     }, { status: 500 });
   }
+  });
 }
 
 export async function PUT(request: NextRequest) {
-  try {
-    const supabase = createClient();
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      const supabase = createClient();
     
     // Get current authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -117,4 +121,5 @@ export async function PUT(request: NextRequest) {
       message: 'Error updating preferences'
     }, { status: 500 });
   }
+  });
 } 

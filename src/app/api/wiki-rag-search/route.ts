@@ -142,7 +142,7 @@ Return up to ${maxResults} results ordered by relevance.`,
               try {
                 const file = await openai.files.retrieve(fileId);
                 fileName = file.filename || fileName;
-              } catch (e) {
+              } catch (_e) {
                 console.warn(`Could not retrieve file info for ${fileId}`);
               }
 

@@ -275,7 +275,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
       // New format but might be missing some fields - convert what we have
       try {
         parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
-      } catch (e) {
+      } catch (_e) {
         // Fallback to treating overallSummary as markdown
         parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overallSummary);
       }

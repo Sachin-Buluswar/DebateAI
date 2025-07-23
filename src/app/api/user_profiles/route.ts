@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
 
 export async function GET(request: NextRequest) {
-  try {
-    const supabase = createClient();
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      const supabase = createClient();
     const searchParams = request.nextUrl.searchParams;
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') as string) : 10;
     const userId = searchParams.get('userId');
@@ -38,11 +40,13 @@ export async function GET(request: NextRequest) {
       error: err instanceof Error ? err.message : 'An unknown error occurred'
     }, { status: 500 });
   }
+  });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const supabase = createClient();
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      const supabase = createClient();
     const body = await request.json();
     
     // Validate the request body
@@ -132,4 +136,5 @@ export async function POST(request: NextRequest) {
       error: err instanceof Error ? err.message : 'An unknown error occurred'
     }, { status: 500 });
   }
+  });
 } 

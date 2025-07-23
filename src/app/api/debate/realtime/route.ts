@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 
 // Initialize Supabase admin client
 const supabaseAdmin = createClient(
@@ -33,8 +34,9 @@ const joinDebateSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  try {
-    const { pathname } = new URL(request.url);
+  return await withRateLimit(request, debateRateLimiter, async () => {
+    try {
+      const { pathname } = new URL(request.url);
     const action = pathname.split('/').pop();
     const body = await request.json();
 
@@ -132,11 +134,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  });
 }
 
 // GET endpoint to check debate status
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  return await withRateLimit(request, debateRateLimiter, async () => {
+    const { searchParams } = new URL(request.url);
   const debateId = searchParams.get('debateId');
 
   if (!debateId) {
@@ -154,4 +158,5 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ debate });
+  });
 }

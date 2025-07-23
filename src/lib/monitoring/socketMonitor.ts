@@ -74,9 +74,10 @@ export class SocketMonitor {
     });
 
     // Monitor engine events
-    this.io.engine.on('connection_error', (error: any) => {
-      socketLogger.error('Socket.IO engine error', error);
-      sentryServer.captureException(error, {
+    this.io.engine.on('connection_error', (error: unknown) => {
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      socketLogger.error('Socket.IO engine error', errorObj);
+      sentryServer.captureException(errorObj, {
         tags: { component: 'socket.io', type: 'engine' },
       });
     });

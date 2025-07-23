@@ -3,7 +3,7 @@ import { createSocket as createSocketIO, isVercel } from '@/lib/socket/socketCon
 import { createSupabaseRealtimeSocket, SupabaseRealtimeAdapter } from './supabaseRealtimeAdapter';
 import { supabase } from '@/lib/supabaseClient';
 
-export type RealtimeSocket = Socket | (SupabaseRealtimeAdapter & Partial<Socket>);
+export type RealtimeSocket = Socket | SupabaseRealtimeAdapter;
 
 export interface RealtimeConfig {
   useSupabase?: boolean;
@@ -62,7 +62,7 @@ export function setupRealtimeHandlers(socket: RealtimeSocket, handlers: {
   onSpeechEnd?: (data: any) => void;
   onAudioChunk?: (chunk: any) => void;
   onCrossfireMessage?: (data: any) => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
 }): void {
   // Common events
   if (handlers.onDebateStarted) {

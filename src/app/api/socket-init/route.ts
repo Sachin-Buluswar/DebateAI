@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // This endpoint helps initialize Socket.IO on Vercel
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // Check if we're on Vercel
   const isVercel = process.env.VERCEL === '1';
   
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   // Handle Socket.IO handshake if needed
   return NextResponse.json({ status: 'ok' });
 }

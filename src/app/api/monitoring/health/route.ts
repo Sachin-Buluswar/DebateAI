@@ -150,9 +150,9 @@ async function checkElevenLabs(): Promise<HealthCheckResult> {
 }
 
 // Main health check handler
-export const GET = withMonitoring(async (request: NextRequest) => {
+export const GET = withMonitoring(async (_request: NextRequest) => {
   return traceAsync('health-check', async () => {
-    const startTime = process.hrtime();
+    const _startTime = process.hrtime();
     
     // Run all health checks in parallel
     const [supabaseCheck, openaiCheck, elevenlabsCheck] = await Promise.allSettled([
@@ -237,12 +237,12 @@ export const GET = withMonitoring(async (request: NextRequest) => {
 });
 
 // Liveness probe - simple check to see if the service is alive
-export async function HEAD(request: NextRequest) {
+export async function HEAD(_request: NextRequest) {
   return new NextResponse(null, { status: 200 });
 }
 
 // Readiness probe - checks if the service is ready to accept traffic
-export const POST = withMonitoring(async (request: NextRequest) => {
+export const POST = withMonitoring(async (_request: NextRequest) => {
   // Quick check of critical dependencies only
   const supabaseCheck = await checkSupabase();
   

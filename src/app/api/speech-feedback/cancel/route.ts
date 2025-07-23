@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 
 // Temporary directory to store chunks
-const TEMP_DIR = '/tmp/chunked_uploads';
+// Using a more specific path that's guaranteed to be writable
+const TEMP_DIR = process.env.NODE_ENV === 'production' 
+  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
+  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
 
 // Helper function to sanitize session ID to prevent directory traversal
 function sanitizeSessionId(sessionId: string): string {
@@ -12,9 +16,10 @@ function sanitizeSessionId(sessionId: string): string {
 }
 
 export async function DELETE(req: NextRequest) {
-  try {
-    // Get the session ID from the URL
-    const { searchParams } = new URL(req.url);
+  return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
+    try {
+      // Get the session ID from the URL
+      const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId');
 
     // Validate session ID
@@ -56,4 +61,5 @@ export async function DELETE(req: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+  });
 } 

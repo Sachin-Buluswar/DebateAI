@@ -68,8 +68,8 @@ export default function DebateDetail() {
           try {
             const parsedTranscript = JSON.parse(data.transcript);
             setTranscript(Array.isArray(parsedTranscript) ? parsedTranscript : []);
-          } catch (e) {
-            console.error('Error parsing transcript:', e);
+          } catch (_e) {
+            console.error('Error parsing transcript:', _e);
             setTranscript(['Transcript data could not be displayed.']);
           }
         }

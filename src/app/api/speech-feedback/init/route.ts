@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 
 // Temporary directory to store chunks
-const TEMP_DIR = '/tmp/chunked_uploads';
+// Using a more specific path that's guaranteed to be writable
+const TEMP_DIR = process.env.NODE_ENV === 'production' 
+  ? '/tmp/chunked_uploads'  // Vercel/serverless environments
+  : path.join(process.cwd(), '.tmp', 'chunked_uploads'); // Local development
 
 // Helper function to sanitize session ID to prevent directory traversal
 function sanitizeSessionId(sessionId: string): string {
@@ -14,18 +18,20 @@ function sanitizeSessionId(sessionId: string): string {
 // Make sure temp directory exists
 async function ensureTempDirExists() {
   try {
-    await fs.mkdir(TEMP_DIR, { recursive: true });
+    await fs.mkdir(TEMP_DIR, { recursive: true, mode: 0o755 });
+    console.log(`[init] Temp directory ensured at: ${TEMP_DIR}`);
     return true;
   } catch (error) {
-    console.error('Error creating temp directory:', error);
+    console.error('[init] Error creating temp directory:', error);
     return false;
   }
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    // Ensure temp directory exists
-    const tempDirExists = await ensureTempDirExists();
+  return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
+    try {
+      // Ensure temp directory exists
+      const tempDirExists = await ensureTempDirExists();
     if (!tempDirExists) {
       return NextResponse.json({ error: 'Failed to create temporary directory' }, { status: 500 });
     }
@@ -91,4 +97,5 @@ export async function POST(req: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+  });
 } 

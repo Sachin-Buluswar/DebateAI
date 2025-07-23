@@ -220,9 +220,8 @@ export default function DebatePage() {
     }
   }, []);
 
-  useEffect(() => {
-    // Initialize socket with authentication
-    const initializeSocket = async () => {
+  // Initialize socket with authentication
+  const initializeSocket = useCallback(async () => {
       // Get the current session
       const { data: { session }, error } = await supabase.auth.getSession();
       
@@ -274,7 +273,7 @@ export default function DebatePage() {
       // Handle different disconnect reasons
       if (reason === 'io server disconnect') {
         setConnectionError('Disconnected by server. Attempting to reconnect...');
-        socket.connect();
+        // Socket.IO will auto-reconnect if configured
       } else if (reason === 'transport close' || reason === 'transport error') {
         setConnectionError('Connection lost. Attempting to reconnect...');
       } else if (reason === 'ping timeout') {
@@ -449,8 +448,9 @@ export default function DebatePage() {
         alert(`Failed to load debate: ${response.error}`);
       }
     });
-    };
-    
+  }, [setup, participants]);
+
+  useEffect(() => {
     // Call the async initialization function
     initializeSocket();
 
@@ -460,7 +460,7 @@ export default function DebatePage() {
         socketRef.current.disconnect();
       }
     };
-  }, [setup, participants]);
+  }, [initializeSocket]);
 
   return (
     <Layout>
@@ -487,7 +487,8 @@ export default function DebatePage() {
                   onClick={() => {
                     setConnectionError(null);
                     setIsConnecting(true);
-                    socketRef.current?.connect();
+                    // Re-initialize socket connection
+                    initializeSocket();
                   }}
                   variant="outline"
                   size="sm"

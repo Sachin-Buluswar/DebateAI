@@ -224,7 +224,7 @@ export const GET = withMonitoring(async (request: NextRequest) => {
 });
 
 // Prometheus-compatible metrics endpoint
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   // Generate Prometheus format metrics
   const memUsage = process.memoryUsage();
   const uptime = process.uptime();

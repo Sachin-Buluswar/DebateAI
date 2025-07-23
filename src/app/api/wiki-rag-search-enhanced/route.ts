@@ -152,7 +152,7 @@ async function performEnhancedRagSearch(
                     source_type: 'other',
                   },
                 });
-              } catch (e) {
+              } catch (_e) {
                 console.warn(`Could not retrieve file info for ${openaiFileId}`);
               }
             }

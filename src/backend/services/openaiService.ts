@@ -90,7 +90,7 @@ class OpenAIService {
         },
         {
           fallbackResponse: options?.fallbackResponse,
-          shouldRetry: (error) => {
+          shouldRetry: (error: any) => {
             // Custom retry logic for chat completions
             if (error?.status === 429) return true; // Rate limit
             if (error?.status >= 500) return true; // Server errors
@@ -167,7 +167,7 @@ class OpenAIService {
         },
         {
           fallbackResponse: options?.fallbackResponse,
-          shouldRetry: (error) => {
+          shouldRetry: (error: any) => {
             if (error?.status === 429) return true; // Rate limit
             if (error?.status >= 500) return true; // Server errors
             if (error?.status === 413) return false; // File too large

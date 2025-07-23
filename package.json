@@ -24,6 +24,8 @@
     "demo": "node scripts/demo-test.js",
     "apply-migrations": "node scripts/apply-migrations.js",
     "db:migrate": "node scripts/apply-migrations.js",
+    "db:check": "node scripts/check-database.js",
+    "status": "node scripts/project-status.js",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "format:check": "prettier --check .",

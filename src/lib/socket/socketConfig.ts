@@ -87,7 +87,7 @@ export const createSocket = async (token?: string): Promise<Socket> => {
   });
   
   socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error.type, error.message);
+    console.error('Socket connection error:', error.message);
   });
   
   return socket;

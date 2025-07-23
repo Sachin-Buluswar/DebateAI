@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { createClient } from '@/utils/supabase/server';
 import { processAndIndexDocument } from '@/backend/modules/wikiSearch/indexingService';
+import { withRateLimit, wikiSearchRateLimiter } from '@/middleware/rateLimiter';
 
 // Get environment variables
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -25,8 +26,9 @@ let openai: OpenAI | null = null;
  * Expects a JSON body with { fileName: string, fileContent: string }.
  */
 export async function POST(request: Request) {
-  // --- Authentication Check ---
-  const supabase = createClient();
+  return await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    // --- Authentication Check ---
+    const supabase = createClient();
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
@@ -107,4 +109,5 @@ export async function POST(request: Request) {
     // Generic server error for other unexpected issues
     return NextResponse.json({ error: `Internal Server Error during indexing process for ${failedFileName}` }, { status: 500 });
   }
+  });
 } 

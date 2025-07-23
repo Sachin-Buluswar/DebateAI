@@ -24,7 +24,9 @@ async function applyMigrations() {
     'add_saved_state_columns.sql',
     'create_user_preferences.sql',
     'create_audio_storage.sql',
-    'create_audio_recordings_table.sql'
+    'create_audio_recordings_table.sql',
+    '../supabase/migrations/20250117_create_documents_schema.sql',
+    '../supabase/migrations/20250120_add_fulltext_search.sql'
   ];
 
   for (const migrationFile of migrations) {
