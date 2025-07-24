@@ -1,13 +1,62 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { z } from 'zod';
 
 // Get service role key from environment
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export async function POST(): Promise<NextResponse> {
+// Schema for migration request
+const migrationRequestSchema = z.object({
+  key: z.string().min(1),
+});
+
+/**
+ * Migrations endpoint with authentication
+ * 
+ * Required environment variables:
+ * - MIGRATIONS_API_KEY: API key for authentication
+ * - MIGRATIONS_ALLOWED_IPS: Optional comma-separated list of allowed IP addresses
+ * 
+ * Usage:
+ * POST /api/migrations
+ * Body: { "key": "your-api-key" }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // Check IP restriction if configured
+    const allowedIPs = process.env.MIGRATIONS_ALLOWED_IPS?.split(',') || [];
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const clientIP = forwardedFor ? forwardedFor.split(',')[0].trim() : request.headers.get('x-real-ip');
+    
+    if (allowedIPs.length > 0 && clientIP && !allowedIPs.includes(clientIP)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    
+    // Parse and validate request body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    
+    const parseResult = migrationRequestSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Invalid request parameters', 
+        details: parseResult.error.flatten() 
+      }, { status: 400 });
+    }
+    
+    const { key: apiKey } = parseResult.data;
+    
+    // Validate API key
+    const expectedKey = process.env.MIGRATIONS_API_KEY;
+    if (!expectedKey || apiKey !== expectedKey) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     // Create admin client with service role
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
