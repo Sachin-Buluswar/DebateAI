@@ -215,13 +215,12 @@ When errors occur, check:
 
 ## Current Issues
 
-### Critical Blockers (Must Fix)
-1. **Hardcoded CORS Origin** - `/src/pages/api/socketio.ts:30` is hardcoded to `http://localhost:3001`
-   - Fix: Use `process.env.NEXT_PUBLIC_APP_URL`
-2. **Missing Viewport Meta Tag** - `src/app/layout.tsx` breaks mobile rendering
-   - Fix: Add `<meta name="viewport" content="width=device-width, initial-scale=1.0" />`
+### Critical Blockers
+None - All critical blockers have been resolved!
 
 ### Recent Fixes
+- ✅ CORS origin now uses environment variables properly
+- ✅ Viewport configuration added using Next.js 14 viewport export
 - Speech feedback 500 errors resolved with in-memory session storage
 - Supabase Realtime implemented for Vercel WebSocket support
 - All TypeScript compilation errors fixed
