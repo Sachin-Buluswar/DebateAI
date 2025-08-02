@@ -65,9 +65,9 @@
 - `src/pages/api/socketio.ts` - WebSocket server
 
 ### Services
-- `src/backend/services/openaiService.ts` - OpenAI integration
-- `src/backend/services/elevenLabsService.ts` - Voice services
-- `src/backend/services/supabaseService.ts` - Database operations
+- `src/backend/services/openaiService.ts` - OpenAI GPT integration
+- `src/backend/services/elevenLabsWebSocket.ts` - Voice services
+- `src/backend/services/documentStorageService.ts` - File storage operations
 
 ### Components
 - `src/components/ui/` - Reusable UI components

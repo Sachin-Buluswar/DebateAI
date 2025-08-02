@@ -1,7 +1,21 @@
 /**
  * Eris Debate - Pure RAG Search API Endpoint
+ * 
+ * This endpoint implements a Retrieval-Augmented Generation (RAG) pattern for document search.
+ * RAG combines vector search with generative AI to find relevant information in large document sets.
+ * 
+ * Key concepts:
+ * - Vector Search: Documents are converted to mathematical embeddings that capture semantic meaning
+ * - OpenAI Assistants API: Used to search through pre-indexed document chunks in a vector store
+ * - File Citations: OpenAI returns references to specific chunks where information was found
+ * 
  * Returns raw vector search results with PDF context and chunk metadata.
  * This allows users to see the original document context around search results.
+ * 
+ * @endpoint POST /api/wiki-rag-search
+ * @param {string} query - The search query to find relevant documents
+ * @param {number} maxResults - Maximum number of results to return (default: 10, max: 20)
+ * @returns {RagSearchResult[]} Array of search results with content, source, and metadata
  */
 
 import { NextResponse } from 'next/server';
@@ -20,6 +34,26 @@ const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
 // Initialize OpenAI client
 let openai: OpenAI | null = null;
 
+/**
+ * RagSearchResult - Structure for RAG search results
+ * 
+ * This interface defines the shape of each search result returned by the RAG system.
+ * Each result represents a chunk of text from a document that matches the search query.
+ * 
+ * @property {string} content - The actual text content from the matched document chunk
+ * @property {string} source - The source document name or identifier
+ * @property {number} score - Relevance score (0-1) indicating how well this chunk matches the query
+ * @property {object} metadata - Additional information about the chunk's location in the document
+ * @property {string} metadata.file_id - OpenAI's internal file identifier for this document
+ * @property {string} metadata.file_name - Human-readable name of the source file
+ * @property {number} metadata.chunk_index - Position of this chunk within the document (0-based)
+ * @property {number} metadata.page_number - PDF page number where this content appears
+ * @property {number} metadata.start_char - Character position where this chunk starts in the full document
+ * @property {number} metadata.end_char - Character position where this chunk ends in the full document
+ * @property {object} context - Surrounding text to provide additional context
+ * @property {string} context.before - Text that appears before this chunk in the document
+ * @property {string} context.after - Text that appears after this chunk in the document
+ */
 export interface RagSearchResult {
   content: string;
   source: string;
@@ -39,7 +73,32 @@ export interface RagSearchResult {
 }
 
 /**
- * Pure RAG search using OpenAI embeddings and vector store
+ * performRagSearch - Core RAG search implementation using OpenAI's vector store
+ * 
+ * This function implements the RAG pattern:
+ * 1. Creates a temporary OpenAI Assistant configured with file_search tool
+ * 2. The Assistant has access to a pre-indexed vector store containing document chunks
+ * 3. User query is processed by the Assistant which searches the vector store
+ * 4. Results include file citations that reference specific chunks
+ * 5. We extract these citations and format them as structured search results
+ * 
+ * Document Chunking Strategy:
+ * - Documents are pre-processed and split into overlapping chunks (~500-1000 tokens each)
+ * - Each chunk is embedded using OpenAI's text-embedding-3-small model
+ * - Chunks maintain metadata about their position, page number, and surrounding context
+ * - This allows semantic search to find relevant passages even if exact keywords don't match
+ * 
+ * Vector Search Process:
+ * - Query is converted to an embedding vector
+ * - Vector store finds chunks with similar embeddings (cosine similarity)
+ * - Results are ranked by relevance score
+ * - File citations provide exact references to source documents
+ * 
+ * @param {OpenAI} openai - Initialized OpenAI client instance
+ * @param {string} vectorStoreId - ID of the pre-indexed OpenAI vector store
+ * @param {string} query - User's search query
+ * @param {number} maxResults - Maximum results to return (capped at 20 for performance)
+ * @returns {Promise<RagSearchResult[]>} Array of search results with metadata
  */
 async function performRagSearch(
   openai: OpenAI,
@@ -47,10 +106,13 @@ async function performRagSearch(
   query: string,
   maxResults: number = 10
 ): Promise<RagSearchResult[]> {
-  // Perform pure RAG search
+  // Perform pure RAG search using OpenAI's vector store and file search capabilities
 
   try {
     // Get embedding for the query
+    // Note: While we generate the embedding here, the actual vector search is handled
+    // by the OpenAI Assistant's file_search tool internally. This embedding could be
+    // used for client-side similarity calculations or caching in the future.
     const embeddingResponse = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: query,
@@ -59,6 +121,12 @@ async function performRagSearch(
     const queryEmbedding = embeddingResponse.data[0].embedding;
 
     // Create a temporary assistant for vector search
+    // The Assistant API provides a managed way to search through vector stores.
+    // Key features:
+    // - file_search tool: Enables semantic search across indexed documents
+    // - vector_store_ids: Links to pre-indexed document collections
+    // - Automatic citation generation: Returns references to source chunks
+    // - GPT-4 integration: Can understand context and intent beyond keyword matching
     const tempAssistant = await openai.beta.assistants.create({
       name: 'RAG Search Assistant',
       instructions: `You are a document search assistant. For each query, return the most relevant document chunks in JSON format. Include exact text content, source information, and relevance scores.
@@ -128,6 +196,11 @@ Return up to ${maxResults} results ordered by relevance.`,
           const textContent = content.text.value;
 
           // Extract file citations from annotations
+          // OpenAI's file_search tool returns citations as annotations in the response.
+          // Each citation includes:
+          // - file_id: Reference to the source file in the vector store
+          // - text: The cited text with special markers (【...】)
+          // These citations are our primary way to trace results back to source documents
           const annotations = content.text.annotations || [];
           const citations = annotations.filter((a) => 'file_citation' in a);
 
@@ -147,6 +220,9 @@ Return up to ${maxResults} results ordered by relevance.`,
               }
 
               // Extract the relevant text around the citation
+              // OpenAI formats citations as 【citation_number】followed by the cited text
+              // We parse this format to extract the actual content.
+              // Fallback: If parsing fails, we take a substring based on position
               const quoteParts = citation.text?.split('】') || [];
               const relevantText =
                 quoteParts.length > 1
@@ -209,7 +285,27 @@ Return up to ${maxResults} results ordered by relevance.`,
 }
 
 /**
- * POST handler for pure RAG search
+ * POST /api/wiki-rag-search - HTTP handler for RAG-based document search
+ * 
+ * This endpoint provides semantic search capabilities using OpenAI's RAG implementation.
+ * It's designed for searching through pre-indexed document collections (debate evidence,
+ * research papers, etc.) and returning relevant passages with context.
+ * 
+ * Request flow:
+ * 1. Rate limiting check (prevents abuse)
+ * 2. Environment validation (ensures API keys are configured)
+ * 3. Request validation (sanitizes input, checks query length)
+ * 4. RAG search execution (queries vector store)
+ * 5. Result formatting (structures response with metadata)
+ * 
+ * Security features:
+ * - Rate limiting per IP/user
+ * - Input sanitization
+ * - CORS headers for cross-origin requests
+ * - Error messages that don't expose internal details
+ * 
+ * @param {Request} request - HTTP request with JSON body containing {query, maxResults}
+ * @returns {Response} JSON response with search results or error
  */
 export async function POST(request: Request) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {

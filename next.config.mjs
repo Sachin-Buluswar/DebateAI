@@ -52,7 +52,7 @@ const nextConfig = {
   
   // Adding a custom path for the API server
   serverRuntimeConfig: {
-    apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003',
+    apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
   
   // Configure allowed image domains if needed
@@ -61,6 +61,13 @@ const nextConfig = {
       // Extract domain from Supabase URL
       process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') || 'localhost'
     ],
+  },
+  
+  // Configure API specific settings
+  api: {
+    bodyParser: {
+      sizeLimit: '30mb', // Set the body size limit to 30MB for large audio/document uploads
+    },
   },
 };
 

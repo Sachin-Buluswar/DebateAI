@@ -11,11 +11,12 @@
 
 ## Project Information
 
-- Type: Next.js 14 application
-- Language: TypeScript
+- Type: Next.js 14 application (App Router)
+- Language: TypeScript (strict mode)
 - Database: Supabase (PostgreSQL with RLS)
-- Real-time: Socket.IO
-- AI: OpenAI GPT-4, ElevenLabs TTS/STT
+- Real-time: Socket.IO (local) / Supabase Realtime (Vercel)
+- AI: OpenAI GPT-4o-mini, ElevenLabs TTS/STT
+- Deployment: Optimized for Vercel serverless
 
 ## File Structure
 
@@ -29,11 +30,13 @@ src/
 │   └── search/            # Search UI
 ├── backend/
 │   ├── modules/           # Business logic
-│   │   └── realtimeDebate/
+│   │   ├── realtimeDebate/     # Debate orchestration
+│   │   ├── speechFeedback/     # Speech analysis
+│   │   └── wikiSearch/         # Document retrieval
 │   └── services/          # External integrations
-│       ├── openaiService.ts
-│       ├── elevenLabsService.ts
-│       └── supabaseService.ts
+│       ├── openaiService.ts        # OpenAI GPT integration
+│       ├── elevenLabsWebSocket.ts  # Voice services
+│       └── documentStorageService.ts # File storage
 ├── components/
 │   ├── ui/                # Reusable UI components
 │   ├── debate/            # Debate-specific components
@@ -212,7 +215,16 @@ When errors occur, check:
 
 ## Current Issues
 
-See `docs/deployment/blockers.md` for critical issues that must be fixed.
+### Critical Blockers (Must Fix)
+1. **Hardcoded CORS Origin** - `/src/pages/api/socketio.ts:30` is hardcoded to `http://localhost:3001`
+   - Fix: Use `process.env.NEXT_PUBLIC_APP_URL`
+2. **Missing Viewport Meta Tag** - `src/app/layout.tsx` breaks mobile rendering
+   - Fix: Add `<meta name="viewport" content="width=device-width, initial-scale=1.0" />`
+
+### Recent Fixes
+- Speech feedback 500 errors resolved with in-memory session storage
+- Supabase Realtime implemented for Vercel WebSocket support
+- All TypeScript compilation errors fixed
 
 ## Do Not
 

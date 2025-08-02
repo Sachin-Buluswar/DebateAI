@@ -1,27 +1,42 @@
 # 🚨 Deployment Blockers - Eris Debate
 
-**Last Updated**: 2025-07-20
-**Critical Issues**: 2 (remaining)
-**High Priority**: 3 (remaining)
-**Setup Required**: 2
+**Last Updated**: January 2025
+**Critical Issues**: 4 (database/storage/env vars/security)
+**High Priority**: 3 (security items)
+**Setup Required**: Multiple (see CURRENT_TASK_LISTS.md)
 **Build Status**: ✅ Builds successfully
-**Deployment Status**: ✅ Ready for Vercel
+**Deployment Status**: ❌ NOT ready - missing critical infrastructure
 
 ## 🔴 CRITICAL - Must Fix Before Deploy
 
-### 1. Hardcoded CORS Origin
-- **Location**: `/src/pages/api/socketio.ts:30`
-- **Current**: `origin: "http://localhost:3001"`
-- **Fix**: Use environment variable `NEXT_PUBLIC_APP_URL`
-- **Impact**: WebSocket connections will fail in production
+### 1. Missing Database Tables
+- **Impact**: Search, debates, and documents features completely broken
+- **Tables Needed**: `documents`, `document_chunks`, `user_feedback`
+- **Fix**: Run SQL scripts in Supabase (see CURRENT_TASK_LISTS.md)
+- **Estimated Time**: 45-60 minutes
+
+### 2. Missing Critical Environment Variables
+- **Variables**: `ELEVENLABS_CROSSFIRE_AGENT_ID`, `OPENAI_VECTOR_STORE_ID`
+- **Impact**: AI debates won't work without agent ID, search broken without vector store
+- **Fix**: Get from respective dashboards and add to .env.local
+- **Estimated Time**: 20 minutes
+
+### 3. CORS Security Vulnerability
+- **Location**: `vercel.json`
+- **Current**: Using wildcard `*` for Access-Control-Allow-Origin
+- **Fix**: Change to specific domain(s)
+- **Impact**: Any website can use your API
 - **Estimated Time**: 5 minutes
 
-### 2. Missing Viewport Meta Tag
-- **Location**: `src/app/layout.tsx`
-- **Current**: No viewport meta tag
-- **Fix**: Add `<meta name="viewport" content="width=device-width, initial-scale=1.0" />`
-- **Impact**: Mobile rendering completely broken
-- **Estimated Time**: 2 minutes
+### 4. Missing Storage Buckets
+- **Buckets**: `debate-documents` (public), `debate_audio` (private)
+- **Impact**: File uploads and audio recordings will fail
+- **Fix**: Create in Supabase or run setup script
+- **Estimated Time**: 10 minutes
+
+### ~~Previously Reported (ALREADY FIXED)~~
+- ~~CORS origin hardcoded~~ ✅ Actually uses env vars
+- ~~Viewport meta missing~~ ✅ Present using Next.js 13+ pattern
 
 ## 🟡 HIGH PRIORITY - Security Issues
 

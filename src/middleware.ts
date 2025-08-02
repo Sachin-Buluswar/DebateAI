@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { corsMiddleware } from './middleware/cors';
 
-export function middleware(_request: NextRequest) {
-  const response = NextResponse.next();
+export function middleware(request: NextRequest) {
+  // Handle CORS first
+  const corsResponse = corsMiddleware(request);
+  if (request.method === 'OPTIONS') {
+    return corsResponse;
+  }
+  
+  const response = corsResponse || NextResponse.next();
   
   // In development, allow 'unsafe-eval' for Next.js dev tools and Sentry
   if (process.env.NODE_ENV === 'development') {
@@ -44,11 +51,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * Include API routes for CORS handling
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

@@ -26,9 +26,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
   // Initialize Socket.IO server
   try {
     // Determine allowed origins based on environment
-    const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://atlasdebate.com', 'https://www.atlasdebate.com'])
-      : (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001']);
+    const defaultOrigins = process.env.NODE_ENV === 'production'
+      ? [process.env.NEXT_PUBLIC_APP_URL, process.env.NEXT_PUBLIC_SITE_URL].filter(Boolean) as string[]
+      : [process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT || '3001'}`];
+    
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+      : defaultOrigins;
     
     const io = new Server(res.socket.server, {
       path: '/api/socketio',

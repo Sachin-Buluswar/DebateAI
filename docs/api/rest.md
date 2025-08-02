@@ -180,6 +180,113 @@ Update user preferences.
 
 ### Debate Features
 
+#### POST /api/debate/start
+Start a new debate session.
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "topic": "Universal Basic Income",
+  "userSide": "PRO",
+  "userId": "user-123-uuid",
+  "debaters": ["ai-opponent"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "sessionId": "session-456-uuid",
+  "topic": "Universal Basic Income",
+  "userSide": "PRO",
+  "status": "active"
+}
+```
+
+#### POST /api/debate/speech
+Submit a speech during a debate.
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "sessionId": "session-456-uuid",
+  "speakerId": "user-123-uuid",
+  "text": "My argument is that UBI provides economic security...",
+  "side": "PRO",
+  "timestamp": "2025-07-17T12:00:00Z"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "speechId": "speech-789-uuid",
+  "saved": true
+}
+```
+
+#### POST /api/debate/end
+End an active debate session.
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "sessionId": "session-456-uuid",
+  "winner": "PRO",
+  "reason": "User requested to end debate"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "sessionId": "session-456-uuid",
+  "status": "completed",
+  "winner": "PRO"
+}
+```
+
+#### POST /api/debate/realtime
+Real-time debate operations (start/join).
+
+**Authentication:** Required
+
+**Request Body (Start):**
+```json
+{
+  "action": "start",
+  "debateId": "debate-123-uuid",
+  "topic": "Climate Change",
+  "participants": [
+    {
+      "id": "user-123",
+      "name": "John Doe",
+      "isAI": false,
+      "team": "PRO",
+      "role": "Speaker 1"
+    }
+  ]
+}
+```
+
+**Request Body (Join):**
+```json
+{
+  "action": "join",
+  "debateId": "debate-123-uuid",
+  "userId": "user-456"
+}
+```
+
 #### POST /api/debate/analyze
 Analyze a completed debate and provide feedback.
 
@@ -338,6 +445,36 @@ Search Wikipedia content using semantic search.
 }
 ```
 
+#### POST /api/wiki-document-search
+Direct document search in the database for document chunks with context.
+
+**Request Body:**
+```json
+{
+  "query": "climate policy arguments",
+  "maxResults": 10
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "id": "chunk-123",
+      "content": "Document chunk content...",
+      "pageNumber": 5,
+      "sectionTitle": "Policy Arguments",
+      "document": {
+        "title": "Climate Policy Review",
+        "fileName": "climate_policy_2024.pdf"
+      }
+    }
+  ]
+}
+```
+
 #### POST /api/wiki-rag-search
 Pure RAG (Retrieval-Augmented Generation) search with vector embeddings.
 
@@ -369,6 +506,37 @@ Pure RAG (Retrieval-Augmented Generation) search with vector embeddings.
   ],
   "query": "climate change policy debates",
   "timestamp": "2025-07-17T12:00:00Z"
+}
+```
+
+#### POST /api/wiki-rag-search-direct
+Direct RAG search from database without OpenAI Assistant.
+
+**Request Body:**
+```json
+{
+  "query": "renewable energy debate points",
+  "maxResults": 10
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "searchType": "rag-direct",
+  "results": [
+    {
+      "id": "chunk-456",
+      "content": "Renewable energy arguments...",
+      "pageNumber": 3,
+      "sectionTitle": "Economic Benefits",
+      "document": {
+        "title": "Renewable Energy Debates",
+        "fileName": "renewable_energy.pdf"
+      }
+    }
+  ]
 }
 ```
 
@@ -507,6 +675,94 @@ Check scraping job status.
 }
 ```
 
+### System Status & Monitoring
+
+#### GET /api/search-status
+Check the status of the search and document systems.
+
+**Response:**
+```json
+{
+  "timestamp": "2025-07-17T12:00:00Z",
+  "database": {
+    "connected": true,
+    "documents": 150,
+    "chunks": 3500,
+    "indexedDocuments": 150
+  },
+  "storage": {
+    "bucketExists": true,
+    "fileCount": 150
+  },
+  "search": {
+    "documentSearchEnabled": true,
+    "fullTextEnabled": true,
+    "trigramEnabled": true,
+    "indexesCreated": true,
+    "aiAssistantEnabled": true
+  },
+  "configuration": {
+    "supabaseUrl": true,
+    "supabaseKey": true,
+    "openaiKey": true,
+    "vectorStoreId": true
+  }
+}
+```
+
+#### GET /api/rag-status
+Check the status of the RAG (Retrieval-Augmented Generation) system.
+
+**Response:**
+```json
+{
+  "timestamp": "2025-07-17T12:00:00Z",
+  "database": {
+    "connected": true,
+    "documents": 150,
+    "chunks": 3500,
+    "indexedDocuments": 150
+  },
+  "storage": {
+    "bucketExists": true,
+    "fileCount": 150
+  },
+  "search": {
+    "fullTextEnabled": true,
+    "trigramEnabled": true,
+    "indexesCreated": true
+  },
+  "configuration": {
+    "supabaseUrl": true,
+    "supabaseKey": true,
+    "openaiKey": true,
+    "vectorStoreId": true
+  }
+}
+```
+
+#### GET /api/socket-init
+Initialize Socket.IO configuration and check transport support.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "environment": {
+    "isVercel": false,
+    "nodeEnv": "development",
+    "transport": "websocket-polling",
+    "limitations": []
+  },
+  "socketConfig": {
+    "path": "/api/socketio",
+    "transports": ["polling", "websocket"],
+    "upgrade": true
+  },
+  "timestamp": "2025-07-17T12:00:00Z"
+}
+```
+
 ### Debugging & Development
 
 #### GET /api/debug
@@ -598,6 +854,8 @@ CORS is configured per environment:
 - Development: `Access-Control-Allow-Origin: *`
 - Production: `Access-Control-Allow-Origin: https://atlasdebate.com`
 
-## WebSocket Endpoints
+## Socket.IO Endpoint
 
-For real-time features, see the [WebSocket API documentation](./websocket.md).
+The Socket.IO server is available at `/api/socketio`. For detailed real-time API documentation, see the [WebSocket API documentation](./websocket.md).
+
+**Note on Vercel Deployment:** When deployed to Vercel, WebSocket connections are not supported due to serverless function limitations. The system automatically falls back to HTTP long-polling, which may result in slightly increased latency but maintains full functionality.
