@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     let query = supabase.from('user_profiles').select('*');
     
     if (userId) {
-      query = query.eq('user_id', userId);
+      query = query.eq('id', userId);
     }
     
     const { data, error } = await query.limit(limit);
@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate the request body
-    if (!body.user_id) {
+    if (!body.id) {
       return NextResponse.json({
         status: 'error',
-        message: 'user_id is required'
+        message: 'id is required'
       }, { status: 400 });
     }
     
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const { data: existing, error: queryError } = await supabase
       .from('user_profiles')
       .select('id')
-      .eq('user_id', body.user_id)
+      .eq('id', body.id)
       .maybeSingle();
       
     if (queryError) {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
           preferences: body.preferences,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', body.user_id)
+        .eq('id', body.id)
         .select()
         .single();
         
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       const { data, error } = await supabase
         .from('user_profiles')
         .insert({
-          user_id: body.user_id,
+          id: body.id,
           display_name: body.display_name,
           preferences: body.preferences,
           created_at: new Date().toISOString(),

@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import EnhancedInput from '@/components/ui/EnhancedInput';
 import EnhancedButton from '@/components/ui/EnhancedButton';
+import { getAuthCallbackUrl, getPasswordResetUrl } from '@/lib/auth-helpers';
 
 export default function CustomAuthForm() {
   const [email, setEmail] = useState('');
@@ -76,7 +77,7 @@ export default function CustomAuthForm() {
     try {
       if (showForgotPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
+          redirectTo: getPasswordResetUrl(),
         });
         
         if (error) throw error;
@@ -95,7 +96,7 @@ export default function CustomAuthForm() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: getAuthCallbackUrl(),
           },
         });
         
@@ -163,7 +164,7 @@ export default function CustomAuthForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getAuthCallbackUrl(),
         },
       });
       
