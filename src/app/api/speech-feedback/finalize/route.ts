@@ -75,7 +75,9 @@ async function forwardToMainEndpoint(sessionId: string, metadata: Metadata, file
     // Use native FormData
     const form = new FormData();
     
-    const fileBlob = new Blob([fileBuffer], { type: metadata.contentType || 'audio/mpeg' });
+    // Convert Buffer to Uint8Array to avoid TypeScript error with SharedArrayBuffer
+    const uint8Array = new Uint8Array(fileBuffer);
+    const fileBlob = new Blob([uint8Array], { type: metadata.contentType || 'audio/mpeg' });
     form.append('audio', fileBlob, metadata.filename);
     
     // Append other metadata

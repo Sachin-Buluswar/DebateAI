@@ -6,14 +6,41 @@ export async function GET(request: NextRequest) {
   return await withRateLimit(request, apiRateLimiter, async () => {
     try {
       const supabase = createClient();
+      
+      // Check authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        return NextResponse.json({
+          status: 'error',
+          message: 'Authentication required'
+        }, { status: 401 });
+      }
+      
     const searchParams = request.nextUrl.searchParams;
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') as string) : 10;
     const userId = searchParams.get('userId');
 
+    // Users can only fetch their own profile unless they have admin role
     let query = supabase.from('user_profiles').select('*');
     
     if (userId) {
+      // Check if requesting user's own profile or has admin role
+      if (userId !== session.user.id) {
+        // Check for admin role
+        const { data: hasAdminRole } = await supabase
+          .rpc('check_user_role', { required_role: 'admin' });
+        
+        if (!hasAdminRole) {
+          return NextResponse.json({
+            status: 'error',
+            message: 'Unauthorized: Can only access your own profile'
+          }, { status: 403 });
+        }
+      }
       query = query.eq('id', userId);
+    } else {
+      // If no userId specified, only return the current user's profile
+      query = query.eq('id', session.user.id);
     }
     
     const { data, error } = await query.limit(limit);
