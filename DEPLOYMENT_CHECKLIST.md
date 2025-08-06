@@ -65,7 +65,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 OPENAI_API_KEY=
 ELEVENLABS_API_KEY=
 OPENAI_VECTOR_STORE_ID=
-NEXT_PUBLIC_SITE_URL=https://atlasdebate.com
+NEXT_PUBLIC_SITE_URL=https://erisdebate.com
 ```
 
 ### Optional but Recommended
@@ -73,7 +73,7 @@ NEXT_PUBLIC_SITE_URL=https://atlasdebate.com
 DEBUG_API_KEY=
 SENTRY_DSN=
 NEXT_PUBLIC_APP_NAME=Eris Debate
-ALLOWED_ORIGINS=https://atlasdebate.com,https://www.atlasdebate.com
+ALLOWED_ORIGINS=https://erisdebate.com,https://www.erisdebate.com
 ```
 
 ## 🚀 Deployment Steps
@@ -89,7 +89,7 @@ ALLOWED_ORIGINS=https://atlasdebate.com,https://www.atlasdebate.com
    Vercel will auto-deploy
 
 3. **Verify Deployment**
-   - Check https://atlasdebate.com/api/health
+   - Check https://erisdebate.com/api/health
    - Test each feature in the checklist above
    - Monitor browser console for errors
 

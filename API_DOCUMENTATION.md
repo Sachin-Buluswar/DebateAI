@@ -7,7 +7,7 @@ The Eris Debate application provides a comprehensive set of REST API endpoints f
 ## Base URL
 
 - Development: `http://localhost:3001/api`
-- Production: `https://atlasdebate.com/api` or configured domain
+- Production: `https://erisdebate.com/api` or configured domain
 
 ## Common Patterns
 

@@ -233,7 +233,7 @@ export async function POST(request: Request) {
 // 
 // CORS Configuration:
 // - Development: Allows all origins (*) for local testing
-// - Production: Restricts to atlasdebate.com for security
+// - Production: Restricts to erisdebate.com for security
 // - Allowed methods: POST (for search), OPTIONS (for preflight)
 // - Allowed headers: Content-Type (JSON), Authorization (auth tokens)
 // - Max-Age: 86400 seconds (24 hours) - browsers can cache preflight
@@ -242,7 +242,7 @@ export async function OPTIONS() {
     new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://atlasdebate.com',
+        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

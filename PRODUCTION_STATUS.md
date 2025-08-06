@@ -38,7 +38,7 @@ All required tables are present in production:
 - Only sachinbuluswar@gmail.com has admin access
 
 ### Site Configuration ✅
-- Domain accessible at https://atlasdebate.com
+- Domain accessible at https://erisdebate.com
 - HTTPS properly configured
 - CSP headers set appropriately
 - CORS configured for production

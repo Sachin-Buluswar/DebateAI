@@ -105,7 +105,7 @@ CREATE POLICY "Authenticated users can manage chunks" ON public.document_chunks
   FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Admin only scrape log" ON public.opencaselist_scrape_log
-  FOR ALL USING (auth.jwt() ->> 'email' = 'admin@atlasdebate.com');
+  FOR ALL USING (auth.jwt() ->> 'email' = 'admin@erisdebate.com');
 
 CREATE POLICY "Search cache is publicly readable" ON public.search_results_cache
   FOR SELECT USING (true);

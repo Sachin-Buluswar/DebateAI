@@ -123,12 +123,12 @@ graph TD
 ### Required GitHub Environments
 
 1. **staging**
-   - URL: `https://staging.atlasdebate.com`
+   - URL: `https://staging.erisdebate.com`
    - Required reviewers: None
    - Deployment branch: `main`
 
 2. **production**
-   - URL: `https://atlasdebate.com`
+   - URL: `https://erisdebate.com`
    - Required reviewers: 1-2 team members
    - Deployment branch: `main` (tags only)
 
@@ -138,11 +138,11 @@ Create these environments in your repository settings:
 
 ```yaml
 # Staging Environment
-STAGING_HOST: staging.atlasdebate.com
+STAGING_HOST: staging.erisdebate.com
 STAGING_DATABASE_URL: postgresql://...
 
 # Production Environment
-PRODUCTION_HOST: atlasdebate.com
+PRODUCTION_HOST: erisdebate.com
 PRODUCTION_DATABASE_URL: postgresql://...
 ```
 
@@ -233,7 +233,7 @@ SLACK_WEBHOOK_URL                 # Team notifications
 
 ```bash
 # SSH to production server
-ssh user@atlasdebate.com
+ssh user@erisdebate.com
 
 # List recent images
 docker images | grep eris-debate
@@ -248,8 +248,8 @@ docker-compose up -d eris-debate:v1.2.2
 ### Health Checks
 
 All deployments include health check endpoints:
-- Staging: `https://staging.atlasdebate.com/api/health`
-- Production: `https://atlasdebate.com/api/health`
+- Staging: `https://staging.erisdebate.com/api/health`
+- Production: `https://erisdebate.com/api/health`
 
 ### Workflow Notifications
 

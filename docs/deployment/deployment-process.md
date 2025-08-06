@@ -255,7 +255,7 @@ ssh-keygen        # SSH keys
 
 ```bash
 # SSH to staging server
-ssh deploy@staging.atlasdebate.com
+ssh deploy@staging.erisdebate.com
 
 # Navigate to application directory
 cd /opt/eris-debate
@@ -278,7 +278,7 @@ docker-compose logs -f web
 
 ```bash
 # SSH to production server
-ssh deploy@atlasdebate.com
+ssh deploy@erisdebate.com
 
 # Navigate to application directory
 cd /opt/eris-debate
@@ -300,7 +300,7 @@ docker-compose up -d --scale web=1 --no-recreate web
 docker-compose exec web npm run migrate:deploy
 
 # Verify deployment
-curl https://atlasdebate.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 ## Rollback Procedures
@@ -318,7 +318,7 @@ The CI/CD pipeline automatically rolls back if:
 
 ```bash
 # SSH to server
-ssh deploy@atlasdebate.com
+ssh deploy@erisdebate.com
 
 # List available images
 docker images | grep eris-debate
@@ -329,7 +329,7 @@ docker tag ghcr.io/your-org/eris-debate:v1.2.2 ghcr.io/your-org/eris-debate:late
 docker-compose up -d
 
 # Verify
-curl https://atlasdebate.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 #### Database Rollback
@@ -366,10 +366,10 @@ All environments expose health check endpoints:
 curl http://localhost:3001/api/health
 
 # Staging
-curl https://staging.atlasdebate.com/api/health
+curl https://staging.erisdebate.com/api/health
 
 # Production
-curl https://atlasdebate.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 ### Health Check Response
@@ -396,7 +396,7 @@ curl https://atlasdebate.com/api/health
 - name: Health Check
   run: |
     for i in {1..30}; do
-      if curl -f https://atlasdebate.com/api/health; then
+      if curl -f https://erisdebate.com/api/health; then
         echo "Health check passed"
         exit 0
       fi
@@ -412,7 +412,7 @@ curl https://atlasdebate.com/api/health
 1. **Response Times**
    ```bash
    # Check API response times
-   curl -w "@curl-format.txt" -o /dev/null -s https://atlasdebate.com/api/health
+   curl -w "@curl-format.txt" -o /dev/null -s https://erisdebate.com/api/health
    ```
 
 2. **Container Health**
@@ -506,7 +506,7 @@ docker-compose up web
 
 ```bash
 # Check certificate expiry
-echo | openssl s_client -servername atlasdebate.com -connect atlasdebate.com:443 2>/dev/null | openssl x509 -noout -dates
+echo | openssl s_client -servername erisdebate.com -connect erisdebate.com:443 2>/dev/null | openssl x509 -noout -dates
 
 # Renew certificates
 certbot renew --nginx
