@@ -26,9 +26,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
   // Initialize Socket.IO server
   try {
     // Determine allowed origins based on environment
-    const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://atlasdebate.com', 'https://www.atlasdebate.com'])
-      : (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001']);
+    const defaultOrigins = process.env.NODE_ENV === 'production'
+      ? [process.env.NEXT_PUBLIC_APP_URL, process.env.NEXT_PUBLIC_SITE_URL].filter(Boolean) as string[]
+      : [process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT || '3001'}`];
+    
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+      : defaultOrigins;
     
     const io = new Server(res.socket.server, {
       path: '/api/socketio',
@@ -56,7 +60,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         if (!token) {
           // In development, allow anonymous connections for testing
           if (process.env.NODE_ENV === 'development') {
-            console.warn('Socket connection without auth token - allowing for development');
+            // PRODUCTION: Logging disabled
+            // console.warn('Socket connection without auth token - allowing for development');
             socket.data.user = null;
             socket.data.userId = 'anonymous-' + socket.id;
             return next();
@@ -83,7 +88,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         if (error || !user) {
           // In development, allow connection but mark as unauthenticated
           if (process.env.NODE_ENV === 'development') {
-            console.warn('Invalid auth token - allowing for development:', error?.message);
+            // PRODUCTION: Logging disabled
+            // console.warn('Invalid auth token - allowing for development:', error?.message);
             socket.data.user = null;
             socket.data.userId = 'anonymous-' + socket.id;
             return next();
@@ -95,10 +101,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         // Authentication successful
         socket.data.user = { id: user.id, email: user.email };
         socket.data.userId = user.id;
-        console.log('Socket authenticated for user:', user.id);
+        // PRODUCTION: Logging disabled
+        // console.log('Socket authenticated for user:', user.id);
         next();
       } catch (error) {
-        console.error('Socket authentication error:', error);
+        // PRODUCTION: Logging disabled
+        // console.error('Socket authentication error:', error);
         
         // In development, allow connection on error
         if (process.env.NODE_ENV === 'development') {
@@ -118,7 +126,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     initializeSocketIO(io);
     // Socket.IO server initialized with authentication
   } catch (error) {
-    console.error('Failed to initialize Socket.IO server:', error);
+    // PRODUCTION: Logging disabled
+    // console.error('Failed to initialize Socket.IO server:', error);
   }
   
   res.end();

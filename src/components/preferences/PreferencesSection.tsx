@@ -9,7 +9,6 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 type Preferences = {
   darkMode: boolean;
   autoSave: boolean;
-  showWordCount: boolean;
   debateFormat: string;
   language: string;
   enhancedNavbar: boolean;
@@ -18,7 +17,6 @@ type Preferences = {
 const defaultPreferences: Preferences = {
   darkMode: false,
   autoSave: true,
-  showWordCount: true,
   debateFormat: 'policy',
   language: 'english',
   enhancedNavbar: true,
@@ -189,30 +187,6 @@ export default function PreferencesSection() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="flex-grow flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
-                    Show Word Count
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Display word count during speeches
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className={`${
-                    preferences.showWordCount ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
-                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
-                  onClick={() => handleToggle('showWordCount')}
-                >
-                  <span className="sr-only">Toggle word count</span>
-                  <span
-                    className={`${
-                      preferences.showWordCount ? 'translate-x-5' : 'translate-x-0'
-                    } pointer-events-none relative inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                  ></span>
-                </button>
-              </div>
 
               <div className="flex items-center justify-between">
                 <span className="flex-grow flex flex-col">

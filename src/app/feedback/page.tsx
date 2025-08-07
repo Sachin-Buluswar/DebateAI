@@ -1,13 +1,11 @@
 'use client';
 
 import React from 'react';
-import Layout from '@/components/layout/Layout';
 import FeedbackForm from '@/components/ui/FeedbackForm';
 
 export default function FeedbackPage() {
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
         <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Feedback</h1>
         </div>
@@ -39,6 +37,5 @@ export default function FeedbackPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 } 

@@ -41,8 +41,8 @@ Add these to your Vercel project settings:
 
 ```env
 NEXT_PUBLIC_VERCEL=1
-NEXT_PUBLIC_SITE_URL=https://atlasdebate.com
-ALLOWED_ORIGINS=https://atlasdebate.com,https://www.atlasdebate.com
+NEXT_PUBLIC_SITE_URL=https://erisdebate.com
+ALLOWED_ORIGINS=https://erisdebate.com,https://www.erisdebate.com
 ```
 
 ### 4. User Experience

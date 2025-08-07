@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Layout from '@/components/layout/Layout';
 import EnhancedButton from '@/components/ui/EnhancedButton';
 import EnhancedInput from '@/components/ui/EnhancedInput';
 import { ToastProvider, useToast } from '@/components/ui/Toast';
@@ -91,8 +90,7 @@ function UIDemoContent() {
   ];
 
   return (
-    <Layout useEnhancedNavbar={useEnhancedNavbar}>
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="space-y-12">
           {/* Header */}
           <div>
@@ -318,7 +316,6 @@ function UIDemoContent() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }
 

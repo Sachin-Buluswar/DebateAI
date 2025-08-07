@@ -12,6 +12,7 @@ const navigation = [
   { name: 'dashboard', href: '/dashboard' },
   { name: 'history', href: '/history' },
   { name: 'search', href: '/search' },
+  { name: 'learn', href: '/learn' },
   { name: 'feedback', href: '/speech-feedback' },
   { name: 'debate', href: '/debate' },
 ];
@@ -117,40 +118,42 @@ export default function EnhancedNavbar() {
               </Link>
             </div>
             
-            {/* Desktop Navigation - Enhanced with animations */}
+            {/* Desktop Navigation - Hidden when sidebar is visible */}
             <div className="hidden md:flex md:items-center md:space-x-8">
-              <div className={cn(
-                'flex items-center transition-all duration-200',
-                isCompact ? 'space-x-6' : 'space-x-8'
-              )}>
-                {navigation.map((item) => {
-                  const isActive = pathname?.startsWith(item.href) || false;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        'relative text-sm font-medium transition-all duration-200',
-                        isActive
-                          ? 'text-primary-600 dark:text-primary-400'
-                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100',
-                        isCompact && 'text-xs'
-                      )}
-                    >
-                      <span className="relative">
-                        {item.name}
-                        {/* Active indicator - animated underline */}
-                        <span
-                          className={cn(
-                            'absolute -bottom-1 left-0 h-0.5 bg-primary-500 transition-all duration-200',
-                            isActive ? 'w-full' : 'w-0'
-                          )}
-                        />
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
+              {!showSidebarToggle && (
+                <div className={cn(
+                  'flex items-center transition-all duration-200',
+                  isCompact ? 'space-x-6' : 'space-x-8'
+                )}>
+                  {navigation.map((item) => {
+                    const isActive = pathname?.startsWith(item.href) || false;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          'relative text-sm font-medium transition-all duration-200',
+                          isActive
+                            ? 'text-primary-600 dark:text-primary-400'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100',
+                          isCompact && 'text-xs'
+                        )}
+                      >
+                        <span className="relative">
+                          {item.name}
+                          {/* Active indicator - animated underline */}
+                          <span
+                            className={cn(
+                              'absolute -bottom-1 left-0 h-0.5 bg-primary-500 transition-all duration-200',
+                              isActive ? 'w-full' : 'w-0'
+                            )}
+                          />
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
               
               {/* Right side items */}
               <div className="flex items-center space-x-4 ml-8">

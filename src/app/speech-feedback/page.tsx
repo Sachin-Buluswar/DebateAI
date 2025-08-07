@@ -11,9 +11,6 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-const Layout = dynamic(() => import('@/components/layout/Layout'), {
-  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
-});
 import type { User } from '@/types';
 import { PlayIcon, PauseIcon, StopIcon, CloudArrowUpIcon, MicrophoneIcon } from '@heroicons/react/24/solid';
 import { MAX_UPLOAD_SIZE_BYTES, MAX_USER_STORAGE_BYTES, UPLOAD_CHUNK_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
@@ -1041,7 +1038,6 @@ export default function SpeechFeedback() {
         </div>
       </div>
     }>
-      <Layout>
         <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           {loading ? (
             <div className="flex justify-center items-center h-60">
@@ -1067,7 +1063,6 @@ export default function SpeechFeedback() {
              </div>
           )}
         </div>
-      </Layout>
     </ErrorBoundary>
   );
 } 

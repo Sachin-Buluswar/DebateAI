@@ -16,15 +16,24 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user || (user.email !== 'admin@atlasdebate.com' && user.email !== 'claudecode@gmail.com')) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    
+    // Check if user has admin role using RBAC
+    const { data: hasAdminRole } = await supabase
+      .rpc('check_user_role', { required_role: 'admin' });
+    
+    if (!hasAdminRole) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const scraper = new OpenCaseListScraper();
 
     // Start scraping in background
     scraper.scrapeWikiFiles().catch(error => {
-      console.error('Scraping error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Scraping error:', error);
     });
 
     return NextResponse.json({
@@ -32,7 +41,8 @@ export async function POST(request: NextRequest) {
       message: 'Scraping started. Check status endpoint for progress.',
     });
   } catch (error) {
-    console.error('Error starting scrape:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error starting scrape:', error);
     return NextResponse.json(
       { error: 'Failed to start scraping' },
       { status: 500 }

@@ -1,26 +1,37 @@
 # Eris Debate
 
-AI-powered debate platform with real-time debates, speech analysis, and evidence search. Built with Next.js 14, TypeScript, and production-ready infrastructure.
+AI-powered debate platform with real-time debates, speech analysis, and evidence search. Built with Next.js 14, TypeScript, and optimized for Vercel deployment.
 
 ## 🚀 Current Status
 
 **Version**: 1.0.0  
-**Status**: Production-ready, all deployment blockers resolved  
-**Completion**: 98%  
-**Build Status**: ✅ Builds successfully without errors
+**Status**: Near production-ready (database setup needed)  
+**Completion**: ~75-80% (Claude Code fixed security & config)  
+**Build Status**: ✅ Builds successfully (features need DB tables)
 
 ### ✅ What's Working
-- **All deployment issues fixed** - PDF parsing, auth packages, security vulnerabilities
 - **All TypeScript errors fixed** - Project builds successfully
-- **Standardized logging** - Consistent logger usage across codebase
 - **Core features operational** - Real-time debates, speech analysis, evidence search
+- **Speech feedback system** - Fixed 500 errors with in-memory session storage for serverless
+- **Real-time communication** - Implemented Supabase Realtime for WebSocket support on Vercel
 - **Production infrastructure** - Docker, CI/CD, monitoring, security hardening
-- **Ready for Vercel deployment** - All critical blockers resolved
+- **Standardized patterns** - Consistent error handling, retry logic, and rate limiting
+
+### 🔴 Critical Blockers (Must Fix)
+1. **Missing Database Tables** - Search, debates, and documents features are broken without proper tables
+2. **Missing Critical Env Vars** - `ELEVENLABS_CROSSFIRE_AGENT_ID` and `OPENAI_VECTOR_STORE_ID` required
+3. **CORS Security** - `vercel.json` uses wildcard `*` instead of specific domain
+4. **Missing Storage Buckets** - `debate-documents` and `debate_audio` buckets needed
+
+See `CURRENT_TASK_LISTS.md` for detailed fixes.
 
 ### 🔧 Remaining Work
-- Mobile responsiveness optimization (5%)
-- Production environment configuration
-- Load testing at scale
+- Create missing database tables (~1 hour)
+- Set up critical API keys and storage (~30 min)
+- Fix security vulnerabilities (~30 min)
+- Mobile responsiveness optimization (60% complete)
+- Replace 701 console.log statements
+- Production monitoring setup
 
 ## 📋 Quick Start
 
@@ -35,7 +46,7 @@ AI-powered debate platform with real-time debates, speech analysis, and evidence
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/eris-debate.git
+git clone https://github.com/[your-username]/eris-debate.git
 cd eris-debate
 
 # Install dependencies
@@ -77,15 +88,27 @@ NEXT_PUBLIC_APP_URL=https://yourdomain.com
 ```
 src/
 ├── app/                    # Next.js 14 App Router
-│   ├── api/               # API routes
-│   ├── debate/            # Debate UI
-│   ├── speech-feedback/   # Speech analysis
-│   └── search/            # Evidence search
+│   ├── api/               # API routes (REST endpoints)
+│   ├── debate/            # Real-time debate UI
+│   ├── speech-feedback/   # Speech analysis interface
+│   └── search/            # RAG-powered evidence search
 ├── backend/
 │   ├── modules/           # Business logic
+│   │   ├── realtimeDebate/   # Debate orchestration
+│   │   ├── speechFeedback/   # Speech processing
+│   │   └── wikiSearch/       # Document retrieval
 │   └── services/          # External integrations
+│       ├── openaiService.ts      # GPT-4 integration
+│       ├── elevenLabsWebSocket.ts # Voice services
+│       └── documentStorageService.ts # Supabase storage
 ├── components/            # React components
-└── lib/                   # Utilities & helpers
+│   ├── ui/               # Reusable UI components
+│   ├── debate/           # Debate-specific components
+│   └── layout/           # Layout components
+└── lib/                   # Utilities & configuration
+    ├── errorRecovery.ts  # Retry logic patterns
+    ├── rateLimit.ts      # API rate limiting
+    └── supabase/         # Database client
 ```
 
 ## 🛠️ Development
@@ -120,12 +143,32 @@ docker run -p 3001:3001 eris-debate:latest
 
 ### Vercel (Recommended)
 
-1. Push to GitHub
-2. Import project in Vercel
-3. Configure environment variables
-4. Deploy
+The application is optimized for Vercel deployment with serverless adaptations:
 
-### Docker
+1. **Fix Critical Blockers First**:
+   - Update CORS origin in `/src/pages/api/socketio.ts`
+   - Add viewport meta tag to `src/app/layout.tsx`
+
+2. **Deploy to Vercel**:
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+   
+   # Deploy
+   vercel
+   ```
+
+3. **Configure Environment Variables** in Vercel Dashboard:
+   - All `NEXT_PUBLIC_*` variables
+   - Server-side API keys
+   - Set `NEXT_PUBLIC_APP_URL` to your production domain
+
+4. **Features on Vercel**:
+   - Supabase Realtime for WebSocket functionality
+   - In-memory session storage for speech uploads
+   - Automatic scaling and edge deployment
+
+### Docker (Self-Hosted)
 
 ```bash
 # Build production image
@@ -141,7 +184,7 @@ docker run -p 3001:3001 --env-file .env.local eris-debate:prod
 # Build application
 npm run build
 
-# Start production server
+# Start production server (with Socket.IO support)
 npm run start
 ```
 
@@ -156,44 +199,49 @@ npm run start
 ## 🔒 Security
 
 - Row-level security (RLS) on all database tables
-- JWT authentication for WebSocket connections
+- JWT authentication for API endpoints
 - Rate limiting on all API endpoints
 - Input validation and sanitization
-- CORS properly configured
+- CORS properly configured (needs fix for production)
 - Security headers implemented
 
 ## 🎯 Features
 
 ### Real-time AI Debates
-- 10 unique AI personalities
-- WebSocket-based communication
-- Live transcription and feedback
-- Evidence search integration
+- 10 unique AI personalities with distinct debate styles
+- Supabase Realtime for low-latency communication
+- Live transcription and AI-generated responses
+- Crossfire debate mode with ElevenLabs integration
 
-### Speech Analysis
-- AI-powered feedback
-- Real-time transcription
-- Performance metrics
-- Improvement suggestions
+### Speech Analysis & Feedback
+- AI-powered speech evaluation using GPT-4
+- Real-time speech-to-text transcription
+- Performance metrics and improvement suggestions
+- Serverless-optimized chunked upload system
 
-### Evidence Search
-- Vector-based semantic search
-- RAG (Retrieval-Augmented Generation)
-- Document management
-- Context-aware results
+### Evidence Search (RAG)
+- Vector-based semantic search with OpenAI embeddings
+- Multiple retrieval strategies (semantic, keyword, hybrid)
+- Document management with PDF support
+- Context-aware answer generation
 
 ### Production Infrastructure
-- Docker containerization
-- GitHub Actions CI/CD
-- OpenTelemetry monitoring
-- Sentry error tracking
-- Automated testing
+- Optimized for Vercel serverless deployment
+- Docker support for self-hosting
+- GitHub Actions CI/CD pipeline
+- Comprehensive monitoring (Sentry + OpenTelemetry)
+- Automated testing and type checking
 
 ## 🐛 Known Issues
 
-1. **Mobile Responsiveness** - Some components need mobile optimization
-2. **Build Warning** - PDF test file reference in upload-document route (non-critical)
-3. **Lint Warnings** - Some TypeScript 'any' types remain (non-blocking)
+### Critical (Must Fix Before Deploy)
+1. **Hardcoded CORS Origin** - `/src/pages/api/socketio.ts` hardcoded to localhost
+2. **Missing Viewport Meta** - Breaks all mobile rendering
+
+### Non-Critical
+1. **Mobile Responsiveness** - 60% complete, needs optimization for smaller screens
+2. **Security Hardening** - 3 high-priority items (debug endpoint, path traversal, auth errors)
+3. **TypeScript 'any' Types** - Some remain but don't block functionality
 
 ## 🤝 Contributing
 

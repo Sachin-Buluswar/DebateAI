@@ -37,7 +37,8 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('ElevenLabs API Error:', errorData);
+      // PRODUCTION: Logging disabled
+// console.error('ElevenLabs API Error:', errorData);
       return NextResponse.json(
         { error: 'Failed to generate audio from ElevenLabs.', details: errorData },
         { status: response.status },
@@ -61,7 +62,8 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Error generating audio:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error generating audio:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json(

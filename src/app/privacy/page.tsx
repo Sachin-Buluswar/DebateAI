@@ -77,18 +77,6 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-6">
-            <h2 className="text-gray-900 dark:text-gray-100">third-party services</h2>
-            <div className="space-y-4">
-              <p>we use trusted partners to provide our services:</p>
-              <div className="pl-8 space-y-2">
-                <p><span className="text-primary-500">openai</span> — speech analysis and feedback</p>
-                <p><span className="text-primary-500">elevenlabs</span> — voice synthesis and transcription</p>
-                <p><span className="text-primary-500">supabase</span> — secure data storage</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">data security</h2>
             <p>
               we implement appropriate security measures including encryption, access controls, 

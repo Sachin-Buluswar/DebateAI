@@ -2,18 +2,135 @@
 
 ## Overview
 
-This document outlines the deployment process for Eris Debate, including staging and production deployments, rollback procedures, and best practices.
+This document outlines the deployment process for Eris Debate. The primary deployment target is Vercel (serverless), with Docker support for self-hosting. 
+
+**IMPORTANT**: Before deploying, ensure the 2 critical blockers are fixed:
+1. CORS origin in `/src/pages/api/socketio.ts`
+2. Viewport meta tag in `src/app/layout.tsx`
 
 ## Table of Contents
 
-1. [Deployment Flow](#deployment-flow)
-2. [Staging Deployment](#staging-deployment)
-3. [Production Deployment](#production-deployment)
-4. [Manual Deployment](#manual-deployment)
-5. [Rollback Procedures](#rollback-procedures)
-6. [Health Checks](#health-checks)
-7. [Monitoring](#monitoring)
-8. [Troubleshooting](#troubleshooting)
+1. [Vercel Deployment (Primary)](#vercel-deployment-primary)
+2. [Docker Deployment (Self-Hosted)](#docker-deployment-self-hosted)
+3. [Deployment Flow](#deployment-flow)
+4. [Staging Deployment](#staging-deployment)
+5. [Production Deployment](#production-deployment)
+6. [Rollback Procedures](#rollback-procedures)
+7. [Health Checks](#health-checks)
+8. [Monitoring](#monitoring)
+9. [Troubleshooting](#troubleshooting)
+
+## Vercel Deployment (Primary)
+
+### Prerequisites
+
+1. **Fix Critical Blockers**:
+   ```bash
+   # Fix CORS origin
+   # In /src/pages/api/socketio.ts, change:
+   # origin: "http://localhost:3001"
+   # to:
+   # origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"
+   
+   # Fix viewport meta
+   # In src/app/layout.tsx, add:
+   # <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   ```
+
+2. **Vercel Account Setup**:
+   - Create account at https://vercel.com
+   - Install Vercel CLI: `npm i -g vercel`
+
+### Automatic Deployment (GitHub Integration)
+
+1. **Connect Repository**:
+   - Go to Vercel Dashboard
+   - Click "New Project"
+   - Import your GitHub repository
+   - Configure project settings
+
+2. **Environment Variables**:
+   Add these in Vercel Dashboard → Settings → Environment Variables:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY
+   OPENAI_API_KEY
+   ELEVENLABS_API_KEY
+   OPENAI_VECTOR_STORE_ID
+   NEXT_PUBLIC_APP_URL (your production URL)
+   ```
+
+3. **Deploy**:
+   - Push to main branch triggers automatic deployment
+   - Preview deployments for pull requests
+
+### Manual Deployment (CLI)
+
+```bash
+# First deployment
+vercel
+
+# Production deployment
+vercel --prod
+
+# With specific environment
+vercel --env NODE_ENV=production
+```
+
+### Vercel-Specific Features
+
+1. **Serverless Adaptations**:
+   - Supabase Realtime for WebSocket support
+   - In-memory session storage for file uploads
+   - Automatic scaling
+
+2. **Edge Functions**:
+   - Middleware runs at edge locations
+   - Reduced latency for global users
+
+3. **Analytics**:
+   - Vercel Speed Insights included
+   - Real User Monitoring (RUM)
+
+## Docker Deployment (Self-Hosted)
+
+For organizations preferring self-hosted solutions:
+
+### Prerequisites
+
+```bash
+# Required tools
+docker --version  # Docker 20+
+docker-compose --version  # Docker Compose 2+
+```
+
+### Deployment Steps
+
+1. **Build Image**:
+   ```bash
+   docker build -t eris-debate:latest .
+   ```
+
+2. **Run with Docker Compose**:
+   ```bash
+   # Create docker-compose.yml with environment variables
+   docker-compose up -d
+   ```
+
+3. **Configure Reverse Proxy**:
+   ```nginx
+   server {
+       listen 443 ssl http2;
+       server_name your-domain.com;
+       
+       location / {
+           proxy_pass http://localhost:3001;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+       }
+   }
+   ```
 
 ## Deployment Flow
 
@@ -64,7 +181,7 @@ git push origin main
    ```
 
 3. **Verification**
-   - Check staging URL: https://staging.atlasdebate.com
+   - Check staging URL: https://staging.your-domain.com
    - Review deployment logs in GitHub Actions
    - Test core functionality
 
@@ -138,7 +255,7 @@ ssh-keygen        # SSH keys
 
 ```bash
 # SSH to staging server
-ssh deploy@staging.atlasdebate.com
+ssh deploy@staging.erisdebate.com
 
 # Navigate to application directory
 cd /opt/eris-debate
@@ -161,7 +278,7 @@ docker-compose logs -f web
 
 ```bash
 # SSH to production server
-ssh deploy@atlasdebate.com
+ssh deploy@erisdebate.com
 
 # Navigate to application directory
 cd /opt/eris-debate
@@ -183,7 +300,7 @@ docker-compose up -d --scale web=1 --no-recreate web
 docker-compose exec web npm run migrate:deploy
 
 # Verify deployment
-curl https://atlasdebate.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 ## Rollback Procedures
@@ -201,7 +318,7 @@ The CI/CD pipeline automatically rolls back if:
 
 ```bash
 # SSH to server
-ssh deploy@atlasdebate.com
+ssh deploy@erisdebate.com
 
 # List available images
 docker images | grep eris-debate
@@ -212,7 +329,7 @@ docker tag ghcr.io/your-org/eris-debate:v1.2.2 ghcr.io/your-org/eris-debate:late
 docker-compose up -d
 
 # Verify
-curl https://atlasdebate.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 #### Database Rollback
@@ -249,10 +366,10 @@ All environments expose health check endpoints:
 curl http://localhost:3001/api/health
 
 # Staging
-curl https://staging.atlasdebate.com/api/health
+curl https://staging.erisdebate.com/api/health
 
 # Production
-curl https://atlasdebate.com/api/health
+curl https://erisdebate.com/api/health
 ```
 
 ### Health Check Response
@@ -279,7 +396,7 @@ curl https://atlasdebate.com/api/health
 - name: Health Check
   run: |
     for i in {1..30}; do
-      if curl -f https://atlasdebate.com/api/health; then
+      if curl -f https://erisdebate.com/api/health; then
         echo "Health check passed"
         exit 0
       fi
@@ -295,7 +412,7 @@ curl https://atlasdebate.com/api/health
 1. **Response Times**
    ```bash
    # Check API response times
-   curl -w "@curl-format.txt" -o /dev/null -s https://atlasdebate.com/api/health
+   curl -w "@curl-format.txt" -o /dev/null -s https://erisdebate.com/api/health
    ```
 
 2. **Container Health**
@@ -389,7 +506,7 @@ docker-compose up web
 
 ```bash
 # Check certificate expiry
-echo | openssl s_client -servername atlasdebate.com -connect atlasdebate.com:443 2>/dev/null | openssl x509 -noout -dates
+echo | openssl s_client -servername erisdebate.com -connect erisdebate.com:443 2>/dev/null | openssl x509 -noout -dates
 
 # Renew certificates
 certbot renew --nginx

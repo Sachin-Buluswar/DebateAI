@@ -139,21 +139,32 @@ export function showRealtimeWarning(): void {
       max-width: 400px;
       font-size: 14px;
     `;
-    warning.innerHTML = `
-      <strong>Limited Real-time Features</strong><br>
-      Due to deployment constraints, some real-time features may have increased latency. 
-      The debate will still function normally.
-      <button onclick="this.parentElement.remove()" style="
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 18px;
-        color: #92400e;
-      ">×</button>
+    // Create content using DOM methods to avoid XSS vulnerability
+    const strong = document.createElement('strong');
+    strong.textContent = 'Limited Real-time Features';
+    
+    const text = document.createTextNode(
+      ' Due to deployment constraints, some real-time features may have increased latency. The debate will still function normally.'
+    );
+    
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '×';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #92400e;
     `;
+    closeButton.addEventListener('click', () => warning.remove());
+    
+    warning.appendChild(strong);
+    warning.appendChild(document.createElement('br'));
+    warning.appendChild(text);
+    warning.appendChild(closeButton);
     document.body.appendChild(warning);
 
     // Auto-remove after 10 seconds

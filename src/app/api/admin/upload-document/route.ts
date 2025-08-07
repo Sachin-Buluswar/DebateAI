@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
       fileName: file.name,
     });
   } catch (error) {
-    console.error('Error uploading document:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error uploading document:', error);
     return NextResponse.json(
       { error: 'Failed to upload document' },
       { status: 500 }

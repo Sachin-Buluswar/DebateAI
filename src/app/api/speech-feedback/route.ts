@@ -7,7 +7,8 @@ export async function POST(request: Request) {
   // Apply rate limiting for speech uploads
   const rateLimitResult = await withRateLimit(request, speechFeedbackRateLimiter, async () => {
     try {
-      console.log('[speech-feedback] Processing incoming request');
+      // PRODUCTION: Logging disabled
+// console.log('[speech-feedback] Processing incoming request');
       
       // Parse FormData from the request
       const formData = await request.formData();
@@ -55,7 +56,8 @@ export async function POST(request: Request) {
       );
 
       if (!validation.success) {
-        console.warn('[speech-feedback] Invalid request:', validation.error);
+        // PRODUCTION: Logging disabled
+// console.warn('[speech-feedback] Invalid request:', validation.error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Invalid request data', details: validation.details },
@@ -83,7 +85,8 @@ export async function POST(request: Request) {
       const speechType = requestData.speechType || 'debate';
       const userSide = requestData.userSide || 'None';
       
-      console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
+      // PRODUCTION: Logging disabled
+// console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
 
       // Process the speech feedback
       const result = await processSpeechFeedback({
@@ -97,7 +100,8 @@ export async function POST(request: Request) {
         customInstructions
       });
       
-      console.log('[speech-feedback] Processing complete, returning feedback');
+      // PRODUCTION: Logging disabled
+// console.log('[speech-feedback] Processing complete, returning feedback');
       
       // Return response with id for frontend redirect
       return addSecurityHeaders(
@@ -108,7 +112,8 @@ export async function POST(request: Request) {
       );
       
     } catch (error) {
-      console.error('[speech-feedback] Error processing request:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[speech-feedback] Error processing request:', error);
       
       // Enhanced error handling
       if (error instanceof Error) {
@@ -173,7 +178,7 @@ export async function OPTIONS() {
     new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://atlasdebate.com',
+        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

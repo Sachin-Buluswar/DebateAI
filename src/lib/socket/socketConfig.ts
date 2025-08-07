@@ -11,8 +11,8 @@ export const isVercel = () => {
   return (
     hostname.includes('vercel.app') || 
     hostname.includes('vercel.sh') ||
-    hostname === 'atlasdebate.com' ||
-    hostname === 'www.atlasdebate.com' ||
+    hostname === 'erisdebate.com' ||
+    hostname === 'www.erisdebate.com' ||
     // Check for Vercel environment variable in window
     (window as any).NEXT_PUBLIC_VERCEL === '1'
   );

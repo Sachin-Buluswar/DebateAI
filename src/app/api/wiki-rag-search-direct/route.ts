@@ -27,7 +27,8 @@ async function performDirectRagSearch(
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
   try {
-    console.log(`[direct-rag-search] Searching for: "${query}"`);
+    // PRODUCTION: Logging disabled
+// console.log(`[direct-rag-search] Searching for: "${query}"`);
     
     // First, try to find exact or partial matches in document chunks
     // Using PostgreSQL full-text search
@@ -56,12 +57,14 @@ async function performDirectRagSearch(
       .limit(maxResults * 2); // Get more results to filter
     
     if (error) {
-      console.error('[direct-rag-search] Database search error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[direct-rag-search] Database search error:', error);
       throw error;
     }
     
     if (!chunks || chunks.length === 0) {
-      console.log('[direct-rag-search] No results found, falling back to ILIKE search');
+      // PRODUCTION: Logging disabled
+// console.log('[direct-rag-search] No results found, falling back to ILIKE search');
       
       // Fallback to ILIKE search for broader matching
       const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
@@ -93,7 +96,8 @@ async function performDirectRagSearch(
       const { data: fallbackChunks, error: fallbackError } = await fallbackQuery.limit(maxResults * 2);
       
       if (fallbackError) {
-        console.error('[direct-rag-search] Fallback search error:', fallbackError);
+        // PRODUCTION: Logging disabled
+// console.error('[direct-rag-search] Fallback search error:', fallbackError);
         throw fallbackError;
       }
       
@@ -171,11 +175,13 @@ async function performDirectRagSearch(
       })
     );
     
-    console.log(`[direct-rag-search] Returning ${enhancedResults.length} results`);
+    // PRODUCTION: Logging disabled
+// console.log(`[direct-rag-search] Returning ${enhancedResults.length} results`);
     return enhancedResults;
     
   } catch (error) {
-    console.error('[direct-rag-search] Search error:', error);
+    // PRODUCTION: Logging disabled
+// console.error('[direct-rag-search] Search error:', error);
     throw error;
   }
 }
@@ -238,7 +244,8 @@ export async function POST(request: Request) {
         )
       );
     } catch (error) {
-      console.error('[direct-rag-search] Error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[direct-rag-search] Error:', error);
 
       // Return empty results instead of error to prevent UI issues
       return addSecurityHeaders(
@@ -265,7 +272,7 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : 'https://atlasdebate.com',
+          process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

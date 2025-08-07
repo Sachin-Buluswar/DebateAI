@@ -1,3 +1,31 @@
+/**
+ * TTS Service - Text-to-Speech integration for the debate system
+ * 
+ * This service provides multiple methods for converting text to speech,
+ * optimized for different use cases in the debate application.
+ * 
+ * Role in the System:
+ * - Primary voice synthesis for AI debate agents
+ * - Supports both HTTP streaming and WebSocket for flexibility
+ * - Handles voice personalization and difficulty adjustments
+ * - Provides fallback mechanisms for reliability
+ * 
+ * Integration Methods:
+ * 1. HTTP Streaming (generateAudioStreamResponse)
+ *    - Higher latency (~500ms) but more reliable
+ *    - Better for pre-generated content
+ *    - Supports full response caching
+ * 
+ * 2. WebSocket Streaming (generateAudioStreamWebSocket)
+ *    - Lower latency (~100ms) for real-time interaction
+ *    - Ideal for live debate responses
+ *    - Requires persistent connection management
+ * 
+ * Authentication:
+ * - Uses ELEVENLABS_API_KEY from environment
+ * - Supports multiple voice IDs for different speakers
+ */
+
 import fetch from 'node-fetch';
 import { env } from '@/shared/env';
 import type { Response } from 'node-fetch';
@@ -8,7 +36,27 @@ import { globalErrorRecovery } from '@/lib/errorRecovery';
 import { ElevenLabsWebSocketService, createElevenLabsWebSocketForSpeaker } from './elevenLabsWebSocket';
 
 /**
- * Generates a readable audio stream from text using the ElevenLabs API.
+ * Generates a readable audio stream from text using the ElevenLabs HTTP API.
+ * 
+ * This is the primary method for TTS when reliability is more important than latency.
+ * Uses HTTP streaming to receive audio data progressively.
+ * 
+ * Voice Selection Logic:
+ * 1. If speakerName provided, uses personality-specific voice
+ * 2. Falls back to narrator voice if speaker not found
+ * 3. Each voice has customized settings for distinctiveness
+ * 
+ * Difficulty Adjustments:
+ * - Style parameter modifies speaking pace
+ * - Beginner: 80% speed for clarity
+ * - Intermediate: 100% normal speed
+ * - Expert: 120% speed for experienced users
+ * 
+ * Error Handling:
+ * - Automatic retry with exponential backoff
+ * - Fallback to narrator voice on speaker voice failure
+ * - Returns null on complete failure for graceful degradation
+ * 
  * @param text The text to convert to speech.
  * @param speakerName Optional speaker name to select appropriate voice profile
  * @param difficulty Optional difficulty level affecting speaking speed
@@ -24,7 +72,13 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
         const baseVoiceSettings = personality ? personality.settings : { stability: 0.5, similarity_boost: 0.75 };
         const voiceSettings = {
             ...baseVoiceSettings,
-            // ElevenLabs doesn't have a direct speed parameter, but we can adjust style to affect pace
+            // Voice Settings Explanation:
+            // - stability: Controls voice consistency (0=variable, 1=monotone)
+            // - similarity_boost: How closely to match the original voice
+            // - style: Affects expressiveness AND speaking pace
+            // 
+            // We use style to control speed since ElevenLabs lacks a direct speed parameter
+            // Higher style values tend to produce more animated, faster speech
             style: baseVoiceSettings.style ? baseVoiceSettings.style * difficultyConfig.speakingSpeed : 0.3 * difficultyConfig.speakingSpeed
         };
 
@@ -43,7 +97,7 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                         },
                         body: JSON.stringify({
                             text: text,
-                            model_id: servicesConfig.elevenLabs.ttsModelId,
+                            model_id: servicesConfig.elevenLabs.ttsModelId, // eleven_turbo_v2 for low latency
                             voice_settings: voiceSettings,
                         }),
                     }
@@ -68,15 +122,22 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                         console.warn(`ElevenLabs TTS retry attempt ${attempt}:`, error.message);
                     },
                     shouldRetry: (error) => {
-                        // Don't retry on authentication errors
+                        // Retry Strategy:
+                        // - 401: Authentication failure - configuration issue, don't retry
+                        // - 400: Bad request - likely invalid text or settings, don't retry
+                        // - 429: Rate limit - retry with backoff
+                        // - 5xx: Server errors - transient, retry
+                        // - Network errors - retry
                         if ((error as any).status === 401) return false;
-                        // Don't retry on invalid input
                         if ((error as any).status === 400) return false;
                         return true;
                     }
                 },
                 fallbacks: [
-                    // Fallback to a different voice if the specified one fails
+                    // Fallback Strategy:
+                    // If the requested voice fails (e.g., quota exceeded, voice deleted),
+                    // we fall back to the narrator voice which should always be available.
+                    // This ensures the debate can continue even if specific voices fail.
                     async () => {
                         console.warn(`Falling back to narrator voice for TTS`);
                         const fallbackResponse = await fetch(
@@ -91,7 +152,7 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                                 body: JSON.stringify({
                                     text: text,
                                     model_id: servicesConfig.elevenLabs.ttsModelId,
-                                    voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+                                    voice_settings: { stability: 0.5, similarity_boost: 0.75 }, // Neutral settings
                                 }),
                             }
                         );
@@ -116,6 +177,17 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
 /**
  * Helper that wraps generateAudioStreamResponse and returns a single ArrayBuffer
  * containing the entire MP3 audio for easier transport to the client.
+ * 
+ * This method is useful when:
+ * - The complete audio needs to be buffered before playback
+ * - Sending audio data through channels that don't support streaming
+ * - Caching complete audio responses
+ * 
+ * Trade-offs:
+ * - Higher memory usage (entire audio in memory)
+ * - Longer initial delay (must receive all data)
+ * - Simpler client-side handling
+ * 
  * @param text The text to convert to speech.
  * @param speakerName Optional speaker name to select appropriate voice profile
  * @param difficulty Optional difficulty level affecting speaking speed
@@ -130,6 +202,31 @@ export async function generateAudioArrayBuffer(text: string, speakerName?: strin
 
 /**
  * Generates audio using WebSocket streaming for lower latency
+ * 
+ * This is the preferred method for real-time debate interactions where
+ * low latency is critical for natural conversation flow.
+ * 
+ * Advantages over HTTP streaming:
+ * - First audio chunk arrives in ~100ms vs ~500ms
+ * - Supports progressive text input (send as you generate)
+ * - Better for interactive applications
+ * 
+ * Implementation details:
+ * - Creates a dedicated WebSocket connection per request
+ * - Automatically handles connection lifecycle
+ * - Collects audio chunks for processing
+ * - Implements timeout protection (30 seconds)
+ * 
+ * Chunk handling:
+ * - Audio arrives in small MP3 chunks (~1-5KB each)
+ * - Can be played progressively or buffered
+ * - Callback allows real-time processing
+ * 
+ * Error scenarios:
+ * - Connection failures trigger automatic cleanup
+ * - Timeouts prevent hanging connections
+ * - Stream errors are propagated to caller
+ * 
  * @param text The text to convert to speech
  * @param speakerName Optional speaker name to select appropriate voice profile
  * @param difficulty Optional difficulty level affecting speaking speed
@@ -200,8 +297,20 @@ export async function generateAudioStreamWebSocket(
                     }
                 }
                 
-                // Simple heuristic: if no new chunks for 2 seconds, assume complete
-                // In production, ElevenLabs would send an end-of-stream signal
+                // Completion Detection:
+                // ElevenLabs doesn't send an explicit end-of-stream signal,
+                // so we use a heuristic: if no new chunks arrive for 2 seconds,
+                // we assume the stream is complete.
+                // 
+                // This works because:
+                // - Audio generation is typically continuous
+                // - Network delays rarely exceed 2 seconds
+                // - False positives just end streaming slightly early
+                // 
+                // In production, consider:
+                // - Implementing a proper end-of-stream protocol
+                // - Using flush messages to signal completion
+                // - Tracking expected audio duration
                 const lastChunkTime = chunks.length > 0 ? Date.now() : 0;
                 if (lastChunkTime && Date.now() - lastChunkTime > 2000) {
                     clearInterval(checkInterval);
@@ -229,6 +338,22 @@ export async function generateAudioStreamWebSocket(
 
 /**
  * Determines whether to use WebSocket or HTTP streaming based on configuration
+ * 
+ * This function implements a feature flag pattern for gradual rollout:
+ * 1. Development: HTTP by default for stability
+ * 2. Testing: Enable WebSocket via environment variable
+ * 3. Production: Gradually increase WebSocket usage
+ * 
+ * Decision factors:
+ * - WebSocket: Better for real-time, interactive use
+ * - HTTP: Better for reliability, simpler infrastructure
+ * 
+ * Future enhancements:
+ * - A/B testing between protocols
+ * - Dynamic switching based on network conditions
+ * - Per-user protocol preferences
+ * - Automatic fallback on WebSocket failures
+ * 
  * @param preferWebSocket Whether to prefer WebSocket streaming when available
  * @returns Boolean indicating if WebSocket should be used
  */

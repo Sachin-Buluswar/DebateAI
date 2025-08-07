@@ -59,7 +59,8 @@ export async function GET() {
       status.database.chunks = chunkCount || 0;
       status.database.indexedDocuments = indexedCount || 0;
     } catch (error) {
-      console.error('Database check failed:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Database check failed:', error);
     }
 
     // Check storage bucket
@@ -77,7 +78,8 @@ export async function GET() {
         status.storage.fileCount = files?.length || 0;
       }
     } catch (error) {
-      console.error('Storage check failed:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Storage check failed:', error);
     }
 
     // Check search capabilities
@@ -88,7 +90,8 @@ export async function GET() {
         const result = await supabase.rpc('get_installed_extensions' as any);
         extensions = result.data || [];
       } catch (error) {
-        console.error('Failed to get extensions:', error);
+        // PRODUCTION: Logging disabled
+// console.error('Failed to get extensions:', error);
       }
       
       if (Array.isArray(extensions)) {
@@ -104,7 +107,8 @@ export async function GET() {
           .eq('tablename', 'document_chunks');
         indexes = result.data || [];
       } catch (error) {
-        console.error('Failed to get indexes:', error);
+        // PRODUCTION: Logging disabled
+// console.error('Failed to get indexes:', error);
       }
       
       if (indexes && indexes.length > 0) {
@@ -114,7 +118,8 @@ export async function GET() {
         status.search.indexesCreated = indexes.length > 2;
       }
     } catch (error) {
-      console.error('Search capability check failed:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Search capability check failed:', error);
     }
 
     // Calculate health score
@@ -129,7 +134,8 @@ export async function GET() {
       })
     );
   } catch (error) {
-    console.error('RAG status check failed:', error);
+    // PRODUCTION: Logging disabled
+// console.error('RAG status check failed:', error);
     return addSecurityHeaders(
       NextResponse.json(
         {

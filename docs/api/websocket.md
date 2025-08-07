@@ -158,31 +158,36 @@ socket.on('debate-state', (state: DebateState) => {
 ### Client → Server
 
 ```ts
-// Convert audio to ArrayBuffer and stream
-const audioRecorder = new MediaRecorder(stream)
-audioRecorder.ondataavailable = (event) => {
-  if (event.data.size > 0) {
-    event.data.arrayBuffer().then(buffer => {
-      socket.emit('audio-chunk', buffer)
-    })
-  }
-}
+// Stream user speech with optional audio
+socket.emit('userSpeech', {
+  text: 'My argument is...',
+  speakerId: 'user-123',
+  phase: 'PRO_CONSTRUCTIVE_1',
+  audioBlob: audioArrayBuffer  // Optional
+})
+
+// Stream crossfire audio
+socket.emit('userCrossfireAudio', {
+  audioData: audioArrayBuffer
+})
 ```
 
 ### Server → Client
 
 ```ts
-// Server: Relay AI audio to clients
-socket.on('ai-audio-ready', ({ speaker, audioBuffer }) => {
-  io.to(`debate:${debateId}`).emit('audio-stream', {
-    speaker,
-    chunk: audioBuffer
-  })
+// Receive AI speech text
+socket.on('aiSpeech', ({ speaker, text }) => {
+  displaySpeech(speaker, text)
 })
 
-// Client: Play received audio
-socket.on('audio-stream', ({ speaker, chunk }) => {
-  audioPlayer.queueChunk(speaker, chunk)
+// Receive AI audio stream
+socket.on('aiAudio', ({ speaker, audioData }) => {
+  playAudio(speaker, audioData)
+})
+
+// Receive crossfire audio
+socket.on('crossfireAudio', ({ speakerId, audioData }) => {
+  playCrossfireAudio(speakerId, audioData)
 })
 ```
 
@@ -190,32 +195,37 @@ socket.on('audio-stream', ({ speaker, chunk }) => {
 
 ## Room Management
 
-### Namespace Patterns
+### Session Management
 
 ```ts
-// Debate-specific rooms
-const debateRoom = `debate:${debateId}`
+// Server maintains active debates and sessions
+const activeDebates = new Map<string, DebateManager>()
+const debateSessions = new Map<string, string>() // socket.id -> session_id
+const debateTranscripts = new Map<string, string>() // socket.id -> transcript
 
-// User-specific rooms (for private messages)
-const userRoom = `user:${userId}`
+// Database integration
+async function createDebateSession(topic: string, userSide: 'PRO' | 'CON', hasAiPartner: boolean): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from('debate_sessions')
+    .insert({ topic, user_side: userSide, has_ai_partner: hasAiPartner })
+    .select()
+    .single()
+  return data.id
+}
 
-// Phase-specific rooms (for crossfire participants)
-const crossfireRoom = `debate:${debateId}:crossfire`
-```
-
-### Session Isolation
-
-```ts
-// Ensure messages only go to debate participants
-socket.on('send-message', (message) => {
-  const { debateId } = socket.data
-  if (debateId) {
-    io.to(`debate:${debateId}`).emit('new-message', {
-      ...message,
-      timestamp: Date.now()
+// Save speeches to database
+async function saveSpeech(sessionId: string, speakerName: string, speakerId: string, phase: string, text: string, audioUrl?: string) {
+  await supabaseAdmin
+    .from('debate_speeches')
+    .insert({
+      session_id: sessionId,
+      speaker_name: speakerName,
+      speaker_id: speakerId,
+      phase,
+      speech_text: text,
+      audio_url: audioUrl
     })
-  }
-})
+}
 ```
 
 ---
@@ -312,16 +322,29 @@ participants.forEach(p => {
 ### Authentication
 
 ```ts
-// Verify user on connection
+// Verify user on connection with Supabase JWT
 io.use(async (socket, next) => {
-  const token = socket.handshake.auth.token
+  const token = socket.handshake.auth.token || 
+                socket.handshake.headers.authorization?.replace('Bearer ', '')
   
-  try {
-    const user = await verifyToken(token)
-    socket.data.user = user
+  if (!token) {
+    // Allow anonymous in development
+    if (process.env.NODE_ENV === 'development') {
+      socket.data.userId = 'anonymous-' + socket.id
+      return next()
+    }
+    return next(new Error('Authentication token required'))
+  }
+  
+  // Verify JWT with Supabase
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+  
+  if (user) {
+    socket.data.user = { id: user.id, email: user.email }
+    socket.data.userId = user.id
     next()
-  } catch (err) {
-    next(new Error('Authentication failed'))
+  } else {
+    next(new Error('Invalid authentication token'))
   }
 })
 ```

@@ -1,21 +1,35 @@
 # AI Agent Instructions for Eris Debate
 
-## Critical Rules
+## 🚨 CRITICAL: Read This First
 
-1. NEVER merge to main branch without explicit user approval
-2. NEVER commit directly to main branch
-3. ALWAYS create feature branches for changes
-4. ALWAYS run `npm run lint` and `npm run typecheck` before committing
-5. NEVER expose API keys in client-side code
-6. ALWAYS use existing patterns - do not create new patterns
+You are working on a **production-ready debate platform**. Every change you make must maintain production quality. 
+
+**NEVER**:
+- Merge to main branch without explicit user approval
+- Commit directly to main branch  
+- Expose API keys in client-side code
+- Create new patterns - always use existing ones
+- Skip error handling or testing
+- Use console.log in production code
+- Use `any` type in TypeScript
+
+**ALWAYS**:
+- Run `npm run lint` and `npm run typecheck` before committing
+- Test your changes thoroughly
+- Follow existing code patterns exactly
+- Create feature branches for changes
+- Handle errors gracefully with user-friendly messages
+- Use proper TypeScript types
+- Check mobile responsiveness
 
 ## Project Information
 
-- Type: Next.js 14 application
-- Language: TypeScript
+- Type: Next.js 14 application (App Router)
+- Language: TypeScript (strict mode)
 - Database: Supabase (PostgreSQL with RLS)
-- Real-time: Socket.IO
-- AI: OpenAI GPT-4, ElevenLabs TTS/STT
+- Real-time: Socket.IO (local) / Supabase Realtime (Vercel)
+- AI: OpenAI GPT-4o-mini, ElevenLabs TTS/STT
+- Deployment: Optimized for Vercel serverless
 
 ## File Structure
 
@@ -29,11 +43,13 @@ src/
 │   └── search/            # Search UI
 ├── backend/
 │   ├── modules/           # Business logic
-│   │   └── realtimeDebate/
+│   │   ├── realtimeDebate/     # Debate orchestration
+│   │   ├── speechFeedback/     # Speech analysis
+│   │   └── wikiSearch/         # Document retrieval
 │   └── services/          # External integrations
-│       ├── openaiService.ts
-│       ├── elevenLabsService.ts
-│       └── supabaseService.ts
+│       ├── openaiService.ts        # OpenAI GPT integration
+│       ├── elevenLabsWebSocket.ts  # Voice services
+│       └── documentStorageService.ts # File storage
 ├── components/
 │   ├── ui/                # Reusable UI components
 │   ├── debate/            # Debate-specific components
@@ -212,7 +228,15 @@ When errors occur, check:
 
 ## Current Issues
 
-See `docs/deployment/blockers.md` for critical issues that must be fixed.
+### Critical Blockers
+None - All critical blockers have been resolved!
+
+### Recent Fixes
+- ✅ CORS origin now uses environment variables properly
+- ✅ Viewport configuration added using Next.js 14 viewport export
+- Speech feedback 500 errors resolved with in-memory session storage
+- Supabase Realtime implemented for Vercel WebSocket support
+- All TypeScript compilation errors fixed
 
 ## Do Not
 

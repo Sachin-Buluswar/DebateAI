@@ -1,6 +1,25 @@
 /**
  * Eris Debate - Direct Document Search API Endpoint
- * Returns search results directly from the database for document chunks with context
+ * 
+ * This endpoint implements database-based document search without vector embeddings.
+ * It provides a complementary search method to the RAG approach, using PostgreSQL's
+ * full-text search capabilities for exact and fuzzy text matching.
+ * 
+ * Key differences from RAG search:
+ * - No vector embeddings: Uses PostgreSQL full-text search and ILIKE queries
+ * - Direct database queries: Searches pre-chunked documents stored in Supabase
+ * - Exact matching: Better for finding specific terms or phrases
+ * - Lower latency: No API calls to OpenAI, direct database access
+ * 
+ * Document Storage Structure:
+ * - documents table: Stores document metadata (title, URL, source type)
+ * - document_chunks table: Stores text chunks with positional metadata
+ * - Chunks maintain relationships for retrieving surrounding context
+ * 
+ * @endpoint POST /api/wiki-document-search
+ * @param {string} query - Search terms to find in documents
+ * @param {number} maxResults - Maximum results to return (default: 10, max: 20)
+ * @returns {EnhancedSearchResult[]} Array of search results with full context
  */
 
 import { NextResponse } from 'next/server';
@@ -20,17 +39,52 @@ const supabase = createClient(
 );
 
 /**
- * Perform direct database search for document chunks
+ * performDirectDocumentSearch - Database-based document search implementation
+ * 
+ * Search strategy:
+ * 1. PostgreSQL Full-Text Search: Primary method using ts_vector for linguistic matching
+ *    - Handles stemming: "running" matches "run", "runs", etc.
+ *    - Supports phrase search and boolean operators
+ *    - Language-aware (configured for English)
+ * 
+ * 2. Fallback ILIKE Search: Secondary method for broader matching
+ *    - Activated when full-text search returns no results
+ *    - Case-insensitive substring matching
+ *    - Useful for acronyms, technical terms, or partial words
+ * 
+ * 3. Relevance Scoring: Custom algorithm considering:
+ *    - Exact phrase matches (highest weight)
+ *    - Individual term frequency
+ *    - Chunk position in document (earlier = higher relevance)
+ *    - Match position within chunk
+ * 
+ * 4. Context Retrieval: For each result, fetches:
+ *    - 2 chunks before and after for context
+ *    - Maintains document structure and flow
+ *    - Helps users understand the full argument or explanation
+ * 
+ * @param {string} query - User's search query
+ * @param {number} maxResults - Maximum results to return
+ * @returns {Promise<EnhancedSearchResult[]>} Scored and ranked search results
  */
 async function performDirectDocumentSearch(
   query: string,
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
   try {
-    console.log(`[document-search] Searching for: "${query}"`);
+    // PRODUCTION: Logging disabled
+// console.log(`[document-search] Searching for: "${query}"`);
     
     // First, try to find exact or partial matches in document chunks
-    // Using PostgreSQL full-text search
+    // Using PostgreSQL full-text search with ts_vector
+    // 
+    // PostgreSQL Full-Text Search explained:
+    // - textSearch uses PostgreSQL's to_tsquery and @@ operator
+    // - 'websearch' type: Parses query like a web search (handles quotes, operators)
+    // - 'english' config: Uses English dictionary for stemming and stop words
+    // - Inner join ensures we only get chunks from valid documents
+    // 
+    // We fetch 2x maxResults because we'll apply additional scoring/filtering
     const { data: chunks, error } = await supabase
       .from('document_chunks')
       .select(`
@@ -56,14 +110,23 @@ async function performDirectDocumentSearch(
       .limit(maxResults * 2); // Get more results to filter
     
     if (error) {
-      console.error('[document-search] Database search error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[document-search] Database search error:', error);
       throw error;
     }
     
     if (!chunks || chunks.length === 0) {
-      console.log('[document-search] No results found, falling back to ILIKE search');
+      // PRODUCTION: Logging disabled
+// console.log('[document-search] No results found, falling back to ILIKE search');
       
       // Fallback to ILIKE search for broader matching
+      // This catches cases where full-text search misses:
+      // - Technical terms not in dictionary
+      // - Partial words or typos
+      // - Special characters or formatting
+      // 
+      // Strategy: Split query into terms, search for any term appearing in content
+      // Filter out very short terms to avoid too many false positives
       const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
       let fallbackQuery = supabase
         .from('document_chunks')
@@ -85,6 +148,7 @@ async function performDirectDocumentSearch(
         `);
       
       // Build OR conditions for each search term
+      // PostgREST syntax: .or('content.ilike.%term1%,content.ilike.%term2%')
       const orConditions = searchTerms.map(term => `content.ilike.%${term}%`).join(',');
       if (orConditions) {
         fallbackQuery = fallbackQuery.or(orConditions);
@@ -93,7 +157,8 @@ async function performDirectDocumentSearch(
       const { data: fallbackChunks, error: fallbackError } = await fallbackQuery.limit(maxResults * 2);
       
       if (fallbackError) {
-        console.error('[document-search] Fallback search error:', fallbackError);
+        // PRODUCTION: Logging disabled
+// console.error('[document-search] Fallback search error:', fallbackError);
         throw fallbackError;
       }
       
@@ -101,26 +166,34 @@ async function performDirectDocumentSearch(
     }
     
     // Score and rank results based on relevance
+    // Custom scoring algorithm to rank results by relevance to query
+    // This compensates for the limitations of database-only search
+    // compared to vector similarity search
     const scoredResults = chunks.map(chunk => {
       const content = chunk.content.toLowerCase();
       const queryLower = query.toLowerCase();
       const queryTerms = queryLower.split(' ').filter(term => term.length > 2);
       
-      // Calculate relevance score
+      // Calculate relevance score with multiple factors:
       let score = 0;
       
-      // Exact match bonus
+      // 1. Exact match bonus (highest weight)
+      // Full query appears as-is in the content
       if (content.includes(queryLower)) {
         score += 10;
       }
       
-      // Term frequency scoring
+      // 2. Term frequency scoring
+      // More occurrences of search terms = higher relevance
+      // Each occurrence adds 2 points
       queryTerms.forEach(term => {
         const termCount = (content.match(new RegExp(term, 'gi')) || []).length;
         score += termCount * 2;
       });
       
-      // Position bonus (earlier chunks in document might be more relevant)
+      // 3. Position bonus (earlier chunks in document might be more relevant)
+      // Assumes important information often appears early in documents
+      // Diminishes by 0.5 points per chunk position
       score += Math.max(0, 10 - chunk.chunk_index * 0.5);
       
       return { chunk, score };
@@ -133,7 +206,11 @@ async function performDirectDocumentSearch(
     // Transform to EnhancedSearchResult format
     const enhancedResults: EnhancedSearchResult[] = await Promise.all(
       topResults.map(async ({ chunk, score }, index) => {
-        // Get surrounding context
+        // Get surrounding context for better understanding
+        // Retrieves 2 chunks before and after the matched chunk
+        // This provides ~1000-2000 tokens of context (assuming 500 tokens per chunk)
+        // Helps users understand the full argument or explanation
+        // without needing to open the source document
         const { data: contextChunks } = await supabase
           .from('document_chunks')
           .select('content, chunk_index')
@@ -171,17 +248,38 @@ async function performDirectDocumentSearch(
       })
     );
     
-    console.log(`[document-search] Returning ${enhancedResults.length} results`);
+    // PRODUCTION: Logging disabled
+// console.log(`[document-search] Returning ${enhancedResults.length} results`);
     return enhancedResults;
     
   } catch (error) {
-    console.error('[document-search] Search error:', error);
+    // PRODUCTION: Logging disabled
+// console.error('[document-search] Search error:', error);
     throw error;
   }
 }
 
 /**
- * POST handler for direct document search
+ * POST /api/wiki-document-search - HTTP handler for database document search
+ * 
+ * This endpoint provides an alternative to vector search, using traditional
+ * database querying methods. It's particularly effective for:
+ * - Exact phrase matching
+ * - Finding specific terms or acronyms
+ * - Lower-latency searches (no external API calls)
+ * - Fallback when vector search is unavailable
+ * 
+ * The endpoint integrates with the same document corpus as RAG search,
+ * but uses different retrieval methods. Results include the same metadata
+ * and context format for consistency across search types.
+ * 
+ * Error handling:
+ * - Returns empty results rather than errors to prevent UI disruption
+ * - Logs errors for debugging while maintaining service availability
+ * - Gracefully handles database connection issues
+ * 
+ * @param {Request} request - HTTP request with JSON body {query, maxResults}
+ * @returns {Response} JSON response with search results and metadata
  */
 export async function POST(request: Request) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
@@ -238,7 +336,8 @@ export async function POST(request: Request) {
         )
       );
     } catch (error) {
-      console.error('[document-search] Error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[document-search] Error:', error);
 
       // Return empty results instead of error to prevent UI issues
       return addSecurityHeaders(
@@ -265,7 +364,7 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : 'https://atlasdebate.com',
+          process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

@@ -44,14 +44,16 @@ if (typeof window === 'undefined') {
   const parsed = mergedSchema.safeParse(serverEnv);
 
   if (!parsed.success) {
-    console.error(
-      '❌ Invalid environment variables on server:',
-      parsed.error.flatten().fieldErrors
-    );
+    // PRODUCTION: Logging disabled
+    // console.error(
+    //   '❌ Invalid environment variables on server:',
+    //   parsed.error.flatten().fieldErrors
+    // );
     if (!isDevMode) {
       throw new Error('Invalid server-side environment variables.');
     } else {
-      console.warn('⚠️ Using fallback values for missing environment variables in development mode');
+      // PRODUCTION: Logging disabled
+      // console.warn('⚠️ Using fallback values for missing environment variables in development mode');
       // Use fallback values in development
       env = {
         OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'fallback',
@@ -78,10 +80,11 @@ if (typeof window === 'undefined') {
   const parsed = clientSchema.safeParse(clientEnv);
 
   if (!parsed.success) {
-    console.error(
-      '❌ Invalid environment variables on client:',
-      parsed.error.flatten().fieldErrors
-    );
+    // PRODUCTION: Logging disabled
+    // console.error(
+    //   '❌ Invalid environment variables on client:',
+    //   parsed.error.flatten().fieldErrors
+    // );
     throw new Error('Invalid client-side environment variables.');
   }
 

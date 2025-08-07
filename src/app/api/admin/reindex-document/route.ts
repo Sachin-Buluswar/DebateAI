@@ -17,8 +17,16 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user || (user.email !== 'admin@atlasdebate.com' && user.email !== 'claudecode@gmail.com')) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    
+    // Check if user has admin role using RBAC
+    const { data: hasAdminRole } = await supabase
+      .rpc('check_user_role', { required_role: 'admin' });
+    
+    if (!hasAdminRole) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const { documentId } = await request.json();
@@ -50,7 +58,8 @@ export async function POST(request: NextRequest) {
       message: 'Document reindexed successfully',
     });
   } catch (error) {
-    console.error('Error reindexing document:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error reindexing document:', error);
     return NextResponse.json(
       { error: 'Failed to reindex document' },
       { status: 500 }

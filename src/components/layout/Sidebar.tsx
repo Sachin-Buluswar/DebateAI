@@ -30,6 +30,11 @@ const navigation: NavItem[] = [
     href: '/search',
   },
   {
+    name: 'learn',
+    shortName: 'l',
+    href: '/learn',
+  },
+  {
     name: 'feedback',
     shortName: 'f',
     href: '/speech-feedback',

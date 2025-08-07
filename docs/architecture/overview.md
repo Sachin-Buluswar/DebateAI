@@ -19,8 +19,8 @@ Eris Debate is a production-ready AI debate platform built with modern web techn
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Application Layer                            │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │  API Routes  │  │  Socket.IO   │  │   Middleware │             │
-│  │  (REST API)  │  │   Server     │  │  & Guards    │             │
+│  │  API Routes  │  │  Real-time   │  │   Middleware │             │
+│  │  (REST API)  │  │Socket.IO/Sup │  │  & Guards    │             │
 │  └──────────────┘  └──────────────┘  └──────────────┘             │
 └─────────────────────────────────────────────────────────────────────┘
                                 │
@@ -50,10 +50,11 @@ Eris Debate is a production-ready AI debate platform built with modern web techn
 ### Technology Stack
 
 - **Frontend**: Next.js 14.2.30, React 18, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Next.js API Routes, Socket.IO
+- **Backend**: Node.js, Next.js API Routes, Socket.IO (local) / Supabase Realtime (Vercel)
 - **Database**: Supabase (PostgreSQL) with Row Level Security
 - **AI Services**: OpenAI GPT-4o-mini, ElevenLabs TTS/STT
-- **Infrastructure**: Docker, GitHub Actions, OpenTelemetry
+- **Infrastructure**: Vercel (primary), Docker (self-hosted), GitHub Actions, OpenTelemetry
+- **Storage**: In-memory sessions (serverless), Supabase Storage (persistent)
 
 ### Key Design Principles
 
@@ -62,6 +63,34 @@ Eris Debate is a production-ready AI debate platform built with modern web techn
 3. **Error Recovery**: Exponential backoff and circuit breakers for external services
 4. **Security First**: Input validation, rate limiting, and RLS policies
 5. **Performance**: Lazy loading, server components, and connection pooling
+
+---
+
+## Serverless Adaptations
+
+### Vercel Deployment Optimizations
+
+The application includes specific adaptations for serverless deployment on Vercel:
+
+1. **Real-time Communication**: 
+   - Local development: Socket.IO with persistent connections
+   - Vercel production: Supabase Realtime for WebSocket support
+   - Automatic adapter selection based on environment
+
+2. **Speech Feedback Processing**:
+   - In-memory session storage for chunked uploads
+   - Bypasses body size limits for large audio files
+   - Session cleanup after processing completion
+
+3. **Function Timeouts**:
+   - API routes optimized for 10-second execution limit
+   - Long-running processes use background jobs
+   - Client-side retry logic for timeout recovery
+
+4. **Static Generation**:
+   - Pages use ISR (Incremental Static Regeneration) where appropriate
+   - Dynamic routes for personalized content
+   - Edge middleware for authentication checks
 
 ---
 
