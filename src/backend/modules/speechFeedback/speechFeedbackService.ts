@@ -9,6 +9,12 @@ import { promises as fs } from 'fs';
 import { getAudioDuration } from '@/backend/utils/audioUtils';
 import { openAIService } from '@/backend/services/openaiService';
 import { aiLogger as logger } from '@/lib/monitoring/logger';
+import { 
+  standardizeToPercentage, 
+  nsdaToPercentage,
+  getStandardizedScore,
+  extractScoreFromFeedback 
+} from '@/utils/scoreStandardization';
 
 // Storage constants
 export const SPEECH_BUCKET = 'speech_audio';
@@ -217,8 +223,9 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   // Write buffer to temporary file
   await fs.writeFile(tempFilePath, audioBuffer);
   
-  // Get actual audio duration
+  // Get actual audio duration using improved detection
   const durationSeconds = await getAudioDuration(tempFilePath);
+  console.log(`[speechFeedbackService] Detected audio duration: ${durationSeconds} seconds`);
   
   // Validate duration
   const durationMinutes = durationSeconds / 60;
@@ -272,11 +279,15 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         topic,
         speech_type: speechType,
         user_side: userSide,
-        feedback: { message: 'Audio file too large for automated feedback.' },
+        feedback: { 
+          message: 'Audio file too large for automated feedback.',
+          standardizedScore: 0 // Include standardized score even for large files
+        },
+        overall_score: 0, // Populate the overall_score column
         audio_url: audioUrl,
         transcription: null,
         file_size_bytes: processedFileSize,
-        duration_seconds: processedAudio.durationSeconds || 0
+        duration_seconds: processedAudio.durationSeconds || 60 // Use actual duration
       })
       .select('id')
       .single();
@@ -288,7 +299,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     
     return {
       feedback: { 
-        speakerScore: 0,
+        speakerScore: 25, // Minimum NSDA score
+        standardizedScore: 0, // 0% in standardized format
         scoreJustification: 'File too large for automated analysis',
         overallSummary: 'Audio file uploaded successfully but is too large for automated feedback.',
         message: 'Audio file too large for automated feedback.' 
@@ -417,9 +429,19 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     
     try {
       feedback = JSON.parse(feedbackContent || '{}');
+      
+      // Standardize the score immediately after parsing
+      const standardizedScore = feedback.speakerScore 
+        ? nsdaToPercentage(feedback.speakerScore)
+        : standardizeToPercentage(feedback.score) || 0;
+      
+      // Add standardized score to feedback object
+      feedback.standardizedScore = standardizedScore;
+      
       logger.info('AI feedback generated successfully', {
         metadata: {
-          speakerScore: feedback.speakerScore
+          speakerScore: feedback.speakerScore,
+          standardizedScore: standardizedScore
         }
       });
     } catch (parseError) {
@@ -430,6 +452,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       });
         feedback = {
           speakerScore: 25,
+          standardizedScore: 0, // 25 NSDA = 0%
           scoreJustification: "Default score due to parsing error",
           overallSummary: 'AI feedback generated but could not be parsed properly. Please try uploading your speech again.',
           structureOrganization: {
@@ -470,7 +493,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   } catch (error) {
       console.error('[speechFeedbackService] AI feedback generation failed:', error);
       feedback = {
-        speakerScore: 0,
+        speakerScore: 25, // Minimum NSDA score
+        standardizedScore: 0, // 0% standardized
         scoreJustification: "Unable to provide score due to API error",
         overallSummary: `Speech analysis failed due to API error. Basic assessment: Speech about ${topic} was recorded successfully.`,
         structureOrganization: {
@@ -509,9 +533,15 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       };
   }
   
-  // Save to database
+  // Save to database with standardized score
   let insertedRecord;
   try {
+    // Extract and standardize the score for database storage
+    const standardizedScore = extractScoreFromFeedback(feedback) || 0;
+    const overallScore = Math.round(standardizedScore); // Round for integer column
+    
+    console.log(`[speechFeedbackService] Storing feedback with standardized score: ${overallScore}%`);
+    
     const { data, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
       .insert({
@@ -519,11 +549,15 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         topic,
         speech_type: speechType,
         user_side: userSide,
-        feedback,
+        feedback: {
+          ...feedback,
+          standardizedScore: standardizedScore // Ensure standardized score is in JSON
+        },
+        overall_score: overallScore, // Populate the overall_score column!
         audio_url: audioUrl,
         transcription: JSON.stringify(transcription),
         file_size_bytes: processedFileSize,
-        duration_seconds: processedAudio.durationSeconds || 0
+        duration_seconds: processedAudio.durationSeconds || 60 // Use actual duration with fallback
       })
       .select('id')
       .single();

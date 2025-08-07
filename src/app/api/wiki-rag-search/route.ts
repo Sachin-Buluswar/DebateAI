@@ -216,7 +216,8 @@ Return up to ${maxResults} results ordered by relevance.`,
                 const file = await openai.files.retrieve(fileId);
                 fileName = file.filename || fileName;
               } catch (_e) {
-                console.warn(`Could not retrieve file info for ${fileId}`);
+                // PRODUCTION: Logging disabled
+// console.warn(`Could not retrieve file info for ${fileId}`);
               }
 
               // Extract the relevant text around the citation
@@ -267,7 +268,8 @@ Return up to ${maxResults} results ordered by relevance.`,
     // Return results
     return results.slice(0, maxResults);
   } catch (error) {
-    console.error('[rag-search] RAG search error:', error);
+    // PRODUCTION: Logging disabled
+// console.error('[rag-search] RAG search error:', error);
 
     // Return error result
     return [
@@ -311,7 +313,8 @@ export async function POST(request: Request) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
-      console.error('[rag-search] Missing environment variables');
+      // PRODUCTION: Logging disabled
+// console.error('[rag-search] Missing environment variables');
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -383,7 +386,8 @@ export async function POST(request: Request) {
         )
       );
     } catch (error) {
-      console.error('[rag-search] Error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[rag-search] Error:', error);
 
       return addSecurityHeaders(
         NextResponse.json(

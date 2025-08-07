@@ -13,6 +13,11 @@ export async function POST(req: NextRequest) {
   //    truthy. This prevents accidental exposure in production builds where the
   //    flag is not set.
 
+  // Never enable in production unless explicitly configured
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SQL_ENDPOINT !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  
   if (!process.env.ENABLE_SQL_ENDPOINT) {
     return NextResponse.json({ error: 'Endpoint disabled' }, { status: 404 });
   }
@@ -43,14 +48,18 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabaseAdmin.rpc('execute_sql', { query });
 
     if (error) {
-      console.error('Error executing SQL:', error);
+      // PRODUCTION: Logging disabled
+      // // PRODUCTION: Logging disabled
+// console.error('Error executing SQL:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ data });
   } catch (err) {
     const error = err as Error;
-    console.error('API Error:', error);
+    // PRODUCTION: Logging disabled
+    // // PRODUCTION: Logging disabled
+// console.error('API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 } 

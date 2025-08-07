@@ -1,13 +1,26 @@
 # AI Agent Instructions for Eris Debate
 
-## Critical Rules
+## 🚨 CRITICAL: Read This First
 
-1. NEVER merge to main branch without explicit user approval
-2. NEVER commit directly to main branch
-3. ALWAYS create feature branches for changes
-4. ALWAYS run `npm run lint` and `npm run typecheck` before committing
-5. NEVER expose API keys in client-side code
-6. ALWAYS use existing patterns - do not create new patterns
+You are working on a **production-ready debate platform**. Every change you make must maintain production quality. 
+
+**NEVER**:
+- Merge to main branch without explicit user approval
+- Commit directly to main branch  
+- Expose API keys in client-side code
+- Create new patterns - always use existing ones
+- Skip error handling or testing
+- Use console.log in production code
+- Use `any` type in TypeScript
+
+**ALWAYS**:
+- Run `npm run lint` and `npm run typecheck` before committing
+- Test your changes thoroughly
+- Follow existing code patterns exactly
+- Create feature branches for changes
+- Handle errors gracefully with user-friendly messages
+- Use proper TypeScript types
+- Check mobile responsiveness
 
 ## Project Information
 

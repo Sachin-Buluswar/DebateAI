@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
     // Security check: Sanitize session ID
     const sanitizedSessionId = sanitizeSessionId(sessionId);
     if (sanitizedSessionId !== sessionId) {
-      console.warn(`Potentially malicious session ID detected: ${sessionId}`);
+      // PRODUCTION: Logging disabled
+// console.warn(`Potentially malicious session ID detected: ${sessionId}`);
       return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
     }
     
@@ -102,7 +103,8 @@ export async function POST(req: NextRequest) {
     const metadata = await UploadSessionStore.getSession(sanitizedSessionId);
     if (!metadata) {
       // Session might have expired (30min timeout) or never existed
-      console.log(`[chunk] Session not found: ${sanitizedSessionId}`);
+      // PRODUCTION: Logging disabled
+// console.log(`[chunk] Session not found: ${sanitizedSessionId}`);
       return NextResponse.json({ error: 'Upload session not found' }, { status: 404 });
     }
 
@@ -142,7 +144,8 @@ export async function POST(req: NextRequest) {
       completed: updatedMetadata?.completed || false
     });
   } catch (error) {
-    console.error('Error processing chunk upload:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error processing chunk upload:', error);
     
     // Don't expose internal errors to clients
     // Log the full error server-side for debugging

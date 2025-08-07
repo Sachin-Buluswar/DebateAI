@@ -51,6 +51,11 @@ interface Diagnostics {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  // Disable completely in production unless explicitly enabled
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEBUG_ENDPOINT !== 'true') {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   // Check IP restriction
   const allowedIPs = process.env.DEBUG_ALLOWED_IPS?.split(',') || [];
   const forwardedFor = request.headers.get('x-forwarded-for');

@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query.limit(limit);
 
     if (error) {
-      console.error('Error fetching user profiles:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Error fetching user profiles:', error);
       return NextResponse.json({
         status: 'error',
         message: 'Failed to fetch user profiles',
@@ -60,7 +61,8 @@ export async function GET(request: NextRequest) {
       data
     });
   } catch (err: unknown) {
-    console.error('Error in user_profiles API:', err);
+    // PRODUCTION: Logging disabled
+// console.error('Error in user_profiles API:', err);
     return NextResponse.json({
       status: 'error',
       message: 'Error processing request',
@@ -92,7 +94,8 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
       
     if (queryError) {
-      console.error('Error checking existing profile:', queryError);
+      // PRODUCTION: Logging disabled
+// console.error('Error checking existing profile:', queryError);
       return NextResponse.json({
         status: 'error',
         message: 'Error checking existing profile',
@@ -116,7 +119,8 @@ export async function POST(request: NextRequest) {
         .single();
         
       if (error) {
-        console.error('Error updating user profile:', error);
+        // PRODUCTION: Logging disabled
+// console.error('Error updating user profile:', error);
         return NextResponse.json({
           status: 'error',
           message: 'Failed to update user profile',
@@ -140,7 +144,8 @@ export async function POST(request: NextRequest) {
         .single();
         
       if (error) {
-        console.error('Error creating user profile:', error);
+        // PRODUCTION: Logging disabled
+// console.error('Error creating user profile:', error);
         return NextResponse.json({
           status: 'error',
           message: 'Failed to create user profile',
@@ -156,7 +161,8 @@ export async function POST(request: NextRequest) {
       ...result
     });
   } catch (err: unknown) {
-    console.error('Error in user_profiles API:', err);
+    // PRODUCTION: Logging disabled
+// console.error('Error in user_profiles API:', err);
     return NextResponse.json({
       status: 'error',
       message: 'Error processing request',

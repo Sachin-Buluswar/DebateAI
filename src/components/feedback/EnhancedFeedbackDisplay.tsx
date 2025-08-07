@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/utils/cn';
+import { formatScore, detectScoreType, getScoreColor, nsdaToPercentage } from '@/utils/scoring';
 
 interface FeedbackScores {
   delivery: number;
@@ -31,22 +32,38 @@ export default function EnhancedFeedbackDisplay({
 }: EnhancedFeedbackDisplayProps) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-[#87A96B]';
-    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
+  // Use the imported getScoreColor from utils/scoring
+  // which handles different score types properly
 
   const getScoreBgColor = (score: number) => {
-    if (score >= 80) return 'from-[#87A96B]/20 to-[#87A96B]/5';
-    if (score >= 60) return 'from-yellow-600/20 to-yellow-600/5';
+    // Convert to percentage for consistent color mapping
+    const scoreType = detectScoreType(score);
+    let percentage = score;
+    if (scoreType === 'nsda') {
+      percentage = nsdaToPercentage(score);
+    } else if (scoreType === 'ten-point') {
+      percentage = (score / 10) * 100;
+    }
+    
+    if (percentage >= 80) return 'from-[#87A96B]/20 to-[#87A96B]/5';
+    if (percentage >= 60) return 'from-yellow-600/20 to-yellow-600/5';
     return 'from-red-600/20 to-red-600/5';
   };
 
   const CircularProgress = ({ score, label }: { score: number; label: string }) => {
     const radius = 45;
     const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (score / 100) * circumference;
+    
+    // Convert score to percentage for progress calculation
+    const scoreType = detectScoreType(score);
+    let progressPercentage = score;
+    if (scoreType === 'nsda') {
+      progressPercentage = nsdaToPercentage(score);
+    } else if (scoreType === 'ten-point') {
+      progressPercentage = (score / 10) * 100;
+    }
+    
+    const strokeDashoffset = circumference - (progressPercentage / 100) * circumference;
 
     return (
       <div className="relative">
@@ -156,7 +173,7 @@ export default function EnhancedFeedbackDisplay({
                       `bg-gradient-to-r ${getScoreBgColor(section.score)}`,
                       getScoreColor(section.score)
                     )}>
-                      {section.score}/100
+                      {formatScore(section.score).display}
                     </span>
                   )}
                 </div>

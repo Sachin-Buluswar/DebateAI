@@ -16,7 +16,6 @@ export default function CustomAuthForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [emailExists, setEmailExists] = useState(false);
   
   const supabase = createClient();
   const router = useRouter();
@@ -25,41 +24,7 @@ export default function CustomAuthForm() {
   useEffect(() => {
     setError(null);
     setMessage(null);
-    setEmailExists(false);
   }, [isSignUp, showForgotPassword]);
-
-  // Check if email exists when user types in sign up mode
-  useEffect(() => {
-    const checkEmailExists = async () => {
-      if (!isSignUp || !email || email.length < 5) {
-        setEmailExists(false);
-        return;
-      }
-
-      try {
-        // Use the sign in method to check if email exists
-        // This will fail if email doesn't exist, succeed if it does
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: 'dummy-password-for-checking' // This will fail but that's ok
-        });
-
-        // If error is "Invalid login credentials", the email exists
-        // If error is "User not found" or similar, the email doesn't exist
-        if (error && error.message.includes('Invalid login credentials')) {
-          setEmailExists(true);
-        } else {
-          setEmailExists(false);
-        }
-      } catch (error) {
-        // If there's an exception, assume email doesn't exist
-        setEmailExists(false);
-      }
-    };
-
-    const timeoutId = setTimeout(checkEmailExists, 500); // Debounce
-    return () => clearTimeout(timeoutId);
-  }, [email, isSignUp, supabase]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,16 +47,12 @@ export default function CustomAuthForm() {
         
         if (error) throw error;
         
-        setMessage('Password reset email sent! Please check your inbox.');
+        setMessage('If an account exists with this email, you will receive a password reset link. Please check your inbox.');
         setShowForgotPassword(false);
+        // Clear form
+        setEmail('');
+        setPassword('');
       } else if (isSignUp) {
-        // Check if email already exists before attempting sign up
-        if (emailExists) {
-          setError('This email address is already associated with an account. Please sign in instead.');
-          setIsSignUp(false); // Switch to sign in mode
-          return;
-        }
-
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -114,24 +75,28 @@ export default function CustomAuthForm() {
           setMessage('Please check your email to confirm your account before signing in!');
         } else if (data.session) {
           // Auto-signed in (email confirmation disabled)
-          console.log('[auth] Sign up successful, redirecting to dashboard');
+          // PRODUCTION: Logging disabled
+          // console.log('[auth] Sign up successful, redirecting to dashboard');
           router.push('/dashboard');
           router.refresh();
         }
       } else {
-        console.log('[auth] Attempting sign in for:', email);
+        // PRODUCTION: Logging disabled
+        // console.log('[auth] Attempting sign in for:', email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
         if (error) {
-          console.error('[auth] Sign in error:', error);
+          // PRODUCTION: Logging disabled
+          // console.error('[auth] Sign in error:', error);
           throw error;
         }
         
         if (data.session) {
-          console.log('[auth] Sign in successful, redirecting to dashboard');
+          // PRODUCTION: Logging disabled
+          // console.log('[auth] Sign in successful, redirecting to dashboard');
           router.push('/dashboard');
           router.refresh();
         } else {
@@ -140,7 +105,8 @@ export default function CustomAuthForm() {
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      console.error('[auth] Authentication error:', error);
+      // PRODUCTION: Logging disabled
+      // console.error('[auth] Authentication error:', error);
       
       // Provide more user-friendly error messages
       let friendlyMessage = error.message;
@@ -158,23 +124,6 @@ export default function CustomAuthForm() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      console.log('[auth] Attempting Google sign in');
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: getAuthCallbackUrl(),
-        },
-      });
-      
-      if (error) throw error;
-    } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      console.error('[auth] Google sign in error:', error);
-      setError(`Google sign-in failed: ${error.message}`);
-    }
-  };
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -190,24 +139,6 @@ export default function CustomAuthForm() {
             label="Email"
             placeholder="Enter your email"
           />
-          {isSignUp && emailExists && (
-            <div className="mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-800">
-              <p className="text-blue-600 dark:text-blue-300 text-sm flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                This email address is already associated with an account.
-                <button
-                  type="button"
-                  onClick={() => setIsSignUp(false)}
-                  className="ml-1 underline hover:no-underline font-medium"
-                >
-                  Sign in instead
-                </button>
-              </p>
-            </div>
-          )}
         </div>
 
         {!showForgotPassword && (
@@ -274,46 +205,6 @@ export default function CustomAuthForm() {
           className="w-full"
         >
           {showForgotPassword ? 'Send Reset Email' : isSignUp ? 'Sign Up' : 'Sign In'}
-        </EnhancedButton>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
-          </div>
-        </div>
-
-        <EnhancedButton
-          type="button"
-          onClick={handleGoogleSignIn}
-          loading={isLoading}
-          variant="outline"
-          size="lg"
-          className="w-full"
-          icon={
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="currentColor"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="currentColor"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="currentColor"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-          }
-        >
-          Sign in with Google
         </EnhancedButton>
 
         <div className="text-center space-y-2">

@@ -102,7 +102,8 @@ async function forwardToMainEndpoint(sessionId: string, metadata: Metadata, file
       targetUrl = 'http://localhost:3001/api/speech-feedback';
     }
 
-    console.log(`[finalize] Forwarding native FormData to: ${targetUrl}`);
+    // PRODUCTION: Logging disabled
+// console.log(`[finalize] Forwarding native FormData to: ${targetUrl}`);
 
     const response = await fetch(targetUrl, {
       method: 'POST',
@@ -115,7 +116,8 @@ async function forwardToMainEndpoint(sessionId: string, metadata: Metadata, file
 
     return response;
   } catch (error: unknown) {
-    console.error('[finalize] Error forwarding to main endpoint:', error);
+    // PRODUCTION: Logging disabled
+// console.error('[finalize] Error forwarding to main endpoint:', error);
     throw error;
   }
 }
@@ -152,13 +154,15 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
     let sessionId: string | null = null; // Keep track of sessionId for error cleanup
     try {
-      console.log('[finalize] Starting upload finalization');
-      console.log('[finalize] Environment:', {
-        NODE_ENV: process.env.NODE_ENV,
-        HAS_VERCEL_URL: !!process.env.VERCEL_URL,
-        VERCEL_URL: process.env.VERCEL_URL?.substring(0, 20) + '...',
-        HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
-      });
+      // PRODUCTION: Logging disabled
+// console.log('[finalize] Starting upload finalization');
+      // PRODUCTION: Logging disabled
+// console.log('[finalize] Environment:', {
+      //   NODE_ENV: process.env.NODE_ENV,
+      //   HAS_VERCEL_URL: !!process.env.VERCEL_URL,
+      //   VERCEL_URL: process.env.VERCEL_URL?.substring(0, 20) + '...',
+      //   HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
+      // });
       
       const data = await req.json() as { sessionId: string };
       sessionId = data.sessionId; // Assign sessionId here
@@ -168,32 +172,37 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     }
 
     const sanitizedSessionId = sanitizeSessionId(sessionId);
-    console.log(`[finalize] Checking session: ${sanitizedSessionId}`);
+    // PRODUCTION: Logging disabled
+// console.log(`[finalize] Checking session: ${sanitizedSessionId}`);
     
     // Get session metadata
     const metadata = await UploadSessionStore.getSession(sanitizedSessionId) as Metadata;
     if (!metadata) {
-      console.error(`[finalize] Session not found: ${sanitizedSessionId}`);
+      // PRODUCTION: Logging disabled
+// console.error(`[finalize] Session not found: ${sanitizedSessionId}`);
       return NextResponse.json({ error: 'Upload session not found or expired' }, { status: 404 });
     }
 
     // Verify all chunks have been uploaded
     // This is critical - processing incomplete audio would fail or produce poor results
     if (metadata.uploadedChunks !== metadata.totalChunks) {
-      console.warn(`Chunk mismatch for session ${sessionId}: expected ${metadata.totalChunks}, got ${metadata.uploadedChunks}`);
+      // PRODUCTION: Logging disabled
+// console.warn(`Chunk mismatch for session ${sessionId}: expected ${metadata.totalChunks}, got ${metadata.uploadedChunks}`);
       return NextResponse.json({ 
         error: `Not all chunks uploaded. Received ${metadata.uploadedChunks} of ${metadata.totalChunks}` 
       }, { status: 400 });
     }
 
-    console.log(`[finalize] Reassembling ${metadata.totalChunks} chunks for file ${metadata.filename} (size: ${metadata.totalSize})`);
+    // PRODUCTION: Logging disabled
+// console.log(`[finalize] Reassembling ${metadata.totalChunks} chunks for file ${metadata.filename} (size: ${metadata.totalSize})`);
     
     // Get merged buffer from memory store
     // The UploadSessionStore concatenates all chunks in order
     let fileBuffer: Buffer;
     try {
       fileBuffer = await UploadSessionStore.getMergedBuffer(sanitizedSessionId);
-      console.log(`[finalize] Merged file size: ${fileBuffer.length} bytes`);
+      // PRODUCTION: Logging disabled
+// console.log(`[finalize] Merged file size: ${fileBuffer.length} bytes`);
       
       // Sanity check: ensure we have data
       if (fileBuffer.length === 0) {
@@ -202,10 +211,12 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       
       // Warn if size doesn't match (but continue - might be due to encoding)
       if (fileBuffer.length !== metadata.totalSize) {
-        console.warn(`[finalize] Size mismatch - expected: ${metadata.totalSize}, actual: ${fileBuffer.length}`);
+        // PRODUCTION: Logging disabled
+// console.warn(`[finalize] Size mismatch - expected: ${metadata.totalSize}, actual: ${fileBuffer.length}`);
       }
     } catch (error) {
-      console.error('[finalize] Error merging chunks:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[finalize] Error merging chunks:', error);
       throw new Error('Failed to merge uploaded chunks');
     }
 
@@ -229,7 +240,8 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     // - Better error handling (direct exceptions vs HTTP errors)
     // - Simpler architecture (fewer network hops)
 
-    console.log('[finalize] Invoking processSpeechFeedback internally');
+    // PRODUCTION: Logging disabled
+// console.log('[finalize] Invoking processSpeechFeedback internally');
 
     const serviceResult = await processSpeechFeedback({
       audioBuffer: fileBuffer,
@@ -246,7 +258,8 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     // This is important to prevent memory leaks in long-running instances
     await UploadSessionStore.deleteSession(sanitizedSessionId);
 
-    console.log('[finalize] Internal processing complete, returning');
+    // PRODUCTION: Logging disabled
+// console.log('[finalize] Internal processing complete, returning');
 
     // Return the feedback ID so the client can retrieve results
     return NextResponse.json({
@@ -256,22 +269,26 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    console.error('[finalize] Error finalizing chunked upload:', {
-      error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-      sessionId,
-      env: {
-        NODE_ENV: process.env.NODE_ENV,
-        HAS_VERCEL_URL: !!process.env.VERCEL_URL,
-        HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
-      }
-    });
+    // PRODUCTION: Logging disabled
+    // console.error('[finalize] Error finalizing chunked upload:', {
+    //   error: errorMessage,
+    //   stack: error instanceof Error ? error.stack : undefined,
+    //   sessionId,
+    //   env: {
+    //     NODE_ENV: process.env.NODE_ENV,
+    //     HAS_VERCEL_URL: !!process.env.VERCEL_URL,
+    //     HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
+    //   }
+    // });
     
     // Clean up the session even if processing failed
     // This prevents memory leaks from failed uploads
     if (sessionId) {
       await UploadSessionStore.deleteSession(sanitizeSessionId(sessionId))
-        .catch(err => console.error(`[finalize] Failed to clean up session on error:`, err));
+        .catch(err => {
+          // PRODUCTION: Logging disabled
+          // console.error(`[finalize] Failed to clean up session on error:`, err)
+        });
     }
     
     // Don't expose internal error details in production

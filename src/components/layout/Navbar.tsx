@@ -12,6 +12,7 @@ const navigation = [
   { name: 'dashboard', href: '/dashboard' },
   { name: 'history', href: '/history' },
   { name: 'search', href: '/search' },
+  { name: 'learn', href: '/learn' },
   { name: 'feedback', href: '/speech-feedback' },
   { name: 'debate', href: '/debate' },
 ];
@@ -75,26 +76,28 @@ export default function Navbar() {
               </Link>
             </div>
             
-            {/* Desktop Navigation - Text only, minimal */}
-            <div className="hidden md:flex md:items-center md:space-x-8">
-              {navigation.map((item) => {
-                const isActive = pathname?.startsWith(item.href) || false;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      'text-sm transition-colors duration-200',
-                      isActive
-                        ? 'text-primary-500'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-                    )}
-                  >
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
+            {/* Desktop Navigation - Hidden when sidebar is visible */}
+            {!showSidebarToggle && (
+              <div className="hidden md:flex md:items-center md:space-x-8">
+                {navigation.map((item) => {
+                  const isActive = pathname?.startsWith(item.href) || false;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        'text-sm transition-colors duration-200',
+                        isActive
+                          ? 'text-primary-500'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                      )}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
             
             {/* Right side items - Minimal */}
             <div className="hidden md:flex md:items-center md:space-x-6">

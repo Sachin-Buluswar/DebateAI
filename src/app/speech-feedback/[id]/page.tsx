@@ -13,9 +13,6 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-const Layout = dynamic(() => import('@/components/layout/Layout'), {
-  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
-});
 
 const ReactMarkdown = dynamic(() => import('react-markdown'), {
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
@@ -350,7 +347,6 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         </div>
       </div>
     }>
-      <Layout>
         <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           {/* Back button and page header */}
           <div className="flex justify-between items-center mb-6">
@@ -434,7 +430,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                 'Argumentation & Evidence',
                 'Clarity & Conciseness',
                 'Persuasiveness & Impact',
-                'Delivery Style (Inferred)',
+                'Delivery Style',
                 'Strategic success Speech Type(s)'
               ].map(heading => {
                 const content = parsedFeedbackSections[heading];
@@ -491,7 +487,6 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           )}
 
         </div>
-      </Layout>
     </ErrorBoundary>
   );
 } 

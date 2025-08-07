@@ -8,15 +8,14 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { Debate, SpeechFeedback } from '@/types';
 import { parseFeedbackMarkdown } from '@/utils/feedbackUtils';
+import { formatScore, detectScoreType, getScoreColor } from '@/utils/scoring';
+import { extractScoreFromFeedback } from '@/utils/scoreStandardization';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-const Layout = dynamic(() => import('@/components/layout/Layout'), {
-  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
-});
 
 const ReactMarkdown = dynamic(() => import('react-markdown'), {
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
@@ -194,14 +193,18 @@ const HistoryItem = memo(({ data, index, style }: { data: HistoryItemData[], ind
               <div className="ml-3 flex-shrink-0">
                 {(() => {
                   const feedback = (item as SpeechFeedback).feedback;
-                  const score = feedback?.speakerScore || feedback?.scores?.overall || feedback?.score;
-                  if (score !== undefined && score !== null) {
-                    const scoreColor = score >= 80 ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' :
-                                     score >= 60 ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' :
-                                                   'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
+                  const score = extractScoreFromFeedback(feedback);
+                  if (score !== null) {
+                    const scoreInfo = formatScore(score);
+                    const scoreColorClass = getScoreColor(score);
+                    // Convert to background color classes
+                    const bgColorClass = scoreColorClass.includes('green') ? 'bg-green-50 dark:bg-green-900/20' :
+                                        scoreColorClass.includes('blue') ? 'bg-blue-50 dark:bg-blue-900/20' :
+                                        scoreColorClass.includes('yellow') ? 'bg-yellow-50 dark:bg-yellow-900/20' :
+                                        'bg-red-50 dark:bg-red-900/20';
                     return (
-                      <div className={`px-3 py-1 rounded-full ${scoreColor} font-semibold text-sm`}>
-                        {Math.round(score)}/100
+                      <div className={`px-3 py-1 rounded-full ${scoreColorClass} ${bgColorClass} font-semibold text-sm`}>
+                        {scoreInfo.display}
                       </div>
                     );
                   }
@@ -557,7 +560,6 @@ export default function History() {
         </div>
       </div>
     }>
-      <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-6">
             <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">History</h1>
@@ -728,7 +730,6 @@ export default function History() {
             </div>
           </div>
         )}
-      </Layout>
     </ErrorBoundary>
   );
 }

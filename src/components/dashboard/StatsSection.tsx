@@ -1,6 +1,7 @@
 'use client';
 
 import StatsCard from './StatsCard';
+import { formatScore, detectScoreType, getScaleLabel } from '@/utils/scoring';
 
 interface StatsSectionProps {
   totalSpeeches: number;
@@ -66,6 +67,10 @@ export default function StatsSection({
     </svg>
   );
 
+  // Format the score with proper scale detection
+  const scoreInfo = formatScore(averageScore);
+  const scoreType = detectScoreType(averageScore);
+  
   const stats = [
     {
       title: 'total speeches',
@@ -85,10 +90,10 @@ export default function StatsSection({
     },
     {
       title: 'average score',
-      value: averageScore.toFixed(1),
+      value: scoreType === 'percentage' ? averageScore.toFixed(1) : scoreInfo.display.split('/')[0],
       change: previousStats ? calculateChange(averageScore, previousStats.averageScore) : undefined,
       icon: scoreIcon,
-      description: 'out of 100',
+      description: getScaleLabel(scoreType),
       accentColor: '#D9A570'
     },
     {

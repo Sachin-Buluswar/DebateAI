@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
         .single(); // Expect single result
 
       if (error) {
-        console.error('Error ending debate session:', error);
+        // PRODUCTION: Logging disabled
+// console.error('Error ending debate session:', error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Failed to end debate session' },
@@ -108,7 +109,8 @@ export async function POST(request: NextRequest) {
         })
       );
     } catch (error) {
-      console.error('Error in debate end:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Error in debate end:', error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Invalid request' },

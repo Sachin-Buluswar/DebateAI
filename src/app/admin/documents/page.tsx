@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Layout from '@/components/layout/Layout';
 import { supabase } from '@/lib/supabaseClient';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import EnhancedButton from '@/components/ui/EnhancedButton';
@@ -11,7 +10,6 @@ import { DocumentTextIcon, ArrowPathIcon, TrashIcon, ExclamationTriangleIcon } f
 import type { Document } from '@/types/documents';
 
 function AdminDocumentsContent() {
-  const router = useRouter();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
@@ -143,16 +141,13 @@ function AdminDocumentsContent() {
 
   if (loading) {
     return (
-      <Layout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
-      </Layout>
     );
   }
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -302,7 +297,6 @@ function AdminDocumentsContent() {
         </div>
 
       </div>
-    </Layout>
   );
 }
 
@@ -311,7 +305,6 @@ export default function AdminDocumentsPage() {
     <RoleProtectedRoute 
       requiredRole="admin"
       unauthorizedComponent={
-        <Layout>
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
@@ -329,7 +322,6 @@ export default function AdminDocumentsPage() {
               </EnhancedButton>
             </div>
           </div>
-        </Layout>
       }
     >
       <AdminDocumentsContent />

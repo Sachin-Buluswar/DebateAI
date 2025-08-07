@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
       message: 'Document reindexed successfully',
     });
   } catch (error) {
-    console.error('Error reindexing document:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error reindexing document:', error);
     return NextResponse.json(
       { error: 'Failed to reindex document' },
       { status: 500 }

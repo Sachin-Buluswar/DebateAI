@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import type { Debate, SpeechFeedback } from '@/types';
+import { extractScoreFromFeedback } from '@/utils/scoreStandardization';
 
 // Lazy load dashboard components for better performance
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
@@ -44,29 +45,8 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Helper function to extract score from feedback object
-const extractScore = (feedback: any): number | null => {
-  if (!feedback) return null;
-  
-  // Check multiple possible locations for scores
-  // 1. New format: speakerScore (NSDA scale 25-30)
-  if (typeof feedback.speakerScore === 'number') {
-    // Convert NSDA scale (25-30) to percentage (0-100)
-    return ((feedback.speakerScore - 25) / 5) * 100;
-  }
-  
-  // 2. Legacy format: scores.overall (already in percentage)
-  if (feedback.scores?.overall !== undefined && feedback.scores?.overall !== null) {
-    return feedback.scores.overall;
-  }
-  
-  // 3. Even older format: score (percentage)
-  if (typeof feedback.score === 'number') {
-    return feedback.score;
-  }
-  
-  return null;
-};
+// Use standardized score extraction
+const extractScore = extractScoreFromFeedback;
 
 // Constants for pagination
 const ITEMS_PER_PAGE = 20;
@@ -155,10 +135,8 @@ export default function Dashboard() {
               // Hours spent estimate
               const speechHours = fetchedSpeeches.reduce(
                 (sum, speech) => {
-                  if (speech.duration_seconds === 60) {
-                    return sum + (3 / 60); // 3 minutes average
-                  }
-                  return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60);
+                  // Use actual duration from database
+                  return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 0);
                 },
                 0
               );
@@ -224,12 +202,8 @@ export default function Dashboard() {
                 if (d >= oneWeekAgo) {
                   const dayName = days[d.getDay()];
                   if (weeklyDataMap.has(dayName)) {
-                    let hours: number;
-                    if (item.duration_seconds === 60) {
-                      hours = 3 / 60; // 3 minutes
-                    } else {
-                      hours = item.duration_seconds ? item.duration_seconds / 3600 : 3 / 60;
-                    }
+                    // Use actual duration from database, no longer using hardcoded estimates
+                    const hours = item.duration_seconds ? item.duration_seconds / 3600 : 0;
                     weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
                   }
                 }
@@ -375,12 +349,8 @@ export default function Dashboard() {
       if (d >= cutoffDate) {
         const key = d.toISOString().split('T')[0];
         if (dataMap.has(key)) {
-          let hours: number;
-          if (speech.duration_seconds === 60) {
-            hours = 3 / 60; // 3 minutes
-          } else {
-            hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 3 / 60;
-          }
+          // Use actual duration from database, no longer using hardcoded estimates
+          const hours = speech.duration_seconds ? speech.duration_seconds / 3600 : 0;
           dataMap.set(key, dataMap.get(key)! + hours);
         }
       }

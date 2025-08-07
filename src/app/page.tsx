@@ -100,6 +100,30 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Founder story - Subtle and minimal */}
+        <section className="breathing-room max-w-4xl mx-auto text-center">
+          <div className="space-y-6">
+            <h2 className="text-2xl md:text-3xl text-gray-900 dark:text-gray-100">
+              founded by debaters, for debaters
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              created by nationally-ranked high school debaters who believe great debate 
+              education shouldn't require expensive coaches
+            </p>
+            <Link 
+              href="/about" 
+              className="inline-block text-primary-500 hover:text-primary-600 transition-colors"
+            >
+              learn our story →
+            </Link>
+          </div>
+        </section>
+
+        {/* Divider */}
+        <div className="max-w-6xl mx-auto px-8">
+          <div className="divider"></div>
+        </div>
+
         {/* Call to action - Minimal and centered */}
         <section className="breathing-room max-w-4xl mx-auto text-center">
           <div className="space-y-8">

@@ -123,7 +123,8 @@ async function getUsageMetrics() {
       },
     };
   } catch (error) {
-    console.error('Error fetching usage metrics:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error fetching usage metrics:', error);
     return {
       debates: { total: 0, active: 0 },
       users: { total: 0, active24h: 0, new24h: 0 },

@@ -56,11 +56,13 @@ export async function POST(request: Request) {
   let requestBodyForErrorLog: unknown = null; // Variable to hold body for logging in catch block
   // --- Environment Variable Check ---
   if (!openaiApiKey) {
-    console.error('OPENAI_API_KEY environment variable is not set.');
+    // PRODUCTION: Logging disabled
+// console.error('OPENAI_API_KEY environment variable is not set.');
     return NextResponse.json({ error: 'Server configuration error: OpenAI API key missing.' }, { status: 500 });
   }
   if (!vectorStoreId) {
-    console.error('OPENAI_VECTOR_STORE_ID environment variable is not set.');
+    // PRODUCTION: Logging disabled
+// console.error('OPENAI_VECTOR_STORE_ID environment variable is not set.');
     return NextResponse.json({ error: 'Server configuration error: OpenAI Vector Store ID missing.' }, { status: 500 });
   }
 
@@ -94,12 +96,14 @@ export async function POST(request: Request) {
     // --- Error Handling --- 
     // Log the filename if available from the parsed body
     const failedFileName = (requestBodyForErrorLog as { fileName?: string })?.fileName || 'unknown'; 
-    console.error(`[API /wiki-index] Error processing request for file ${failedFileName}:`, error);
+    // PRODUCTION: Logging disabled
+// console.error(`[API /wiki-index] Error processing request for file ${failedFileName}:`, error);
 
     // Handle specific errors thrown from the service layer
     if (error instanceof Error) {
          // Log the specific error message from the service
-         console.error(`[API /wiki-index] Service Error Message: ${error.message}`);
+         // PRODUCTION: Logging disabled
+// console.error(`[API /wiki-index] Service Error Message: ${error.message}`);
          // Return a specific error response based on the caught error
          return NextResponse.json({ error: `Indexing failed for ${failedFileName}: ${error.message}` }, { status: 500 });
     } else if (error instanceof SyntaxError) {

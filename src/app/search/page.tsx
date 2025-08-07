@@ -13,9 +13,6 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-const Layout = dynamic(() => import('@/components/layout/Layout'), {
-  loading: () => <LoadingSpinner fullScreen text="Loading..." />,
-});
 
 const UnifiedSearchCard = dynamic(() => import('@/components/search/UnifiedSearchCard'), {
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
@@ -305,7 +302,6 @@ export default function SearchPage() {
         </div>
       }
     >
-      <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
           <div className="pb-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -587,7 +583,6 @@ export default function SearchPage() {
             ))}
           </div>
         </div>
-      </Layout>
     </ErrorBoundary>
   );
 }

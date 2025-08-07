@@ -88,10 +88,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
       
       if (functionError) {
-        console.log('Error creating exec_sql function, it might already exist:', functionError.message);
+        // PRODUCTION: Logging disabled
+// console.log('Error creating exec_sql function, it might already exist:', functionError.message);
       }
     } catch {
-      console.log('Function does not exist yet, this is normal on first run');
+      // PRODUCTION: Logging disabled
+// console.log('Function does not exist yet, this is normal on first run');
       // Try a direct SQL approach instead, but we'll continue regardless
       try {
         await supabaseAdmin.from('_exec_sql_direct').select('*').limit(1);
@@ -129,7 +131,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         migrationError = error as Error;
       }
     } catch (err: unknown) {
-      console.error('Error using exec_sql RPC:', err);
+      // PRODUCTION: Logging disabled
+// console.error('Error using exec_sql RPC:', err);
     }
     
     // Approach 2: Try direct SQL with REST API
@@ -151,7 +154,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         });
       }
     } catch (err: unknown) {
-      console.error('Error using REST API:', err);
+      // PRODUCTION: Logging disabled
+// console.error('Error using REST API:', err);
     }
     
     // If we got here, we couldn't execute the migration
@@ -165,7 +169,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error('Error executing migration:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error executing migration:', error);
     return NextResponse.json(
       { 
         error: `Error executing migration: ${errorMessage}`,

@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error fetching user preferences:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error fetching user preferences:', error);
     return NextResponse.json({ 
       message: 'Error fetching preferences',
       preferences: {} 
@@ -103,7 +104,8 @@ export async function PUT(request: NextRequest) {
       });
     
     if (updateError) {
-      console.error('Error updating user preferences:', updateError);
+      // PRODUCTION: Logging disabled
+// console.error('Error updating user preferences:', updateError);
       return NextResponse.json({
         message: 'Failed to update preferences'
       }, { status: 500 });
@@ -116,7 +118,8 @@ export async function PUT(request: NextRequest) {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Error updating user preferences:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error updating user preferences:', error);
     return NextResponse.json({ 
       message: 'Error updating preferences'
     }, { status: 500 });

@@ -91,7 +91,8 @@ export async function POST(request: NextRequest) {
         .single(); // Expect single result
 
       if (error) {
-        console.error('Error saving speech:', error);
+        // PRODUCTION: Logging disabled
+// console.error('Error saving speech:', error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Failed to save speech' },
@@ -124,7 +125,8 @@ export async function POST(request: NextRequest) {
         })
       );
     } catch (error) {
-      console.error('Error in debate speech:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Error in debate speech:', error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Invalid request' },

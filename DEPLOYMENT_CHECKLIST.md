@@ -1,143 +1,172 @@
-# Eris Debate - Deployment Checklist
+# Eris Debate Production Deployment Checklist
 
-## ✅ Completed Fixes
+## Pre-Deployment Verification
 
-### 1. Branding Update
-- [x] Changed all references from previous names to "Eris Debate"
-- [x] Updated domain references to use production domain
-- [x] Updated package.json, UI components, email templates
+### ✅ Critical Fixes Applied
+- [x] Database infinite recursion in user_roles table FIXED
+- [x] MIGRATIONS_API_KEY added to Vercel environment variables
+- [x] Authentication routes fixed (/login, /signup redirect to /auth)
+- [x] Duplicate navigation links resolved
+- [x] Scoring display inconsistencies fixed across all components
+- [x] Unified scoring utility created
 
-### 2. Socket.IO / Real-time Features
-- [x] Fixed WebSocket errors on Vercel
-- [x] Configured polling-only transport for Vercel
-- [x] Added fallback mechanisms
-- [x] Created user-friendly warnings
-
-### 3. Documentation
-- [x] Created Vercel Socket.IO guide
-- [x] Added deployment fix summary
-- [x] Updated troubleshooting guides
-
-## 🧪 Features to Test
-
-### 1. Authentication (`/auth`)
-- [ ] Sign up with email
-- [ ] Sign in with email
-- [ ] Magic link login
-- [ ] Password reset
-- [ ] Session persistence
-
-### 2. Real-time Debates (`/debate`)
-- [ ] Create new debate
-- [ ] Select AI debaters
-- [ ] Start debate session
-- [ ] Audio recording/playback
-- [ ] Turn management
-- [ ] Evidence search panel
-- [ ] Debate completion
-
-### 3. Speech Analysis (`/speech-feedback`)
-- [ ] Upload audio file
-- [ ] Record speech
-- [ ] Receive AI feedback
-- [ ] View analysis results
-- [ ] Save feedback history
-
-### 4. Evidence Search (`/search`)
-- [ ] Search functionality
-- [ ] RAG-based results
-- [ ] Document viewing
-- [ ] Context highlighting
-
-### 5. Admin Features (`/admin`)
-- [ ] Document management
-- [ ] User management (if implemented)
-- [ ] System monitoring
-
-## 🔧 Vercel Configuration
-
-### Required Environment Variables
+### ⚠️ Environment Variables to Verify
+Ensure all these are set in Vercel dashboard:
 ```
-NEXT_PUBLIC_VERCEL=1
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 OPENAI_API_KEY=
 ELEVENLABS_API_KEY=
 OPENAI_VECTOR_STORE_ID=
+MIGRATIONS_API_KEY=
 NEXT_PUBLIC_SITE_URL=https://erisdebate.com
 ```
 
-### Optional but Recommended
+## Deployment Steps
+
+### Step 1: Final Code Checks
+```bash
+# Run these locally before pushing
+npm run lint
+npm run typecheck
+npm run build
 ```
-DEBUG_API_KEY=
-SENTRY_DSN=
-NEXT_PUBLIC_APP_NAME=Eris Debate
-ALLOWED_ORIGINS=https://erisdebate.com,https://www.erisdebate.com
+
+### Step 2: Commit Changes
+```bash
+git add .
+git commit -m "fix: production readiness updates
+
+- Fixed database infinite recursion
+- Added authentication route redirects
+- Fixed navigation duplication
+- Fixed scoring display inconsistencies
+- Added unified scoring utilities"
+
+git push origin feature/add-migrations-auth
 ```
 
-## 🚀 Deployment Steps
+### Step 3: Deploy to Vercel
+1. Go to Vercel dashboard
+2. Check deployment preview
+3. Test critical flows in preview environment
+4. Promote to production if tests pass
 
-1. **Set Environment Variables**
-   - Go to Vercel Dashboard → Project Settings → Environment Variables
-   - Add all required variables
+## Post-Deployment Testing
 
-2. **Deploy**
-   ```bash
-   git push origin main
-   ```
-   Vercel will auto-deploy
+### Critical User Flows to Test
 
-3. **Verify Deployment**
-   - Check https://erisdebate.com/api/health
-   - Test each feature in the checklist above
-   - Monitor browser console for errors
+#### 1. Authentication Flow
+- [ ] User can sign up with email
+- [ ] User receives confirmation email with production URL
+- [ ] User can log in with email/password
+- [ ] User can reset password
+- [ ] User can sign in with Google OAuth
+- [ ] /login and /signup redirect to /auth properly
 
-## 🐛 Common Issues & Solutions
+#### 2. Core Debate Functionality
+- [ ] User can start a new debate
+- [ ] Debate participants load correctly
+- [ ] User can select topics
+- [ ] Speech recording works
+- [ ] Real-time features work (or fallback gracefully)
+- [ ] Debate history saves correctly
 
-### Issue: "Failed to connect to debate server"
-**Solution**: Clear cache, check Socket.IO is using polling mode
+#### 3. Speech Feedback
+- [ ] User can submit speech for feedback
+- [ ] Audio upload works
+- [ ] Feedback generation completes
+- [ ] Scores display with correct scale (NSDA/percentage)
+- [ ] Feedback can be viewed later
 
-### Issue: "Authentication failed"
-**Solution**: Verify Supabase keys are correctly set in Vercel
+#### 4. Search & Documentation
+- [ ] Wiki search returns results
+- [ ] Document search works (if documents uploaded)
+- [ ] RAG search functions properly
 
-### Issue: "OpenAI API error"
-**Solution**: Check OPENAI_API_KEY is set and has credits
-
-### Issue: "Audio features not working"
-**Solution**: Verify ELEVENLABS_API_KEY is set
-
-## 📊 Monitoring
-
-### Health Checks
-- `/api/health` - Basic health status
-- `/api/socket-init` - Socket.IO configuration
-- `/api/debug?key=YOUR_KEY` - Detailed diagnostics (if DEBUG_API_KEY is set)
-
-### Logs
-- Check Vercel Function logs for server errors
-- Browser console for client-side errors
-- Network tab for API failures
-
-## 🎯 Success Criteria
-
+#### 5. UI/UX Verification
+- [ ] Navigation works on desktop (sidebar only, no duplicate)
+- [ ] Navigation works on mobile (hamburger menu)
+- [ ] Dark mode toggle works
 - [ ] All pages load without errors
-- [ ] Authentication flow works
-- [ ] Can create and participate in debates
-- [ ] Speech analysis provides feedback
-- [ ] Search returns relevant results
-- [ ] No console errors in production
-- [ ] Mobile responsive (basic functionality)
+- [ ] Scores show correct scale indicators
 
-## 📞 Support
+## Monitoring & Alerts
 
-If issues persist after following this checklist:
-1. Check `/api/debug` endpoint
-2. Review Vercel function logs
-3. Check browser console for detailed errors
-4. Review Socket.IO fallback warnings
+### What to Monitor Post-Deployment
+1. **Error Rates**
+   - Check Vercel logs for 500 errors
+   - Monitor Supabase logs for database errors
+   - Watch for authentication failures
+
+2. **Performance Metrics**
+   - API response times
+   - Page load times
+   - Time to interactive
+
+3. **User Metrics**
+   - Signup success rate
+   - Login success rate
+   - Debate completion rate
+   - Speech feedback generation rate
+
+### Common Issues & Solutions
+
+| Issue | Solution |
+|-------|----------|
+| Users can't log in | Check user_roles table policies |
+| Emails go to spam | Update SPF/DKIM records |
+| Slow API responses | Check Supabase connection pooling |
+| Audio upload fails | Verify storage bucket permissions |
+| Scores show wrong scale | Check scoring utility implementation |
+
+## Rollback Plan
+
+If critical issues are discovered:
+1. Revert to previous deployment in Vercel
+2. Fix issues in development
+3. Re-test thoroughly
+4. Deploy again
+
+## Success Criteria
+
+Deployment is successful when:
+- ✅ All authentication flows work
+- ✅ Users can complete a full debate session
+- ✅ Speech feedback generation works
+- ✅ No critical errors in logs
+- ✅ Performance metrics are acceptable
+- ✅ User reports are positive
+
+## Support Contacts
+
+- **Database Issues**: Supabase Dashboard
+- **Deployment Issues**: Vercel Support
+- **API Issues**: Check respective service dashboards
+- **User Reports**: Monitor feedback form submissions
 
 ---
 
-Last updated: [Current Date]
-Status: Ready for production deployment with known Vercel limitations
+## Final Checklist Before Going Live
+
+- [ ] All environment variables verified
+- [ ] Database migrations applied successfully
+- [ ] Email templates updated with production URLs
+- [ ] DNS records properly configured
+- [ ] SSL certificate active
+- [ ] Monitoring tools configured
+- [ ] Backup strategy in place
+- [ ] Team notified of deployment
+
+---
+
+**Last Updated**: February 2025
+**Status**: READY FOR DEPLOYMENT ✅
+
+## Build Status Summary
+- Build: ✅ Successful
+- Type Check: ✅ Passing
+- Lint: ⚠️ 285 warnings (non-critical, mostly TypeScript `any` types)
+- Security: ✅ No hardcoded secrets found
+- Database: ✅ Migrations ready

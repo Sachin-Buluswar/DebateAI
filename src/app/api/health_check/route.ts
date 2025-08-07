@@ -50,7 +50,8 @@ export async function GET(): Promise<NextResponse> {
     });
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-    console.error('Health check error:', err);
+    // PRODUCTION: Logging disabled
+    // console.error('Health check error:', err);
     return NextResponse.json({
       status: 'error',
       message: 'Error performing health check',

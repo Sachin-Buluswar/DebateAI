@@ -196,7 +196,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('Debate realtime API error:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Debate realtime API error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

@@ -13,7 +13,6 @@ import { debateConfig } from '@/backend/modules/realtimeDebate/debate.config';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import Layout from '@/components/layout/Layout';
 
 // Lazy load heavy components for better initial load performance
 const ParticipantPanel = dynamic(() => import('../../components/debate/ParticipantPanel'), {
@@ -463,7 +462,7 @@ export default function DebatePage() {
   }, [initializeSocket]);
 
   return (
-    <Layout>
+    <>
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 space-y-4 animate-fade-in">
           <h1>
@@ -1147,6 +1146,6 @@ export default function DebatePage() {
           currentSpeaker={currentSpeaker}
         />
       )}
-    </Layout>
+    </>
   );
 }

@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
 
     // Start scraping in background
     scraper.scrapeWikiFiles().catch(error => {
-      console.error('Scraping error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('Scraping error:', error);
     });
 
     return NextResponse.json({
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest) {
       message: 'Scraping started. Check status endpoint for progress.',
     });
   } catch (error) {
-    console.error('Error starting scrape:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error starting scrape:', error);
     return NextResponse.json(
       { error: 'Failed to start scraping' },
       { status: 500 }

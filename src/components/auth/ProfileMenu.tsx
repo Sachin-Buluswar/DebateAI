@@ -30,7 +30,8 @@ export default function ProfileMenu() {
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Error fetching user info:', error);
+        // PRODUCTION: Logging disabled
+        // console.error('Error fetching user info:', error);
         setIsAuthenticated(false);
       }
     };
@@ -56,7 +57,8 @@ export default function ProfileMenu() {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Error signing out:', error);
+        // PRODUCTION: Logging disabled
+        // console.error('Error signing out:', error);
         return;
       }
       
@@ -64,7 +66,8 @@ export default function ProfileMenu() {
       router.push('/');
       router.refresh();
     } catch (error) {
-      console.error('Exception during logout:', error);
+      // PRODUCTION: Logging disabled
+      // console.error('Exception during logout:', error);
     } finally {
       setIsLoggingOut(false);
     }

@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(status);
   } catch (error) {
-    console.error('Error getting scrape status:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error getting scrape status:', error);
     return NextResponse.json(
       { error: 'Failed to get scraping status' },
       { status: 500 }

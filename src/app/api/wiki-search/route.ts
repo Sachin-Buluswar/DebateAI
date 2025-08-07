@@ -85,7 +85,8 @@ export async function POST(request: Request) {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      console.warn('[wiki-search] Unauthorized request - no session');
+      // PRODUCTION: Logging disabled
+// console.warn('[wiki-search] Unauthorized request - no session');
       return addSecurityHeaders(
         NextResponse.json({ 
           error: 'Authentication required' 
@@ -95,7 +96,8 @@ export async function POST(request: Request) {
     
     // Environment Variable Check
     if (!openaiApiKey) {
-      console.error('[wiki-search] OPENAI_API_KEY environment variable is not set.');
+      // PRODUCTION: Logging disabled
+// console.error('[wiki-search] OPENAI_API_KEY environment variable is not set.');
       return addSecurityHeaders(
         NextResponse.json({ 
           error: 'Server configuration error: Search service unavailable.' 
@@ -103,7 +105,8 @@ export async function POST(request: Request) {
       );
     }
     if (!vectorStoreId) {
-      console.error('[wiki-search] OPENAI_VECTOR_STORE_ID environment variable is not set.');
+      // PRODUCTION: Logging disabled
+// console.error('[wiki-search] OPENAI_VECTOR_STORE_ID environment variable is not set.');
       return addSecurityHeaders(
         NextResponse.json({
           error: 'The search service is not configured. Please contact support.'
@@ -124,7 +127,8 @@ export async function POST(request: Request) {
       });
 
       if (!validation.success) {
-        console.warn('[wiki-search] Invalid request:', validation.error);
+        // PRODUCTION: Logging disabled
+// console.warn('[wiki-search] Invalid request:', validation.error);
         return addSecurityHeaders(
           NextResponse.json({ 
             error: 'Invalid request', 
@@ -144,7 +148,8 @@ export async function POST(request: Request) {
         );
       }
 
-      console.log(`[wiki-search] Processing search request: "${query.substring(0, 50)}..."`);
+      // PRODUCTION: Logging disabled
+// console.log(`[wiki-search] Processing search request: "${query.substring(0, 50)}..."`);
 
       // Perform Search using enhanced vector store retrieval
       // This function (from enhancedRetrievalService) handles:
@@ -165,7 +170,8 @@ export async function POST(request: Request) {
         Math.min(maxResults, 20) // Cap at 20 results for performance
       );
 
-      console.log(`[wiki-search] Search completed. Returning ${results.length} results.`);
+      // PRODUCTION: Logging disabled
+// console.log(`[wiki-search] Search completed. Returning ${results.length} results.`);
 
       // Return Results with security headers
       // Response format is standardized across all search endpoints
@@ -190,7 +196,8 @@ export async function POST(request: Request) {
       );
 
     } catch (error) {
-      console.error('[wiki-search] Search error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[wiki-search] Search error:', error);
       
       // Return appropriate error based on error type
       if (error instanceof Error) {

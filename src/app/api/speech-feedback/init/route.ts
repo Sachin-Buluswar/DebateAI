@@ -80,7 +80,8 @@ export async function POST(req: NextRequest) {
   // This prevents abuse and ensures fair resource usage
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
     try {
-      console.log('[init] Starting upload session initialization');
+      // PRODUCTION: Logging disabled
+// console.log('[init] Starting upload session initialization');
 
     // Parse the request body
     const data = await req.json();
@@ -112,7 +113,8 @@ export async function POST(req: NextRequest) {
     // Sanitize session ID
     const sanitizedSessionId = sanitizeSessionId(sessionId);
     if (sanitizedSessionId !== sessionId) {
-      console.warn(`[init] Invalid session ID format: ${sessionId}`);
+      // PRODUCTION: Logging disabled
+// console.warn(`[init] Invalid session ID format: ${sessionId}`);
       return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
     }
 
@@ -153,7 +155,8 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     // Log the full error for debugging
-    console.error('Error initializing chunked upload:', error);
+    // PRODUCTION: Logging disabled
+// console.error('Error initializing chunked upload:', error);
     
     // Return a sanitized error response
     // In production, we don't expose internal error details

@@ -223,7 +223,8 @@ async function performEnhancedRagSearch(
                   },
                 });
               } catch (_e) {
-                console.warn(`Could not retrieve file info for ${openaiFileId}`);
+                // PRODUCTION: Logging disabled
+// console.warn(`Could not retrieve file info for ${openaiFileId}`);
               }
             }
           }
@@ -239,7 +240,8 @@ async function performEnhancedRagSearch(
       try {
         await documentStorage.setSearchResultsCache(query, enhancedResults);
       } catch (cacheError) {
-        console.warn('[enhanced-rag-search] Failed to cache results:', cacheError);
+        // PRODUCTION: Logging disabled
+// console.warn('[enhanced-rag-search] Failed to cache results:', cacheError);
         // Continue - caching is not critical
       }
     }
@@ -264,23 +266,27 @@ async function performEnhancedRagSearch(
     }
     
     if (cleanupErrors.length > 0) {
-      console.warn('[enhanced-rag-search] Cleanup errors:', cleanupErrors);
+      // PRODUCTION: Logging disabled
+// console.warn('[enhanced-rag-search] Cleanup errors:', cleanupErrors);
     }
 
     return enhancedResults;
   } catch (error) {
-    console.error('[enhanced-rag-search] Search error:', error);
+    // PRODUCTION: Logging disabled
+// console.error('[enhanced-rag-search] Search error:', error);
     
     // Attempt cleanup on error
     if (tempAssistant?.id) {
-      await openai.beta.assistants.delete(tempAssistant.id).catch(err => 
-        console.warn('[enhanced-rag-search] Failed to cleanup assistant on error:', err)
-      );
+      await openai.beta.assistants.delete(tempAssistant.id).catch(err => {
+        // PRODUCTION: Logging disabled
+        // console.warn('[enhanced-rag-search] Failed to cleanup assistant on error:', err)
+      });
     }
     if (thread?.id) {
-      await openai.beta.threads.delete(thread.id).catch(err => 
-        console.warn('[enhanced-rag-search] Failed to cleanup thread on error:', err)
-      );
+      await openai.beta.threads.delete(thread.id).catch(err => {
+        // PRODUCTION: Logging disabled
+        // console.warn('[enhanced-rag-search] Failed to cleanup thread on error:', err)
+      });
     }
     
     throw error;
@@ -316,7 +322,8 @@ export async function POST(request: Request) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
-      console.error('[enhanced-rag-search] Missing environment variables');
+      // PRODUCTION: Logging disabled
+// console.error('[enhanced-rag-search] Missing environment variables');
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -386,7 +393,8 @@ export async function POST(request: Request) {
         )
       );
     } catch (error) {
-      console.error('[enhanced-rag-search] Error:', error);
+      // PRODUCTION: Logging disabled
+// console.error('[enhanced-rag-search] Error:', error);
 
       return addSecurityHeaders(
         NextResponse.json(
