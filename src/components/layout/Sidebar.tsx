@@ -11,6 +11,7 @@ interface NavItem {
   name: string;
   shortName: string;
   href: string;
+  external?: boolean;
 }
 
 const navigation: NavItem[] = [
@@ -53,6 +54,12 @@ const navigation: NavItem[] = [
     name: 'help',
     shortName: '?',
     href: '/feedback',
+  },
+  {
+    name: 'instagram',
+    shortName: 'ig',
+    href: 'https://www.instagram.com/erisdebate/',
+    external: true,
   },
 ];
 
@@ -136,6 +143,27 @@ export default function Sidebar() {
       <nav className="flex-1 px-4 py-8 space-y-2">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
+          
+          // Handle external links differently
+          if (item.external) {
+            return (
+              <a
+                key={item.name}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`
+                  block py-2 text-sm transition-colors duration-200
+                  ${isCollapsed ? 'text-center' : 'px-4'}
+                  text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100
+                `}
+                title={isCollapsed ? item.name : undefined}
+              >
+                {isCollapsed ? item.shortName : item.name}
+              </a>
+            );
+          }
+          
           return (
             <Link
               key={item.name}

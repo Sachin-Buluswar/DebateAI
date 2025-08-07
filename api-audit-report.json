@@ -1,0 +1,778 @@
+{
+  "timestamp": "2025-08-07T07:08:57.740Z",
+  "totalRoutes": 42,
+  "problematicCount": 6,
+  "routes": [
+    {
+      "path": "socket-init",
+      "score": "2/9",
+      "issues": [
+        "Missing try-catch block",
+        "No error response handling",
+        "No error status codes",
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": false,
+        "hasErrorResponse": false,
+        "hasStatusCode": false,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "auth-email-templates",
+      "score": "2/9",
+      "issues": [
+        "Missing try-catch block",
+        "No error response handling",
+        "No error status codes",
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": false,
+        "hasErrorResponse": false,
+        "hasStatusCode": false,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "example-monitored",
+      "score": "3/9",
+      "issues": [
+        "No error response handling",
+        "No error status codes",
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": false,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": false
+      }
+    },
+    {
+      "path": "monitoring/health",
+      "score": "4/9",
+      "issues": [
+        "No error response handling",
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": false
+      }
+    },
+    {
+      "path": "health",
+      "score": "4/9",
+      "issues": [
+        "No error response handling",
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "monitoring/metrics",
+      "score": "5/9",
+      "issues": [
+        "No error response handling",
+        "No error status codes",
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": false,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "search-status",
+      "score": "6/9",
+      "issues": [
+        "No error response handling",
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "rag-status",
+      "score": "6/9",
+      "issues": [
+        "No error response handling",
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "health_check",
+      "score": "6/9",
+      "issues": [
+        "No error response handling",
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debug",
+      "score": "6/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-rag-search-enhanced",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-rag-search",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-generate",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "user_profiles",
+      "score": "7/9",
+      "issues": [
+        "No error response handling",
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "user_preferences",
+      "score": "7/9",
+      "issues": [
+        "No error response handling",
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": false,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "sql",
+      "score": "7/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "speech-feedback",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "speech-feedback/init",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "speech-feedback/finalize",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "speech-feedback/chunk",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "speech-feedback/cancel",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "resources/setup",
+      "score": "7/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "prototype/openai-argument",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "prototype/elevenlabs-tts",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": false,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debate/analyze",
+      "score": "7/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": false,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "admin/upload-document",
+      "score": "7/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "admin/scrape-status",
+      "score": "7/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "admin/scrape-opencaselist",
+      "score": "7/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "admin/reindex-document",
+      "score": "7/9",
+      "issues": [
+        "No input validation",
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-search",
+      "score": "8/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-rag-search-direct",
+      "score": "8/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-index",
+      "score": "8/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "wiki-document-search",
+      "score": "8/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "resources/[slug]",
+      "score": "8/9",
+      "issues": [
+        "No input validation"
+      ],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": false,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "migrations",
+      "score": "8/9",
+      "issues": [
+        "No rate limiting"
+      ],
+      "checks": {
+        "hasRateLimit": false,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debate-advice",
+      "score": "8/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": false,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "resources",
+      "score": "9/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "resources/track",
+      "score": "9/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debate/start",
+      "score": "9/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debate/speech",
+      "score": "9/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debate/realtime",
+      "score": "9/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    },
+    {
+      "path": "debate/end",
+      "score": "9/9",
+      "issues": [],
+      "checks": {
+        "hasRateLimit": true,
+        "hasTryCatch": true,
+        "hasErrorResponse": true,
+        "hasStatusCode": true,
+        "hasValidation": true,
+        "hasConsoleError": true,
+        "hasProperAuth": true,
+        "returnsJson": true,
+        "hasProperMethod": true
+      }
+    }
+  ]
+}

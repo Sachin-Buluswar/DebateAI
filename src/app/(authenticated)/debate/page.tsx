@@ -1,17 +1,14 @@
 'use client';
 
-import { useEffect, useState, useRef, FormEvent, useMemo, useCallback, memo } from 'react';
-import { Socket } from 'socket.io-client';
-import { createSocket, isVercel } from '@/lib/socket/socketConfig';
-import { showRealtimeWarning } from '@/lib/socket/socketFallback';
-import { createRealtimeConnection, setupRealtimeHandlers, RealtimeSocket } from '@/lib/realtime/realtimeFactory';
+import { useEffect, useState, useRef, FormEvent, useMemo, useCallback } from 'react';
+import { isVercel } from '@/lib/socket/socketConfig';
+import { createRealtimeConnection, RealtimeSocket } from '@/lib/realtime/realtimeFactory';
 import {
   Participant,
   DebateState,
 } from '@/backend/modules/realtimeDebate/debate-types';
 import { debateConfig } from '@/backend/modules/realtimeDebate/debate.config';
 import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 // Lazy load heavy components for better initial load performance
@@ -88,7 +85,7 @@ export default function DebatePage() {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [, setReconnectAttempt] = useState(0);
   const [audioQueue, setAudioQueue] = useState<Blob[]>([]);
   const [isCrossfireActive, setIsCrossfireActive] = useState<boolean>(false);
   const socketRef = useRef<RealtimeSocket | null>(null);

@@ -68,8 +68,8 @@ export default function StatsSection({
   );
 
   // Format the score with proper scale detection
-  const scoreInfo = formatScore(averageScore);
-  const scoreType = detectScoreType(averageScore);
+  // averageScore should already be in NSDA format (25-30)
+  const scoreInfo = formatScore(averageScore, 'nsda');
   
   const stats = [
     {
@@ -90,10 +90,10 @@ export default function StatsSection({
     },
     {
       title: 'average score',
-      value: scoreType === 'percentage' ? averageScore.toFixed(1) : scoreInfo.display.split('/')[0],
+      value: averageScore > 0 ? averageScore.toFixed(1) : '0',
       change: previousStats ? calculateChange(averageScore, previousStats.averageScore) : undefined,
       icon: scoreIcon,
-      description: getScaleLabel(scoreType),
+      description: 'out of 30 (NSDA)',
       accentColor: '#D9A570'
     },
     {

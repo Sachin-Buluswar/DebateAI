@@ -218,28 +218,30 @@ export function formatScoreDisplay(percentage: number, originalFormat?: ScoreFor
 
 /**
  * Extract score from feedback object (handles all legacy formats)
+ * Returns the score in NSDA format (25-30) for consistency
  */
 export function extractScoreFromFeedback(feedback: any): number | null {
   if (!feedback) return null;
   
-  // Priority 1: Check for already standardized score
-  if (typeof feedback.standardizedScore === 'number') {
-    return feedback.standardizedScore;
-  }
-  
-  // Priority 2: Check for overall_score (database column)
-  if (typeof feedback.overall_score === 'number') {
-    return feedback.overall_score;
-  }
-  
-  // Priority 3: New format - speakerScore (NSDA scale 25-30)
+  // Priority 1: New format - speakerScore (NSDA scale 25-30)
   if (typeof feedback.speakerScore === 'number') {
-    return standardizeToPercentage(feedback.speakerScore);
+    return feedback.speakerScore;
+  }
+  
+  // Priority 2: Check for already standardized score (percentage) and convert to NSDA
+  if (typeof feedback.standardizedScore === 'number') {
+    return percentageToNSDA(feedback.standardizedScore);
+  }
+  
+  // Priority 3: Check for overall_score (database column - stored as percentage)
+  if (typeof feedback.overall_score === 'number') {
+    return percentageToNSDA(feedback.overall_score);
   }
   
   // Priority 4: Legacy format - scores.overall (percentage)
   if (feedback.scores?.overall !== undefined && feedback.scores?.overall !== null) {
-    return standardizeToPercentage(feedback.scores.overall);
+    const percentage = standardizeToPercentage(feedback.scores.overall);
+    return percentage !== null ? percentageToNSDA(percentage) : null;
   }
   
   // Priority 5: Old format - score field (could be various formats)
@@ -248,12 +250,14 @@ export function extractScoreFromFeedback(feedback: any): number | null {
     if (typeof feedback.score === 'string' && feedback.score.startsWith('{')) {
       try {
         const parsed = JSON.parse(feedback.score);
-        return standardizeToPercentage(parsed);
+        const percentage = standardizeToPercentage(parsed);
+        return percentage !== null ? percentageToNSDA(percentage) : null;
       } catch (e) {
         console.error('[scoreStandardization] Failed to parse JSON score:', e);
       }
     }
-    return standardizeToPercentage(feedback.score);
+    const percentage = standardizeToPercentage(feedback.score);
+    return percentage !== null ? percentageToNSDA(percentage) : null;
   }
   
   return null;

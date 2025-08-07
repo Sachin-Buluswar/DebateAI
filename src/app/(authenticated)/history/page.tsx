@@ -7,8 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { Debate, SpeechFeedback } from '@/types';
-import { parseFeedbackMarkdown } from '@/utils/feedbackUtils';
-import { formatScore, detectScoreType, getScoreColor } from '@/utils/scoring';
+import { formatScore, getScoreColor } from '@/utils/scoring';
 import { extractScoreFromFeedback } from '@/utils/scoreStandardization';
 
 // Lazy load heavy components
@@ -17,17 +16,12 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
 });
 
 
-const ReactMarkdown = dynamic(() => import('react-markdown'), {
-  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
-  ssr: false,
-});
 import { MicrophoneIcon, ChatBubbleLeftRightIcon, PlayIcon, PauseIcon, TrashIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/Toast';
 import { FixedSizeList as List } from 'react-window';
 
 // Constants for pagination
 const ITEMS_PER_PAGE = 50;
-const INITIAL_LOAD = 100;
 
 // Helper component for the audio player in history items
 const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
@@ -195,8 +189,9 @@ const HistoryItem = memo(({ data, index, style }: { data: HistoryItemData[], ind
                   const feedback = (item as SpeechFeedback).feedback;
                   const score = extractScoreFromFeedback(feedback);
                   if (score !== null) {
-                    const scoreInfo = formatScore(score);
-                    const scoreColorClass = getScoreColor(score);
+                    // Score is now in NSDA format (25-30), format it properly
+                    const scoreInfo = formatScore(score, 'nsda');
+                    const scoreColorClass = getScoreColor(score, 'nsda');
                     // Convert to background color classes
                     const bgColorClass = scoreColorClass.includes('green') ? 'bg-green-50 dark:bg-green-900/20' :
                                         scoreColorClass.includes('blue') ? 'bg-blue-50 dark:bg-blue-900/20' :

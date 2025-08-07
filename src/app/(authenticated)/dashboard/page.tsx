@@ -27,12 +27,9 @@ import Link from 'next/link';
 import {
   MicrophoneIcon,
   ChatBubbleLeftRightIcon,
-  AcademicCapIcon,
   MagnifyingGlassIcon,
   ClockIcon,
   FireIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
 } from '@heroicons/react/24/solid';
 // Lazy load the entire recharts library when needed
 import * as Recharts from 'recharts';
@@ -62,14 +59,12 @@ export default function Dashboard() {
     count: 0,
   });
   const [scoreTrendData, setScoreTrendData] = useState<{ date: string; score: number }[]>([]);
-  const [weeklyChartData, setWeeklyChartData] = useState<
-    { name: string; hours: number }[]
-  >([]);
+  // Removed unused weeklyChartData state
   const [hoursSpent, setHoursSpent] = useState(0);
   const [highestScore, setHighestScore] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'year' | 'all'>('month');
   const [chartDateRange, setChartDateRange] = useState<'week' | 'month' | 'year'>('week');
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
 
   useEffect(() => {
     // Check if user is logged in
@@ -131,7 +126,7 @@ export default function Dashboard() {
             setSpeechHistory(fetchedSpeeches);
 
             // Calculate stats from speech feedback
-            if (fetchedSpeeches.length > 0) {
+            if (fetchedSpeeches.length > 0 || fetchedDebates.length > 0) {
               // Hours spent estimate
               const speechHours = fetchedSpeeches.reduce(
                 (sum, speech) => {
@@ -146,39 +141,60 @@ export default function Dashboard() {
               // Calculate average score and highest score
               const speechesWithScores = fetchedSpeeches.filter(s => {
                 const score = extractScore(s.feedback);
-                return score !== null && typeof score === 'number';
+                return score !== null && typeof score === 'number' && !isNaN(score) && score >= 25 && score <= 30;
               });
               
               if (speechesWithScores.length > 0) {
-                const scores = speechesWithScores.map(s => extractScore(s.feedback) || 0);
-                
-                // Average score
-                const totalScore = scores.reduce((sum, score) => sum + score, 0);
-                const average = totalScore / scores.length;
-                setAvgScores({
-                  overall: Math.round(average * 10) / 10,
-                  count: speechesWithScores.length
+                const scores = speechesWithScores.map(s => {
+                  const score = extractScore(s.feedback);
+                  return score !== null && !isNaN(score) ? score : 25;
                 });
                 
-                // Highest score
-                const maxScore = Math.max(...scores);
-                setHighestScore(Math.round(maxScore * 10) / 10);
+                // Filter out any remaining invalid scores (should be between 25-30 for NSDA)
+                const validScores = scores.filter(s => s >= 25 && s <= 30);
                 
-                // Score trend data for chart
+                if (validScores.length > 0) {
+                  // Average score (in NSDA format)
+                  const totalScore = validScores.reduce((sum, score) => sum + score, 0);
+                  const average = totalScore / validScores.length;
+                  setAvgScores({
+                    overall: Math.round(average * 10) / 10, // Keep in NSDA format
+                    count: validScores.length
+                  });
+                  
+                  // Highest score (in NSDA format)
+                  const maxScore = Math.max(...validScores);
+                  setHighestScore(Math.round(maxScore * 10) / 10);
+                } else {
+                  setAvgScores({ overall: 0, count: 0 });
+                  setHighestScore(null);
+                }
+                
+                // Score trend data for chart (keep in NSDA format)
                 const sortedSpeeches = [...speechesWithScores].sort(
                   (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                 );
                 
-                const trendData = sortedSpeeches.map(speech => ({
-                  date: new Date(speech.created_at).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    year: sortedSpeeches.length > 10 ? '2-digit' : undefined
-                  }),
-                  score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
-                }));
+                const trendData = sortedSpeeches.map(speech => {
+                  const score = extractScore(speech.feedback);
+                  return {
+                    date: new Date(speech.created_at).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      year: sortedSpeeches.length > 10 ? '2-digit' : undefined
+                    }),
+                    score: score !== null && !isNaN(score) && score >= 25 && score <= 30 
+                      ? Math.round(score * 10) / 10 
+                      : 25
+                  };
+                }).filter(item => item.score >= 25 && item.score <= 30); // Filter out any invalid scores
                 
                 setScoreTrendData(trendData);
+              } else {
+                // No scores available
+                setAvgScores({ overall: 0, count: 0 });
+                setHighestScore(null);
+                setScoreTrendData([]);
               }
 
               // Calculate weekly activity for chart
@@ -221,11 +237,17 @@ export default function Dashboard() {
                 }
               });
 
-              const finalWeeklyChartData = orderedDays.map((dayName) => ({
-                name: dayName,
-                hours: Math.round(weeklyDataMap.get(dayName)! * 100) / 100,
-              }));
-              setWeeklyChartData(finalWeeklyChartData);
+              // Weekly chart data removed - feature can be re-added if needed
+              // const finalWeeklyChartData = orderedDays.map((dayName) => ({
+              //   name: dayName,
+              //   hours: Math.round((weeklyDataMap.get(dayName) || 0) * 100) / 100,
+              // }));
+            } else {
+              // No activity data available, set empty data
+              setHoursSpent(0);
+              setAvgScores({ overall: 0, count: 0 });
+              setHighestScore(null);
+              setScoreTrendData([]);
             }
           }
         } catch (speechError) {
@@ -712,12 +734,13 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
             tick={{ fill: '#6b7280' }}
           />
           <Recharts.YAxis 
-            domain={[0, 100]} 
+            domain={[25, 30]} 
             fontSize={11} 
             tickLine={false} 
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
-            tickFormatter={(value) => `${value}%`}
+            ticks={[25, 26, 27, 28, 29, 30]}
+            tickFormatter={(value) => value.toString()}
           />
           <Recharts.Tooltip
             contentStyle={{
@@ -728,7 +751,7 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
             }}
             itemStyle={{ color: '#374151', fontWeight: '500' }}
             labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
-            formatter={(value: number) => [`${value.toFixed(1)}%`, 'Score']}
+            formatter={(value: number) => [`${value.toFixed(1)}/30`, 'Speaker Score']}
           />
           <Recharts.Line
             type="monotone"
@@ -809,32 +832,4 @@ const WeeklyActivityChart = memo(({
 });
 WeeklyActivityChart.displayName = 'WeeklyActivityChart';
 
-// Simple Progress Bar Component (if needed, or use existing ProgressItem)
-interface ProgressItemProps {
-  label: string;
-  value: number; // Expect value 0-100
-  color: string; // Tailwind bg color class e.g., 'bg-primary-500'
-  icon: React.ReactNode;
-}
-
-function ProgressItem({ label, value, color, icon }: ProgressItemProps) {
-  return (
-    <div className="flex items-center space-x-3">
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center mb-1">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{value}%</p>
-        </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all duration-300 ${color}`}
-            style={{ width: `${value}%` }}
-          ></div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// Removed unused ProgressItem component - can be added back if needed

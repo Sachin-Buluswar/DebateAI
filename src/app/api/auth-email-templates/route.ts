@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 // Export these templates and paste them in the Supabase dashboard
 
 export async function GET() {
-  const emailConfirmationTemplate = `
+  try {
+    const emailConfirmationTemplate = `
 <h2>Welcome to Eris Debate!</h2>
 <p>Thanks for signing up. We're excited to help you improve your debate skills.</p>
 <p>Please confirm your email by clicking the link below:</p>
@@ -14,7 +15,7 @@ export async function GET() {
 <p>Happy debating!<br>The Eris Team</p>
 `;
 
-  const inviteUserTemplate = `
+    const inviteUserTemplate = `
 <h2>You've been invited to join Eris Debate</h2>
 <p>You've been invited to create a user on Eris Debate, the AI-powered platform for debate training.</p>
 <p>Click the link below to accept the invite:</p>
@@ -24,7 +25,7 @@ export async function GET() {
 <p>Best regards,<br>The Eris Team</p>
 `;
 
-  const magicLinkTemplate = `
+    const magicLinkTemplate = `
 <h2>Magic Link for Eris Debate</h2>
 <p>Click the link below to sign in to your Eris Debate account:</p>
 <p><a href="{{ .ConfirmationURL }}">Sign In</a></p>
@@ -33,7 +34,7 @@ export async function GET() {
 <p>Happy debating!<br>The Eris Team</p>
 `;
 
-  const resetPasswordTemplate = `
+    const resetPasswordTemplate = `
 <h2>Reset Your Eris Debate Password</h2>
 <p>You have requested to reset your password on Eris Debate.</p>
 <p>Click the link below to reset your password:</p>
@@ -43,7 +44,7 @@ export async function GET() {
 <p>Best regards,<br>The Eris Team</p>
 `;
 
-  const changeEmailTemplate = `
+    const changeEmailTemplate = `
 <h2>Confirm Email Change for Eris Debate</h2>
 <p>You have requested to update your email address on Eris Debate.</p>
 <p>Click the link below to confirm the change to: {{ .NewEmail }}</p>
@@ -53,13 +54,20 @@ export async function GET() {
 <p>Best regards,<br>The Eris Team</p>
 `;
 
-  // Return all templates in a structured JSON format
-  return NextResponse.json({
-    emailConfirmationTemplate,
-    inviteUserTemplate,
-    magicLinkTemplate,
-    resetPasswordTemplate,
-    changeEmailTemplate,
-    message: "Copy these templates and use them in your Supabase dashboard Email Templates settings"
-  });
+    // Return all templates in a structured JSON format
+    return NextResponse.json({
+      emailConfirmationTemplate,
+      inviteUserTemplate,
+      magicLinkTemplate,
+      resetPasswordTemplate,
+      changeEmailTemplate,
+      message: "Copy these templates and use them in your Supabase dashboard Email Templates settings"
+    });
+  } catch (error) {
+    console.error('[auth-email-templates] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate email templates' },
+      { status: 500 }
+    );
+  }
 } 

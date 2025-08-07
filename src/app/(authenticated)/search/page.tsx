@@ -6,7 +6,6 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
 import type { User, SearchResult, GeneratedAnswer } from '@/types';
-import type { EnhancedSearchResult } from '@/types/documents';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {

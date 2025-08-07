@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import type { SpeechFeedback } from '@/types';
 import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/utils/feedbackUtils';
+import { exportFeedbackAsPDF, formatMarkdownForPDF, isPDFExportSupported } from '@/lib/pdf/exportFeedbackPDF';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
@@ -184,6 +185,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
   
   useEffect(() => {
     const checkUser = async () => {
@@ -280,42 +282,120 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
   }
   
   // Add a function to handle exporting feedback
-  const handleExportFeedback = () => {
+  const handleExportFeedback = async () => {
     if (!feedback) return;
     
-    // Create content for export
-    const title = `## Speech Feedback: ${feedback.topic}\n`;
-    const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
+    setExportingPDF(true);
     
-    let content = '';
-    
-    // Export based on format
-    if (Object.keys(parsedFeedbackSections).length > 0) {
-      // Export parsed sections
-      for (const [heading, sectionContent] of Object.entries(parsedFeedbackSections)) {
-        content += `### ${heading}\n\n${sectionContent}\n\n`;
+    try {
+      // Create content for export
+      const title = `## Speech Feedback: ${feedback.topic}\n`;
+      const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
+      
+      let content = '';
+      
+      // Export based on format
+      if (Object.keys(parsedFeedbackSections).length > 0) {
+        // Export parsed sections in the same order as displayed in UI
+        const sectionOrder = [
+          'Overall Summary',
+          'Strengths',
+          'Areas for Improvement',
+          'Next Steps',
+          'Structure & Organization',
+          'Argumentation & Evidence',
+          'Clarity & Conciseness',
+          'Persuasiveness & Impact',
+          'Delivery Style',
+          'Strategic success Speech Type(s)'
+        ];
+        
+        for (const heading of sectionOrder) {
+          const sectionContent = parsedFeedbackSections[heading];
+          if (sectionContent) {
+            content += `### ${heading}\n\n${sectionContent}\n\n`;
+          }
+        }
+      } else if (feedback.feedback?.overall) {
+        // Old format
+        content = feedback.feedback.overall;
+      } else if (feedback.feedback?.overallSummary) {
+        // New format - export as structured text
+        content = feedback.feedback.overallSummary;
       }
-    } else if (feedback.feedback?.overall) {
-      // Old format
-      content = feedback.feedback.overall;
-    } else if (feedback.feedback?.overallSummary) {
-      // New format - export as structured text
-      content = feedback.feedback.overallSummary;
+      
+      // Combine all content
+      const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
+      
+      // Format markdown for better PDF rendering
+      const formattedContent = formatMarkdownForPDF(exportContent);
+      
+      // Check if PDF export is supported
+      if (isPDFExportSupported()) {
+        // Export as PDF
+        await exportFeedbackAsPDF(formattedContent, {
+          filename: `speech-feedback-${formatDateForFilename(feedback.created_at)}.pdf`
+        });
+      } else {
+        // Fallback to markdown if PDF export is not supported
+        console.warn('PDF export not supported, falling back to markdown');
+        const blob = new Blob([exportContent], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `speech-feedback-${formatDateForFilename(feedback.created_at)}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      // Fallback to markdown export on error
+      const title = `## Speech Feedback: ${feedback.topic}\n`;
+      const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
+      
+      let content = '';
+      if (Object.keys(parsedFeedbackSections).length > 0) {
+        // Use same section order as main export
+        const sectionOrder = [
+          'Overall Summary',
+          'Strengths',
+          'Areas for Improvement',
+          'Next Steps',
+          'Structure & Organization',
+          'Argumentation & Evidence',
+          'Clarity & Conciseness',
+          'Persuasiveness & Impact',
+          'Delivery Style',
+          'Strategic success Speech Type(s)'
+        ];
+        
+        for (const heading of sectionOrder) {
+          const sectionContent = parsedFeedbackSections[heading];
+          if (sectionContent) {
+            content += `### ${heading}\n\n${sectionContent}\n\n`;
+          }
+        }
+      } else if (feedback.feedback?.overall) {
+        content = feedback.feedback.overall;
+      } else if (feedback.feedback?.overallSummary) {
+        content = feedback.feedback.overallSummary;
+      }
+      
+      const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
+      const blob = new Blob([exportContent], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `speech-feedback-${formatDateForFilename(feedback.created_at)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingPDF(false);
     }
-    
-    // Combine all content
-    const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
-    
-    // Create a blob and download link
-    const blob = new Blob([exportContent], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `speech-feedback-${formatDateForFilename(feedback.created_at)}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
   
   // Helper function to format date for filename
@@ -358,14 +438,31 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
               Back
             </button>
             
-            {/* Export button - Add this new button */}
+            {/* Export button - Export as PDF */}
             {feedback && (
               <button
                 onClick={handleExportFeedback}
-                className="btn btn-secondary btn-sm"
-                title="Export feedback as Markdown"
+                className="btn btn-secondary btn-sm flex items-center gap-2"
+                title="Export feedback as PDF"
+                disabled={exportingPDF}
+                aria-label={exportingPDF ? "Generating PDF" : "Export feedback as PDF"}
               >
-                Export Feedback
+                {exportingPDF ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export as PDF
+                  </>
+                )}
               </button>
             )}
           </div>
