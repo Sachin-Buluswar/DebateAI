@@ -37,10 +37,18 @@ You are working on a **production-ready debate platform**. Every change you make
 src/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes (route.ts files)
-│   ├── (auth)/            # Auth pages
-│   ├── debate/            # Debate UI
-│   ├── speech-feedback/   # Speech analysis UI
-│   └── search/            # Search UI
+│   ├── (authenticated)/   # Authenticated pages with navigation
+│   │   ├── layout.tsx     # Shared layout with navigation
+│   │   ├── dashboard/     # Dashboard UI
+│   │   ├── debate/        # Debate UI
+│   │   ├── speech-feedback/ # Speech analysis UI
+│   │   ├── search/        # Search UI
+│   │   ├── history/       # History UI
+│   │   ├── preferences/   # User preferences
+│   │   ├── feedback/      # Feedback UI
+│   │   └── learn/         # Educational resources
+│   ├── auth/              # Auth pages (no navigation)
+│   └── page.tsx           # Landing page (no navigation)
 ├── backend/
 │   ├── modules/           # Business logic
 │   │   ├── realtimeDebate/     # Debate orchestration

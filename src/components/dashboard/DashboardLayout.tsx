@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Layout from '../layout/Layout';
 
 type WidgetProps = {
   title: string;
@@ -25,17 +24,16 @@ type DashboardLayoutProps = {
   children: React.ReactNode;
 };
 
+// No longer wrapping with Layout since the authenticated route group handles it
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-6">
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
-        </div>
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {children}
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="pb-5 border-b border-gray-200 dark:border-gray-700 sm:flex sm:items-center sm:justify-between mb-6">
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
       </div>
-    </Layout>
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {children}
+      </div>
+    </div>
   );
 } 

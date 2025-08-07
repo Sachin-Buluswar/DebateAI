@@ -15,7 +15,7 @@ import { Suspense } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 // Lazy load heavy components for better initial load performance
-const ParticipantPanel = dynamic(() => import('../../components/debate/ParticipantPanel'), {
+const ParticipantPanel = dynamic(() => import('@/components/debate/ParticipantPanel'), {
   loading: () => <LoadingSpinner text="Loading participants..." />,
   ssr: false,
 });
@@ -25,17 +25,17 @@ const WikiSearchPanel = dynamic(() => import('@/components/debate/WikiSearchPane
   ssr: false,
 });
 
-const StreamingAudioPlayer = dynamic(() => import('../../components/debate/StreamingAudioPlayer'), {
+const StreamingAudioPlayer = dynamic(() => import('@/components/debate/StreamingAudioPlayer'), {
   loading: () => <LoadingSpinner text="Loading audio player..." />,
   ssr: false,
 });
 
-const AudioRecorder = dynamic(() => import('../../components/debate/AudioRecorder'), {
+const AudioRecorder = dynamic(() => import('@/components/debate/AudioRecorder'), {
   loading: () => <LoadingSpinner text="Loading recorder..." />,
   ssr: false,
 });
 
-const CrossfireController = dynamic(() => import('../../components/debate/CrossfireControls'), {
+const CrossfireController = dynamic(() => import('@/components/debate/CrossfireControls'), {
   loading: () => <LoadingSpinner text="Loading controls..." />,
   ssr: false,
 });

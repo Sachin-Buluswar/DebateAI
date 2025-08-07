@@ -3,23 +3,23 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import React from 'react';
 
 // Lazy-loaded route components for code splitting
-export const LazyDebatePage = dynamic(() => import('@/app/debate/page'), {
+export const LazyDebatePage = dynamic(() => import('@/app/(authenticated)/debate/page'), {
   loading: () => React.createElement(LoadingSpinner, { fullScreen: true, text: "Loading debate..." }),
 });
 
-export const LazyDashboardPage = dynamic(() => import('@/app/dashboard/page'), {
+export const LazyDashboardPage = dynamic(() => import('@/app/(authenticated)/dashboard/page'), {
   loading: () => React.createElement(LoadingSpinner, { fullScreen: true, text: "Loading dashboard..." }),
 });
 
-export const LazyHistoryPage = dynamic(() => import('@/app/history/page'), {
+export const LazyHistoryPage = dynamic(() => import('@/app/(authenticated)/history/page'), {
   loading: () => React.createElement(LoadingSpinner, { fullScreen: true, text: "Loading history..." }),
 });
 
-export const LazySpeechFeedbackPage = dynamic(() => import('@/app/speech-feedback/page'), {
+export const LazySpeechFeedbackPage = dynamic(() => import('@/app/(authenticated)/speech-feedback/page'), {
   loading: () => React.createElement(LoadingSpinner, { fullScreen: true, text: "Loading speech feedback..." }),
 });
 
-export const LazySearchPage = dynamic(() => import('@/app/search/page'), {
+export const LazySearchPage = dynamic(() => import('@/app/(authenticated)/search/page'), {
   loading: () => React.createElement(LoadingSpinner, { fullScreen: true, text: "Loading search..." }),
 });
 
