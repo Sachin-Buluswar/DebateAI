@@ -40,6 +40,7 @@ export async function POST(request: Request) {
         topic: formData.get('topic') as string,
         speechType: formData.get('speechType') as string,
         userSide: formData.get('userSide') as string,
+        skillLevel: formData.get('skillLevel') as string,
         customInstructions: formData.get('customInstructions') as string,
         userId: formData.get('userId') as string,
       };
@@ -81,9 +82,10 @@ export async function POST(request: Request) {
         );
       }
 
-      // Get speech type and user side from request
+      // Get speech type, user side, and skill level from request
       const speechType = requestData.speechType || 'debate';
       const userSide = requestData.userSide || 'None';
+      const skillLevel = (requestData.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate';
       
       // PRODUCTION: Logging disabled
 // console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
@@ -97,6 +99,7 @@ export async function POST(request: Request) {
         userId,
         speechType,
         userSide,
+        skillLevel,
         customInstructions
       });
       

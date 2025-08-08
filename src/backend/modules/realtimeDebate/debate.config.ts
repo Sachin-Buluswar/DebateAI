@@ -124,12 +124,25 @@ export const debateConfig = {
     3. Delivery (20%): Clarity, pace, natural speaking style
     4. Crossfire (10%): Effective questioning and responses
     
+    SCORING GUIDELINES (NSDA Public Forum Speaker Points):
+    - 29.5-30: Exceptional performance, tournament champion quality
+    - 28.5-29: Excellent with minor areas for improvement
+    - 27.5-28: Good solid performance with some weaknesses
+    - 26.5-27: Average performance with notable issues
+    - 25.5-26: Below average with significant problems
+    - 25: Poor performance with major deficiencies
+    
+    Assign an appropriate score based on ACTUAL performance quality.
+    DO NOT default to any particular score - evaluate honestly.
+    Use ONLY half-point increments (e.g., 26.5, 27, 27.5, 28, etc.)
+    
     Provide specific feedback to {{userName}} on:
-    - What they did well
-    - Key areas for improvement
+    - What they did well (with examples)
+    - Key areas for improvement (be specific)
     - Strategic advice for future rounds
     - Speaking/delivery tips
     
+    Include a speaker score (25-30, half-points only) with justification.
     Sound like a real debate coach giving constructive feedback. Reference specific moments from the transcript.
     
     Transcript: \n\n{{transcript}}`,

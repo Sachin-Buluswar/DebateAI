@@ -41,6 +41,7 @@ interface Metadata {
   topic: string;
   speechType: string;
   userSide: string;
+  skillLevel: string;
   customInstructions: string;
   userId: string;
   totalChunks: number;
@@ -84,6 +85,7 @@ async function forwardToMainEndpoint(sessionId: string, metadata: Metadata, file
     form.append('topic', metadata.topic);
     form.append('speechType', metadata.speechType || 'debate');
     form.append('userSide', metadata.userSide || 'None');
+    form.append('skillLevel', metadata.skillLevel || 'intermediate');
     form.append('customInstructions', metadata.customInstructions || '');
     form.append('userId', metadata.userId);
 
@@ -251,6 +253,7 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       userId: metadata.userId,
       speechType: metadata.speechType,
       userSide: metadata.userSide,
+      skillLevel: (metadata.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate',
       customInstructions: metadata.customInstructions,
     });
 

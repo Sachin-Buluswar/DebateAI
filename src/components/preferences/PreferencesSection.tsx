@@ -10,16 +10,12 @@ type Preferences = {
   darkMode: boolean;
   autoSave: boolean;
   debateFormat: string;
-  language: string;
-  enhancedNavbar: boolean;
 };
 
 const defaultPreferences: Preferences = {
   darkMode: false,
   autoSave: true,
   debateFormat: 'policy',
-  language: 'english',
-  enhancedNavbar: true,
 };
 
 export default function PreferencesSection() {
@@ -188,30 +184,6 @@ export default function PreferencesSection() {
               </div>
 
 
-              <div className="flex items-center justify-between">
-                <span className="flex-grow flex flex-col">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
-                    Enhanced Navigation
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Use modern navigation with smooth animations
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className={`${
-                    preferences.enhancedNavbar ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'
-                  } relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
-                  onClick={() => handleToggle('enhancedNavbar')}
-                >
-                  <span className="sr-only">Toggle enhanced navigation</span>
-                  <span
-                    className={`${
-                      preferences.enhancedNavbar ? 'translate-x-5' : 'translate-x-0'
-                    } pointer-events-none relative inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200`}
-                  ></span>
-                </button>
-              </div>
             </div>
 
             {/* Select Preferences */}
@@ -233,27 +205,6 @@ export default function PreferencesSection() {
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="language"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Language
-                </label>
-                <select
-                  id="language"
-                  name="language"
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md dark:bg-gray-700 dark:text-white"
-                  value={preferences.language}
-                  onChange={(e) => handleSelect('language', e.target.value)}
-                >
-                  <option value="english">English</option>
-                  <option value="spanish">Spanish</option>
-                  <option value="french">French</option>
-                  <option value="german">German</option>
-                  <option value="chinese">Chinese</option>
-                </select>
-              </div>
             </div>
           </div>
 

@@ -24,6 +24,12 @@ const FeedbackSection = dynamic(() => import('@/components/feedback/FeedbackSect
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
   ssr: false,
 });
+
+const TrainingSection = dynamic(() => import('@/components/feedback/TrainingSection'), {
+  loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-48 rounded-lg" />,
+  ssr: false,
+});
+
 import { PlayIcon, PauseIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 // Helper component for the audio player
@@ -307,12 +313,17 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           'Clarity & Conciseness',
           'Persuasiveness & Impact',
           'Delivery Style',
-          'Strategic success Speech Type(s)'
+          'Strategic success Speech Type(s)',
+          'Training Plan'
         ];
         
         for (const heading of sectionOrder) {
           const sectionContent = parsedFeedbackSections[heading];
           if (sectionContent) {
+            // Add page break before Training Plan for better PDF formatting
+            if (heading === 'Training Plan') {
+              content += `<div class="page-break-before"></div>\n\n`;
+            }
             content += `### ${heading}\n\n${sectionContent}\n\n`;
           }
         }
@@ -322,6 +333,56 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
       } else if (feedback.feedback?.overallSummary) {
         // New format - export as structured text
         content = feedback.feedback.overallSummary;
+      }
+      
+      // Add training plan if not already included in parsed sections
+      if (feedback.feedback?.trainingPlan && !parsedFeedbackSections['Training Plan']) {
+        content += `\n\n<div class="page-break-before"></div>\n\n### Personalized Training Plan\n\n`;
+        
+        // Add exercises
+        if (feedback.feedback.trainingPlan.exercises && feedback.feedback.trainingPlan.exercises.length > 0) {
+          content += `#### Practice Exercises\n\n`;
+          feedback.feedback.trainingPlan.exercises.forEach((exercise, index) => {
+            content += `**Exercise ${index + 1}: ${exercise.title}**\n\n`;
+            content += `- **Focus:** ${exercise.focus}\n`;
+            content += `- **Duration:** ${exercise.duration}\n`;
+            content += `- **Difficulty:** ${exercise.difficulty}\n\n`;
+            
+            if (exercise.instructions && exercise.instructions.length > 0) {
+              content += `**Instructions:**\n`;
+              exercise.instructions.forEach((instruction, i) => {
+                content += `${i + 1}. ${instruction}\n`;
+              });
+              content += `\n`;
+            }
+            
+            if (exercise.example) {
+              content += `**Example:** ${exercise.example}\n\n`;
+            }
+            
+            if (exercise.metrics && exercise.metrics.length > 0) {
+              content += `**Success Metrics:**\n`;
+              exercise.metrics.forEach(metric => {
+                content += `- ${metric}\n`;
+              });
+              content += `\n`;
+            }
+          });
+        }
+        
+        // Add weekly goals
+        if (feedback.feedback.trainingPlan.weeklyGoals && feedback.feedback.trainingPlan.weeklyGoals.length > 0) {
+          content += `#### Weekly Goals\n\n`;
+          feedback.feedback.trainingPlan.weeklyGoals.forEach((goal, i) => {
+            content += `${i + 1}. ${goal}\n`;
+          });
+          content += `\n`;
+        }
+        
+        // Add progress tracking
+        if (feedback.feedback.trainingPlan.progressTracking) {
+          content += `#### Progress Tracking\n\n${feedback.feedback.trainingPlan.progressTracking}\n\n`;
+        }
       }
       
       // Combine all content
@@ -551,6 +612,14 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
                   />
                 );
               })}
+
+              {/* Training Plan Section */}
+              {feedback.feedback?.trainingPlan && (
+                <TrainingSection 
+                  trainingPlan={feedback.feedback.trainingPlan}
+                  className="mt-8"
+                />
+              )}
 
               {/* Fallback or message if parsing fails or no sections found */}
               {Object.keys(parsedFeedbackSections).length === 0 && (feedback.feedback?.overall || feedback.feedback?.overallSummary) && (

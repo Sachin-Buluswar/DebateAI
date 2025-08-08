@@ -174,6 +174,30 @@ export async function exportFeedbackAsPDF(
           .section {
             page-break-inside: avoid;
           }
+          
+          /* Force page break for Training Plan section */
+          .page-break-before {
+            page-break-before: always;
+            margin-top: 0;
+          }
+          
+          /* Training plan styles */
+          h4 {
+            font-size: 12pt;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #444;
+          }
+          
+          /* Exercise boxes */
+          .exercise {
+            border: 1px solid #e5e5e5;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background: #fafafa;
+          }
         </style>
       </head>
       <body>

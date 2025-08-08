@@ -8,8 +8,6 @@ type Preferences = {
   autoSave: boolean;
   showWordCount: boolean;
   debateFormat: string;
-  language: string;
-  enhancedNavbar: boolean;
 };
 
 const defaultPreferences: Preferences = {
@@ -17,8 +15,6 @@ const defaultPreferences: Preferences = {
   autoSave: true,
   showWordCount: true,
   debateFormat: 'policy',
-  language: 'english',
-  enhancedNavbar: false,
 };
 
 interface PreferencesContextType {

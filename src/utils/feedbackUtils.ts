@@ -53,6 +53,19 @@ export interface StructuredFeedback {
   actionableSuggestions: string[];
   strengths: string[];
   areasForImprovement: string[];
+  trainingPlan?: {
+    exercises: Array<{
+      title: string;
+      focus: string;
+      difficulty: 'beginner' | 'intermediate' | 'advanced';
+      duration: string;
+      instructions: string[];
+      example?: string;
+      metrics?: string[];
+    }>;
+    weeklyGoals?: string[];
+    progressTracking?: string;
+  };
 }
 
 export function parseFeedbackData(feedbackData: unknown): Feedback | null {
@@ -197,6 +210,53 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
       content += `**Suggestions:**\n${relevanceSection.suggestions.map(s => `- ${s}`).join('\n')}`;
     }
     sections['Strategic success Speech Type(s)'] = content.trim();
+  }
+  
+  // Training Plan
+  const trainingPlan = feedback.trainingPlan;
+  if (trainingPlan && trainingPlan.exercises && trainingPlan.exercises.length > 0) {
+    let content = '';
+    
+    // Add exercises
+    content += '## Practice Exercises\n\n';
+    trainingPlan.exercises.forEach((exercise, index) => {
+      content += `### Exercise ${index + 1}: ${exercise.title}\n\n`;
+      content += `**Focus:** ${exercise.focus}\n`;
+      content += `**Duration:** ${exercise.duration}\n`;
+      content += `**Difficulty:** ${exercise.difficulty}\n\n`;
+      
+      if (exercise.instructions && exercise.instructions.length > 0) {
+        content += `**Instructions:**\n`;
+        exercise.instructions.forEach((instruction, i) => {
+          content += `${i + 1}. ${instruction}\n`;
+        });
+        content += '\n';
+      }
+      
+      if (exercise.example) {
+        content += `**Example:** ${exercise.example}\n\n`;
+      }
+      
+      if (exercise.metrics && exercise.metrics.length > 0) {
+        content += `**Success Metrics:**\n${exercise.metrics.map(m => `- ${m}`).join('\n')}\n\n`;
+      }
+    });
+    
+    // Add weekly goals
+    if (trainingPlan.weeklyGoals && trainingPlan.weeklyGoals.length > 0) {
+      content += '## Weekly Goals\n\n';
+      trainingPlan.weeklyGoals.forEach((goal, i) => {
+        content += `${i + 1}. ${goal}\n`;
+      });
+      content += '\n';
+    }
+    
+    // Add progress tracking
+    if (trainingPlan.progressTracking) {
+      content += `## Progress Tracking\n\n${trainingPlan.progressTracking}\n`;
+    }
+    
+    sections['Training Plan'] = content.trim();
   }
   
   return sections;

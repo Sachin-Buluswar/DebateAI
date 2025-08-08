@@ -61,6 +61,7 @@ src/
 ├── components/
 │   ├── ui/                # Reusable UI components
 │   ├── debate/            # Debate-specific components
+│   ├── feedback/          # Feedback components (including TrainingSection)
 │   └── layout/            # Layout components
 └── lib/
     ├── errorRecovery.ts   # Retry logic patterns
@@ -245,6 +246,12 @@ None - All critical blockers have been resolved!
 - Speech feedback 500 errors resolved with in-memory session storage
 - Supabase Realtime implemented for Vercel WebSocket support
 - All TypeScript compilation errors fixed
+
+### Latest Features (January 2025)
+- ✅ **Enhanced HOW-TO Feedback**: All suggestions now include detailed step-by-step instructions, timing, and practice drills
+- ✅ **Personalized Training Plans**: Auto-generated exercises based on skill level and identified weaknesses
+- ✅ **Skill-level Adaptive Feedback**: Novice/Intermediate/Advanced with appropriate language and expectations
+- ✅ **Training Plan in PDF Exports**: Full practice exercises included with page breaks for printing
 
 ## Do Not
 

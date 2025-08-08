@@ -11,10 +11,11 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-import type { User } from '@/types';
+import type { User, DebaterSkillLevel } from '@/types';
 import { PlayIcon, PauseIcon, StopIcon, CloudArrowUpIcon, MicrophoneIcon } from '@heroicons/react/24/solid';
 import { MAX_UPLOAD_SIZE_BYTES, MAX_USER_STORAGE_BYTES, UPLOAD_CHUNK_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
 import { useToast } from '@/components/ui/Toast';
+import { SkillLevelSelector } from '@/components/feedback/SkillLevelSelector';
 
 // Import our new UI components
 import EnhancedButton from '@/components/ui/EnhancedButton';
@@ -55,6 +56,7 @@ export default function SpeechFeedback() {
   const [userSide, setUserSide] = useState<string>('None'); // 'Proposition', 'Opposition', 'None'
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [customInstructions, setCustomInstructions] = useState('');
+  const [skillLevel, setSkillLevel] = useState<DebaterSkillLevel>('intermediate');
   
   // Storage usage tracking
   const [storageUsed, setStorageUsed] = useState(0); // in bytes
@@ -452,6 +454,7 @@ export default function SpeechFeedback() {
           formData.append('topic', topic);
           formData.append('speechType', selectedSpeechType);
           formData.append('userSide', userSide);
+          formData.append('skillLevel', skillLevel);
           formData.append('customInstructions', customInstructions);
           formData.append('userId', user?.id || '');
           
@@ -552,6 +555,7 @@ export default function SpeechFeedback() {
           topic: topic,
           speechType: selectedSpeechType,
           userSide: userSide,
+          skillLevel: skillLevel,
           customInstructions: customInstructions,
           userId: user?.id || '',
         }),
@@ -803,6 +807,13 @@ export default function SpeechFeedback() {
                     ))}
                   </div>
                 </div>
+
+                {/* Skill Level Selection */}
+                <SkillLevelSelector
+                  value={skillLevel}
+                  onChange={setSkillLevel}
+                  className="mb-6"
+                />
 
                 {/* Custom Instructions */}
                 <EnhancedInput

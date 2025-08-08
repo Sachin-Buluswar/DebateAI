@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
       topic, 
       speechType, 
       userSide,
+      skillLevel,
       customInstructions
     } = data;
 
@@ -133,6 +134,7 @@ export async function POST(req: NextRequest) {
       topic: topic || '',
       speechType: speechType || 'debate',
       userSide: userSide || 'None',
+      skillLevel: skillLevel || 'intermediate',
       customInstructions: customInstructions || '',
       uploadedChunks: 0,         // Tracks how many chunks have been received
       completed: false           // Flag to indicate if upload is finalized

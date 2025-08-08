@@ -1,3 +1,5 @@
+export type DebaterSkillLevel = 'novice' | 'intermediate' | 'advanced';
+
 export interface User {
   id: string;
   email: string;
@@ -35,6 +37,7 @@ export interface SpeechFeedback {
   speech_type?: string;
   speech_types?: string;
   user_side?: string;
+  skill_level?: DebaterSkillLevel;
   custom_instructions?: string;
   audio_url?: string;
   file_path?: string;
@@ -114,6 +117,21 @@ export interface SpeechFeedback {
     actionableSuggestions?: string[];
     strengths?: string[];
     areasForImprovement?: string[];
+    
+    // Training plan for skill development
+    trainingPlan?: {
+      exercises: Array<{
+        title: string;
+        focus: string;
+        difficulty: 'beginner' | 'intermediate' | 'advanced';
+        duration: string;
+        instructions: string[];
+        example?: string;
+        metrics?: string[];
+      }>;
+      weeklyGoals?: string[];
+      progressTracking?: string;
+    };
     
     // Additional fields for error states
     message?: string;

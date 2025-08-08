@@ -76,7 +76,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mt-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
               {features.map((feature, index) => (
                 <div 
                   key={feature.name} 
@@ -148,7 +148,10 @@ export default function HomePage() {
         <footer className="border-t border-gray-200 dark:border-gray-800">
           <div className="max-w-6xl mx-auto px-8 py-12">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="flex items-center space-x-8">
+              <p className="text-sm text-gray-500 dark:text-gray-500">
+                eris debate. focused practice for better debates.
+              </p>
+              <nav className="flex space-x-8">
                 <a 
                   href="https://www.instagram.com/erisdebate/" 
                   target="_blank"
@@ -157,11 +160,6 @@ export default function HomePage() {
                 >
                   instagram
                 </a>
-                <p className="text-sm text-gray-500 dark:text-gray-500">
-                  eris debate. focused practice for better debates.
-                </p>
-              </div>
-              <nav className="flex space-x-8">
                 <Link href="/about" className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-100">
                   about
                 </Link>

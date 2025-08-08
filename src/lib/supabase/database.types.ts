@@ -306,6 +306,7 @@ export type Database = {
           id: string
           overall_score: number | null
           recording_id: string | null
+          skill_level: string | null
           speech_type: string | null
           speech_types: string | null
           topic: string
@@ -326,6 +327,7 @@ export type Database = {
           id?: string
           overall_score?: number | null
           recording_id?: string | null
+          skill_level?: string | null
           speech_type?: string | null
           speech_types?: string | null
           topic: string
@@ -346,6 +348,7 @@ export type Database = {
           id?: string
           overall_score?: number | null
           recording_id?: string | null
+          skill_level?: string | null
           speech_type?: string | null
           speech_types?: string | null
           topic?: string

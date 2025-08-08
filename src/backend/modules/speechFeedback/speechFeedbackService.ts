@@ -41,6 +41,7 @@ export interface SpeechFeedbackInput {
   userId: string;
   speechType?: string;
   userSide?: string;
+  skillLevel?: 'novice' | 'intermediate' | 'advanced';
   customInstructions?: string;
 }
 
@@ -83,9 +84,99 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
 }
 
 /**
+ * Get skill level modifier for the prompt
+ */
+function getSkillLevelModifier(skillLevel: 'novice' | 'intermediate' | 'advanced' = 'intermediate'): string {
+  const modifiers = {
+    novice: `
+SKILL LEVEL: NOVICE DEBATER (First year, learning fundamentals)
+
+Adjust your feedback for a beginner:
+- Use simple, clear language - explain debate terms when you use them
+- Focus on fundamental skills: structure, clarity, time management, basic argumentation
+- Be HIGHLY encouraging - celebrate effort and small improvements enthusiastically
+- Typical scoring range: 26-28 (only go below 26 for serious issues, rarely above 28)
+- Provide very detailed step-by-step instructions in all suggestions
+- Example good feedback: "Great job making eye contact! To improve, try pausing for 2 seconds after each main point to let it sink in."
+- Avoid overwhelming with advanced strategy or complex debate theory
+- Emphasize progress: "You're building important skills!"
+- Focus on 2-3 main improvements rather than listing many issues`,
+
+    intermediate: `
+SKILL LEVEL: INTERMEDIATE DEBATER (1-2 years experience)
+
+Adjust your feedback for developing skills:
+- Use standard debate terminology with brief clarification when helpful
+- Balance fundamentals with strategic thinking
+- Mix encouragement with constructive criticism equally
+- Typical scoring range: 26-29 (use most of the range appropriately)
+- Provide clear but concise implementation steps
+- Example: "Your link chain needs strengthening - add an internal link between economic decline and conflict. Practice by writing out each step of causation."
+- Introduce advanced concepts gradually with explanations
+- Emphasize growth: "You're ready to take your skills to the next level!"
+- Can handle 4-5 areas for improvement`,
+
+    advanced: `
+SKILL LEVEL: ADVANCED DEBATER (Varsity level, 2+ years, competitive)
+
+Adjust your feedback for competitive excellence:
+- Use sophisticated debate terminology freely without explanation
+- Focus on nuanced strategy, marginal gains, and advanced techniques
+- Be direct and critically honest while remaining constructive
+- Use full scoring range: 25-30 (apply high standards consistently)
+- Provide strategic insights and advanced tactical suggestions
+- Example: "Your probabilistic weighing in the 2AR failed to engage their delink on structural violence - consider preempting this in summary"
+- Compare to top tournament performances when relevant
+- Emphasize refinement: "These adjustments will give you a competitive edge"
+- Can handle comprehensive critique across all areas`
+  };
+  
+  return modifiers[skillLevel] || modifiers.intermediate;
+}
+
+/**
+ * Get training plan instructions based on skill level
+ */
+function getTrainingPlanInstructions(skillLevel: 'novice' | 'intermediate' | 'advanced' = 'intermediate'): string {
+  const trainingInstructions = {
+    novice: `
+TRAINING PLAN FOR NOVICE (Generate 2-3 exercises):
+Based on the identified weaknesses, create basic exercises:
+- Focus on fundamentals: flowing, time management, basic rebuttals, speaking clearly
+- Make instructions VERY detailed with examples  
+- Each exercise 5-10 minutes
+- Include encouragement
+- Example exercise: "Basic Flowing Drill: 1) Get a notebook, 2) Draw 4 columns for each speaker, 3) Watch a sample speech and write one key word per argument, 4) Practice daily for 10 minutes"
+- Weekly goals should be achievable and build confidence`,
+    
+    intermediate: `
+TRAINING PLAN FOR INTERMEDIATE (Generate 3-4 exercises):
+Based on the identified weaknesses, create targeted exercises:
+- Focus on: weighing mechanisms, impact calc, cross-examination, efficiency
+- Balance detail with assumed knowledge
+- Each exercise 10-15 minutes  
+- Include self-assessment metrics
+- Example exercise: "Impact Weighing Drill: 1) List 3 impacts from your case, 2) Compare on magnitude/probability/timeframe, 3) Write 30-second weighing overview, 4) Record and refine"
+- Weekly goals should push consistent improvement`,
+    
+    advanced: `
+TRAINING PLAN FOR ADVANCED (Generate 3-5 exercises):
+Based on the identified weaknesses, create sophisticated exercises:
+- Focus on: meta-weighing, judge adaptation, round vision, speed with clarity
+- Be concise but strategic
+- Each exercise 15-20 minutes
+- Include tournament prep elements
+- Example exercise: "Crystallization Practice: 1) Identify 2 key voters, 2) Write 90-second overview, 3) Include offensive/defensive balance, 4) Practice at tournament speed"
+- Weekly goals should target tournament success`
+  };
+  
+  return trainingInstructions[skillLevel] || trainingInstructions.intermediate;
+}
+
+/**
  * Get the system prompt for different speech types
  */
-function getSpeechTypePrompt(speechType: string, topic: string, userSide?: string, customInstructions?: string): string {
+function getSpeechTypePrompt(speechType: string, topic: string, userSide?: string, customInstructions?: string, skillLevel?: 'novice' | 'intermediate' | 'advanced'): string {
   const sideContext = userSide && userSide !== 'None' ? ` The speaker is on the ${userSide} side.` : '';
   const basePrompt = `You are an expert Public Forum debate coach with 20+ years of experience judging at the highest levels of competition including NSDA Nationals and TOC. You are analyzing a ${speechType} on the topic: "${topic}".${sideContext}`;
   
@@ -131,53 +222,98 @@ function getSpeechTypePrompt(speechType: string, topic: string, userSide?: strin
   };
   
   const specificPrompt = prompts[speechType] || prompts.default;
+  const skillModifier = getSkillLevelModifier(skillLevel || 'intermediate');
+  const trainingPlanInstructions = getTrainingPlanInstructions(skillLevel || 'intermediate');
   
   return `${specificPrompt}
+
+${skillModifier}
+
+${trainingPlanInstructions}
 
 ${customInstructions ? `Additional instructions from the user: ${customInstructions}\n` : ''}
 
 You must provide COMPREHENSIVE feedback as an expert debate coach would. Be specific with examples from the speech. Your feedback should be constructive, detailed, and actionable.
 
+IMPORTANT SCORING GUIDELINES:
+- Assign speaker points based on ACTUAL performance quality
+- Use the FULL range of scores appropriately:
+  * 29.5-30: Exceptional, tournament-winning quality speech
+  * 28.5-29: Excellent speech with minor flaws
+  * 27.5-28: Good speech with some areas for improvement
+  * 26.5-27: Average speech with notable weaknesses
+  * 25.5-26: Below average with significant issues
+  * 25: Poor performance with major problems
+- DO NOT default to 27.5 - evaluate each speech individually
+- Consider ALL aspects: content, delivery, strategy, and execution
+- Be honest and fair - inflated scores don't help students improve
+
+IMPORTANT: For ALL suggestions, provide detailed HOW-TO instructions, not just WHAT to improve. Each suggestion must include:
+1. The specific technique or method (WHAT)
+2. Step-by-step instructions (HOW - be very specific with 2-3 clear steps)
+3. When to use it (WHEN - in what context or speech section)
+4. A practice drill or exercise (PRACTICE - specific activity with frequency/duration)
+
+Example format: "HOW TO improve signposting: 1) Start each contention with 'My [first/second] argument is...', 2) Use transitional phrases like 'This matters because...', 3) Practice by recording your contentions with clear markers. Do this drill for 10 minutes before each practice round."
+
 Analyze the transcription and provide feedback in JSON format with these exact fields:
 {
-  "speakerScore": 27,  // NSDA Public Forum speaker points (25-30 scale, half points allowed)
-  "scoreJustification": "Explain why this specific score was awarded based on NSDA criteria",
+  "speakerScore": 0,  // NSDA speaker points (25-30, ONLY half-points: 25, 25.5, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, or 30) - BASE ON ACTUAL PERFORMANCE
+  "scoreJustification": "Explain why this SPECIFIC score was awarded, referencing concrete strengths and weaknesses from the speech",
   "overallSummary": "2-3 paragraph comprehensive summary of the speech performance, highlighting key strengths and areas for improvement",
   "structureOrganization": {
     "analysis": "Detailed analysis of speech structure, flow, transitions, and organization",
     "examples": ["Specific example from speech showing good/poor structure", "Another example"],
-    "suggestions": ["Specific suggestion for improvement", "Another suggestion"]
+    "suggestions": [
+      "Detailed HOW-TO instruction with specific steps. Include: 1) WHAT to do, 2) HOW to do it (2-3 steps), 3) WHEN to use it, 4) Practice tip",
+      "Another detailed suggestion following same format"
+    ]
   },
   "argumentationEvidence": {
     "analysis": "Detailed analysis of argument quality, evidence use, warrants, and logical reasoning",
     "examples": ["Quote or paraphrase showing strong/weak argumentation", "Example of evidence use"],
-    "suggestions": ["How to strengthen arguments", "Better evidence usage tips"]
+    "suggestions": [
+      "Detailed HOW-TO for stronger arguments. Include: 1) WHAT to improve, 2) HOW (2-3 specific steps), 3) WHEN to apply, 4) Practice drill",
+      "Specific technique for evidence usage with step-by-step instructions and practice method"
+    ]
   },
   "clarityConciseness": {
     "analysis": "Analysis of clarity, word economy, avoiding redundancy, and message precision",
     "examples": ["Example of clear/unclear communication from the speech", "Instance of redundancy"],
-    "suggestions": ["Ways to improve clarity", "How to be more concise"]
+    "suggestions": [
+      "HOW TO improve clarity: 1) Use signposting ('First', 'Second'), 2) State claim before evidence, 3) Practice with 30-second summaries daily",
+      "TECHNIQUE for conciseness: 1) Remove filler words, 2) Use active voice, 3) Drill by recording and re-recording same argument in less time"
+    ]
   },
   "persuasivenessImpact": {
     "analysis": "Analysis of persuasive techniques, impact calculus, and emotional appeal",
     "examples": ["Example of effective/ineffective persuasion", "Impact comparison attempt"],
-    "suggestions": ["How to be more persuasive", "Better impact framing techniques"]
+    "suggestions": [
+      "PERSUASION METHOD: 1) Start with impact, 2) Use comparative language ('more important than...'), 3) Practice with weighing drills - 5 min daily",
+      "IMPACT FRAMING: 1) Quantify impacts, 2) Use timeframe/probability/magnitude, 3) Practice explaining why your impact outweighs in 30 seconds"
+    ]
   },
   "deliveryStyle": {
     "analysis": "Analysis of speaking pace, tone variation, confidence, and vocal delivery",
     "examples": ["Noted delivery characteristic", "Specific moment of strong/weak delivery"],
-    "suggestions": ["Delivery improvement tips", "Vocal technique suggestions"]
+    "suggestions": [
+      "DELIVERY DRILL: 1) Record yourself, 2) Mark pauses with // in script, 3) Practice varying pace - slow for impacts, faster for rebuttals",
+      "VOCAL TECHNIQUE: 1) Stand while practicing, 2) Project to back wall, 3) Do tongue twisters before rounds for articulation"
+    ]
   },
   "relevanceToSpeechType": {
     "analysis": "How well the speech fulfilled the specific requirements of a ${speechType}",
     "examples": ["Example showing understanding/misunderstanding of speech type", "Another example"],
-    "suggestions": ["Better ways to approach this speech type", "Key elements to include next time"]
+    "suggestions": [
+      "SPEECH TYPE MASTERY: 1) Template the structure, 2) Time each section precisely, 3) Practice transitions between sections 10x before rounds",
+      "KEY ELEMENTS CHECKLIST: 1) Create a pre-round checklist, 2) Review after each practice, 3) Record yourself hitting all elements in order"
+    ]
   },
   "actionableSuggestions": [
-    "Top priority: Most important thing to work on",
-    "Second priority: Next area for improvement",
-    "Third priority: Additional improvement area",
-    "Long-term goal: Skill to develop over time"
+    "TOP PRIORITY - Include specific HOW-TO: What skill needs work + 3-step practice plan + daily 10-minute drill",
+    "SECOND PRIORITY - Actionable technique: Specific weakness + method to address + practice frequency (e.g., 'before each round')",
+    "THIRD PRIORITY - Targeted improvement: Area to develop + exercise/drill + success metric to track progress",
+    "LONG-TERM GOAL - Strategic development: Advanced skill + monthly milestone + specific resources or exercises to use"
   ],
   "strengths": [
     "First key strength demonstrated",
@@ -188,7 +324,30 @@ Analyze the transcription and provide feedback in JSON format with these exact f
     "Primary area needing work",
     "Secondary area for improvement",
     "Additional improvement opportunity"
-  ]
+  ],
+  "trainingPlan": {
+    "exercises": [
+      {
+        "title": "Name of the exercise (e.g., 'Impact Weighing Drill')",
+        "focus": "Specific skill this targets (e.g., 'Comparative analysis')",
+        "difficulty": "appropriate level based on skill level",
+        "duration": "Time needed (e.g., '10-15 minutes')",
+        "instructions": [
+          "Step 1: Specific first step",
+          "Step 2: Next action to take",
+          "Step 3: Final step"
+        ],
+        "example": "Brief example of successful execution",
+        "metrics": ["How to measure improvement", "Success indicators"]
+      }
+    ],
+    "weeklyGoals": [
+      "Specific goal 1 for this week",
+      "Specific goal 2 for this week",
+      "Specific goal 3 for this week"
+    ],
+    "progressTracking": "How to measure overall improvement over time"
+  }
 }`
 }
 
@@ -196,7 +355,7 @@ Analyze the transcription and provide feedback in JSON format with these exact f
  * Main speech feedback processing function
  */
 export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise<SpeechFeedbackResult> {
-  const { audioBuffer, filename, topic, userId, speechType = 'debate', userSide } = input;
+  const { audioBuffer, filename, topic, userId, speechType = 'debate', userSide, skillLevel = 'intermediate' } = input;
   
   // Sanitize filename for logging (prevent log injection)
   const sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
@@ -279,6 +438,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         topic,
         speech_type: speechType,
         user_side: userSide,
+        skill_level: skillLevel,
         feedback: { 
           message: 'Audio file too large for automated feedback.',
           standardizedScore: 0 // Include standardized score even for large files
@@ -299,7 +459,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     
     return {
       feedback: { 
-        speakerScore: 25, // Minimum NSDA score
+        speakerScore: 25.0, // Minimum NSDA score (half-point scoring)
         standardizedScore: 0, // 0% in standardized format
         scoreJustification: 'File too large for automated analysis',
         overallSummary: 'Audio file uploaded successfully but is too large for automated feedback.',
@@ -361,7 +521,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   // Generate AI feedback using GPT-4o with structured output
   let feedback: any;
   const fallbackFeedback = {
-      speakerScore: 0,
+      speakerScore: 25.0,
       scoreJustification: "Unable to provide score - OpenAI API not configured",
       overallSummary: `Unable to provide AI analysis - OpenAI API not configured. Manual review recommended for speech about ${topic}.`,
       structureOrganization: {
@@ -400,7 +560,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     };
   
   try {
-    const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions);
+    const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions, skillLevel);
     
     logger.info('Generating AI feedback', {
       metadata: {
@@ -549,6 +709,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         topic,
         speech_type: speechType,
         user_side: userSide,
+        skill_level: skillLevel,
         feedback: {
           ...feedback,
           standardizedScore: standardizedScore // Ensure standardized score is in JSON

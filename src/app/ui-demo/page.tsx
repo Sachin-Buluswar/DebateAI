@@ -9,7 +9,6 @@ import ParticipantCard from '@/components/debate/ParticipantCard';
 
 function UIDemoContent() {
   const [loading, setLoading] = useState(false);
-  const [useEnhancedNavbar, setUseEnhancedNavbar] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -98,24 +97,6 @@ function UIDemoContent() {
             <p className="text-gray-600 dark:text-gray-400">test and compare the new enhanced components</p>
           </div>
 
-          {/* Navigation Toggle */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-medium text-gray-900 dark:text-white">navigation enhancement</h2>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useEnhancedNavbar}
-                  onChange={(e) => setUseEnhancedNavbar(e.target.checked)}
-                  className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">use enhanced navbar (scroll to see collapse effect)</span>
-              </label>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              the enhanced navbar collapses smoothly when scrolling down and expands when scrolling up
-            </p>
-          </section>
 
           {/* Enhanced Buttons */}
           <section className="space-y-4">
@@ -306,14 +287,6 @@ function UIDemoContent() {
             </div>
           </section>
 
-          {/* Spacing for scroll demo */}
-          <div className="h-screen flex items-center justify-center text-gray-400 dark:text-gray-600">
-            <p className="text-center">
-              scroll up and down to see the navbar collapse effect
-              <br />
-              <span className="text-sm">(if enhanced navbar is enabled)</span>
-            </p>
-          </div>
         </div>
       </div>
   );

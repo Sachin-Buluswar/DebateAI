@@ -38,6 +38,7 @@ export function nsdaToPercentage(score: number): number {
 
 /**
  * Convert percentage (0-100) to NSDA score (25-30)
+ * Uses half-point scoring (rounds to nearest 0.5)
  */
 export function percentageToNSDA(percentage: number): number {
   if (percentage < 0 || percentage > 100) {
@@ -45,7 +46,7 @@ export function percentageToNSDA(percentage: number): number {
     percentage = Math.max(0, Math.min(100, percentage)); // Clamp to valid range
   }
   const nsdaScore = 25 + (percentage / 100) * 5;
-  return Math.round(nsdaScore * 10) / 10; // Round to 1 decimal place
+  return Math.round(nsdaScore * 2) / 2; // Round to nearest 0.5 (half-point scoring)
 }
 
 /**
@@ -203,7 +204,8 @@ export function formatScoreDisplay(percentage: number, originalFormat?: ScoreFor
   switch (originalFormat) {
     case ScoreFormat.NSDA:
       const nsda = percentageToNSDA(percentage);
-      return `${nsda.toFixed(1)}/30`;
+      // Show .0 decimals only when needed (e.g., 27 instead of 27.0, but 27.5 stays 27.5)
+      return `${nsda % 1 === 0 ? nsda.toFixed(0) : nsda.toFixed(1)}/30`;
       
     case ScoreFormat.TEN_POINT:
       const tenPoint = percentageToTenPoint(percentage);
@@ -316,6 +318,7 @@ export function getScoreQuality(percentage: number): {
 
 /**
  * Calculate average score from multiple scores
+ * Rounds to nearest 0.5 for NSDA-compatible scoring
  */
 export function calculateAverageScore(scores: (number | null)[]): number | null {
   const validScores = scores.filter((s): s is number => s !== null && !isNaN(s));
@@ -325,7 +328,8 @@ export function calculateAverageScore(scores: (number | null)[]): number | null 
   }
   
   const sum = validScores.reduce((acc, score) => acc + score, 0);
-  return Math.round((sum / validScores.length) * 10) / 10; // Round to 1 decimal
+  const average = sum / validScores.length;
+  return Math.round(average * 2) / 2; // Round to nearest 0.5 (half-point scoring)
 }
 
 /**

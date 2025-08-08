@@ -28,12 +28,13 @@ export function nsdaToPercentage(score: number): number {
 
 /**
  * Convert percentage (0-100) to NSDA score (25-30)
+ * Rounds to nearest 0.5 (half-point scoring)
  */
 export function percentageToNSDA(percentage: number): number {
   const MIN_NSDA = 25;
   const MAX_NSDA = 30;
   const nsdaScore = MIN_NSDA + (percentage / 100) * (MAX_NSDA - MIN_NSDA);
-  return Math.round(nsdaScore * 10) / 10; // Round to 1 decimal place
+  return Math.round(nsdaScore * 2) / 2; // Round to nearest 0.5 (half-point scoring)
 }
 
 /**
@@ -67,8 +68,8 @@ export function formatScore(score: number, type?: ScoreType): ScoreInfo {
       return {
         value: score,
         type: 'nsda',
-        display: `${score.toFixed(1)}/30`,
-        description: 'NSDA Public Forum scale'
+        display: `${score % 1 === 0 ? score.toFixed(0) : score.toFixed(1)}/30`,
+        description: 'NSDA Public Forum scale (half-point scoring)'
       };
     
     case 'ten-point':
