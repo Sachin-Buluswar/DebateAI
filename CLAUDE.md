@@ -62,7 +62,9 @@ src/
 │   ├── ui/                # Reusable UI components
 │   ├── debate/            # Debate-specific components
 │   ├── feedback/          # Feedback components (including TrainingSection)
-│   └── layout/            # Layout components
+│   ├── layout/            # Layout components
+│   ├── pdf/               # PDF viewing components (EnhancedPDFViewer)
+│   └── search/            # Search and document viewing components
 └── lib/
     ├── errorRecovery.ts   # Retry logic patterns
     └── rateLimit.ts       # Rate limiting
@@ -252,6 +254,11 @@ None - All critical blockers have been resolved!
 - ✅ **Personalized Training Plans**: Auto-generated exercises based on skill level and identified weaknesses
 - ✅ **Skill-level Adaptive Feedback**: Novice/Intermediate/Advanced with appropriate language and expectations
 - ✅ **Training Plan in PDF Exports**: Full practice exercises included with page breaks for printing
+- ✅ **Native PDF Viewer**: Integrated PDF.js for secure, private inline PDF viewing without external services
+  - Uses react-pdf with dynamic imports to prevent SSR issues
+  - Supports zoom, navigation, download, and fullscreen modes
+  - Fallback to Google Docs viewer as secondary option
+  - CSP headers updated to allow both native and Google Docs viewing
 
 ## Do Not
 

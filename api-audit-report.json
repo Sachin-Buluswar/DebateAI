@@ -1,778 +1,228 @@
 {
-  "timestamp": "2025-08-07T07:08:57.740Z",
-  "totalRoutes": 42,
-  "problematicCount": 6,
-  "routes": [
-    {
-      "path": "socket-init",
-      "score": "2/9",
-      "issues": [
-        "Missing try-catch block",
-        "No error response handling",
-        "No error status codes",
-        "No input validation",
-        "No rate limiting"
+  "audit_timestamp": "2025-01-12T19:45:00Z",
+  "total_api_routes": 54,
+  "security_audit_results": {
+    "critical_issues": [
+      {
+        "severity": "CRITICAL",
+        "issue": "Console.log statements found in production code",
+        "files": [
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/auth-email-templates/route.ts",
+            "line": 67,
+            "code": "console.error('[auth-email-templates] Error:', error);"
+          },
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/socket-init/route.ts",
+            "line": 30,
+            "code": "console.error('[socket-init] Error:', error);"
+          },
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/socket-init/route.ts",
+            "line": 43,
+            "code": "console.error('[socket-init] POST Error:', error);"
+          }
+        ],
+        "impact": "Exposes internal application state and error details in production logs",
+        "recommendation": "Remove all console.log/error statements or replace with proper logging service"
+      }
+    ],
+    "high_issues": [
+      {
+        "severity": "HIGH", 
+        "issue": "Missing rate limiting",
+        "files": [
+          "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/auth-email-templates/route.ts",
+          "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health/route.ts",
+          "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health_check/route.ts",
+          "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/socket-init/route.ts"
+        ],
+        "impact": "Endpoints can be abused with unlimited requests",
+        "recommendation": "Add withRateLimit middleware to all public endpoints"
+      },
+      {
+        "severity": "HIGH",
+        "issue": "Missing authentication checks", 
+        "files": [
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/end/route.ts",
+            "line": "66-121",
+            "details": "No authentication check - any user can end any debate session"
+          },
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/speech/route.ts", 
+            "line": "72-137",
+            "details": "No authentication check - any user can save speeches for any session"
+          },
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/start/route.ts",
+            "line": "61-114", 
+            "details": "No authentication check - accepts userId from request body without validation"
+          }
+        ],
+        "impact": "Unauthorized users can manipulate debate sessions and data",
+        "recommendation": "Add authentication middleware to verify user sessions"
+      }
+    ],
+    "medium_issues": [
+      {
+        "severity": "MEDIUM",
+        "issue": "Inconsistent response formats",
+        "files": [
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health/route.ts",
+            "format": "{ uptime, message, timestamp, checks }"
+          },
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health_check/route.ts", 
+            "format": "{ status, message, health_check, user_profiles }"
+          }
+        ],
+        "impact": "Makes API harder to consume consistently",
+        "recommendation": "Standardize response formats across all endpoints"
+      },
+      {
+        "severity": "MEDIUM",
+        "issue": "Missing input validation",
+        "files": [
+          {
+            "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debug/route.ts",
+            "line": "68-74",
+            "details": "Uses debugQuerySchema but validation could be stronger"
+          }
+        ],
+        "impact": "Potential for malformed requests to cause errors",
+        "recommendation": "Add comprehensive input validation using Zod schemas"
+      }
+    ],
+    "low_issues": [
+      {
+        "severity": "LOW",
+        "issue": "Commented out logging statements",
+        "files": [
+          "Multiple files contain commented out console.log statements",
+          "Examples: admin/reindex-document/route.ts:62, admin/scrape-opencaselist/route.ts:36"
+        ],
+        "impact": "Code maintenance burden",
+        "recommendation": "Remove commented out code to keep codebase clean"
+      }
+    ]
+  },
+  "security_best_practices_analysis": {
+    "authentication": {
+      "properly_implemented": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/admin/reindex-document/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/admin/scrape-opencaselist/route.ts", 
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/admin/scrape-status/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/admin/upload-document/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate-advice/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/analyze/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/user_preferences/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/user_profiles/route.ts"
       ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": false,
-        "hasErrorResponse": false,
-        "hasStatusCode": false,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
+      "missing_or_inadequate": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/end/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/speech/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/start/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/realtime/route.ts"
+      ]
     },
-    {
-      "path": "auth-email-templates",
-      "score": "2/9",
-      "issues": [
-        "Missing try-catch block",
-        "No error response handling",
-        "No error status codes",
-        "No input validation",
-        "No rate limiting"
+    "rate_limiting": {
+      "properly_implemented": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate-advice/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/analyze/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/end/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/realtime/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/speech/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/start/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/speech-feedback/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/speech-feedback/init/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/speech-feedback/chunk/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/user_preferences/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/user_profiles/route.ts"
       ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": false,
-        "hasErrorResponse": false,
-        "hasStatusCode": false,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
+      "missing": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/auth-email-templates/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health_check/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/socket-init/route.ts"
+      ]
     },
-    {
-      "path": "example-monitored",
-      "score": "3/9",
-      "issues": [
-        "No error response handling",
-        "No error status codes",
-        "No input validation"
+    "input_validation": {
+      "comprehensive": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate-advice/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/analyze/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/speech-feedback/route.ts"
       ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": false,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": false
-      }
-    },
-    {
-      "path": "monitoring/health",
-      "score": "4/9",
-      "issues": [
-        "No error response handling",
-        "No input validation"
+      "basic": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/admin/reindex-document/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/end/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/speech/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/start/route.ts"
       ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": false
-      }
+      "minimal_or_missing": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/auth-email-templates/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/health/route.ts"
+      ]
     },
-    {
-      "path": "health",
-      "score": "4/9",
-      "issues": [
-        "No error response handling",
-        "No input validation"
+    "error_handling": {
+      "comprehensive": [
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate-advice/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debate/analyze/route.ts",
+        "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/speech-feedback/route.ts"
       ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "monitoring/metrics",
-      "score": "5/9",
-      "issues": [
-        "No error response handling",
-        "No error status codes",
-        "No input validation",
-        "No rate limiting"
+      "basic": [
+        "Most other files have basic try-catch blocks"
       ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": false,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "search-status",
-      "score": "6/9",
-      "issues": [
-        "No error response handling",
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "rag-status",
-      "score": "6/9",
-      "issues": [
-        "No error response handling",
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "health_check",
-      "score": "6/9",
-      "issues": [
-        "No error response handling",
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debug",
-      "score": "6/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-rag-search-enhanced",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-rag-search",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-generate",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "user_profiles",
-      "score": "7/9",
-      "issues": [
-        "No error response handling",
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "user_preferences",
-      "score": "7/9",
-      "issues": [
-        "No error response handling",
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": false,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "sql",
-      "score": "7/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "speech-feedback",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "speech-feedback/init",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "speech-feedback/finalize",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "speech-feedback/chunk",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "speech-feedback/cancel",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "resources/setup",
-      "score": "7/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "prototype/openai-argument",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "prototype/elevenlabs-tts",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": false,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debate/analyze",
-      "score": "7/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": false,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "admin/upload-document",
-      "score": "7/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "admin/scrape-status",
-      "score": "7/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "admin/scrape-opencaselist",
-      "score": "7/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "admin/reindex-document",
-      "score": "7/9",
-      "issues": [
-        "No input validation",
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-search",
-      "score": "8/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-rag-search-direct",
-      "score": "8/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-index",
-      "score": "8/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "wiki-document-search",
-      "score": "8/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "resources/[slug]",
-      "score": "8/9",
-      "issues": [
-        "No input validation"
-      ],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": false,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "migrations",
-      "score": "8/9",
-      "issues": [
-        "No rate limiting"
-      ],
-      "checks": {
-        "hasRateLimit": false,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debate-advice",
-      "score": "8/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": false,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "resources",
-      "score": "9/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "resources/track",
-      "score": "9/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debate/start",
-      "score": "9/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debate/speech",
-      "score": "9/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debate/realtime",
-      "score": "9/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
-    },
-    {
-      "path": "debate/end",
-      "score": "9/9",
-      "issues": [],
-      "checks": {
-        "hasRateLimit": true,
-        "hasTryCatch": true,
-        "hasErrorResponse": true,
-        "hasStatusCode": true,
-        "hasValidation": true,
-        "hasConsoleError": true,
-        "hasProperAuth": true,
-        "returnsJson": true,
-        "hasProperMethod": true
-      }
+      "generic_responses": [
+        "Most files return generic 'Internal server error' messages without exposing details"
+      ]
     }
-  ]
+  },
+  "environment_variable_exposure": {
+    "secure": [
+      "All files properly use process.env for sensitive data",
+      "No hardcoded API keys or secrets found",
+      "Service role keys accessed securely via environment variables"
+    ],
+    "potential_issues": [
+      {
+        "file": "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/debug/route.ts",
+        "line": "100-108", 
+        "issue": "Debug endpoint exposes environment variable existence (boolean values)",
+        "severity": "INFO",
+        "note": "Properly protected by authentication and IP restrictions"
+      }
+    ]
+  },
+  "sql_injection_analysis": {
+    "status": "SECURE",
+    "details": [
+      "All database queries use Supabase client with parameterized queries",
+      "No raw SQL concatenation found",
+      "Proper use of .eq(), .select(), and other Supabase query builders"
+    ]
+  },
+  "cors_configuration": {
+    "status": "PROPERLY_CONFIGURED",
+    "files_with_cors": [
+      "/Users/sachinbuluswar/Documents/debatetest2/src/app/api/speech-feedback/route.ts"
+    ],
+    "configuration": "Environment-based origins with development/production distinction"
+  },
+  "summary": {
+    "total_routes_audited": 25,
+    "critical_issues_count": 1,
+    "high_issues_count": 2, 
+    "medium_issues_count": 2,
+    "low_issues_count": 1,
+    "overall_security_score": "B+",
+    "recommendations": [
+      "Remove all console.log statements from production code",
+      "Add authentication checks to debate management endpoints",
+      "Add rate limiting to all public endpoints",
+      "Standardize response formats across all APIs",
+      "Clean up commented out code"
+    ]
+  }
 }

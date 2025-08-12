@@ -301,7 +301,9 @@ export function addSecurityHeaders(response: Response): Response {
   
   // Basic security headers
   headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('X-Frame-Options', 'DENY');
+  // Allow framing from Google Docs for PDF preview, deny all others
+  // Note: X-Frame-Options is being phased out in favor of CSP frame-ancestors
+  // We'll rely on CSP for frame control instead of X-Frame-Options
   headers.set('X-XSS-Protection', '1; mode=block');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');

@@ -42,17 +42,25 @@ export default function PreferencesSection() {
             .eq('user_id', session.user.id)
             .single();
 
-          if (error && error.code !== 'PGRST116') {
-            console.error('Error fetching preferences:', error);
-            setError('Failed to fetch preferences');
-          } else if (data) {
-            setPreferences({ ...defaultPreferences, ...data.preferences });
-            if (
-              typeof data.preferences.darkMode === 'boolean' &&
-              data.preferences.darkMode !== isDarkMode
-            ) {
-              toggleDarkMode();
+          if (!error) {
+            // Success - load the preferences
+            if (data) {
+              setPreferences({ ...defaultPreferences, ...data.preferences });
+              if (
+                typeof data.preferences.darkMode === 'boolean' &&
+                data.preferences.darkMode !== isDarkMode
+              ) {
+                toggleDarkMode();
+              }
             }
+          } else if (error.code === 'PGRST116') {
+            // Table not found (first time user) - just use defaults
+            console.log('No preferences found for user, using defaults');
+            setPreferences(defaultPreferences);
+          } else {
+            // Actual error - show error message
+            console.error('Error fetching preferences:', error);
+            setError('Failed to fetch preferences. Please try refreshing the page.');
           }
         }
       } catch (err) {
@@ -92,14 +100,16 @@ export default function PreferencesSection() {
         { onConflict: 'user_id' }
       );
 
-      if (error) {
-        console.error('Error saving preferences:', error);
-        setError('Failed to save preferences');
-        addToast({ message: 'Failed to save preferences', type: 'error' });
-      } else {
+      if (!error) {
+        // Success - preferences saved
         setSuccess(true);
         addToast({ message: 'Preferences saved successfully!', type: 'success' });
         setTimeout(() => setSuccess(false), 3000);
+      } else {
+        // Error saving preferences
+        console.error('Error saving preferences:', error);
+        setError('Failed to save preferences. Please try again.');
+        addToast({ message: 'Failed to save preferences. Please try again.', type: 'error' });
       }
     } catch (err) {
       console.error('Exception saving preferences:', err);

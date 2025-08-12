@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { EnhancedPDFViewer } from '@/components/pdf/EnhancedPDFViewer';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface PDFViewerProps {
   pdfUrl: string;
@@ -11,45 +12,51 @@ interface PDFViewerProps {
 }
 
 export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText, onClose }: PDFViewerProps) {
-  const [currentPage, setCurrentPage] = useState(pageNumber);
+  const [useGoogleViewer, setUseGoogleViewer] = useState(false);
+
+  // If the native viewer fails, we can fall back to Google Docs viewer
+  const handleFallback = () => {
+    setUseGoogleViewer(true);
+  };
+
+  if (useGoogleViewer) {
+    return <GoogleDocsPDFViewer pdfUrl={pdfUrl} pageNumber={pageNumber} onClose={onClose} />;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <div className="relative w-full h-full max-w-7xl bg-white rounded-lg shadow-2xl flex flex-col">
+        <EnhancedPDFViewer
+          pdfUrl={pdfUrl}
+          title="PDF Document"
+          initialPage={pageNumber}
+          onClose={onClose}
+          className="w-full h-full"
+          showDownload={true}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Google Docs Viewer as fallback
+function GoogleDocsPDFViewer({ pdfUrl, pageNumber = 1, onClose }: PDFViewerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCurrentPage(pageNumber);
-  }, [pageNumber]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
   };
 
   const handleIframeError = () => {
-    setError('Failed to load PDF. Please try downloading the file instead.');
+    setError('Failed to load PDF with Google Docs viewer. Please try downloading the file instead.');
     setIsLoading(false);
   };
 
-  // Construct PDF.js viewer URL with parameters
-  const getPdfViewerUrl = () => {
-    // Use PDF.js viewer with page parameter
-    const baseUrl = `/pdfjs/web/viewer.html`;
-    const params = new URLSearchParams({
-      file: pdfUrl,
-    });
-
-    if (currentPage > 1) {
-      params.append('page', currentPage.toString());
-    }
-
-    if (highlightText) {
-      params.append('search', highlightText);
-      params.append('highlight', 'true');
-    }
-
-    return `${baseUrl}?${params.toString()}`;
-  };
-
-  const navigatePage = (delta: number) => {
-    setCurrentPage(prev => Math.max(1, prev + delta));
+  // Construct Google Docs viewer URL
+  const getGoogleViewerUrl = () => {
+    const encodedUrl = encodeURIComponent(pdfUrl);
+    return `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
   };
 
   return (
@@ -58,24 +65,9 @@ export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText, onClose }: PD
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-4">
-            <h3 className="text-lg font-semibold">PDF Viewer</h3>
-            {currentPage && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => navigatePage(-1)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                  disabled={currentPage <= 1}
-                >
-                  <ArrowLeftIcon className="h-5 w-5" />
-                </button>
-                <span className="text-sm text-gray-600">Page {currentPage}</span>
-                <button
-                  onClick={() => navigatePage(1)}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <ArrowRightIcon className="h-5 w-5" />
-                </button>
-              </div>
+            <h3 className="text-lg font-semibold">PDF Viewer (Google Docs)</h3>
+            {pageNumber && (
+              <span className="text-sm text-gray-600">Page {pageNumber}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -121,7 +113,7 @@ export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText, onClose }: PD
             </div>
           ) : (
             <iframe
-              src={getPdfViewerUrl()}
+              src={getGoogleViewerUrl()}
               className="w-full h-full"
               onLoad={handleIframeLoad}
               onError={handleIframeError}
@@ -133,7 +125,7 @@ export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText, onClose }: PD
   );
 }
 
-// Simple PDF viewer for environments without PDF.js
+// Simple PDF viewer for environments without PDF.js (keeping for backward compatibility)
 export function SimplePDFViewer({ pdfUrl, pageNumber, onClose }: PDFViewerProps) {
   const pdfUrlWithPage = pageNumber ? `${pdfUrl}#page=${pageNumber}` : pdfUrl;
 

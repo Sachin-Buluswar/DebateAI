@@ -3,9 +3,26 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/layout/Navbar';
 import BackButton from '@/components/ui/BackButton';
 import { cn } from '@/utils/cn';
+
+// Dynamic import to prevent SSR issues
+const InlinePDFViewer = dynamic(
+  () => import('@/components/pdf/EnhancedPDFViewer').then(mod => ({ default: mod.InlinePDFViewer })),
+  { 
+    ssr: false, 
+    loading: () => (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading PDF viewer...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 interface Resource {
   id: string;
@@ -30,7 +47,7 @@ export default function ResourceViewerPage() {
   const [resource, setResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'embed' | 'download'>('embed');
+  const [viewMode, setViewMode] = useState<'native' | 'google' | 'download'>('native');
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
   const [hasTrackedView, setHasTrackedView] = useState(false);
 
@@ -263,15 +280,26 @@ export default function ResourceViewerPage() {
         <div className="flex items-center justify-between mb-6 animate-fade-in stagger-1">
           <div className="flex gap-2">
             <button
-              onClick={() => setViewMode('embed')}
+              onClick={() => setViewMode('native')}
               className={cn(
                 'px-4 py-2 rounded transition-colors',
-                viewMode === 'embed'
+                viewMode === 'native'
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
               )}
             >
-              View Online
+              Native Viewer
+            </button>
+            <button
+              onClick={() => setViewMode('google')}
+              className={cn(
+                'px-4 py-2 rounded transition-colors',
+                viewMode === 'google'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              )}
+            >
+              Google Docs
             </button>
             <button
               onClick={() => setViewMode('download')}
@@ -299,53 +327,46 @@ export default function ResourceViewerPage() {
 
         {/* Content Viewer */}
         <div className="animate-fade-in stagger-2">
-          {viewMode === 'embed' ? (
+          {viewMode === 'native' && resource.file_type === 'pdf' ? (
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-              {resource.file_type === 'pdf' ? (
-                <>
-                  <iframe
-                    src={`https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`}
-                    className="w-full h-[700px] md:h-[800px] rounded bg-white"
-                    title={resource.title}
-                    loading="lazy"
-                  />
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Having trouble viewing? Try the download option below.
-                    </p>
-                    <a
-                      href={resource.file_url}
-                      download
-                      onClick={handleDownload}
-                      className="inline-flex items-center px-6 py-3 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
-                    >
-                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
-                      Download PDF
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    This file type cannot be previewed online.
-                  </p>
-                  <a
-                    href={resource.file_url}
-                    download
-                    onClick={handleDownload}
-                    className="inline-flex items-center px-6 py-3 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    Download {resource.file_type.toUpperCase()}
-                  </a>
-                </div>
-              )}
+              <InlinePDFViewer
+                pdfUrl={fullFileUrl}
+                title={resource.title}
+                height="800px"
+                showControls={true}
+              />
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Having trouble viewing? Try the Google Docs viewer or download the file.
+                </p>
+              </div>
             </div>
-          ) : (
+          ) : viewMode === 'google' && resource.file_type === 'pdf' ? (
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+              <iframe
+                src={`https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`}
+                className="w-full h-[700px] md:h-[800px] rounded bg-white"
+                title={resource.title}
+                loading="lazy"
+              />
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Having trouble viewing? Try the native viewer or download the file.
+                </p>
+                <a
+                  href={resource.file_url}
+                  download
+                  onClick={handleDownload}
+                  className="inline-flex items-center px-6 py-3 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  Download PDF
+                </a>
+              </div>
+            </div>
+          ) : viewMode === 'download' || resource.file_type !== 'pdf' ? (
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-12 text-center">
               <svg className="w-24 h-24 mx-auto text-gray-400 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
@@ -354,7 +375,9 @@ export default function ResourceViewerPage() {
                 Download {resource.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Save this resource for offline viewing or printing.
+                {resource.file_type === 'pdf' 
+                  ? 'Save this PDF for offline viewing or printing.'
+                  : `This ${resource.file_type.toUpperCase()} file cannot be previewed online. Download it to view.`}
               </p>
               <div className="space-y-4">
                 <a
@@ -380,7 +403,7 @@ export default function ResourceViewerPage() {
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </main>
     </div>

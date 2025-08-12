@@ -95,13 +95,14 @@ export default function Dashboard() {
             .order('created_at', { ascending: false })
             .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
-          if (debatesError && debatesError.code !== '42P01') {
-            setError((prev) =>
-              prev ? `${prev}. Failed to load debates.` : 'Failed to load debates.'
-            );
-          } else {
+          if (!debatesError) {
+            // Success - set the data
             fetchedDebates = debatesData || [];
             setDebateHistory(fetchedDebates);
+          } else if (debatesError.code !== '42P01') {
+            // Error that's not "table doesn't exist" - show error
+            console.error('Error fetching debates:', debatesError);
+            setError('Failed to load debates. Please try refreshing the page.');
           }
         } catch (debateError) {
           console.error('Exception fetching debates:', debateError);
@@ -116,16 +117,17 @@ export default function Dashboard() {
             .order('created_at', { ascending: false })
             .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
-          if (speechError && speechError.code !== '42P01') {
-            console.error('Supabase speech fetch error:', speechError);
-            setError((prev) =>
-              prev ? `${prev}. Failed to load speech history.` : 'Failed to load speech history.'
-            );
-          } else {
+          if (!speechError) {
+            // Success - set the data
             fetchedSpeeches = speechData || [];
             setSpeechHistory(fetchedSpeeches);
+          } else if (speechError.code !== '42P01') {
+            // Error that's not "table doesn't exist" - show error
+            console.error('Error fetching speech feedback:', speechError);
+            setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
+          }
 
-            // Calculate stats from speech feedback
+          // Calculate stats from speech feedback only if we have data
             if (fetchedSpeeches.length > 0 || fetchedDebates.length > 0) {
               // Hours spent estimate
               const speechHours = fetchedSpeeches.reduce(
@@ -249,7 +251,6 @@ export default function Dashboard() {
               setHighestScore(null);
               setScoreTrendData([]);
             }
-          }
         } catch (speechError) {
           console.error('Exception fetching speech feedback:', speechError);
         }

@@ -313,9 +313,8 @@ export default function History() {
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
-        if (debatesError && debatesError.code !== '42P01') {
-          setError(prev => prev ? `${prev}. Failed to load debates.` : 'Failed to load debates.');
-        } else {
+        if (!debatesError) {
+          // Success - set the data
           if (loadMore) {
             setDebateHistory(prev => [...prev, ...(debatesData || [])]);
           } else {
@@ -326,6 +325,10 @@ export default function History() {
           if (!debatesData || debatesData.length < ITEMS_PER_PAGE) {
             setHasMore(false);
           }
+        } else if (debatesError.code !== '42P01') {
+          // Error that's not "table doesn't exist" - show error
+          console.error('Error fetching debates:', debatesError);
+          setError('Failed to load debates. Please try refreshing the page.');
         }
       } catch (debateError) {
         console.error('Exception fetching debates:', debateError);
@@ -341,14 +344,17 @@ export default function History() {
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
-        if (speechError && speechError.code !== '42P01') {
-          setError(prev => prev ? `${prev}. Failed to load speech history.` : 'Failed to load speech history.');
-        } else {
+        if (!speechError) {
+          // Success - set the data
           if (loadMore) {
             setSpeechHistory(prev => [...prev, ...(speechData || [])]);
           } else {
             setSpeechHistory(speechData || []);
           }
+        } else if (speechError.code !== '42P01') {
+          // Error that's not "table doesn't exist" - show error
+          console.error('Error fetching speech feedback:', speechError);
+          setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
         }
       } catch (speechError) {
         console.error('Exception fetching speech feedback:', speechError);

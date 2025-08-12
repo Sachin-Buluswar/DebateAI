@@ -18,13 +18,13 @@ export function middleware(request: NextRequest) {
       "default-src 'self'; " +
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.sentry-cdn.com; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "font-src 'self' https://fonts.gstatic.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
       "img-src 'self' data: https: blob:; " +
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openai.com https://api.elevenlabs.io ws://localhost:* wss://localhost:*; " +
       "media-src 'self' blob: data:; " +
       "worker-src 'self' blob:; " +
       "child-src 'self' blob:; " +
-      "frame-src 'self';"
+      "frame-src 'self' https://docs.google.com;"
     );
   } else {
     // Production CSP - more restrictive, no eval
@@ -33,13 +33,13 @@ export function middleware(request: NextRequest) {
       "default-src 'self'; " +
       "script-src 'self' 'unsafe-inline' https://*.sentry.io https://*.sentry-cdn.com; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "font-src 'self' https://fonts.gstatic.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
       "img-src 'self' data: https: blob:; " +
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openai.com https://api.elevenlabs.io; " +
       "media-src 'self' blob: data:; " +
       "worker-src 'self' blob:; " +
       "child-src 'self' blob:; " +
-      "frame-src 'self';"
+      "frame-src 'self' https://docs.google.com;"
     );
   }
   
