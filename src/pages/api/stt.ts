@@ -20,7 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   form.parse(req, async (err: Error, fields: Fields, files: Files) => {
     if (err) {
-      console.error('Error parsing form:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Error parsing form:', err);
       return res.status(400).json({ error: 'Error parsing form data' });
     }
 
@@ -63,7 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('ElevenLabs STT error:', response.status, errorText);
+        // PRODUCTION: Console disabled
+        // console.error('ElevenLabs STT error:', response.status, errorText);
         
         // Return a placeholder response if STT is not available
         if (response.status === 404 || response.status === 403) {
@@ -91,7 +93,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     } catch (error) {
-      console.error('Error transcribing audio:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error transcribing audio:', error);
       
       // Return placeholder text to keep the debate flowing
       res.status(200).json({ 

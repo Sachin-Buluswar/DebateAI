@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
 import { speechFeedbackRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders, validateAudioFile } from '@/middleware/inputValidation';
@@ -7,6 +8,19 @@ export async function POST(request: Request) {
   // Apply rate limiting for speech uploads
   const rateLimitResult = await withRateLimit(request, speechFeedbackRateLimiter, async () => {
     try {
+      // Get authenticated user's session first
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to submit speech feedback' },
+            { status: 401 }
+          )
+        );
+      }
+      
       // PRODUCTION: Logging disabled
 // console.log('[speech-feedback] Processing incoming request');
       
@@ -67,7 +81,20 @@ export async function POST(request: Request) {
         );
       }
 
-      const { topic, userId, customInstructions } = validation.data;
+      const { topic, customInstructions } = validation.data;
+      
+      // Use authenticated user's ID instead of form data
+      const userId = user.id;
+      
+      // Verify the userId from form matches authenticated user (if provided)
+      if (validation.data.userId && validation.data.userId !== user.id) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Forbidden - Cannot submit feedback for another user' },
+            { status: 403 }
+          )
+        );
+      }
       
       // Convert audio to buffer
       const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
@@ -90,7 +117,7 @@ export async function POST(request: Request) {
       // PRODUCTION: Logging disabled
 // console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
 
-      // Process the speech feedback
+      // Process the speech feedback (service will handle storage with service role)
       const result = await processSpeechFeedback({
         audioBuffer,
         filename: audioFile.name || 'audio.mp3',

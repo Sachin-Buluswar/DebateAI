@@ -87,32 +87,26 @@ export interface SpeechFeedback {
     structureOrganization?: {
       analysis: string;
       examples: string[];
-      suggestions: string[];
     };
     argumentationEvidence?: {
       analysis: string;
       examples: string[];
-      suggestions: string[];
     };
     clarityConciseness?: {
       analysis: string;
       examples: string[];
-      suggestions: string[];
     };
     persuasivenessImpact?: {
       analysis: string;
       examples: string[];
-      suggestions: string[];
     };
     deliveryStyle?: {
       analysis: string;
       examples: string[];
-      suggestions: string[];
     };
     relevanceToSpeechType?: {
       analysis: string;
       examples: string[];
-      suggestions: string[];
     };
     actionableSuggestions?: string[];
     strengths?: string[];
@@ -129,8 +123,6 @@ export interface SpeechFeedback {
         example?: string;
         metrics?: string[];
       }>;
-      weeklyGoals?: string[];
-      progressTracking?: string;
     };
     
     // Additional fields for error states

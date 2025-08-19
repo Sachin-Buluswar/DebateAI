@@ -3,6 +3,10 @@
 import { useEffect, useState, useRef, FormEvent, useMemo, useCallback } from 'react';
 import { isVercel } from '@/lib/socket/socketConfig';
 import { createRealtimeConnection, RealtimeSocket } from '@/lib/realtime/realtimeFactory';
+import { useToast } from '@/lib/toast';
+import { FormValidator } from '@/lib/validation';
+// Unused import removed by lint fix
+// import { TextAreaField } from '@/components/ui/FormField';
 import {
   Participant,
   DebateState,
@@ -78,6 +82,7 @@ const createParticipants = (setup: DebateSetup): Participant[] => {
 };
 
 export default function DebatePage() {
+  const toast = useToast();
   const [debateState, setDebateState] = useState<DebateState | null>(null);
   const [currentSpeaker, setCurrentSpeaker] = useState<string>('');
   const [isResearchPanelVisible, setIsResearchPanelVisible] = useState(false);
@@ -116,6 +121,26 @@ export default function DebatePage() {
   } | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Form validator
+  const validator = useMemo(() => new FormValidator({
+    topic: {
+      required: 'Please enter a debate topic',
+      minLength: { value: 5, message: 'Topic must be at least 5 characters' },
+      maxLength: { value: 200, message: 'Topic must be less than 200 characters' }
+    },
+    selectedAIDebaters: {
+      validate: (value: unknown) => {
+        const debaters = value as string[];
+        if (!Array.isArray(debaters) || debaters.length !== 3) {
+          const count = Array.isArray(debaters) ? debaters.length : 0;
+          return `Please select exactly 3 AI debaters (${count} currently selected)`;
+        }
+        return true;
+      }
+    }
+  }), []);
 
   // Memoize available AI debaters to avoid recreating array on each render
   const availableAIDebaters = useMemo(() => Object.values(debateConfig.personalities), []);
@@ -148,30 +173,48 @@ export default function DebatePage() {
 
   const handleSetupSubmit = useCallback((e: FormEvent) => {
     e.preventDefault();
+    
+    // Validate form
+    const errors = validator.validateAll({
+      topic: formData.topic?.trim(),
+      selectedAIDebaters: formData.selectedAIDebaters
+    });
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      // Focus on first error field
+      const firstErrorField = Object.keys(errors)[0];
+      toast.error(errors[firstErrorField]);
+      return;
+    }
+    
+    setFormErrors({});
     const topic = formData.topic?.trim();
-    if (!topic) {
-      alert('Please enter a debate topic');
-      return;
-    }
-    if (formData.selectedAIDebaters.length < 3) {
-      alert('Please select exactly 3 AI debaters');
-      return;
-    }
     setSetup({ topic, side: formData.side, aiPartner: formData.aiPartner, selectedAIDebaters: formData.selectedAIDebaters });
-  }, [formData]);
+    toast.success('Debate setup complete! Click "Start Debate" to begin.');
+  }, [formData, validator, toast]);
 
   const startDebate = useCallback(() => {
     if (!setup) return;
     if (!isConnected) {
-      alert('Not connected to server. Please refresh the page.');
+      toast.error('Not connected to server. Please check your connection.', {
+        duration: 7000,
+        action: {
+          label: 'Retry',
+          onClick: () => window.location.reload()
+        }
+      });
       return;
     }
-    console.log('Starting debate with participants:', participants);
+    // PRODUCTION: Console disabled - Critical file
+    // console.log('Starting debate with participants:', participants);
     socketRef.current?.emit('startDebate', { topic: setup.topic, participants });
-  }, [setup, isConnected, participants]);
+    toast.success('Debate started! Get ready for your opening statement.');
+  }, [setup, isConnected, participants, toast]);
   
   const handleUserSpeech = useCallback((text: string) => {
-    console.log('User speech transcribed:', text);
+    // PRODUCTION: Console disabled - Critical file
+    // console.log('User speech transcribed:', text);
     setCurrentSpeaker('You');
     
     const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
@@ -222,7 +265,8 @@ export default function DebatePage() {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error || !session) {
-        console.error('No authenticated session found');
+        // PRODUCTION: Console disabled - Critical file
+        // console.error('No authenticated session found');
         setConnectionError('You must be logged in to participate in debates');
         setIsConnecting(false);
         return;
@@ -236,7 +280,8 @@ export default function DebatePage() {
         
         // Show info about real-time mode
         if (isVercel()) {
-          console.log('Running on Vercel - using Supabase Realtime for WebSocket features');
+          // PRODUCTION: Console disabled - Critical file
+          // console.log('Running on Vercel - using Supabase Realtime for WebSocket features');
         }
         
         // Create real-time connection (will use Supabase on Vercel)
@@ -245,8 +290,9 @@ export default function DebatePage() {
           useSupabase: isVercel() // Force Supabase on Vercel
         });
         
-      } catch (error) {
-        console.error('Failed to initialize real-time connection:', error);
+      } catch (_error) {
+        // PRODUCTION: Console disabled - Critical file
+        // console.error('Failed to initialize real-time connection:', error);
         setConnectionError('Failed to connect to debate server. Please try again.');
         setIsConnecting(false);
         return;
@@ -255,7 +301,8 @@ export default function DebatePage() {
       socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Socket connected successfully');
+      // PRODUCTION: Console disabled - Critical file
+      // console.log('Socket connected successfully');
       setIsConnected(true);
       setIsConnecting(false);
       setConnectionError(null);
@@ -263,7 +310,8 @@ export default function DebatePage() {
     });
     
     socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
+      // PRODUCTION: Console disabled - Critical file
+      // console.log('Socket disconnected:', reason);
       setIsConnected(false);
       
       // Handle different disconnect reasons
@@ -278,7 +326,8 @@ export default function DebatePage() {
     });
     
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
+      // PRODUCTION: Console disabled - Critical file
+      // console.error('Socket connection error:', error.message);
       setIsConnected(false);
       setIsConnecting(false);
       
@@ -289,15 +338,17 @@ export default function DebatePage() {
         setConnectionError('Connection timeout. Please check your internet connection.');
       } else if (error.message.includes('websocket error') && isVercel()) {
         // This is expected on Vercel - Socket.IO should fall back to polling
-        console.log('WebSocket error on Vercel - falling back to polling');
+        // PRODUCTION: Console disabled - Critical file
+        // console.log('WebSocket error on Vercel - falling back to polling');
         setConnectionError(null); // Don't show error if it's just WebSocket failing on Vercel
       } else {
         setConnectionError(`Connection failed: ${error.message}`);
       }
     });
     
-    socket.on('reconnect', (attemptNumber) => {
-      console.log('Socket reconnected after', attemptNumber, 'attempts');
+    socket.on('reconnect', (_attemptNumber) => {
+      // PRODUCTION: Console disabled - Critical file
+      // console.log('Socket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
       setConnectionError(null);
       setReconnectAttempt(0);
@@ -310,13 +361,15 @@ export default function DebatePage() {
     });
     
     socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('Socket reconnection attempt', attemptNumber);
+      // PRODUCTION: Console disabled - Critical file
+      // console.log('Socket reconnection attempt', attemptNumber);
       setReconnectAttempt(attemptNumber);
       setConnectionError(`Reconnecting... (Attempt ${attemptNumber}/5)`);
     });
     
     socket.on('reconnect_failed', () => {
-      console.error('Socket reconnection failed');
+      // PRODUCTION: Console disabled - Critical file
+      // console.error('Socket reconnection failed');
       setIsConnected(false);
       setConnectionError('Failed to reconnect. Please refresh the page to try again.');
       
@@ -360,7 +413,8 @@ export default function DebatePage() {
       keyMoments: Array<{ timestamp: string; moment: string }>;
       recommendedNextSteps: string[];
     }) => {
-      console.log('Debate analysis received:', analysis);
+      // PRODUCTION: Console disabled - Critical file
+      // console.log('Debate analysis received:', analysis);
       setDebateAnalysis(analysis);
       setShowAnalysis(true);
     });
@@ -411,16 +465,39 @@ export default function DebatePage() {
     });
 
     socket.on('debateError', (error: { message: string; error: string }) => {
-      console.error('Debate error:', error);
-      alert(`Debate Error: ${error.message} - ${error.error}`);
+      // PRODUCTION: Console disabled - Critical file
+      // console.error('Debate error:', error);
+      // User-friendly error messages
+      const userMessage = error.message.toLowerCase().includes('connection') 
+        ? 'Connection lost. Please check your internet and try again.'
+        : error.message.toLowerCase().includes('timeout')
+        ? 'The operation timed out. Please try again.'
+        : error.message.toLowerCase().includes('auth')
+        ? 'Authentication error. Please sign in again.'
+        : `An error occurred: ${error.message}`;
+      
+      toast.error(userMessage, {
+        duration: 8000,
+        action: error.message.toLowerCase().includes('connection') ? {
+          label: 'Retry',
+          onClick: () => window.location.reload()
+        } : undefined
+      });
     });
 
     socket.on('debateSaved', (response: { success: boolean; sessionId?: string; error?: string }) => {
       if (response.success && response.sessionId) {
         setSaveStatus('saved');
+        toast.success('Debate saved successfully!', { duration: 3000 });
         setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
-        alert(`Failed to save debate: ${response.error}`);
+        toast.error(`Failed to save debate. ${response.error || 'Please try again.'}`, {
+          duration: 7000,
+          action: {
+            label: 'Retry',
+            onClick: () => socketRef.current?.emit('saveDebate')
+          }
+        });
         setSaveStatus('idle');
       }
     });
@@ -440,8 +517,15 @@ export default function DebatePage() {
             });
           }
         }
+        toast.success('Debate loaded successfully!');
       } else {
-        alert(`Failed to load debate: ${response.error}`);
+        toast.error(`Failed to load debate. ${response.error || 'Please try again.'}`, {
+          duration: 7000,
+          action: {
+            label: 'Retry',
+            onClick: () => socketRef.current?.emit('loadDebate')
+          }
+        });
       }
     });
   }, [setup, participants]);
@@ -664,6 +748,8 @@ export default function DebatePage() {
                       variant="primary" 
                       size="lg" 
                       className="w-full"
+                      disabled={!isConnected}
+                      aria-label="Create debate with selected settings"
                       icon={
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 

@@ -51,9 +51,20 @@ interface Diagnostics {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  // Disable completely in production unless explicitly enabled
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEBUG_ENDPOINT !== 'true') {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // SECURITY: Multiple layers of protection
+  // 1. Check NODE_ENV
+  if (process.env.NODE_ENV === 'production') {
+    // 2. In production, must be explicitly enabled AND have valid key
+    if (process.env.ENABLE_DEBUG_ENDPOINT !== 'true') {
+      // Return 404 to hide endpoint existence
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    
+    // 3. Even if enabled, require strong authentication
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
   }
 
   // Check IP restriction

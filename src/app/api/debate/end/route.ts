@@ -22,17 +22,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
 import { z } from 'zod';
-
-// Initialize Supabase admin client for database operations
-// Service role key allows bypassing RLS to update any session
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Admin access required
-);
 
 // Request validation schema for ending a debate
 const endDebateSchema = z.object({
@@ -59,7 +52,7 @@ const endDebateSchema = z.object({
  * Error (500): { error: 'Failed to end debate session' }
  * 
  * Notes:
- * - Does not validate if the caller owns the session (relies on client honesty)
+ * - Validates that the caller owns the session before allowing updates
  * - Should trigger WebSocket disconnection in real implementation
  * - Winner can be determined by AI judge or user vote
  */
@@ -67,11 +60,48 @@ export async function POST(request: NextRequest) {
   // Apply rate limiting to prevent abuse
   return await withRateLimit(request, debateRateLimiter, async () => {
     try {
+      // Get authenticated user's session
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to end a debate' },
+            { status: 401 }
+          )
+        );
+      }
+
       const body = await request.json();
       const validated = endDebateSchema.parse(body);
 
-      // Update debate session status in database
-      // This marks the debate as completed and records outcome metadata
+      // First, verify the user owns this debate session
+      const { data: existingSession, error: checkError } = await supabase
+        .from('debate_sessions')
+        .select('id, user_id')
+        .eq('id', validated.sessionId)
+        .single();
+
+      if (checkError || !existingSession) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Debate session not found' },
+            { status: 404 }
+          )
+        );
+      }
+
+      if (existingSession.user_id !== user.id) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Forbidden - Cannot end another user\'s debate' },
+            { status: 403 }
+          )
+        );
+      }
+
+      // Update debate session status in database (now with proper ownership check)
       const { data: session, error } = await supabase
         .from('debate_sessions')
         .update({
@@ -81,6 +111,7 @@ export async function POST(request: NextRequest) {
           ended_at: new Date().toISOString(), // Record exact end time
         })
         .eq('id', validated.sessionId) // Match by session ID
+        .eq('user_id', user.id) // Ensure user owns the session
         .select() // Return updated record
         .single(); // Expect single result
 

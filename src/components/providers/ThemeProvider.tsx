@@ -56,7 +56,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           }
         }
       } catch (error) {
-        console.error('Error fetching theme preference:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error fetching theme preference:', error);
         // Default to light mode
         setIsDarkMode(false);
       } finally {
@@ -99,7 +100,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           }, { onConflict: 'user_id' });
       }
     } catch (error) {
-      console.error('Error saving theme preference:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error saving theme preference:', error);
     }
   };
   

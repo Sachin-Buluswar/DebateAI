@@ -34,7 +34,8 @@ const storeChunksInVectorStore = async (
 ): Promise<void> => {
   // console.log(`[storeChunks] Uploading ${chunks.length} chunks from ${fileName} to Vector Store ID: ${vectorStoreId}`);
   if (!vectorStoreId || !vectorStoreId.startsWith('vs_')) {
-    console.error(`[storeChunks] Invalid or missing Vector Store ID provided: ${vectorStoreId}`);
+    // PRODUCTION: Console disabled
+    // console.error(`[storeChunks] Invalid or missing Vector Store ID provided: ${vectorStoreId}`);
     throw new Error(`Invalid Vector Store ID: ${vectorStoreId}`);
   }
 
@@ -57,7 +58,8 @@ const storeChunksInVectorStore = async (
         uploadedFileIds.push(fileObject.id); // Add to list only on successful upload
         return fileObject.id;
       } catch (uploadError) {
-        console.error(`[storeChunks] Failed to upload chunk ${index} (${chunkFileName}):`, uploadError);
+        // PRODUCTION: Console disabled
+        // console.error(`[storeChunks] Failed to upload chunk ${index} (${chunkFileName}):`, uploadError);
         // Decide how to handle partial failures: throw immediately or collect errors?
         // For now, log and return null/undefined to filter out later
         return null;
@@ -68,7 +70,8 @@ const storeChunksInVectorStore = async (
     const fileIds = maybeFileIds.filter((id): id is string => id !== null); // Filter out nulls from failed uploads
 
     if (fileIds.length === 0) {
-      console.error(`[storeChunks] No chunk files were successfully uploaded for ${fileName}. Aborting batch creation.`);
+      // PRODUCTION: Console disabled
+      // console.error(`[storeChunks] No chunk files were successfully uploaded for ${fileName}. Aborting batch creation.`);
       // Consider cleanup of potentially uploaded files if needed, though complex.
       throw new Error(`Failed to upload any chunks for ${fileName}.`);
     }
@@ -106,10 +109,15 @@ const storeChunksInVectorStore = async (
           batch = await pollResponse.json();
         }
     } catch (batchCreateError) {
-        console.error(`[storeChunks] FATAL ERROR during createAndPoll for vector store ${vectorStoreId}:`, batchCreateError);
+        // PRODUCTION: Console disabled
+        // console.error(`[storeChunks] FATAL ERROR during createAndPoll for vector store ${vectorStoreId}:`, batchCreateError);
         // console.log(`[storeChunks] Attempting to delete ${uploadedFileIds.length} uploaded files due to batch creation failure...`);
         const deletePromises = uploadedFileIds.map(id => 
-            openai.files.delete(id).catch(delErr => console.error(`[storeChunks] Failed to delete uploaded file ${id}:`, delErr))
+            openai.files.delete(id).catch(delErr => {
+                // PRODUCTION: Console disabled
+                // console.error(`[storeChunks] Failed to delete uploaded file ${id}:`, delErr);
+                return null; // Silently handle errors
+            })
         );
         await Promise.all(deletePromises);
         throw batchCreateError; 
@@ -127,16 +135,17 @@ const storeChunksInVectorStore = async (
       // ------------------------------------------
 
       if (batch.status !== 'completed' || (batch.file_counts?.failed || 0) > 0 || (batch.file_counts?.cancelled || 0) > 0) {
-        console.error(`[storeChunks] Vector Store file batch ${batch.id} did not complete successfully for ${fileName}. Status: ${batch.status}. Failed: ${batch.file_counts?.failed || 0}, Cancelled: ${batch.file_counts?.cancelled || 0}`);
+        // PRODUCTION: Console disabled
+        // console.error(`[storeChunks] Vector Store file batch ${batch.id} did not complete successfully for ${fileName}. Status: ${batch.status}. Failed: ${batch.file_counts?.failed || 0}, Cancelled: ${batch.file_counts?.cancelled || 0}`);
         // If some files failed, they are likely still in the Vector Store if the batch was partially processed.
         // If the whole batch failed/cancelled, the files might not be attached.
         // The files we uploaded earlier are *still* in the general OpenAI Files area unless deleted.
         // Consider logging the specific failed file IDs if the API provides them (might need listFiles method)
         // try {
         //     const batchFiles = await openai.beta.vectorStores.fileBatches.listFiles(vectorStoreId, batch.id);
-        //     console.error("[storeChunks] Batch file details:", JSON.stringify(batchFiles.data, null, 2));
+        //     /* console.error("[storeChunks] Batch file details:", JSON.stringify(batchFiles.data, null, 2) */);
         // } catch (listError) {
-        //     console.error("[storeChunks] Could not list files in failed batch:", listError);
+        //     /* console.error("[storeChunks] Could not list files in failed batch:", listError) */;
         // }
 
         // Decide on error handling: Throw an error to signal failure back up the chain?
@@ -151,7 +160,8 @@ const storeChunksInVectorStore = async (
   } catch (error) {
     // Log intermediate errors from upload/batching steps above
     // This catch block handles errors thrown explicitly or unexpected issues
-    console.error(`[storeChunks] Error storing chunks for ${fileName} in OpenAI Vector Store:`, error);
+    // PRODUCTION: Console disabled
+    // console.error(`[storeChunks] Error storing chunks for ${fileName} in OpenAI Vector Store:`, error);
     throw error; // Re-throw error to be caught by the caller (API route or script)
   }
 };
@@ -176,11 +186,13 @@ export const processAndIndexDocument = async (
     // console.log(`[processAndIndex] Starting OpenAI Vector Store processing for document: ${fileName}`);
 
     if (!vectorStoreId) {
-      console.error("[processAndIndex] Vector Store ID is missing!");
+      // PRODUCTION: Console disabled
+      // console.error("[processAndIndex] Vector Store ID is missing!");
       throw new Error("Vector Store ID is required for indexing.");
     }
     if (!openai) {
-      console.error("[processAndIndex] OpenAI client is missing!");
+      // PRODUCTION: Console disabled
+      // console.error("[processAndIndex] OpenAI client is missing!");
       throw new Error("OpenAI client is required for indexing.");
     }
 
@@ -196,7 +208,8 @@ export const processAndIndexDocument = async (
 
     // console.log(`[processAndIndex] Successfully processed and initiated indexing for document: ${fileName} in Vector Store ${vectorStoreId}`);
   } catch (error) {
-    console.error(`[processAndIndex] Error processing document ${fileName} for Vector Store:`, error);
+    // PRODUCTION: Console disabled
+    // console.error(`[processAndIndex] Error processing document ${fileName} for Vector Store:`, error);
     throw error; // Re-throw error
   }
 }; 

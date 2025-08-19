@@ -51,7 +51,8 @@ export function usePerformanceMonitor({
 
       // Log to console in development
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[Performance] ${componentName} mounted in ${mountTime.toFixed(2)}ms`);
+        // PRODUCTION: Console disabled
+        // console.log(`[Performance] ${componentName} mounted in ${mountTime.toFixed(2)}ms`);
       }
 
       hasReportedMount.current = true;
@@ -120,7 +121,8 @@ export function usePerformanceMonitor({
   const endTimer = useCallback((name: string, additionalMetadata?: Record<string, any>) => {
     const entry = entries.current.get(name);
     if (!entry) {
-      console.warn(`[Performance] No timer found for: ${name}`);
+      // PRODUCTION: Console disabled
+      // console.warn(`[Performance] No timer found for: ${name}`);
       return null;
     }
 
@@ -141,7 +143,8 @@ export function usePerformanceMonitor({
       });
 
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`[Performance] Slow operation in ${componentName}: ${name} took ${entry.duration.toFixed(2)}ms`);
+        // PRODUCTION: Console disabled
+        // console.warn(`[Performance] Slow operation in ${componentName}: ${name} took ${entry.duration.toFixed(2)}ms`);
       }
     }
 
@@ -234,7 +237,8 @@ export function usePerformanceMonitor({
       
       return lastMeasure?.duration;
     } catch (_e) {
-      console.error(`[Performance] Failed to measure ${name}:`, _e);
+      // PRODUCTION: Console disabled
+      // console.error(`[Performance] Failed to measure ${name}:`, _e);
       return null;
     }
   }, [componentName, reportThreshold]);

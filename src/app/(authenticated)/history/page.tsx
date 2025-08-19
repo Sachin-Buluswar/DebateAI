@@ -39,7 +39,8 @@ const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
     } else {
       setError(null);
       audioRef.current.play().catch(err => {
-        console.error('Playback error in history player:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Playback error in history player:', err);
         setError('Unable to play audio');
         setIsPlaying(false);
       });
@@ -81,7 +82,8 @@ const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
   }, []);
 
   const handleError = useCallback(() => {
-    console.error('Audio loading error in history item');
+    // PRODUCTION: Console disabled
+    // console.error('Audio loading error in history item');
     setError('Failed to load audio');
     setLoading(false);
   }, []);
@@ -149,7 +151,7 @@ interface HistoryItemData {
   item: Debate | SpeechFeedback;
   formatDate: (dateString: string) => string;
   onDelete: (id: string, type: 'speech' | 'debate') => void;
-  router: any;
+  router: ReturnType<typeof useRouter>;
 }
 
 const HistoryItem = memo(({ data, index, style }: { data: HistoryItemData[], index: number, style: React.CSSProperties }) => {
@@ -286,6 +288,7 @@ export default function History() {
     try {
       if (!loadMore) {
         setLoading(true);
+        setError(null); // Clear any existing errors when starting fresh load
       } else {
         setIsLoadingMore(true);
       }
@@ -295,6 +298,7 @@ export default function History() {
       if (sessionError) {
         setError('Authentication error. Please try signing in again.');
         setLoading(false);
+        setIsLoadingMore(false);
         return;
       }
       
@@ -302,6 +306,9 @@ export default function History() {
         router.push('/auth');
         return;
       }
+      
+      let hasDebateError = false;
+      let hasSpeechError = false;
       
       try {
         // Fetch debates with pagination
@@ -314,7 +321,7 @@ export default function History() {
           .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
         if (!debatesError) {
-          // Success - set the data
+          // Success - set the data and clear any debate-specific errors
           if (loadMore) {
             setDebateHistory(prev => [...prev, ...(debatesData || [])]);
           } else {
@@ -326,12 +333,15 @@ export default function History() {
             setHasMore(false);
           }
         } else if (debatesError.code !== '42P01') {
-          // Error that's not "table doesn't exist" - show error
-          console.error('Error fetching debates:', debatesError);
-          setError('Failed to load debates. Please try refreshing the page.');
+          // Error that's not "table doesn't exist"
+          // PRODUCTION: Console disabled
+          // console.error('Error fetching debates:', debatesError);
+          hasDebateError = true;
         }
-      } catch (debateError) {
-        console.error('Exception fetching debates:', debateError);
+      } catch (_debateError) {
+        // PRODUCTION: Console disabled
+        // console.error('Exception fetching debates:', debateError);
+        hasDebateError = true;
       }
 
       try {
@@ -352,16 +362,36 @@ export default function History() {
             setSpeechHistory(speechData || []);
           }
         } else if (speechError.code !== '42P01') {
-          // Error that's not "table doesn't exist" - show error
-          console.error('Error fetching speech feedback:', speechError);
-          setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
+          // Error that's not "table doesn't exist"
+          // PRODUCTION: Console disabled
+          // console.error('Error fetching speech feedback:', speechError);
+          hasSpeechError = true;
         }
-      } catch (speechError) {
-        console.error('Exception fetching speech feedback:', speechError);
+      } catch (_speechError) {
+        // PRODUCTION: Console disabled
+        // console.error('Exception fetching speech feedback:', speechError);
+        hasSpeechError = true;
       }
       
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+      // Set error only if both failed, or clear if at least one succeeded
+      if (hasDebateError && hasSpeechError) {
+        setError('Failed to load history. Please try refreshing the page.');
+      } else if (hasDebateError) {
+        // Only debates failed, but we have speech data
+        // PRODUCTION: Console disabled
+        // console.warn('Debates failed to load, but speech history loaded successfully');
+      } else if (hasSpeechError) {
+        // Only speeches failed, but we have debate data
+        // PRODUCTION: Console disabled
+        // console.warn('Speech history failed to load, but debates loaded successfully');
+      } else {
+        // Both succeeded - clear any errors
+        setError(null);
+      }
+      
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Error fetching user data:', error);
       setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
@@ -371,20 +401,7 @@ export default function History() {
 
   useEffect(() => {
     checkUser();
-    
-    // Add a safeguard against infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (loading) {
-        console.error('History page loading timed out');
-        setLoading(false);
-        const errorMessage = 'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.';
-        setError(errorMessage);
-        addToast({ message: errorMessage, type: 'error' });
-      }
-    }, 30000); // 30 seconds timeout
-    
-    return () => clearTimeout(loadingTimeout);
-  }, []);
+  }, [checkUser]);
 
   // Function to handle delete confirmation
   const handleDeleteConfirm = useCallback((id: string, type: 'speech' | 'debate') => {
@@ -430,19 +447,22 @@ export default function History() {
               const storagePath = pathParts.slice(storageIndex + 5).join('/');
               
               if (bucketName && storagePath) {
-                console.log(`Attempting to delete from bucket: ${bucketName}, path: ${storagePath}`);
+                // PRODUCTION: Console disabled
+                // console.log(`Attempting to delete from bucket: ${bucketName}, path: ${storagePath}`);
                 const { error: storageError } = await supabase
                   .storage
                   .from(bucketName)
                   .remove([storagePath]);
                 if (storageError) {
-                   console.error('Error deleting storage file:', storageError);
+                   // PRODUCTION: Console disabled
+                   // console.error('Error deleting storage file:', storageError);
                    throw new Error(`Failed to delete associated audio file: ${storageError.message}`);
                 }
               }
             }
-          } catch (urlParseError) {
-            console.error('Error parsing audio URL for deletion:', urlParseError);
+          } catch (_urlParseError) {
+            // PRODUCTION: Console disabled
+            // console.error('Error parsing audio URL for deletion:', urlParseError);
           }
         }
         
@@ -478,7 +498,8 @@ export default function History() {
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      console.error('Error deleting item:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error deleting item:', error);
       const fullErrorMessage = `Failed to delete the item: ${errorMessage}`;
       setError(fullErrorMessage);
       addToast({ message: fullErrorMessage, type: 'error' });
@@ -524,9 +545,15 @@ export default function History() {
   const loadMore = useCallback(() => {
     if (!isLoadingMore && hasMore) {
       setPage(prev => prev + 1);
+    }
+  }, [isLoadingMore, hasMore]);
+  
+  // Trigger checkUser when page changes for pagination
+  useEffect(() => {
+    if (page > 1) {
       checkUser(true);
     }
-  }, [isLoadingMore, hasMore, checkUser]);
+  }, [page, checkUser]);
   
   // Prepare data for virtual list
   const itemData = useMemo(() => {
@@ -639,14 +666,15 @@ export default function History() {
             {displayItems.length > 0 ? (
               <div style={{ height: '70vh' }}>
                 <List
-                  height={window.innerHeight * 0.7}
+                  height={typeof window !== 'undefined' ? window.innerHeight * 0.7 : 600}
                   itemCount={displayItems.length}
                   itemSize={200} // Approximate height of each item
                   width="100%"
                   itemData={itemData}
                   onScroll={({ scrollOffset, scrollUpdateWasRequested }) => {
                     // Load more when near bottom
-                    const scrollPercentage = scrollOffset / (displayItems.length * 200 - window.innerHeight * 0.7);
+                    const listHeight = typeof window !== 'undefined' ? window.innerHeight * 0.7 : 600;
+                    const scrollPercentage = scrollOffset / Math.max(1, (displayItems.length * 200 - listHeight));
                     if (scrollPercentage > 0.8 && !isLoadingMore && hasMore && !scrollUpdateWasRequested) {
                       loadMore();
                     }

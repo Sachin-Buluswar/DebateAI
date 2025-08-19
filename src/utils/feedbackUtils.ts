@@ -23,32 +23,26 @@ export interface StructuredFeedback {
   structureOrganization: {
     analysis: string;
     examples: string[];
-    suggestions: string[];
   };
   argumentationEvidence: {
     analysis: string;
     examples: string[];
-    suggestions: string[];
   };
   clarityConciseness: {
     analysis: string;
     examples: string[];
-    suggestions: string[];
   };
   persuasivenessImpact: {
     analysis: string;
     examples: string[];
-    suggestions: string[];
   };
   deliveryStyle: {
     analysis: string;
     examples: string[];
-    suggestions: string[];
   };
   relevanceToSpeechType: {
     analysis: string;
     examples: string[];
-    suggestions: string[];
   };
   actionableSuggestions: string[];
   strengths: string[];
@@ -63,8 +57,6 @@ export interface StructuredFeedback {
       example?: string;
       metrics?: string[];
     }>;
-    weeklyGoals?: string[];
-    progressTracking?: string;
   };
 }
 
@@ -139,10 +131,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
   if (structSection) {
     let content = `${structSection.analysis}\n\n`;
     if (structSection.examples && structSection.examples.length > 0) {
-      content += `**Examples from your speech:**\n${structSection.examples.map(e => `- ${e}`).join('\n')}\n\n`;
-    }
-    if (structSection.suggestions && structSection.suggestions.length > 0) {
-      content += `**Suggestions:**\n${structSection.suggestions.map(s => `- ${s}`).join('\n')}`;
+      content += `**Examples from your speech:**\n${structSection.examples.map(e => `- ${e}`).join('\n')}`;
     }
     sections['Structure & Organization'] = content.trim();
   }
@@ -152,10 +141,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
   if (argSection) {
     let content = `${argSection.analysis}\n\n`;
     if (argSection.examples && argSection.examples.length > 0) {
-      content += `**Examples from your speech:**\n${argSection.examples.map(e => `- ${e}`).join('\n')}\n\n`;
-    }
-    if (argSection.suggestions && argSection.suggestions.length > 0) {
-      content += `**Suggestions:**\n${argSection.suggestions.map(s => `- ${s}`).join('\n')}`;
+      content += `**Examples from your speech:**\n${argSection.examples.map(e => `- ${e}`).join('\n')}`;
     }
     sections['Argumentation & Evidence'] = content.trim();
   }
@@ -165,10 +151,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
   if (claritySection) {
     let content = `${claritySection.analysis}\n\n`;
     if (claritySection.examples && claritySection.examples.length > 0) {
-      content += `**Examples from your speech:**\n${claritySection.examples.map(e => `- ${e}`).join('\n')}\n\n`;
-    }
-    if (claritySection.suggestions && claritySection.suggestions.length > 0) {
-      content += `**Suggestions:**\n${claritySection.suggestions.map(s => `- ${s}`).join('\n')}`;
+      content += `**Examples from your speech:**\n${claritySection.examples.map(e => `- ${e}`).join('\n')}`;
     }
     sections['Clarity & Conciseness'] = content.trim();
   }
@@ -178,10 +161,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
   if (persuasiveSection) {
     let content = `${persuasiveSection.analysis}\n\n`;
     if (persuasiveSection.examples && persuasiveSection.examples.length > 0) {
-      content += `**Examples from your speech:**\n${persuasiveSection.examples.map(e => `- ${e}`).join('\n')}\n\n`;
-    }
-    if (persuasiveSection.suggestions && persuasiveSection.suggestions.length > 0) {
-      content += `**Suggestions:**\n${persuasiveSection.suggestions.map(s => `- ${s}`).join('\n')}`;
+      content += `**Examples from your speech:**\n${persuasiveSection.examples.map(e => `- ${e}`).join('\n')}`;
     }
     sections['Persuasiveness & Impact'] = content.trim();
   }
@@ -191,10 +171,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
   if (deliverySection) {
     let content = `${deliverySection.analysis}\n\n`;
     if (deliverySection.examples && deliverySection.examples.length > 0) {
-      content += `**Examples from your speech:**\n${deliverySection.examples.map(e => `- ${e}`).join('\n')}\n\n`;
-    }
-    if (deliverySection.suggestions && deliverySection.suggestions.length > 0) {
-      content += `**Suggestions:**\n${deliverySection.suggestions.map(s => `- ${s}`).join('\n')}`;
+      content += `**Examples from your speech:**\n${deliverySection.examples.map(e => `- ${e}`).join('\n')}`;
     }
     sections['Delivery Style'] = content.trim();
   }
@@ -204,10 +181,7 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
   if (relevanceSection) {
     let content = `${relevanceSection.analysis}\n\n`;
     if (relevanceSection.examples && relevanceSection.examples.length > 0) {
-      content += `**Examples from your speech:**\n${relevanceSection.examples.map(e => `- ${e}`).join('\n')}\n\n`;
-    }
-    if (relevanceSection.suggestions && relevanceSection.suggestions.length > 0) {
-      content += `**Suggestions:**\n${relevanceSection.suggestions.map(s => `- ${s}`).join('\n')}`;
+      content += `**Examples from your speech:**\n${relevanceSection.examples.map(e => `- ${e}`).join('\n')}`;
     }
     sections['Strategic success Speech Type(s)'] = content.trim();
   }
@@ -241,20 +215,6 @@ export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback
         content += `**Success Metrics:**\n${exercise.metrics.map(m => `- ${m}`).join('\n')}\n\n`;
       }
     });
-    
-    // Add weekly goals
-    if (trainingPlan.weeklyGoals && trainingPlan.weeklyGoals.length > 0) {
-      content += '## Weekly Goals\n\n';
-      trainingPlan.weeklyGoals.forEach((goal, i) => {
-        content += `${i + 1}. ${goal}\n`;
-      });
-      content += '\n';
-    }
-    
-    // Add progress tracking
-    if (trainingPlan.progressTracking) {
-      content += `## Progress Tracking\n\n${trainingPlan.progressTracking}\n`;
-    }
     
     sections['Training Plan'] = content.trim();
   }

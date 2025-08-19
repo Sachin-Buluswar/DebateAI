@@ -27,7 +27,8 @@ export async function GET(_request: NextRequest) {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('[socket-init] Error:', error);
+    // PRODUCTION: Console disabled
+    // console.error('[socket-init] Error:', error);
     return NextResponse.json(
       { error: 'Failed to initialize socket configuration' },
       { status: 500 }
@@ -40,7 +41,8 @@ export async function POST(_request: NextRequest) {
     // Handle Socket.IO handshake if needed
     return NextResponse.json({ status: 'ok' });
   } catch (error) {
-    console.error('[socket-init] POST Error:', error);
+    // PRODUCTION: Console disabled
+    // console.error('[socket-init] POST Error:', error);
     return NextResponse.json(
       { error: 'Socket handshake failed' },
       { status: 500 }

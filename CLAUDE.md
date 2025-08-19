@@ -143,6 +143,102 @@ export function Component({ props }: ComponentProps) {
 }
 ```
 
+### Form Validation Pattern
+
+**NEVER use `alert()` for form validation. Use toast notifications and inline validation.**
+
+```typescript
+'use client';
+
+import { useToast } from '@/lib/toast';
+import { FormValidator } from '@/lib/validation';
+import { FormField, TextAreaField } from '@/components/ui/FormField';
+
+export function FormComponent() {
+  const toast = useToast();
+  const [formData, setFormData] = useState({ field1: '', field2: '' });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  
+  // Define validation rules
+  const validator = useMemo(() => new FormValidator({
+    field1: {
+      required: 'This field is required',
+      minLength: { value: 3, message: 'Must be at least 3 characters' }
+    },
+    field2: {
+      validate: (value: unknown) => {
+        // Custom validation logic
+        return true; // or error message string
+      }
+    }
+  }), []);
+  
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    
+    // Validate all fields
+    const errors = validator.validateAll(formData);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error(Object.values(errors)[0]); // Show first error
+      return;
+    }
+    
+    // Success
+    toast.success('Form submitted successfully!');
+  };
+  
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      <FormField
+        label="Field 1"
+        name="field1"
+        value={formData.field1}
+        onChange={(value) => {
+          setFormData(prev => ({ ...prev, field1: value }));
+          // Clear error on change
+          if (formErrors.field1) {
+            setFormErrors(prev => ({ ...prev, field1: '' }));
+          }
+        }}
+        error={formErrors.field1}
+        required
+        aria-label="Field 1 input"
+      />
+      
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+### Toast Notifications Pattern
+
+```typescript
+import { useToast } from '@/lib/toast';
+
+// In component
+const toast = useToast();
+
+// Success
+toast.success('Operation completed!');
+
+// Error with action
+toast.error('Failed to save', {
+  duration: 7000,
+  action: {
+    label: 'Retry',
+    onClick: () => retryOperation()
+  }
+});
+
+// Warning
+toast.warning('Please review your input');
+
+// Info
+toast.info('New features available');
+```
+
 ### Service Pattern with Retry
 
 ```typescript
@@ -259,6 +355,12 @@ None - All critical blockers have been resolved!
   - Supports zoom, navigation, download, and fullscreen modes
   - Fallback to Google Docs viewer as secondary option
   - CSP headers updated to allow both native and Google Docs viewing
+- ✅ **Professional Form Validation**: Replaced all browser alerts with modern UX patterns
+  - Toast notifications for user feedback with action buttons
+  - Inline validation with real-time error messages
+  - Comprehensive FormField components with built-in validation
+  - Full ARIA attributes for accessibility compliance
+  - Centralized validation utilities for consistency
 
 ## Do Not
 

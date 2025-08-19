@@ -25,8 +25,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
+import { addSecurityHeaders } from '@/middleware/inputValidation';
 
 /**
  * Sanitize session ID to prevent directory traversal attacks
@@ -68,6 +70,19 @@ function sanitizeSessionId(sessionId: string): string {
 export async function POST(req: NextRequest) {
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
     try {
+      // Check authentication first
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to upload chunks' },
+            { status: 401 }
+          )
+        );
+      }
+      
       // Parse the form data
       // We use FormData instead of JSON because we're receiving binary chunk data
       const formData = await req.formData();
@@ -79,7 +94,9 @@ export async function POST(req: NextRequest) {
     // Validate required fields
     // All fields are critical for proper chunk storage and reassembly
     if (!chunk || !sessionId || isNaN(chunkIndex)) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return addSecurityHeaders(
+        NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      );
     }
 
     // Security check: Sanitize session ID
@@ -87,7 +104,9 @@ export async function POST(req: NextRequest) {
     if (sanitizedSessionId !== sessionId) {
       // PRODUCTION: Logging disabled
 // console.warn(`Potentially malicious session ID detected: ${sessionId}`);
-      return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
+      return addSecurityHeaders(
+        NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 })
+      );
     }
     
     // Validate chunk size (additional security check)
@@ -95,7 +114,9 @@ export async function POST(req: NextRequest) {
     // 10MB per chunk is generous - typical chunks are 1-5MB
     const maxChunkSize = 10 * 1024 * 1024; // 10MB max per chunk as a safety check
     if (chunk.size > maxChunkSize) {
-      return NextResponse.json({ error: 'Chunk size exceeds maximum allowed' }, { status: 413 });
+      return addSecurityHeaders(
+        NextResponse.json({ error: 'Chunk size exceeds maximum allowed' }, { status: 413 })
+      );
     }
 
     // Get session metadata
@@ -105,15 +126,26 @@ export async function POST(req: NextRequest) {
       // Session might have expired (30min timeout) or never existed
       // PRODUCTION: Logging disabled
 // console.log(`[chunk] Session not found: ${sanitizedSessionId}`);
-      return NextResponse.json({ error: 'Upload session not found' }, { status: 404 });
+      return addSecurityHeaders(
+        NextResponse.json({ error: 'Upload session not found' }, { status: 404 })
+      );
+    }
+    
+    // Verify the session belongs to the authenticated user
+    if (metadata.userId !== user.id) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: 'Unauthorized - Session does not belong to you' }, { status: 403 })
+      );
     }
 
     // Check if this chunk index is valid
     // Prevents clients from uploading more chunks than declared
     if (chunkIndex >= metadata.totalChunks) {
-      return NextResponse.json({ 
-        error: `Invalid chunk index: ${chunkIndex}. Total chunks: ${metadata.totalChunks}` 
-      }, { status: 400 });
+      return addSecurityHeaders(
+        NextResponse.json({ 
+          error: `Invalid chunk index: ${chunkIndex}. Total chunks: ${metadata.totalChunks}` 
+        }, { status: 400 })
+      );
     }
 
     // Save the chunk to memory store
@@ -136,23 +168,27 @@ export async function POST(req: NextRequest) {
 
     // Return success response with updated metadata
     // This allows the client to track upload progress and verify completion
-    return NextResponse.json({
-      success: true,
-      message: `Chunk ${chunkIndex} uploaded successfully`,
-      uploadedChunks: updatedMetadata?.uploadedChunks || chunkIndex + 1,
-      totalChunks: updatedMetadata?.totalChunks || metadata.totalChunks,
-      completed: updatedMetadata?.completed || false
-    });
+    return addSecurityHeaders(
+      NextResponse.json({
+        success: true,
+        message: `Chunk ${chunkIndex} uploaded successfully`,
+        uploadedChunks: updatedMetadata?.uploadedChunks || chunkIndex + 1,
+        totalChunks: updatedMetadata?.totalChunks || metadata.totalChunks,
+        completed: updatedMetadata?.completed || false
+      })
+    );
   } catch (error) {
     // PRODUCTION: Logging disabled
 // console.error('Error processing chunk upload:', error);
     
     // Don't expose internal errors to clients
     // Log the full error server-side for debugging
-    return NextResponse.json({ 
-      error: 'Failed to process chunk',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return addSecurityHeaders(
+      NextResponse.json({ 
+        error: 'Failed to process chunk',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 })
+    );
   }
   });
 } 

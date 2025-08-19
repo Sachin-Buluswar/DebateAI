@@ -170,7 +170,8 @@ export default function SpeechFeedback() {
       for (const mimeType of mimeTypes) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
           options = { mimeType };
-          console.log(`Using supported MIME type: ${mimeType}`);
+          // PRODUCTION: Console disabled
+          // console.log(`Using supported MIME type: ${mimeType}`);
           break;
         }
       }
@@ -224,7 +225,8 @@ export default function SpeechFeedback() {
       
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      console.error('Error starting recording:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Error starting recording:', err);
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
           const message = 'Microphone access denied. Please grant permission in your browser settings.';
           setError(message);
@@ -248,7 +250,8 @@ export default function SpeechFeedback() {
         .eq('user_id', userId);
       
       if (fetchError) {
-        console.error('Error fetching storage usage:', fetchError);
+        // PRODUCTION: Console disabled
+        // console.error('Error fetching storage usage:', fetchError);
         return;
       }
       
@@ -256,7 +259,8 @@ export default function SpeechFeedback() {
       const totalBytes = data?.reduce((sum, item) => sum + (item.file_size_bytes || 0), 0) || 0;
       setStorageUsed(totalBytes);
     } catch (err) {
-      console.error('Error calculating storage usage:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Error calculating storage usage:', err);
     } finally {
       setStorageUsageLoading(false);
     }
@@ -268,26 +272,31 @@ export default function SpeechFeedback() {
         const { data, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('Session error:', sessionError);
+          // PRODUCTION: Console disabled
+          // console.error('Session error:', sessionError);
           setError('Authentication error. Please try signing in again.');
           setLoading(false);
           return;
         }
         
         if (!data.session) {
-          console.log('No session found, redirecting to auth');
+          // PRODUCTION: Console disabled
+          // console.log('No session found, redirecting to auth');
           router.push('/auth');
           return;
         }
         
-        console.log('User authenticated:', data.session.user);
+        // PRODUCTION: Console disabled
+        
+        // console.log('User authenticated:', data.session.user);
         setUser(data.session.user as User);
         setLoading(false);
         
         // Fetch user's storage usage
         fetchStorageUsage(data.session.user.id);
       } catch (err) {
-        console.error('Error checking user session:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Error checking user session:', err);
         setError('Failed to authenticate user. Please try logging in again.');
         router.push('/auth');
       }
@@ -430,7 +439,8 @@ export default function SpeechFeedback() {
         
       if (tableCheckError && tableCheckError.code === '42P01') {
         // Table doesn't exist - this is now handled by the backend
-        console.warn('Speech feedback table does not exist yet, will be created by backend');
+        // PRODUCTION: Console disabled
+        // console.warn('Speech feedback table does not exist yet, will be created by backend');
       }
       
       // Validate selections again
@@ -465,7 +475,8 @@ export default function SpeechFeedback() {
         }
       } catch (uploadError: unknown) {
         const error = uploadError instanceof Error ? uploadError : new Error('An unknown error occurred');
-        console.error('Upload error:', uploadError);
+        // PRODUCTION: Console disabled
+        // console.error('Upload error:', uploadError);
         // Provide specific error message based on the error type
         if (error.message?.includes('network') || error.message?.includes('connection')) {
           throw new Error('Network error during upload. Please check your internet connection and try again.');
@@ -514,12 +525,14 @@ export default function SpeechFeedback() {
         router.push(`/speech-feedback/${result.id}`);
       } else {
         // Handle unexpected result format
-        console.error('Unexpected response format:', result);
+        // PRODUCTION: Console disabled
+        // console.error('Unexpected response format:', result);
         throw new Error('Received invalid response from server. Please try again.');
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      console.error('Error submitting speech:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error submitting speech:', error);
       const message = error?.message || 'An unexpected error occurred. Please try again.';
       setError(message);
       addToast({ message, type: 'error' });
@@ -633,14 +646,16 @@ export default function SpeechFeedback() {
       throw new Error('Unexpected error: Failed to complete all chunks');
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      console.error('Error in chunked upload:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error in chunked upload:', error);
       // Clean up any partial upload
       try {
         await fetch(`/api/speech-feedback/cancel?sessionId=${sessionId}`, {
           method: 'DELETE',
         });
       } catch (cleanupError) {
-        console.error('Failed to clean up partial upload:', cleanupError);
+        // PRODUCTION: Console disabled
+        // console.error('Failed to clean up partial upload:', cleanupError);
       }
       throw error;
     }

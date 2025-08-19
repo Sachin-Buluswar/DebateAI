@@ -27,9 +27,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
 import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
+import { addSecurityHeaders } from '@/middleware/inputValidation';
 
 /**
  * Type definition for session metadata
@@ -156,22 +158,30 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
     let sessionId: string | null = null; // Keep track of sessionId for error cleanup
     try {
+      // Check authentication first
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to finalize upload' },
+            { status: 401 }
+          )
+        );
+      }
+      
       // PRODUCTION: Logging disabled
 // console.log('[finalize] Starting upload finalization');
-      // PRODUCTION: Logging disabled
-// console.log('[finalize] Environment:', {
-      //   NODE_ENV: process.env.NODE_ENV,
-      //   HAS_VERCEL_URL: !!process.env.VERCEL_URL,
-      //   VERCEL_URL: process.env.VERCEL_URL?.substring(0, 20) + '...',
-      //   HAS_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL
-      // });
       
       const data = await req.json() as { sessionId: string };
       sessionId = data.sessionId; // Assign sessionId here
 
-    if (!sessionId) {
-      return NextResponse.json({ error: 'Missing session ID' }, { status: 400 });
-    }
+      if (!sessionId) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: 'Missing session ID' }, { status: 400 })
+        );
+      }
 
     const sanitizedSessionId = sanitizeSessionId(sessionId);
     // PRODUCTION: Logging disabled

@@ -241,7 +241,8 @@ export async function exportFeedbackAsPDF(
       .save();
       
   } catch (error) {
-    console.error('PDF generation failed:', error);
+    // PRODUCTION: Console disabled
+    // console.error('PDF generation failed:', error);
     throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

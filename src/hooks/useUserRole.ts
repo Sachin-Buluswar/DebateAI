@@ -43,7 +43,8 @@ export function useUserRole(): UseUserRoleReturn {
 
       setRole(data || 'user');
     } catch (err) {
-      console.error('Error fetching user role:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Error fetching user role:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch user role'));
       setRole('user'); // Default to user role on error
     } finally {

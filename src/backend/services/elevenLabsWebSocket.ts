@@ -130,7 +130,8 @@ export class ElevenLabsWebSocketService {
 
           this.ws.on('open', () => {
             clearTimeout(connectionTimeout);
-            console.log('ElevenLabs WebSocket connected');
+            // PRODUCTION: Console disabled - Critical file
+            // console.log('ElevenLabs WebSocket connected');
             this.isConnected = true;
             this.reconnectAttempts = 0;
             
@@ -152,7 +153,8 @@ export class ElevenLabsWebSocketService {
                 const message = JSON.parse(textData);
                 
                 if (message.error) {
-                  console.error('ElevenLabs WebSocket error:', message);
+                  // PRODUCTION: Console disabled - Critical file
+                  // console.error('ElevenLabs WebSocket error:', message);
                   if (this.onError) {
                     this.onError(new Error(message.error));
                   }
@@ -164,7 +166,8 @@ export class ElevenLabsWebSocketService {
                 // - Synchronized subtitles
                 // - Progress tracking
                 // - Pronunciation timing
-                console.log('ElevenLabs WebSocket message:', message);
+                // PRODUCTION: Console disabled - Critical file
+                // console.log('ElevenLabs WebSocket message:', message);
               } else {
                 // Binary audio data (MP3 chunks)
                 // These arrive in small chunks for low latency
@@ -183,7 +186,8 @@ export class ElevenLabsWebSocketService {
 
           this.ws.on('error', (error) => {
             clearTimeout(connectionTimeout);
-            console.error('ElevenLabs WebSocket error:', error);
+            // PRODUCTION: Console disabled - Critical file
+            // console.error('ElevenLabs WebSocket error:', error);
             this.isConnected = false;
             
             if (this.onError) {
@@ -194,7 +198,8 @@ export class ElevenLabsWebSocketService {
           });
 
           this.ws.on('close', (code, reason) => {
-            console.log(`ElevenLabs WebSocket closed: ${code} - ${reason}`);
+            // PRODUCTION: Console disabled - Critical file
+            // console.log(`ElevenLabs WebSocket closed: ${code} - ${reason}`);
             this.isConnected = false;
             
             // WebSocket close codes:
@@ -216,7 +221,8 @@ export class ElevenLabsWebSocketService {
         retryOptions: {
           maxRetries: 3,
           onRetry: (error, attempt) => {
-            console.warn(`ElevenLabs WebSocket connection retry ${attempt}:`, error.message);
+            // PRODUCTION: Console disabled - Critical file
+            // console.warn(`ElevenLabs WebSocket connection retry ${attempt}:`, error.message);
           }
         }
       }
@@ -367,13 +373,16 @@ export class ElevenLabsWebSocketService {
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
     
-    console.log(`Attempting to reconnect ElevenLabs WebSocket in ${delay}ms...`);
+    // PRODUCTION: Console disabled - Critical file
+    
+    // console.log(`Attempting to reconnect ElevenLabs WebSocket in ${delay}ms...`);
     
     setTimeout(async () => {
       try {
         await this.connect();
       } catch (error) {
-        console.error('ElevenLabs WebSocket reconnection failed:', error);
+        // PRODUCTION: Console disabled - Critical file
+        // console.error('ElevenLabs WebSocket reconnection failed:', error);
       }
     }, delay);
   }
@@ -399,7 +408,8 @@ export class ElevenLabsWebSocketService {
         try {
           await this.sendText(message.text, message.flush);
         } catch (error) {
-          console.error('Failed to send queued message:', error);
+          // PRODUCTION: Console disabled - Critical file
+          // console.error('Failed to send queued message:', error);
           // Put it back at the front of the queue
           this.messageQueue.unshift(message);
           break;

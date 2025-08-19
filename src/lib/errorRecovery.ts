@@ -142,13 +142,15 @@ export class FallbackHandler<T> {
     try {
       return await primaryFn();
     } catch (primaryError) {
-      console.error('Primary function failed:', primaryError);
+      // PRODUCTION: Console disabled
+      // console.error('Primary function failed:', primaryError);
       
       for (let i = 0; i < this.fallbacks.length; i++) {
         try {
           return await this.fallbacks[i]();
         } catch (fallbackError) {
-          console.error(`Fallback ${i + 1} failed:`, fallbackError);
+          // PRODUCTION: Console disabled
+          // console.error(`Fallback ${i + 1} failed:`, fallbackError);
         }
       }
       

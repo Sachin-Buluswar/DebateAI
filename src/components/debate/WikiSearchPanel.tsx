@@ -63,7 +63,8 @@ export function WikiSearchPanel({
       }
     } catch (err) {
       setError('Network error while getting advice');
-      console.error('Advice error:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Advice error:', err);
     } finally {
       setIsLoading(false);
     }

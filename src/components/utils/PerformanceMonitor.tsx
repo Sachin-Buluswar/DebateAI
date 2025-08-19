@@ -18,7 +18,8 @@ export function PerformanceMonitor({ componentName, threshold = 16 }: Performanc
       const renderTime = performance.now() - startTime;
       
       if (renderTime > threshold) {
-        console.warn(`⚠️ Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`);
+        // PRODUCTION: Console disabled
+        // console.warn(`⚠️ Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`);
       }
       
       // Log to performance API
@@ -53,7 +54,8 @@ export function usePerformanceMonitor(componentName: string, threshold?: number)
       const duration = endTime - startTime;
       
       if (duration > (threshold || 100)) {
-        console.log(`📊 ${componentName} lifecycle duration: ${duration.toFixed(2)}ms`);
+        // PRODUCTION: Console disabled
+        // console.log(`📊 ${componentName} lifecycle duration: ${duration.toFixed(2)}ms`);
       }
     };
   }, [componentName, threshold]);

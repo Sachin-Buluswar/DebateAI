@@ -42,7 +42,8 @@ export default function DebateDetail() {
           .single();
         
         if (error) {
-          console.error('Error fetching debate:', error);
+          // PRODUCTION: Console disabled
+          // console.error('Error fetching debate:', error);
           setError('Could not load debate details. The debate may have been deleted or you may not have permission to view it.');
           setLoading(false);
           return;
@@ -69,12 +70,14 @@ export default function DebateDetail() {
             const parsedTranscript = JSON.parse(data.transcript);
             setTranscript(Array.isArray(parsedTranscript) ? parsedTranscript : []);
           } catch (_e) {
-            console.error('Error parsing transcript:', _e);
+            // PRODUCTION: Console disabled
+            // console.error('Error parsing transcript:', _e);
             setTranscript(['Transcript data could not be displayed.']);
           }
         }
-      } catch (error) {
-        console.error('Error in data fetching:', error);
+      } catch (_error) {
+        // PRODUCTION: Console disabled
+        // console.error('Error in data fetching:', error);
         setError('An unexpected error occurred while loading the debate details.');
       } finally {
         setLoading(false);

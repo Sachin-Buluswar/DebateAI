@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import Navbar from '@/components/layout/Navbar';
 import BackButton from '@/components/ui/BackButton';
 import { cn } from '@/utils/cn';
+import { useToast } from '@/lib/toast';
 
 // Dynamic import to prevent SSR issues
 const InlinePDFViewer = dynamic(
@@ -44,6 +44,7 @@ interface Resource {
 
 export default function ResourceViewerPage() {
   const params = useParams<{ category: string; slug: string }>();
+  const toast = useToast();
   const [resource, setResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,8 +87,9 @@ export default function ResourceViewerPage() {
       } else if (eventType === 'download') {
         setResource(prev => prev ? { ...prev, download_count: prev.download_count + 1 } : prev);
       }
-    } catch (err) {
-      console.error('Failed to track event:', err);
+    } catch (_err) {
+      // PRODUCTION: Console disabled
+      // console.error('Failed to track event:', err);
     }
   }, [resource, sessionId]);
 
@@ -111,7 +113,8 @@ export default function ResourceViewerPage() {
         setResource(data.resource);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load resource');
-        console.error('Error fetching resource:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Error fetching resource:', err);
       } finally {
         setLoading(false);
       }
@@ -153,41 +156,37 @@ export default function ResourceViewerPage() {
       } else {
         // Fallback to copying URL
         await navigator.clipboard.writeText(window.location.href);
-        alert('Link copied to clipboard!');
+        toast.success('Link copied to clipboard!', { duration: 3000 });
       }
-    } catch (err) {
-      console.error('Error sharing:', err);
+    } catch (_err) {
+      // PRODUCTION: Console disabled
+      // console.error('Error sharing:', err);
+      toast.error('Failed to share. Please try again.', { duration: 5000 });
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-950">
-        <Navbar />
-        <div className="breathing-room max-w-6xl mx-auto text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading resource...</p>
-        </div>
-      </div>
+      <main className="breathing-room max-w-6xl mx-auto text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading resource...</p>
+      </main>
     );
   }
 
   if (error || !resource) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-950">
-        <Navbar />
-        <div className="breathing-room max-w-6xl mx-auto">
-          <BackButton className="mb-8" />
-          <div className="text-center py-12">
-            <h1 className="text-2xl text-gray-900 dark:text-gray-100 mb-4">
-              {error || 'Resource not found'}
-            </h1>
-            <Link href="/learn" className="text-primary-500 hover:text-primary-600 transition-colors">
-              ← Back to all resources
-            </Link>
-          </div>
+      <main className="breathing-room max-w-6xl mx-auto">
+        <BackButton className="mb-8" />
+        <div className="text-center py-12">
+          <h1 className="text-2xl text-gray-900 dark:text-gray-100 mb-4">
+            {error || 'Resource not found'}
+          </h1>
+          <Link href="/learn" className="text-primary-500 hover:text-primary-600 transition-colors">
+            ← Back to all resources
+          </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -195,10 +194,7 @@ export default function ResourceViewerPage() {
   const encodedUrl = encodeURIComponent(fullFileUrl);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <Navbar />
-      
-      <main className="breathing-room max-w-6xl mx-auto">
+    <main className="breathing-room max-w-6xl mx-auto">
         <BackButton href="/learn" className="mb-8" />
         
         {/* Resource Header */}
@@ -405,7 +401,6 @@ export default function ResourceViewerPage() {
             </div>
           ) : null}
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

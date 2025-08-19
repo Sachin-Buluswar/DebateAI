@@ -105,11 +105,13 @@ export class SocketIOFallback implements FallbackDebateManager {
   }
 
   pauseDebate(): void {
-    console.log('Pause functionality not available in fallback mode');
+    // PRODUCTION: Console disabled
+    // console.log('Pause functionality not available in fallback mode');
   }
 
   resumeDebate(): void {
-    console.log('Resume functionality not available in fallback mode');
+    // PRODUCTION: Console disabled
+    // console.log('Resume functionality not available in fallback mode');
   }
 
   isAvailable(): boolean {

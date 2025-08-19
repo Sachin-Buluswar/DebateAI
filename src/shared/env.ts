@@ -44,28 +44,24 @@ if (typeof window === 'undefined') {
   const parsed = mergedSchema.safeParse(serverEnv);
 
   if (!parsed.success) {
-    // PRODUCTION: Logging disabled
-    // console.error(
-    //   '❌ Invalid environment variables on server:',
-    //   parsed.error.flatten().fieldErrors
-    // );
+    // PRODUCTION: Logging disabled in production
     if (!isDevMode) {
-      throw new Error('Invalid server-side environment variables.');
+      // In production, throw an error with minimal information
+      throw new Error('Missing required environment variables. Please check server configuration.');
     } else {
-      // PRODUCTION: Logging disabled
-      // console.warn('⚠️ Using fallback values for missing environment variables in development mode');
-      // Use fallback values in development
-      env = {
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'fallback',
-        ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY || 'sk_placeholder_key_for_elevenlabs',
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback',
-        ELEVENLABS_STT_MODEL_ID: process.env.ELEVENLABS_STT_MODEL_ID,
-        ELEVENLABS_CROSSFIRE_AGENT_ID: process.env.ELEVENLABS_CROSSFIRE_AGENT_ID,
-        OPENAI_VECTOR_STORE_ID: process.env.OPENAI_VECTOR_STORE_ID,
-        PORT: process.env.PORT || '3000',
-        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'fallback',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fallback',
-      } as z.infer<typeof mergedSchema>;
+      // Development mode: Log details for debugging
+      // PRODUCTION: Console disabled
+      // console.error(
+      //   '❌ Invalid environment variables on server:',
+      //   parsed.error.flatten().fieldErrors
+      // );
+      // PRODUCTION: Console disabled
+      // console.warn('⚠️ Development mode: Some features may not work without proper environment variables');
+      
+      // In development, throw error to force proper setup
+      throw new Error(
+        'Missing environment variables in development. Please copy .env.example to .env.local and fill in your values.'
+      );
     }
   } else {
     env = parsed.data;

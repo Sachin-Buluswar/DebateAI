@@ -41,21 +41,23 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
         setupOnce() {
           // Track debate-specific events
           if (typeof window !== 'undefined') {
-            window.addEventListener('debate:start', (event: any) => {
+            window.addEventListener('debate:start', (event: Event) => {
+              const customEvent = event as CustomEvent;
               Sentry.addBreadcrumb({
                 category: 'debate',
                 message: 'Debate started',
                 level: 'info',
-                data: event.detail,
+                data: customEvent.detail,
               });
             });
             
-            window.addEventListener('debate:error', (event: any) => {
-              Sentry.captureException(new Error(event.detail.message), {
+            window.addEventListener('debate:error', (event: Event) => {
+              const customEvent = event as CustomEvent;
+              Sentry.captureException(new Error(customEvent.detail?.message || 'Debate error'), {
                 tags: {
                   component: 'debate',
                 },
-                extra: event.detail,
+                extra: customEvent.detail,
               });
             });
           }
@@ -97,7 +99,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
               id: user.id,
               email: user.email,
             };
-          } catch (e) {
+          } catch (_e) {
             // Ignore parse errors
           }
         }
@@ -117,7 +119,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
           id: user.id,
           email: user.email,
         });
-      } catch (e) {
+      } catch (_e) {
         // Ignore parse errors
       }
     }
@@ -129,9 +131,9 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 // Export utilities for manual error tracking
 export const sentryClient = {
-  captureException: (error: Error, context?: any) => {
+  captureException: (error: Error, context?: Record<string, any>) => {
     if (SENTRY_DSN) {
-      Sentry.captureException(error, context);
+      Sentry.captureException(error, context as any);
     }
   },
   

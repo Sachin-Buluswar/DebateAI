@@ -34,7 +34,10 @@ function UIDemoContent() {
       message: messages[type],
       action: type === 'error' ? {
         label: 'Retry',
-        onClick: () => console.log('Retrying...')
+        onClick: () => {
+          // PRODUCTION: Console disabled
+          // console.log('Retrying...')
+        }
       } : undefined
     });
   };

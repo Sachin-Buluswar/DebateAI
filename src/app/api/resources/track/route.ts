@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
       });
 
     if (analyticsError) {
-      console.error('Error tracking resource analytics:', analyticsError);
+      // PRODUCTION: Console disabled
+      // console.error('Error tracking resource analytics:', analyticsError);
       return NextResponse.json(
         { error: 'Failed to track analytics' },
         { status: 500 }
@@ -81,7 +82,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.error('API Error [/api/resources/track]:', error);
+      // PRODUCTION: Console disabled
+
+      // console.error('API Error [/api/resources/track]:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

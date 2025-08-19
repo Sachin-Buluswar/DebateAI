@@ -43,23 +43,28 @@ export default function SearchPage() {
         const { data, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
-          console.error('Session error:', sessionError);
+          // PRODUCTION: Console disabled
+          // console.error('Session error:', sessionError);
           setError('Authentication error. Please try signing in again.');
           setLoading(false);
           return;
         }
 
         if (!data.session) {
-          console.log('No session found, redirecting to auth');
+          // PRODUCTION: Console disabled
+          // console.log('No session found, redirecting to auth');
           router.push('/auth');
           return;
         }
 
-        console.log('User authenticated:', data.session.user);
+        // PRODUCTION: Console disabled
+
+        // console.log('User authenticated:', data.session.user);
         setUser(data.session.user as User);
         setLoading(false);
-      } catch (error) {
-        console.error('Error checking user session:', error);
+      } catch (_error) {
+        // PRODUCTION: Console disabled
+        // console.error('Error checking user session:', error);
         setError('Failed to authenticate user. Please try logging in again.');
         router.push('/auth');
       }
@@ -81,13 +86,15 @@ export default function SearchPage() {
         .limit(10);
 
       if (error) {
-        console.error('Error fetching search history:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error fetching search history:', error);
         return;
       }
 
       setSearchHistory(data || []);
-    } catch (error) {
-      console.error('Failed to fetch search history:', error);
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Failed to fetch search history:', error);
     }
   };
 
@@ -103,14 +110,16 @@ export default function SearchPage() {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting search:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error deleting search:', error);
         return;
       }
 
       // Refresh search history
       fetchSearchHistory();
-    } catch (error) {
-      console.error('Failed to delete search:', error);
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Failed to delete search:', error);
     }
   };
 
@@ -134,7 +143,8 @@ export default function SearchPage() {
         .single();
 
       if (selectError && selectError.code !== 'PGRST116') {
-        console.error('Error checking existing search:', selectError);
+        // PRODUCTION: Console disabled
+        // console.error('Error checking existing search:', selectError);
         return;
       }
 
@@ -149,7 +159,8 @@ export default function SearchPage() {
           .eq('id', existingSearch.id);
 
         if (updateError) {
-          console.error('Error updating search:', updateError);
+          // PRODUCTION: Console disabled
+          // console.error('Error updating search:', updateError);
         }
       } else {
         // Insert new entry
@@ -162,11 +173,13 @@ export default function SearchPage() {
           });
 
         if (insertError) {
-          console.error('Error inserting search:', insertError);
+          // PRODUCTION: Console disabled
+          // console.error('Error inserting search:', insertError);
         }
       }
-    } catch (error) {
-      console.error('Failed to upsert search history:', error);
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Failed to upsert search history:', error);
     }
   };
 
@@ -230,8 +243,9 @@ export default function SearchPage() {
 
       // Refresh search history after successful search
       fetchSearchHistory();
-    } catch (error) {
-      console.error('Error performing search:', error);
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Error performing search:', error);
       setError('An unexpected error occurred. Please try again later.');
     } finally {
       setSearching(false);
@@ -266,8 +280,9 @@ export default function SearchPage() {
 
       const generatedData = await generateResponse.json();
       setGeneratedAnswer(generatedData);
-    } catch (error) {
-      console.error('Error generating answer:', error);
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Error generating answer:', error);
       setError('Failed to generate an answer. Please try again later.');
     } finally {
       setGenerating(false);

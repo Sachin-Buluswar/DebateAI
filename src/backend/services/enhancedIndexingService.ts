@@ -36,7 +36,8 @@ export class EnhancedIndexingService {
     fileName: string
   ): Promise<void> {
     try {
-      console.log(`Starting enhanced indexing for ${fileName}`);
+      // PRODUCTION: Console disabled
+      // console.log(`Starting enhanced indexing for ${fileName}`);
       
       // Download PDF
       const pdfBuffer = await this.downloadPDF(pdfUrl);
@@ -113,10 +114,13 @@ export class EnhancedIndexingService {
       // Update document as indexed
       await this.documentStorage.updateDocumentIndexStatus(documentId);
       
-      console.log(`Successfully indexed ${fileName} with ${chunks.length} chunks from ${totalPages} pages`);
+      // PRODUCTION: Console disabled
+      
+      // console.log(`Successfully indexed ${fileName} with ${chunks.length} chunks from ${totalPages} pages`);
       
     } catch (error) {
-      console.error(`Error indexing document ${fileName}:`, error);
+      // PRODUCTION: Console disabled
+      // console.error(`Error indexing document ${fileName}:`, error);
       throw error;
     }
   }
@@ -364,22 +368,27 @@ export class EnhancedIndexingService {
   }
 
   async reindexExistingDocuments(): Promise<void> {
-    console.log('Starting reindexing of existing documents...');
+    // PRODUCTION: Console disabled
+    // console.log('Starting reindexing of existing documents...');
     
     // Get all documents
     const documents = await this.documentStorage.searchDocuments('');
     
     for (const document of documents) {
       if (!document.indexed_at) {
-        console.log(`Reindexing: ${document.file_name}`);
+        // PRODUCTION: Console disabled
+        // console.log(`Reindexing: ${document.file_name}`);
         try {
           await this.indexPDFDocument(document.id, document.file_url, document.file_name);
         } catch (error) {
-          console.error(`Failed to reindex ${document.file_name}:`, error);
+          // PRODUCTION: Console disabled
+          // console.error(`Failed to reindex ${document.file_name}:`, error);
         }
       }
     }
     
-    console.log('Reindexing complete');
+    // PRODUCTION: Console disabled
+    
+    // console.log('Reindexing complete');
   }
 }

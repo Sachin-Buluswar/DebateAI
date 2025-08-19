@@ -130,7 +130,9 @@ export function useDebateRealtime({
           user_agent: navigator.userAgent
         });
         
-        console.log('Connected to debate channel:', debateId);
+        // PRODUCTION: Console disabled
+        
+        // console.log('Connected to debate channel:', debateId);
       } else if (status === 'CHANNEL_ERROR') {
         onError?.(new Error('Failed to connect to debate channel'));
       }

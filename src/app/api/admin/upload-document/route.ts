@@ -1,34 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DocumentStorageService } from '@/backend/services/documentStorageService';
 import { EnhancedIndexingService } from '@/backend/services/enhancedIndexingService';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
+import { addSecurityHeaders } from '@/middleware/inputValidation';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export async function POST(request: NextRequest): Promise<NextResponse | Response> {
+  // Apply rate limiting for file uploads to prevent DOS attacks
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      // Check authentication using server client
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in' },
+            { status: 401 }
+          )
+        );
+      }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check admin authorization
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabase.auth.getUser(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user has admin role using RBAC
-    const { data: hasAdminRole } = await supabase
-      .rpc('check_user_role', { required_role: 'admin' });
-    
-    if (!hasAdminRole) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+      // Check if user has admin role in user_roles table
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (roleError || !userRole || (userRole.role !== 'admin' && userRole.role !== 'super_admin')) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Forbidden - Admin access required' },
+            { status: 403 }
+          )
+        );
+      }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -80,7 +89,12 @@ export async function POST(request: NextRequest) {
         }));
         
       if (chunks.length > 0) {
-        await supabase
+        // Use service client only for storage operations
+        const serviceClient = createServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        await serviceClient
           .from('document_chunks')
           .insert(chunks);
       }
@@ -89,17 +103,22 @@ export async function POST(request: NextRequest) {
       await documentStorage.updateDocumentIndexStatus(document.id);
     }
 
-    return NextResponse.json({
-      success: true,
-      documentId: document.id,
-      fileName: file.name,
-    });
-  } catch (error) {
-    // PRODUCTION: Logging disabled
+      return addSecurityHeaders(
+        NextResponse.json({
+          success: true,
+          documentId: document.id,
+          fileName: file.name,
+        })
+      );
+    } catch (error) {
+      // PRODUCTION: Logging disabled
 // console.error('Error uploading document:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload document' },
-      { status: 500 }
-    );
-  }
+      return addSecurityHeaders(
+        NextResponse.json(
+          { error: 'Failed to upload document' },
+          { status: 500 }
+        )
+      );
+    }
+  });
 }

@@ -33,7 +33,8 @@ function AdminDocumentsContent() {
       if (error) throw error;
       setDocuments(data || []);
     } catch (error) {
-      console.error('Error loading documents:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error loading documents:', error);
       addToast({ message: 'Failed to load documents', type: 'error' });
     } finally {
       setLoading(false);
@@ -61,7 +62,8 @@ function AdminDocumentsContent() {
       setSelectedFile(null);
       await loadDocuments();
     } catch (error) {
-      console.error('Error uploading file:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error uploading file:', error);
       addToast({ message: 'Failed to upload document', type: 'error' });
     } finally {
       setUploadingFile(false);
@@ -82,7 +84,8 @@ function AdminDocumentsContent() {
       addToast({ message: 'Document reindexed successfully', type: 'success' });
       await loadDocuments();
     } catch (error) {
-      console.error('Error reindexing document:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error reindexing document:', error);
       addToast({ message: 'Failed to reindex document', type: 'error' });
     } finally {
       setIndexing(false);
@@ -104,7 +107,8 @@ function AdminDocumentsContent() {
       addToast({ message: 'Document deleted successfully', type: 'success' });
       await loadDocuments();
     } catch (error) {
-      console.error('Error deleting document:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error deleting document:', error);
       addToast({ message: 'Failed to delete document', type: 'error' });
     }
   };
@@ -133,7 +137,8 @@ function AdminDocumentsContent() {
         }
       }, 5000);
     } catch (error) {
-      console.error('Error starting scrape:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error starting scrape:', error);
       addToast({ message: 'Failed to start scraping', type: 'error' });
       setScraping(false);
     }

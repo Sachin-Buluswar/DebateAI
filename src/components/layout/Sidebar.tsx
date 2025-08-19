@@ -86,7 +86,8 @@ export default function Sidebar() {
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Error getting user info:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error getting user info:', error);
         setIsAuthenticated(false);
       }
     };
@@ -116,14 +117,16 @@ export default function Sidebar() {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Error signing out:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error signing out:', error);
         return;
       }
       
       router.push('/');
       router.refresh();
     } catch (error) {
-      console.error('Exception during logout:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Exception during logout:', error);
     } finally {
       setIsLoggingOut(false);
     }

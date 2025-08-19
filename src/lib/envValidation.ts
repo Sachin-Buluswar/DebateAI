@@ -61,16 +61,21 @@ export function logEnvironmentStatus(): void {
   const result = validateEnvironment();
   
   if (!result.isValid) {
-    console.error('🚨 Environment validation failed!');
-    console.error('Missing variables:', result.missing);
+    // PRODUCTION: Console disabled
+    // console.error('🚨 Environment validation failed!');
+    // PRODUCTION: Console disabled
+    // console.error('Missing variables:', result.missing);
   }
   
   if (result.warnings.length > 0) {
-    console.warn('⚠️ Environment warnings:');
-    result.warnings.forEach(warning => console.warn(`  - ${warning}`));
+    // PRODUCTION: Console disabled
+    // console.warn('⚠️ Environment warnings:');
+    // PRODUCTION: Console disabled
+    // result.warnings.forEach(warning => console.warn(`  - ${warning}`));
   }
   
   if (result.isValid && result.warnings.length === 0) {
-    console.log('✅ Environment validation passed');
+    // PRODUCTION: Console disabled
+    // console.log('✅ Environment validation passed');
   }
 }

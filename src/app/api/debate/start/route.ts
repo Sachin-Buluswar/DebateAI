@@ -18,17 +18,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
 import { z } from 'zod';
-
-// Initialize Supabase admin client with service role key for full database access
-// This bypasses Row Level Security (RLS) to create sessions on behalf of users
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Service role key required for admin operations
-);
 
 // Request validation schema using Zod for type safety and input validation
 const startDebateSchema = z.object({
@@ -62,17 +55,39 @@ export async function POST(request: NextRequest) {
   // Apply debate-specific rate limiting (prevents rapid session creation)
   return await withRateLimit(request, debateRateLimiter, async () => {
     try {
+      // Get authenticated user's session (uses cookie-based auth)
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to start a debate' },
+            { status: 401 }
+          )
+        );
+      }
+
       const body = await request.json();
       const validated = startDebateSchema.parse(body);
+      
+      // Verify the userId matches the authenticated user
+      if (validated.userId !== user.id) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Forbidden - Cannot create debate for another user' },
+            { status: 403 }
+          )
+        );
+      }
 
-      // Create debate session in Supabase database
-      // This creates a persistent record that tracks the debate state
+      // Create debate session using authenticated client (respects RLS)
       const { data: session, error } = await supabase
         .from('debate_sessions')
         .insert({
           topic: validated.topic, // The debate topic/resolution
           user_side: validated.userSide, // PRO or CON - determines user's position
-          user_id: validated.userId, // Links session to authenticated user
+          user_id: user.id, // Use authenticated user's ID
           has_ai_partner: true, // Flag indicating AI opponent (always true for this app)
           status: 'active', // Initial status - will change to 'completed' on end
         })

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/layout/Navbar';
 import { cn } from '@/utils/cn';
 
 interface Resource {
@@ -161,7 +160,8 @@ export default function LearnPage() {
       }
     } catch (err) {
       setError('Failed to load resources. Please try again later.');
-      console.error('Error fetching resources:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Error fetching resources:', err);
     } finally {
       setLoading(false);
     }
@@ -171,19 +171,16 @@ export default function LearnPage() {
   const regularResources = resources.filter(r => !r.is_featured);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <Navbar />
-      
-      <main className="breathing-room max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="space-y-6 mb-12 animate-fade-in">
-          <h1 className="text-gray-900 dark:text-gray-100">
-            learn debate fundamentals
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-            free resources created by nationally-ranked debaters to help you master public forum debate
-          </p>
-        </div>
+    <main className="breathing-room max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="space-y-6 mb-12 animate-fade-in">
+        <h1 className="text-gray-900 dark:text-gray-100">
+          learn debate fundamentals
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
+          free resources created by nationally-ranked debaters to help you master public forum debate
+        </p>
+      </div>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-8 animate-fade-in stagger-1">
@@ -348,7 +345,6 @@ export default function LearnPage() {
             </button>
           </div>
         )}
-      </main>
-    </div>
+    </main>
   );
 }

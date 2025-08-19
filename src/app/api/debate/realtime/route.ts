@@ -30,22 +30,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
-
-// Initialize Supabase admin client with service role key
-// This client has full database access and can create/manage Realtime channels
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Admin access required for channel management
-  {
-    auth: {
-      autoRefreshToken: false, // Not needed for server-side admin client
-      persistSession: false // No session persistence on server
-    }
-  }
-);
 
 // Request validation schemas using Zod
 
@@ -61,6 +49,20 @@ const startDebateSchema = z.object({
     role: z.string() // Role in debate (e.g., 'First Speaker', 'Second Speaker')
   }))
 });
+
+// Helper to get service client for Realtime operations only
+function getRealtimeServiceClient() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
+}
 
 // Schema for joining an existing debate
 const joinDebateSchema = z.object({
@@ -81,6 +83,17 @@ const joinDebateSchema = z.object({
 export async function POST(request: NextRequest) {
   return await withRateLimit(request, debateRateLimiter, async () => {
     try {
+      // Get authenticated user's session
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return NextResponse.json(
+          { error: 'Unauthorized - Please log in' },
+          { status: 401 }
+        );
+      }
+
       // Extract action from URL path (e.g., 'start', 'join', 'end')
       const { pathname } = new URL(request.url);
       const action = pathname.split('/').pop();
@@ -91,37 +104,43 @@ export async function POST(request: NextRequest) {
         // Validate request and start new debate
         const { debateId, topic, participants } = startDebateSchema.parse(body);
         
-        // Create debate record in database
-        // This establishes the persistent state for the debate
-        const { error: dbError } = await supabaseAdmin
+        // Verify user is a participant in this debate
+        const userParticipant = participants.find(p => p.id === user.id);
+        if (!userParticipant && !participants.some(p => p.isAI)) {
+          return NextResponse.json(
+            { error: 'Forbidden - User must be a participant' },
+            { status: 403 }
+          );
+        }
+        
+        // Create debate record in database with authenticated client
+        const { error: dbError } = await supabase
           .from('debates')
           .insert({
-            id: debateId, // Use provided UUID
-            topic, // Debate resolution/topic
-            participants, // Array of participant objects
-            status: 'active', // Initial status
-            started_at: new Date().toISOString() // Track start time
+            id: debateId,
+            topic,
+            participants,
+            status: 'active',
+            started_at: new Date().toISOString(),
+            user_id: user.id // Track who created the debate
           });
 
         if (dbError) {
           return NextResponse.json({ error: 'Failed to create debate' }, { status: 500 });
         }
 
-        // Initialize debate state in Realtime
-        // This creates a Supabase Realtime channel for this debate
-        // All participants will subscribe to this channel for real-time updates
-        const channel = supabaseAdmin.channel(`debate:${debateId}`);
+        // Use service client only for Realtime channel operations
+        const realtimeClient = getRealtimeServiceClient();
+        const channel = realtimeClient.channel(`debate:${debateId}`);
         
-        // Broadcast initial debate state to channel
-        // Any clients already subscribed will receive this
         await channel.send({
-          type: 'broadcast', // Broadcast to all subscribers
-          event: 'debate_initialized', // Event type for clients to handle
+          type: 'broadcast',
+          event: 'debate_initialized',
           payload: {
             debateId,
             topic,
             participants,
-            phase: 'PRO_CONSTRUCTIVE', // Start with PRO team's constructive speech
+            phase: 'PRO_CONSTRUCTIVE',
             timestamp: Date.now()
           }
         });
@@ -139,13 +158,20 @@ export async function POST(request: NextRequest) {
         // Handle user joining an existing debate
         const { debateId, userId } = joinDebateSchema.parse(body);
         
-        // Verify debate exists and is active
-        // This prevents joining non-existent or ended debates
-        const { data: debate, error } = await supabaseAdmin
+        // Verify the userId matches the authenticated user
+        if (userId !== user.id) {
+          return NextResponse.json(
+            { error: 'Forbidden - Cannot join as another user' },
+            { status: 403 }
+          );
+        }
+        
+        // Verify debate exists and is active using authenticated client
+        const { data: debate, error } = await supabase
           .from('debates')
-          .select('*') // Get all debate data
+          .select('*')
           .eq('id', debateId)
-          .single(); // Expect exactly one result
+          .single();
 
         if (error || !debate) {
           return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
@@ -167,25 +193,52 @@ export async function POST(request: NextRequest) {
         // Handle ending a debate
         const { debateId } = z.object({ debateId: z.string().uuid() }).parse(body);
         
+        // First verify user owns or participates in this debate
+        const { data: debate, error: checkError } = await supabase
+          .from('debates')
+          .select('user_id, participants')
+          .eq('id', debateId)
+          .single();
+        
+        if (checkError || !debate) {
+          return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
+        }
+        
+        // Check if user is the creator or a participant
+        const isCreator = debate.user_id === user.id;
+        const isParticipant = (debate.participants as any[])?.some(
+          (p: any) => p.id === user.id
+        );
+        
+        if (!isCreator && !isParticipant) {
+          return NextResponse.json(
+            { error: 'Forbidden - Cannot end this debate' },
+            { status: 403 }
+          );
+        }
+        
         // Update debate status in database
-        // This marks the debate as completed and records end time
-        await supabaseAdmin
+        const { error: updateError } = await supabase
           .from('debates')
           .update({ 
-            status: 'completed', // Change from 'active' to 'completed'
-            ended_at: new Date().toISOString() // Record when debate ended
+            status: 'completed',
+            ended_at: new Date().toISOString()
           })
           .eq('id', debateId);
+        
+        if (updateError) {
+          return NextResponse.json({ error: 'Failed to end debate' }, { status: 500 });
+        }
 
-        // Notify all participants via Realtime
-        // This ensures all connected clients know the debate has ended
-        const channel = supabaseAdmin.channel(`debate:${debateId}`);
+        // Use service client only for Realtime notifications
+        const realtimeClient = getRealtimeServiceClient();
+        const channel = realtimeClient.channel(`debate:${debateId}`);
         await channel.send({
-          type: 'broadcast', // Send to all subscribers
-          event: 'debate_ended', // Event type for client handling
+          type: 'broadcast',
+          event: 'debate_ended',
           payload: { 
             debateId, 
-            timestamp: Date.now() // When the debate ended
+            timestamp: Date.now()
           }
         });
 
@@ -226,26 +279,36 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   return await withRateLimit(request, debateRateLimiter, async () => {
+    // Get authenticated user's session
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
+    }
+    
     // Extract debate ID from query parameters
     const { searchParams } = new URL(request.url);
     const debateId = searchParams.get('debateId');
 
-  if (!debateId) {
-    return NextResponse.json({ error: 'Debate ID required' }, { status: 400 });
-  }
+    if (!debateId) {
+      return NextResponse.json({ error: 'Debate ID required' }, { status: 400 });
+    }
 
-  // Query database for debate record
-  // Returns full debate data including participants and status
-  const { data: debate, error } = await supabaseAdmin
-    .from('debates')
-    .select('*') // Get all columns
-    .eq('id', debateId) // Match by debate ID
-    .single(); // Expect single result
+    // Query database for debate record using authenticated client
+    const { data: debate, error } = await supabase
+      .from('debates')
+      .select('*')
+      .eq('id', debateId)
+      .single();
 
-  if (error || !debate) {
-    return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
-  }
+    if (error || !debate) {
+      return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
+    }
 
-  return NextResponse.json({ debate });
+    return NextResponse.json({ debate });
   });
 }

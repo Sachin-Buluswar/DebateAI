@@ -46,7 +46,8 @@ const StreamingAudioPlayer = ({ audioQueue, setAudioQueue }: StreamingAudioPlaye
       try {
         sourceBufferRef.current.appendBuffer(buffer);
       } catch (err) {
-        console.error('Error appending audio buffer:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Error appending audio buffer:', err);
         // Attempt to recover by resetting the media source
         resetMediaSource();
       }

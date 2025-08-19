@@ -21,7 +21,8 @@ export async function createRealtimeConnection(config: RealtimeConfig = {}): Pro
     process.env.NEXT_PUBLIC_USE_SUPABASE_REALTIME === 'true';
 
   if (shouldUseSupabase) {
-    console.log('Using Supabase Realtime for WebSocket connection');
+    // PRODUCTION: Console disabled
+    // console.log('Using Supabase Realtime for WebSocket connection');
     
     // Get current user
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -39,7 +40,8 @@ export async function createRealtimeConnection(config: RealtimeConfig = {}): Pro
     
     return adapter;
   } else {
-    console.log('Using Socket.IO for WebSocket connection');
+    // PRODUCTION: Console disabled
+    // console.log('Using Socket.IO for WebSocket connection');
     // Use traditional Socket.IO
     return await createSocketIO(config.token);
   }

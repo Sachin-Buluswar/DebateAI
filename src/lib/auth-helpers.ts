@@ -1,29 +1,46 @@
 /**
  * Get the correct redirect URL based on environment
- * In production, uses NEXT_PUBLIC_SITE_URL
- * In development, uses window.location.origin
+ * Handles multiple environment variable patterns for maximum compatibility
  */
 export function getRedirectUrl(path: string = ''): string {
   // For server-side rendering or when window is not available
   if (typeof window === 'undefined') {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    // Try multiple environment variables in order of preference
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                   process.env.NEXT_PUBLIC_APP_URL ||
+                   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+    
     if (siteUrl) {
-      return `${siteUrl}${path}`;
+      // Ensure URL doesn't have trailing slash and path doesn't have leading slash duplication
+      const baseUrl = siteUrl.replace(/\/$/, '');
+      const cleanPath = path.startsWith('/') ? path : `/${path}`;
+      return `${baseUrl}${cleanPath}`;
     }
-    // Fallback for server-side
-    return `https://erisdebate.com${path}`;
+    
+    // Production fallback
+    if (process.env.NODE_ENV === 'production') {
+      return `https://erisdebate.com${path}`;
+    }
+    
+    // Development fallback
+    return `http://localhost:3001${path}`;
   }
 
-  // For client-side
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  // For client-side - try environment variables first
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                 process.env.NEXT_PUBLIC_APP_URL;
   
-  // In production, always use the configured site URL
+  // In production, prefer configured URLs
   if (siteUrl && process.env.NODE_ENV === 'production') {
-    return `${siteUrl}${path}`;
+    const baseUrl = siteUrl.replace(/\/$/, '');
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${cleanPath}`;
   }
   
-  // In development or if SITE_URL is not set, use current origin
-  return `${window.location.origin}${path}`;
+  // Use current origin as fallback (works in all environments)
+  const baseUrl = window.location.origin;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${cleanPath}`;
 }
 
 /**

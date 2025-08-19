@@ -36,8 +36,9 @@ import * as Recharts from 'recharts';
 
 // Add global error handler to catch unhandled errors
 if (typeof window !== 'undefined') {
-  window.onerror = function (message, source, lineno, colno, error) {
-    console.log('Global error caught:', { message, source, lineno, colno, error });
+  window.onerror = function (_message, _source, _lineno, _colno, _error) {
+    // PRODUCTION: Console disabled
+    // console.log('Global error caught:', { message, source, lineno, colno, error });
     return false;
   };
 }
@@ -101,11 +102,13 @@ export default function Dashboard() {
             setDebateHistory(fetchedDebates);
           } else if (debatesError.code !== '42P01') {
             // Error that's not "table doesn't exist" - show error
-            console.error('Error fetching debates:', debatesError);
+            // PRODUCTION: Console disabled
+            // console.error('Error fetching debates:', debatesError);
             setError('Failed to load debates. Please try refreshing the page.');
           }
-        } catch (debateError) {
-          console.error('Exception fetching debates:', debateError);
+        } catch (_debateError) {
+          // PRODUCTION: Console disabled
+          // console.error('Exception fetching debates:', debateError);
         }
 
         try {
@@ -123,7 +126,8 @@ export default function Dashboard() {
             setSpeechHistory(fetchedSpeeches);
           } else if (speechError.code !== '42P01') {
             // Error that's not "table doesn't exist" - show error
-            console.error('Error fetching speech feedback:', speechError);
+            // PRODUCTION: Console disabled
+            // console.error('Error fetching speech feedback:', speechError);
             setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
           }
 
@@ -251,11 +255,13 @@ export default function Dashboard() {
               setHighestScore(null);
               setScoreTrendData([]);
             }
-        } catch (speechError) {
-          console.error('Exception fetching speech feedback:', speechError);
+        } catch (_speechError) {
+          // PRODUCTION: Console disabled
+          // console.error('Exception fetching speech feedback:', speechError);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
+      } catch (_error) {
+        // PRODUCTION: Console disabled
+        // console.error('Error fetching user data:', error);
         setError('An unexpected error occurred. Please try again later.');
       } finally {
         setLoading(false);
@@ -267,7 +273,8 @@ export default function Dashboard() {
     // Add a safeguard against infinite loading
     const loadingTimeout = setTimeout(() => {
       if (loading) {
-        console.error('Dashboard loading timed out');
+        // PRODUCTION: Console disabled
+        // console.error('Dashboard loading timed out');
         setLoading(false);
         setError(
           'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.'

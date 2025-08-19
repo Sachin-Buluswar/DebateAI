@@ -63,12 +63,6 @@ const nextConfig = {
     ],
   },
   
-  // Configure API specific settings
-  api: {
-    bodyParser: {
-      sizeLimit: '30mb', // Set the body size limit to 30MB for large audio/document uploads
-    },
-  },
 };
 
 // Sentry configuration options

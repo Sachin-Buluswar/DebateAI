@@ -19,10 +19,12 @@ const withRetry = async <T>(fn: () => Promise<T>, label: string, maxAttempts = 3
     } catch (err) {
       attempt += 1;
       if (attempt >= maxAttempts) {
-        console.error(`[searchVectorStore] ${label} failed after ${attempt} attempts.`);
+        // PRODUCTION: Console disabled
+        // console.error(`[searchVectorStore] ${label} failed after ${attempt} attempts.`);
         throw err;
       }
-      console.warn(`[searchVectorStore] ${label} failed (attempt ${attempt}). Retrying in ${delay}ms ...`, err);
+      // PRODUCTION: Console disabled
+      // console.warn(`[searchVectorStore] ${label} failed (attempt ${attempt}). Retrying in ${delay}ms ...`, err);
       await new Promise((r) => setTimeout(r, delay));
       delay *= 2; // exponential backoff
     }
@@ -47,7 +49,8 @@ export const searchVectorStore = async (
   query: string,
   maxResults: number = 5 // Default top_k
 ): Promise<SearchResult[]> => {
-  console.log(`[searchVectorStore] Querying vector store ${vectorStoreId} with: "${query}" (top_k=${maxResults})`);
+  // PRODUCTION: Console disabled
+  // console.log(`[searchVectorStore] Querying vector store ${vectorStoreId} with: "${query}" (top_k=${maxResults})`);
 
   // -------- Primary: Assistant + file_search tool (production implementation) --------
   try {
@@ -148,7 +151,8 @@ export const searchVectorStore = async (
     }
 
     const limited = aggregated.slice(0, maxResults);
-    console.log(`[searchVectorStore] Assistant search produced ${limited.length} results.`);
+    // PRODUCTION: Console disabled
+    // console.log(`[searchVectorStore] Assistant search produced ${limited.length} results.`);
 
     // Cleanup temp resources
     await openai.beta.threads.delete(thread.id).catch(() => {});
@@ -157,10 +161,12 @@ export const searchVectorStore = async (
     return limited;
     
   } catch (assistErr) {
-    console.error('[searchVectorStore] Assistant-based search failed:', assistErr);
+    // PRODUCTION: Console disabled
+    // console.error('[searchVectorStore] Assistant-based search failed:', assistErr);
     
     // -------- Fallback: Return informative error results --------
-    console.log('[searchVectorStore] Falling back to error results');
+    // PRODUCTION: Console disabled
+    // console.log('[searchVectorStore] Falling back to error results');
     const fallbackResults: SearchResult[] = [
       {
         content: `Search temporarily unavailable for "${query}". The system is experiencing technical difficulties with the vector store. Please try again later or contact support if the issue persists.`,

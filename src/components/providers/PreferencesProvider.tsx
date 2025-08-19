@@ -54,7 +54,8 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } catch (err) {
-        console.error('Error fetching preferences:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Error fetching preferences:', err);
       } finally {
         setLoading(false);
       }
@@ -79,7 +80,8 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
         }, { onConflict: 'user_id' });
       }
     } catch (err) {
-      console.error('Error saving preference:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Error saving preference:', err);
     }
   };
 

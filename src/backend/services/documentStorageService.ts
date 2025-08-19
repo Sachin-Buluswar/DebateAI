@@ -34,7 +34,8 @@ export class DocumentStorageService {
 
       return { url: publicUrl, path };
     } catch (error) {
-      console.error('Error uploading PDF:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Error uploading PDF:', error);
       throw error;
     }
   }

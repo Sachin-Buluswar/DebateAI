@@ -33,7 +33,8 @@ export class OpenCaseListScraper {
     let browser;
     
     try {
-      console.log('Starting OpenCaseList scraping...');
+      // PRODUCTION: Console disabled
+      // console.log('Starting OpenCaseList scraping...');
       
       browser = await puppeteer.launch({
         headless: true,
@@ -53,7 +54,8 @@ export class OpenCaseListScraper {
       
       // Get all wiki file links
       const wikiLinks = await this.extractWikiLinks(page);
-      console.log(`Found ${wikiLinks.length} wiki files to scrape`);
+      // PRODUCTION: Console disabled
+      // console.log(`Found ${wikiLinks.length} wiki files to scrape`);
       
       // Process each wiki file
       for (const link of wikiLinks) {
@@ -61,7 +63,8 @@ export class OpenCaseListScraper {
       }
       
     } catch (error) {
-      console.error('Scraping error:', error);
+      // PRODUCTION: Console disabled
+      // console.error('Scraping error:', error);
       throw error;
     } finally {
       if (browser) {
@@ -71,7 +74,8 @@ export class OpenCaseListScraper {
   }
 
   private async login(page: Page): Promise<void> {
-    console.log('Logging in to OpenCaseList...');
+    // PRODUCTION: Console disabled
+    // console.log('Logging in to OpenCaseList...');
     
     // Go to login page
     await page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle2' });
@@ -86,7 +90,9 @@ export class OpenCaseListScraper {
       page.click('button[type="submit"]')
     ]);
     
-    console.log('Login successful');
+    // PRODUCTION: Console disabled
+    
+    // console.log('Login successful');
   }
 
   private async extractWikiLinks(page: Page): Promise<string[]> {
@@ -110,7 +116,9 @@ export class OpenCaseListScraper {
       const fullUrl = fileLink.startsWith('http') ? fileLink : `${this.baseUrl}${fileLink}`;
       const fileName = path.basename(fileLink);
       
-      console.log(`Processing: ${fileName}`);
+      // PRODUCTION: Console disabled
+      
+      // console.log(`Processing: ${fileName}`);
       
       // Check if already processed
       const { data: existingLog } = await supabase
@@ -121,7 +129,8 @@ export class OpenCaseListScraper {
         .single();
       
       if (existingLog) {
-        console.log(`Skipping ${fileName} - already processed`);
+        // PRODUCTION: Console disabled
+        // console.log(`Skipping ${fileName} - already processed`);
         return;
       }
       
@@ -172,10 +181,13 @@ export class OpenCaseListScraper {
         })
         .eq('id', scrapeLog.id);
       
-      console.log(`Successfully processed: ${fileName}`);
+      // PRODUCTION: Console disabled
+      
+      // console.log(`Successfully processed: ${fileName}`);
       
     } catch (error) {
-      console.error(`Error processing ${fileLink}:`, error);
+      // PRODUCTION: Console disabled
+      // console.error(`Error processing ${fileLink}:`, error);
       
       // Log failure
       await supabase

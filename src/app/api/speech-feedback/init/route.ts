@@ -25,8 +25,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
+import { addSecurityHeaders } from '@/middleware/inputValidation';
 
 /**
  * Sanitize session ID to prevent directory traversal attacks
@@ -80,44 +82,62 @@ export async function POST(req: NextRequest) {
   // This prevents abuse and ensures fair resource usage
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
     try {
+      // Check authentication first
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to upload speech' },
+            { status: 401 }
+          )
+        );
+      }
+      
       // PRODUCTION: Logging disabled
 // console.log('[init] Starting upload session initialization');
 
-    // Parse the request body
-    const data = await req.json();
-    const { 
-      filename, 
-      contentType, 
-      totalSize, 
-      totalChunks, 
-      sessionId,
-      userId,
-      topic, 
-      speechType, 
-      userSide,
-      skillLevel,
-      customInstructions
-    } = data;
+      // Parse the request body
+      const data = await req.json();
+      const { 
+        filename, 
+        contentType, 
+        totalSize, 
+        totalChunks, 
+        sessionId,
+        topic, 
+        speechType, 
+        userSide,
+        skillLevel,
+        customInstructions
+      } = data;
+      
+      // Use authenticated user's ID, not client-provided
+      const userId = user.id;
 
-    // Validate required fields
-    // These fields are essential for:
-    // - filename/contentType: Proper file handling and type validation
-    // - totalSize/totalChunks: Tracking upload progress and validation
-    // - sessionId: Linking chunks to the correct upload session
-    // - userId: Authorization and feedback association
-    // - topic/speechType/userSide: Context for AI feedback generation
-    if (!filename || !contentType || !totalSize || !totalChunks || !sessionId || !userId || !topic || !speechType || !userSide) {
-      // Custom instructions are optional, so not validated here
-      return NextResponse.json({ error: 'Missing required fields for init' }, { status: 400 });
-    }
+      // Validate required fields
+      // These fields are essential for:
+      // - filename/contentType: Proper file handling and type validation
+      // - totalSize/totalChunks: Tracking upload progress and validation
+      // - sessionId: Linking chunks to the correct upload session
+      // - topic/speechType/userSide: Context for AI feedback generation
+      if (!filename || !contentType || !totalSize || !totalChunks || !sessionId || !topic || !speechType || !userSide) {
+        // Custom instructions are optional, so not validated here
+        return addSecurityHeaders(
+          NextResponse.json({ error: 'Missing required fields for init' }, { status: 400 })
+        );
+      }
 
-    // Sanitize session ID
-    const sanitizedSessionId = sanitizeSessionId(sessionId);
-    if (sanitizedSessionId !== sessionId) {
-      // PRODUCTION: Logging disabled
+      // Sanitize session ID
+      const sanitizedSessionId = sanitizeSessionId(sessionId);
+      if (sanitizedSessionId !== sessionId) {
+        // PRODUCTION: Logging disabled
 // console.warn(`[init] Invalid session ID format: ${sessionId}`);
-      return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
-    }
+        return addSecurityHeaders(
+          NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 })
+        );
+      }
 
     // Create session metadata
     // This metadata object tracks everything needed to:
@@ -148,24 +168,28 @@ export async function POST(req: NextRequest) {
     // - Sessions auto-expire after 30 minutes to prevent memory leaks
     await UploadSessionStore.createSession(sanitizedSessionId, metadata);
 
-    // Return success response with session ID
-    // Client will use this sessionId for all subsequent chunk uploads
-    return NextResponse.json({
-      success: true,
-      sessionId,
-      message: 'Upload session initialized'
-    });
-  } catch (error) {
-    // Log the full error for debugging
-    // PRODUCTION: Logging disabled
+      // Return success response with session ID
+      // Client will use this sessionId for all subsequent chunk uploads
+      return addSecurityHeaders(
+        NextResponse.json({
+          success: true,
+          sessionId,
+          message: 'Upload session initialized'
+        })
+      );
+    } catch (error) {
+      // Log the full error for debugging
+      // PRODUCTION: Logging disabled
 // console.error('Error initializing chunked upload:', error);
-    
-    // Return a sanitized error response
-    // In production, we don't expose internal error details
-    return NextResponse.json({ 
-      error: 'Failed to initialize upload session',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+      
+      // Return a sanitized error response
+      // In production, we don't expose internal error details
+      return addSecurityHeaders(
+        NextResponse.json({ 
+          error: 'Failed to initialize upload session',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 })
+      );
   }
   });
 } 

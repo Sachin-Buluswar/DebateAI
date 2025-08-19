@@ -28,6 +28,7 @@ export async function playTextToSpeech(text: string): Promise<void> {
     };
 
   } catch (error) {
-    console.error('Error playing text to speech:', error);
+    // PRODUCTION: Console disabled
+    // console.error('Error playing text to speech:', error);
   }
 } 

@@ -67,7 +67,8 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
       .list(userId);
     
     if (error) {
-      console.error('[speechFeedbackService] Error fetching storage:', error);
+      // PRODUCTION: Console disabled
+      // console.error('[speechFeedbackService] Error fetching storage:', error);
       return 0;
     }
     
@@ -78,7 +79,8 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
     
     return totalBytes;
   } catch (error) {
-    console.error('[speechFeedbackService] Storage calculation error:', error);
+    // PRODUCTION: Console disabled
+    // console.error('[speechFeedbackService] Storage calculation error:', error);
     return 0;
   }
 }
@@ -96,8 +98,7 @@ Adjust your feedback for a beginner:
 - Focus on fundamental skills: structure, clarity, time management, basic argumentation
 - Be HIGHLY encouraging - celebrate effort and small improvements enthusiastically
 - Typical scoring range: 26-28 (only go below 26 for serious issues, rarely above 28)
-- Provide very detailed step-by-step instructions in all suggestions
-- Example good feedback: "Great job making eye contact! To improve, try pausing for 2 seconds after each main point to let it sink in."
+- Example good feedback: "Great job making eye contact! Your pauses after main points were effective."
 - Avoid overwhelming with advanced strategy or complex debate theory
 - Emphasize progress: "You're building important skills!"
 - Focus on 2-3 main improvements rather than listing many issues`,
@@ -110,8 +111,7 @@ Adjust your feedback for developing skills:
 - Balance fundamentals with strategic thinking
 - Mix encouragement with constructive criticism equally
 - Typical scoring range: 26-29 (use most of the range appropriately)
-- Provide clear but concise implementation steps
-- Example: "Your link chain needs strengthening - add an internal link between economic decline and conflict. Practice by writing out each step of causation."
+- Example: "Your link chain needs strengthening between economic decline and conflict."
 - Introduce advanced concepts gradually with explanations
 - Emphasize growth: "You're ready to take your skills to the next level!"
 - Can handle 4-5 areas for improvement`,
@@ -124,8 +124,8 @@ Adjust your feedback for competitive excellence:
 - Focus on nuanced strategy, marginal gains, and advanced techniques
 - Be direct and critically honest while remaining constructive
 - Use full scoring range: 25-30 (apply high standards consistently)
-- Provide strategic insights and advanced tactical suggestions
-- Example: "Your probabilistic weighing in the 2AR failed to engage their delink on structural violence - consider preempting this in summary"
+- Provide strategic insights and advanced analysis
+- Example: "Your probabilistic weighing in the 2AR failed to engage their delink on structural violence"
 - Compare to top tournament performances when relevant
 - Emphasize refinement: "These adjustments will give you a competitive edge"
 - Can handle comprehensive critique across all areas`
@@ -146,8 +146,7 @@ Based on the identified weaknesses, create basic exercises:
 - Make instructions VERY detailed with examples  
 - Each exercise 5-10 minutes
 - Include encouragement
-- Example exercise: "Basic Flowing Drill: 1) Get a notebook, 2) Draw 4 columns for each speaker, 3) Watch a sample speech and write one key word per argument, 4) Practice daily for 10 minutes"
-- Weekly goals should be achievable and build confidence`,
+- Example exercise: "Basic Flowing Drill: 1) Get a notebook, 2) Draw 4 columns for each speaker, 3) Watch a sample speech and write one key word per argument, 4) Practice daily for 10 minutes"`,
     
     intermediate: `
 TRAINING PLAN FOR INTERMEDIATE (Generate 3-4 exercises):
@@ -156,8 +155,7 @@ Based on the identified weaknesses, create targeted exercises:
 - Balance detail with assumed knowledge
 - Each exercise 10-15 minutes  
 - Include self-assessment metrics
-- Example exercise: "Impact Weighing Drill: 1) List 3 impacts from your case, 2) Compare on magnitude/probability/timeframe, 3) Write 30-second weighing overview, 4) Record and refine"
-- Weekly goals should push consistent improvement`,
+- Example exercise: "Impact Weighing Drill: 1) List 3 impacts from your case, 2) Compare on magnitude/probability/timeframe, 3) Write 30-second weighing overview, 4) Record and refine"`,
     
     advanced: `
 TRAINING PLAN FOR ADVANCED (Generate 3-5 exercises):
@@ -166,8 +164,7 @@ Based on the identified weaknesses, create sophisticated exercises:
 - Be concise but strategic
 - Each exercise 15-20 minutes
 - Include tournament prep elements
-- Example exercise: "Crystallization Practice: 1) Identify 2 key voters, 2) Write 90-second overview, 3) Include offensive/defensive balance, 4) Practice at tournament speed"
-- Weekly goals should target tournament success`
+- Example exercise: "Crystallization Practice: 1) Identify 2 key voters, 2) Write 90-second overview, 3) Include offensive/defensive balance, 4) Practice at tournament speed"`
   };
   
   return trainingInstructions[skillLevel] || trainingInstructions.intermediate;
@@ -248,13 +245,6 @@ IMPORTANT SCORING GUIDELINES:
 - Consider ALL aspects: content, delivery, strategy, and execution
 - Be honest and fair - inflated scores don't help students improve
 
-IMPORTANT: For ALL suggestions, provide detailed HOW-TO instructions, not just WHAT to improve. Each suggestion must include:
-1. The specific technique or method (WHAT)
-2. Step-by-step instructions (HOW - be very specific with 2-3 clear steps)
-3. When to use it (WHEN - in what context or speech section)
-4. A practice drill or exercise (PRACTICE - specific activity with frequency/duration)
-
-Example format: "HOW TO improve signposting: 1) Start each contention with 'My [first/second] argument is...', 2) Use transitional phrases like 'This matters because...', 3) Practice by recording your contentions with clear markers. Do this drill for 10 minutes before each practice round."
 
 Analyze the transcription and provide feedback in JSON format with these exact fields:
 {
@@ -263,57 +253,33 @@ Analyze the transcription and provide feedback in JSON format with these exact f
   "overallSummary": "2-3 paragraph comprehensive summary of the speech performance, highlighting key strengths and areas for improvement",
   "structureOrganization": {
     "analysis": "Detailed analysis of speech structure, flow, transitions, and organization",
-    "examples": ["Specific example from speech showing good/poor structure", "Another example"],
-    "suggestions": [
-      "Detailed HOW-TO instruction with specific steps. Include: 1) WHAT to do, 2) HOW to do it (2-3 steps), 3) WHEN to use it, 4) Practice tip",
-      "Another detailed suggestion following same format"
-    ]
+    "examples": ["Specific example from speech showing good/poor structure", "Another example"]
   },
   "argumentationEvidence": {
     "analysis": "Detailed analysis of argument quality, evidence use, warrants, and logical reasoning",
-    "examples": ["Quote or paraphrase showing strong/weak argumentation", "Example of evidence use"],
-    "suggestions": [
-      "Detailed HOW-TO for stronger arguments. Include: 1) WHAT to improve, 2) HOW (2-3 specific steps), 3) WHEN to apply, 4) Practice drill",
-      "Specific technique for evidence usage with step-by-step instructions and practice method"
-    ]
+    "examples": ["Quote or paraphrase showing strong/weak argumentation", "Example of evidence use"]
   },
   "clarityConciseness": {
     "analysis": "Analysis of clarity, word economy, avoiding redundancy, and message precision",
-    "examples": ["Example of clear/unclear communication from the speech", "Instance of redundancy"],
-    "suggestions": [
-      "HOW TO improve clarity: 1) Use signposting ('First', 'Second'), 2) State claim before evidence, 3) Practice with 30-second summaries daily",
-      "TECHNIQUE for conciseness: 1) Remove filler words, 2) Use active voice, 3) Drill by recording and re-recording same argument in less time"
-    ]
+    "examples": ["Example of clear/unclear communication from the speech", "Instance of redundancy"]
   },
   "persuasivenessImpact": {
     "analysis": "Analysis of persuasive techniques, impact calculus, and emotional appeal",
-    "examples": ["Example of effective/ineffective persuasion", "Impact comparison attempt"],
-    "suggestions": [
-      "PERSUASION METHOD: 1) Start with impact, 2) Use comparative language ('more important than...'), 3) Practice with weighing drills - 5 min daily",
-      "IMPACT FRAMING: 1) Quantify impacts, 2) Use timeframe/probability/magnitude, 3) Practice explaining why your impact outweighs in 30 seconds"
-    ]
+    "examples": ["Example of effective/ineffective persuasion", "Impact comparison attempt"]
   },
   "deliveryStyle": {
     "analysis": "Analysis of speaking pace, tone variation, confidence, and vocal delivery",
-    "examples": ["Noted delivery characteristic", "Specific moment of strong/weak delivery"],
-    "suggestions": [
-      "DELIVERY DRILL: 1) Record yourself, 2) Mark pauses with // in script, 3) Practice varying pace - slow for impacts, faster for rebuttals",
-      "VOCAL TECHNIQUE: 1) Stand while practicing, 2) Project to back wall, 3) Do tongue twisters before rounds for articulation"
-    ]
+    "examples": ["Noted delivery characteristic", "Specific moment of strong/weak delivery"]
   },
   "relevanceToSpeechType": {
     "analysis": "How well the speech fulfilled the specific requirements of a ${speechType}",
-    "examples": ["Example showing understanding/misunderstanding of speech type", "Another example"],
-    "suggestions": [
-      "SPEECH TYPE MASTERY: 1) Template the structure, 2) Time each section precisely, 3) Practice transitions between sections 10x before rounds",
-      "KEY ELEMENTS CHECKLIST: 1) Create a pre-round checklist, 2) Review after each practice, 3) Record yourself hitting all elements in order"
-    ]
+    "examples": ["Example showing understanding/misunderstanding of speech type", "Another example"]
   },
   "actionableSuggestions": [
-    "TOP PRIORITY - Include specific HOW-TO: What skill needs work + 3-step practice plan + daily 10-minute drill",
-    "SECOND PRIORITY - Actionable technique: Specific weakness + method to address + practice frequency (e.g., 'before each round')",
-    "THIRD PRIORITY - Targeted improvement: Area to develop + exercise/drill + success metric to track progress",
-    "LONG-TERM GOAL - Strategic development: Advanced skill + monthly milestone + specific resources or exercises to use"
+    "Top priority: Most important thing to work on",
+    "Second priority: Next area for improvement",
+    "Third priority: Additional improvement area",
+    "Long-term goal: Skill to develop over time"
   ],
   "strengths": [
     "First key strength demonstrated",
@@ -340,13 +306,7 @@ Analyze the transcription and provide feedback in JSON format with these exact f
         "example": "Brief example of successful execution",
         "metrics": ["How to measure improvement", "Success indicators"]
       }
-    ],
-    "weeklyGoals": [
-      "Specific goal 1 for this week",
-      "Specific goal 2 for this week",
-      "Specific goal 3 for this week"
-    ],
-    "progressTracking": "How to measure overall improvement over time"
+    ]
   }
 }`
 }
@@ -359,7 +319,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Sanitize filename for logging (prevent log injection)
   const sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
-  console.log(`[speechFeedbackService] Processing ${sanitizedFilename} for user ${userId}`);
+  // PRODUCTION: Console disabled
+  // console.log(`[speechFeedbackService] Processing ${sanitizedFilename} for user ${userId}`);
   
   // Validate file size
   if (audioBuffer.length > MAX_UPLOAD_SIZE_BYTES) {
@@ -384,7 +345,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Get actual audio duration using improved detection
   const durationSeconds = await getAudioDuration(tempFilePath);
-  console.log(`[speechFeedbackService] Detected audio duration: ${durationSeconds} seconds`);
+  // PRODUCTION: Console disabled
+  // console.log(`[speechFeedbackService] Detected audio duration: ${durationSeconds} seconds`);
   
   // Validate duration
   const durationMinutes = durationSeconds / 60;
@@ -429,7 +391,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Handle large files without transcription
   if (processedFileSize > WHISPER_MAX_BYTES) {
-    console.warn(`[speechFeedbackService] File too large for transcription (${processedFileSize} bytes)`);
+    // PRODUCTION: Console disabled
+    // console.warn(`[speechFeedbackService] File too large for transcription (${processedFileSize} bytes)`);
     
     const { data: insertedRecord, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
@@ -526,33 +489,27 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       overallSummary: `Unable to provide AI analysis - OpenAI API not configured. Manual review recommended for speech about ${topic}.`,
       structureOrganization: {
         analysis: "API configuration required for detailed feedback",
-        examples: [],
-        suggestions: []
+        examples: []
       },
       argumentationEvidence: {
         analysis: "API configuration required for detailed feedback",
-        examples: [],
-        suggestions: []
+        examples: []
       },
       clarityConciseness: {
         analysis: "API configuration required for detailed feedback",
-        examples: [],
-        suggestions: []
+        examples: []
       },
       persuasivenessImpact: {
         analysis: "API configuration required for detailed feedback",
-        examples: [],
-        suggestions: []
+        examples: []
       },
       deliveryStyle: {
         analysis: "API configuration required for detailed feedback",
-        examples: [],
-        suggestions: []
+        examples: []
       },
       relevanceToSpeechType: {
         analysis: "API configuration required for detailed feedback",
-        examples: [],
-        suggestions: []
+        examples: []
       },
       actionableSuggestions: ["Configure OpenAI API key to enable AI-powered feedback"],
       strengths: ["Unable to analyze without API"],
@@ -617,33 +574,27 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
           overallSummary: 'AI feedback generated but could not be parsed properly. Please try uploading your speech again.',
           structureOrganization: {
             analysis: "Unable to parse detailed feedback",
-            examples: [],
-            suggestions: []
+            examples: []
           },
           argumentationEvidence: {
             analysis: "Unable to parse detailed feedback",
-            examples: [],
-            suggestions: []
+            examples: []
           },
           clarityConciseness: {
             analysis: "Unable to parse detailed feedback",
-            examples: [],
-            suggestions: []
+            examples: []
           },
           persuasivenessImpact: {
             analysis: "Unable to parse detailed feedback",
-            examples: [],
-            suggestions: []
+            examples: []
           },
           deliveryStyle: {
             analysis: "Unable to parse detailed feedback",
-            examples: [],
-            suggestions: []
+            examples: []
           },
           relevanceToSpeechType: {
             analysis: "Unable to parse detailed feedback",
-            examples: [],
-            suggestions: []
+            examples: []
           },
           actionableSuggestions: ["Please try uploading your speech again"],
           strengths: ["Unable to parse feedback"],
@@ -651,7 +602,8 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         };
     }
   } catch (error) {
-      console.error('[speechFeedbackService] AI feedback generation failed:', error);
+      // PRODUCTION: Console disabled
+      // console.error('[speechFeedbackService] AI feedback generation failed:', error);
       feedback = {
         speakerScore: 25, // Minimum NSDA score
         standardizedScore: 0, // 0% standardized
@@ -659,33 +611,27 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         overallSummary: `Speech analysis failed due to API error. Basic assessment: Speech about ${topic} was recorded successfully.`,
         structureOrganization: {
           analysis: "Unable to analyze due to API error",
-          examples: [],
-          suggestions: []
+          examples: []
         },
         argumentationEvidence: {
           analysis: "Unable to analyze due to API error",
-          examples: [],
-          suggestions: []
+          examples: []
         },
         clarityConciseness: {
           analysis: "Unable to analyze due to API error",
-          examples: [],
-          suggestions: []
+          examples: []
         },
         persuasivenessImpact: {
           analysis: "Unable to analyze due to API error",
-          examples: [],
-          suggestions: []
+          examples: []
         },
         deliveryStyle: {
           analysis: "Unable to analyze due to API error",
-          examples: [],
-          suggestions: []
+          examples: []
         },
         relevanceToSpeechType: {
           analysis: "Unable to analyze due to API error",
-          examples: [],
-          suggestions: []
+          examples: []
         },
         actionableSuggestions: ["Please try again later or contact support"],
         strengths: ["Unable to analyze"],
@@ -700,7 +646,9 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     const standardizedScore = extractScoreFromFeedback(feedback) || 0;
     const overallScore = Math.round(standardizedScore); // Round for integer column
     
-    console.log(`[speechFeedbackService] Storing feedback with standardized score: ${overallScore}%`);
+    // PRODUCTION: Console disabled
+    
+    // console.log(`[speechFeedbackService] Storing feedback with standardized score: ${overallScore}%`);
     
     const { data, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
@@ -724,15 +672,18 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       .single();
     
     if (dbError) {
-      console.error('[speechFeedbackService] Database save failed:', dbError);
+      // PRODUCTION: Console disabled
+      // console.error('[speechFeedbackService] Database save failed:', dbError);
       // Continue with execution but use a mock ID
       insertedRecord = { id: `temp-feedback-${Date.now()}` };
     } else {
       insertedRecord = data;
-      console.log('[speechFeedbackService] Feedback saved to database successfully');
+      // PRODUCTION: Console disabled
+      // console.log('[speechFeedbackService] Feedback saved to database successfully');
     }
   } catch (error) {
-    console.error('[speechFeedbackService] Database operation failed:', error);
+    // PRODUCTION: Console disabled
+    // console.error('[speechFeedbackService] Database operation failed:', error);
     insertedRecord = { id: `temp-feedback-${Date.now()}` };
   }
   

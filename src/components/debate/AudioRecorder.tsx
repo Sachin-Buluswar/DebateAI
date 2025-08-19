@@ -29,7 +29,8 @@ export default function AudioRecorder({ onTranscription, disabled = false, onRec
             setIsRecording(true);
         } catch (err) {
             setError('Could not access microphone. Please grant permission.');
-            console.error('Error getting user media:', err);
+            // PRODUCTION: Console disabled
+            // console.error('Error getting user media:', err);
         }
     };
 
@@ -64,7 +65,8 @@ export default function AudioRecorder({ onTranscription, disabled = false, onRec
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
             setError(errorMessage);
-            console.error('Error sending audio:', err);
+            // PRODUCTION: Console disabled
+            // console.error('Error sending audio:', err);
         } finally {
             audioChunks.length = 0; // Clear chunks for next recording
         }

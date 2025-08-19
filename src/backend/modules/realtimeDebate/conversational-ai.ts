@@ -28,7 +28,8 @@ export class ConversationalAIService {
     this.ws = new WebSocket(url);
 
     this.ws.on('open', () => {
-      console.log('Connected to ElevenLabs Conversational AI');
+      // PRODUCTION: Console disabled
+      // console.log('Connected to ElevenLabs Conversational AI');
       this.options.onOpen?.();
     });
 
@@ -38,12 +39,14 @@ export class ConversationalAIService {
     });
 
     this.ws.on('error', (error) => {
-      console.error('ElevenLabs Conversational AI Error:', error);
+      // PRODUCTION: Console disabled
+      // console.error('ElevenLabs Conversational AI Error:', error);
       this.options.onError?.(error);
     });
 
     this.ws.on('close', () => {
-      console.log('Disconnected from ElevenLabs Conversational AI');
+      // PRODUCTION: Console disabled
+      // console.log('Disconnected from ElevenLabs Conversational AI');
       this.options.onClose?.();
       this.ws = null;
     });

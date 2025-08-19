@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
 
     if (checkError && checkError.message.includes('relation')) {
       // Table doesn't exist, let's create it
-      console.log('Creating educational_resources table...');
+      // PRODUCTION: Console disabled
+      // console.log('Creating educational_resources table...');
       
       try {
         // Create the table using raw SQL
@@ -73,7 +74,8 @@ export async function GET(request: NextRequest) {
         });
         
         if (!response.ok) {
-          console.log('REST API approach failed, table might already exist or need manual creation');
+          // PRODUCTION: Console disabled
+          // console.log('REST API approach failed, table might already exist or need manual creation');
           return NextResponse.json({
             error: 'Database tables not created yet',
             message: 'Please run the SQL migration in Supabase dashboard:',
@@ -82,11 +84,14 @@ export async function GET(request: NextRequest) {
           }, { status: 500 });
         }
         
-        console.log('Table created successfully!');
+        // PRODUCTION: Console disabled
+        
+        // console.log('Table created successfully!');
         
         // Continue with the rest of the setup process
       } catch (error) {
-        console.error('Error creating table:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error creating table:', error);
         return NextResponse.json({
           error: 'Database tables not created yet',
           message: 'Please run the SQL migration in Supabase dashboard:',
@@ -130,7 +135,8 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error('Error inserting resource:', insertError);
+      // PRODUCTION: Console disabled
+      // console.error('Error inserting resource:', insertError);
       return NextResponse.json(
         { error: 'Failed to insert initial resource', details: insertError },
         { status: 500 }
@@ -142,7 +148,8 @@ export async function GET(request: NextRequest) {
       resource: newResource
     });
   } catch (error) {
-    console.error('Setup error:', error);
+    // PRODUCTION: Console disabled
+    // console.error('Setup error:', error);
     return NextResponse.json(
       { error: 'Failed to setup resources' },
       { status: 500 }

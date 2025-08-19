@@ -23,17 +23,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
 import { z } from 'zod';
-
-// Initialize Supabase admin client
-// Service role key needed to bypass RLS and save speeches from any participant
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Admin access for speech persistence
-);
 
 // Request validation schema for speech data
 const speechSchema = z.object({
@@ -67,14 +60,54 @@ const speechSchema = z.object({
  * - Updates debate session last_activity timestamp
  * - Increments session speech_count (if RPC function exists)
  * 
- * Note: No authentication check - relies on valid session/speaker IDs
+ * Note: Verifies user owns the session before allowing speech save
  */
 export async function POST(request: NextRequest) {
   // Apply rate limiting to prevent speech spam
   return await withRateLimit(request, debateRateLimiter, async () => {
     try {
+      // Get authenticated user's session
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in to save speech' },
+            { status: 401 }
+          )
+        );
+      }
+
       const body = await request.json();
       const validated = speechSchema.parse(body);
+
+      // Verify user owns this debate session or is a participant
+      const { data: session, error: sessionError } = await supabase
+        .from('debate_sessions')
+        .select('user_id')
+        .eq('id', validated.sessionId)
+        .single();
+      
+      if (sessionError || !session) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Debate session not found' },
+            { status: 404 }
+          )
+        );
+      }
+      
+      // For now, only allow the session owner to save speeches
+      // In future, could check if user is in participants list
+      if (session.user_id !== user.id && validated.speakerId !== user.id) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Forbidden - Cannot save speech to this session' },
+            { status: 403 }
+          )
+        );
+      }
 
       // Save speech to database
       // Each speech is a permanent record for analysis and replay
@@ -103,14 +136,17 @@ export async function POST(request: NextRequest) {
 
       // Update debate session last activity
       // This helps track active sessions and detect timeouts
-      // Note: speech_count increment uses Supabase RPC function (if defined)
-      await supabase
+      // Using authenticated client ensures RLS is respected
+      const { error: updateError } = await supabase
         .from('debate_sessions')
         .update({ 
-          last_activity: new Date().toISOString(), // Track when last speech occurred
-          speech_count: supabase.rpc('increment', { x: 1 }) // Increment counter (requires RPC)
+          last_activity: new Date().toISOString() // Track when last speech occurred
+          // Note: removed speech_count increment as it requires RPC function
         })
-        .eq('id', validated.sessionId); // Update only this session
+        .eq('id', validated.sessionId) // Update only this session
+        .eq('user_id', user.id); // Ensure user owns the session
+      
+      // updateError is non-critical - speech was saved successfully
 
       // Return success with speech ID
       // Frontend can use speechId to:

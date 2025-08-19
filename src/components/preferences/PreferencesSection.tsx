@@ -55,16 +55,19 @@ export default function PreferencesSection() {
             }
           } else if (error.code === 'PGRST116') {
             // Table not found (first time user) - just use defaults
-            console.log('No preferences found for user, using defaults');
+            // PRODUCTION: Console disabled
+            // console.log('No preferences found for user, using defaults');
             setPreferences(defaultPreferences);
           } else {
             // Actual error - show error message
-            console.error('Error fetching preferences:', error);
+            // PRODUCTION: Console disabled
+            // console.error('Error fetching preferences:', error);
             setError('Failed to fetch preferences. Please try refreshing the page.');
           }
         }
       } catch (err) {
-        console.error('Exception fetching preferences:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Exception fetching preferences:', err);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -107,12 +110,14 @@ export default function PreferencesSection() {
         setTimeout(() => setSuccess(false), 3000);
       } else {
         // Error saving preferences
-        console.error('Error saving preferences:', error);
+        // PRODUCTION: Console disabled
+        // console.error('Error saving preferences:', error);
         setError('Failed to save preferences. Please try again.');
         addToast({ message: 'Failed to save preferences. Please try again.', type: 'error' });
       }
     } catch (err) {
-      console.error('Exception saving preferences:', err);
+      // PRODUCTION: Console disabled
+      // console.error('Exception saving preferences:', err);
       setError('An unexpected error occurred');
       addToast({ message: 'Unexpected error saving preferences', type: 'error' });
     } finally {

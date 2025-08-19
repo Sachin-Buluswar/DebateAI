@@ -20,13 +20,33 @@ function AuthPageContent() {
     
     // Check for error parameters from URL (from callback redirects)
     const urlError = searchParams?.get('error');
+    const errorCode = searchParams?.get('code');
     const urlErrorDescription = searchParams?.get('error_description');
     
     if (urlError) {
-      if (urlError === 'access_denied' && urlErrorDescription?.includes('otp_expired')) {
-        setError('Email verification link has expired. Please request a new one.');
-      } else {
-        setError(urlErrorDescription || urlError);
+      // Map error codes to user-friendly messages
+      const errorMessages: Record<string, string> = {
+        'verification_link_expired': 'Your email verification link has expired. Please sign up again to receive a new link.',
+        'auth_code_expired': 'The authentication code has expired. Please try signing in again.',
+        'invalid_auth_code': 'Invalid authentication code. Please try signing in again.',
+        'session_creation_failed': 'Unable to create session. Please try signing in again.',
+        'access_denied': 'Access denied. Please check your credentials and try again.',
+        'invalid_auth_request': 'Invalid authentication request. Please try again.',
+        'session_failed': 'Failed to establish session. Please try signing in again.',
+        'unexpected_error': 'An unexpected error occurred. Please try again or contact support if the issue persists.',
+        'authentication_failed': 'Authentication failed. Please check your credentials and try again.'
+      };
+      
+      // Use specific message if available, otherwise use generic message
+      const message = errorMessages[urlError] || 
+                     (urlErrorDescription || 
+                      `Authentication error: ${urlError}. Please try again or contact support.`);
+      
+      setError(message);
+      
+      // Log error code for debugging (only in development)
+      if (process.env.NODE_ENV === 'development' && errorCode) {
+        // console.log(`[auth] Error code: ${errorCode}, Error: ${urlError}`);
       }
     }
     
@@ -56,7 +76,8 @@ function AuthPageContent() {
             }
           }
         } catch (healthErr) {
-          console.error('Supabase health check exception:', healthErr);
+          // PRODUCTION: Console disabled
+          // console.error('Supabase health check exception:', healthErr);
         }
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -67,7 +88,8 @@ function AuthPageContent() {
         }
         
         if (session) {
-          console.log('[auth] User already logged in, redirecting to dashboard');
+          // PRODUCTION: Console disabled
+          // console.log('[auth] User already logged in, redirecting to dashboard');
           router.push('/dashboard');
           return;
         } else {
@@ -84,13 +106,16 @@ function AuthPageContent() {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
-        console.log('[auth] Auth state changed:', event, session?.user?.email);
+        // PRODUCTION: Console disabled
+        // console.log('[auth] Auth state changed:', event, session?.user?.email);
         
         if (event === 'SIGNED_IN' && session) {
-          console.log('[auth] User signed in, redirecting to dashboard');
+          // PRODUCTION: Console disabled
+          // console.log('[auth] User signed in, redirecting to dashboard');
           router.push('/dashboard');
         } else if (event === 'SIGNED_OUT') {
-          console.log('[auth] User signed out');
+          // PRODUCTION: Console disabled
+          // console.log('[auth] User signed out');
           setLoading(false);
         }
       }

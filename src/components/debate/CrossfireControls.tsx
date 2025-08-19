@@ -19,7 +19,8 @@ const CrossfireController = () => {
         wsRef.current = ws;
 
         ws.onopen = () => {
-            console.log('Connected to crossfire service');
+            // PRODUCTION: Console disabled
+            // console.log('Connected to crossfire service');
             setIsConnecting(false);
             setIsConnected(true);
         };
@@ -32,7 +33,8 @@ const CrossfireController = () => {
         };
 
         ws.onclose = () => {
-            console.log('Disconnected from crossfire service');
+            // PRODUCTION: Console disabled
+            // console.log('Disconnected from crossfire service');
             setIsConnected(false);
             setIsRecording(false);
         };

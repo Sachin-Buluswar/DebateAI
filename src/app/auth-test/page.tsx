@@ -10,9 +10,12 @@ export default function AuthTestPage() {
   
   useEffect(() => {
     setIsClient(true);
-    console.log('Auth test page loaded');
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL || 'undefined');
-    console.log('Supabase Anon Key exists:', Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY));
+    // PRODUCTION: Console disabled
+    // console.log('Auth test page loaded');
+    // PRODUCTION: Console disabled
+    // console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL || 'undefined');
+    // PRODUCTION: Console disabled
+    // console.log('Supabase Anon Key exists:', Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY));
   }, []);
   
   return (

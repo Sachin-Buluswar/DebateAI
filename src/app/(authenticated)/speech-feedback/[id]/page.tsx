@@ -49,7 +49,8 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
       // Reset error state when attempting to play
       setError(null);
       audioRef.current.play().catch(err => {
-        console.error('Playback error:', err);
+        // PRODUCTION: Console disabled
+        // console.error('Playback error:', err);
         setError('Unable to play audio. The file may be corrupted or inaccessible.');
         setIsPlaying(false);
       });
@@ -91,7 +92,8 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
   };
 
   const handleError = () => {
-    console.error('Audio loading error');
+    // PRODUCTION: Console disabled
+    // console.error('Audio loading error');
     setError('Failed to load audio file. The file may be missing or inaccessible.');
     setLoading(false);
   };
@@ -218,7 +220,8 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           .single();
         
         if (feedbackError) {
-          console.error('Error fetching speech feedback:', feedbackError);
+          // PRODUCTION: Console disabled
+          // console.error('Error fetching speech feedback:', feedbackError);
           if (feedbackError.code === 'PGRST116') { // Not found
              setError('Speech feedback not found. It may have been deleted or you may not have permission to view it.');
           } else {
@@ -229,8 +232,9 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         }
         
         setFeedback(feedbackData as SpeechFeedback);
-      } catch (error) {
-        console.error('Error loading feedback details:', error);
+      } catch (_error) {
+        // PRODUCTION: Console disabled
+        // console.error('Error loading feedback details:', error);
         setError('An unexpected error occurred. Please try again later.');
       } finally {
         setLoading(false);
@@ -370,19 +374,6 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           });
         }
         
-        // Add weekly goals
-        if (feedback.feedback.trainingPlan.weeklyGoals && feedback.feedback.trainingPlan.weeklyGoals.length > 0) {
-          content += `#### Weekly Goals\n\n`;
-          feedback.feedback.trainingPlan.weeklyGoals.forEach((goal, i) => {
-            content += `${i + 1}. ${goal}\n`;
-          });
-          content += `\n`;
-        }
-        
-        // Add progress tracking
-        if (feedback.feedback.trainingPlan.progressTracking) {
-          content += `#### Progress Tracking\n\n${feedback.feedback.trainingPlan.progressTracking}\n\n`;
-        }
       }
       
       // Combine all content
@@ -399,7 +390,8 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         });
       } else {
         // Fallback to markdown if PDF export is not supported
-        console.warn('PDF export not supported, falling back to markdown');
+        // PRODUCTION: Console disabled
+        // console.warn('PDF export not supported, falling back to markdown');
         const blob = new Blob([exportContent], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -410,8 +402,9 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch (_error) {
+      // PRODUCTION: Console disabled
+      // console.error('Export failed:', error);
       // Fallback to markdown export on error
       const title = `## Speech Feedback: ${feedback.topic}\n`;
       const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;

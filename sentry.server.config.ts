@@ -134,7 +134,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
 
 // Export utilities for manual error tracking
 export const sentryServer = {
-  captureException: (error: Error, context?: any) => {
+  captureException: (error: Error, context?: Record<string, any>) => {
     if (SENTRY_DSN) {
       Sentry.captureException(error, context);
     }

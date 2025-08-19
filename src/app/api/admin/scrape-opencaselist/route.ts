@@ -1,32 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenCaseListScraper } from '@/backend/services/openCaseListScraper';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
+import { addSecurityHeaders } from '@/middleware/inputValidation';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function POST(request: NextRequest) {
-  try {
-    // Check admin authorization
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-    
-    // Check if user has admin role using RBAC
-    const { data: hasAdminRole } = await supabase
-      .rpc('check_user_role', { required_role: 'admin' });
-    
-    if (!hasAdminRole) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+export async function POST(request: NextRequest): Promise<NextResponse | Response> {
+  return await withRateLimit(request, apiRateLimiter, async () => {
+    try {
+      // Check authentication using server client
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Unauthorized - Please log in' },
+            { status: 401 }
+          )
+        );
+      }
+      
+      // Check if user has admin role in user_roles table
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (roleError || !userRole || (userRole.role !== 'admin' && userRole.role !== 'super_admin')) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Forbidden - Admin access required' },
+            { status: 403 }
+          )
+        );
+      }
 
     const scraper = new OpenCaseListScraper();
 
@@ -36,16 +44,21 @@ export async function POST(request: NextRequest) {
 // console.error('Scraping error:', error);
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Scraping started. Check status endpoint for progress.',
-    });
-  } catch (error) {
-    // PRODUCTION: Logging disabled
+      return addSecurityHeaders(
+        NextResponse.json({
+          success: true,
+          message: 'Scraping started. Check status endpoint for progress.',
+        })
+      );
+    } catch (error) {
+      // PRODUCTION: Logging disabled
 // console.error('Error starting scrape:', error);
-    return NextResponse.json(
-      { error: 'Failed to start scraping' },
-      { status: 500 }
-    );
-  }
+      return addSecurityHeaders(
+        NextResponse.json(
+          { error: 'Failed to start scraping' },
+          { status: 500 }
+        )
+      );
+    }
+  });
 }

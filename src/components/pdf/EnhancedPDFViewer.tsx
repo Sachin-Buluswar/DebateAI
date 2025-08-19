@@ -72,7 +72,8 @@ export function EnhancedPDFViewer({
   };
 
   const onDocumentLoadError = (error: Error) => {
-    console.error('PDF loading error:', error);
+    // PRODUCTION: Console disabled
+    // console.error('PDF loading error:', error);
     setError('Failed to load PDF. Please try downloading the file instead.');
     setLoading(false);
   };

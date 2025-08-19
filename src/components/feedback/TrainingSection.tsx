@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, ClockIcon, AcademicCapIcon, CheckCircleIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, ClockIcon, AcademicCapIcon, ChartBarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/utils/cn';
 
 interface Exercise {
@@ -16,8 +16,6 @@ interface Exercise {
 
 interface TrainingPlan {
   exercises: Exercise[];
-  weeklyGoals?: string[];
-  progressTracking?: string;
 }
 
 interface TrainingSectionProps {
@@ -191,7 +189,7 @@ export default function TrainingSection({ trainingPlan, className }: TrainingSec
 
         {/* Show More/Less Button */}
         {trainingPlan.exercises.length > 2 && (
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center">
             <button
               onClick={() => setShowAllExercises(!showAllExercises)}
               className="px-4 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
@@ -204,46 +202,6 @@ export default function TrainingSection({ trainingPlan, className }: TrainingSec
             </button>
           </div>
         )}
-
-        {/* Weekly Goals */}
-        {trainingPlan.weeklyGoals && trainingPlan.weeklyGoals.length > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-              <CheckCircleIcon className="w-5 h-5 text-blue-500" />
-              Weekly Goals
-            </h3>
-            <ul className="space-y-2">
-              {trainingPlan.weeklyGoals.map((goal, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold text-blue-600 dark:text-blue-400 min-w-[20px]">
-                    {i + 1}.
-                  </span>
-                  <span>{goal}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Progress Tracking */}
-        {trainingPlan.progressTracking && (
-          <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-              <ChartBarIcon className="w-5 h-5 text-gray-500" />
-              How to Track Your Progress
-            </h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              {trainingPlan.progressTracking}
-            </p>
-          </div>
-        )}
-
-        {/* Motivational Footer */}
-        <div className="mt-6 p-4 bg-gradient-to-r from-primary-100 to-secondary-100 dark:from-primary-900/30 dark:to-secondary-900/30 rounded-lg text-center">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            💪 Consistent practice leads to excellence. Complete these exercises regularly to see improvement!
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -12,7 +12,8 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error('Runtime error:', error);
+    // PRODUCTION: Console disabled
+    // console.error('Runtime error:', error);
   }, [error]);
 
   return (
