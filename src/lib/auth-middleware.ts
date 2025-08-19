@@ -47,11 +47,15 @@ export async function requireAuth(
     
     return handler(request as AuthenticatedRequest);
   } catch (error) {
-    authLogger.error('Error checking authentication', { 
-      service: 'auth-middleware',
-      action: 'requireAuth',
-      metadata: { error: error instanceof Error ? error.message : String(error) }
-    });
+    authLogger.error(
+      'Error checking authentication',
+      error instanceof Error ? error : undefined,
+      { 
+        service: 'auth-middleware',
+        action: 'requireAuth',
+        metadata: { errorMessage: error instanceof Error ? error.message : String(error) }
+      }
+    );
     return NextResponse.json(
       { 
         error: 'Authentication error',
@@ -115,11 +119,15 @@ export async function requireAdmin(
     (request as AuthenticatedRequest).user = user;
     return handler(request as AuthenticatedRequest);
   } catch (error) {
-    authLogger.error('Error checking admin role', {
-      service: 'auth-middleware',
-      action: 'requireAdmin',
-      metadata: { error: error instanceof Error ? error.message : String(error) }
-    });
+    authLogger.error(
+      'Error checking admin role',
+      error instanceof Error ? error : undefined,
+      {
+        service: 'auth-middleware',
+        action: 'requireAdmin',
+        metadata: { errorMessage: error instanceof Error ? error.message : String(error) }
+      }
+    );
     return NextResponse.json(
       { 
         error: 'Authorization error',
@@ -205,11 +213,15 @@ export async function hasRole(
     
     return userRoleLevel >= requiredRoleLevel;
   } catch (error) {
-    authLogger.error('Error checking user role', {
-      service: 'auth-middleware',
-      action: 'hasRole',
-      metadata: { error: error instanceof Error ? error.message : String(error) }
-    });
+    authLogger.error(
+      'Error checking user role',
+      error instanceof Error ? error : undefined,
+      {
+        service: 'auth-middleware',
+        action: 'hasRole',
+        metadata: { errorMessage: error instanceof Error ? error.message : String(error) }
+      }
+    );
     return false;
   }
 }
