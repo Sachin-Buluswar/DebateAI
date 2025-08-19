@@ -3,26 +3,23 @@
  * Returns search results directly from the database without using OpenAI Assistant
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import {
   validateRequest,
   validationSchemas,
   addSecurityHeaders,
 } from '@/middleware/inputValidation';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { EnhancedSearchResult } from '@/types/documents';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Perform direct database search for RAG
  */
 async function performDirectRagSearch(
+  supabase: SupabaseClient,
   query: string,
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
@@ -189,80 +186,87 @@ async function performDirectRagSearch(
 /**
  * POST handler for direct RAG search
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
-    try {
-      // Validate request
-      const validation = await validateRequest(request, validationSchemas.wikiSearch, {
-        body: true,
-        sanitize: true,
-      });
+    return requireAuth(request, async (req: AuthenticatedRequest) => {
+      try {
+        // Create authenticated Supabase client that respects RLS
+        const supabase = createClient();
+        
+        // Validate request
+        const validation = await validateRequest(request, validationSchemas.wikiSearch, {
+          body: true,
+          sanitize: true,
+        });
 
-      if (!validation.success) {
+        if (!validation.success) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              {
+                error: 'Invalid request',
+                details: validation.details,
+              },
+              { status: 400 }
+            )
+          );
+        }
+
+        const { query, maxResults = 10 } = validation.data;
+
+        if (query.length < 3) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              {
+                error: 'Search query must be at least 3 characters long',
+              },
+              { status: 400 }
+            )
+          );
+        }
+
+        // Perform direct database search with authenticated client
+        const results = await performDirectRagSearch(
+          supabase,
+          query,
+          Math.min(maxResults, 20)
+        );
+
+        // Always return results, even if empty
         return addSecurityHeaders(
           NextResponse.json(
             {
-              error: 'Invalid request',
-              details: validation.details,
+              success: true,
+              searchType: 'direct-rag',
+              results,
+              query: query.substring(0, 200),
+              maxResults,
+              timestamp: new Date().toISOString(),
+              userId: req.user.id, // Include user ID for audit trail
             },
-            { status: 400 }
+            { status: 200 }
           )
         );
-      }
-
-      const { query, maxResults = 10 } = validation.data;
-
-      if (query.length < 3) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            {
-              error: 'Search query must be at least 3 characters long',
-            },
-            { status: 400 }
-          )
-        );
-      }
-
-      // Perform direct database search
-      const results = await performDirectRagSearch(
-        query,
-        Math.min(maxResults, 20)
-      );
-
-      // Always return results, even if empty
-      return addSecurityHeaders(
-        NextResponse.json(
-          {
-            success: true,
-            searchType: 'direct-rag',
-            results,
-            query: query.substring(0, 200),
-            maxResults,
-            timestamp: new Date().toISOString(),
-          },
-          { status: 200 }
-        )
-      );
-    } catch (error) {
-      // PRODUCTION: Logging disabled
+      } catch (error) {
+        // PRODUCTION: Logging disabled
 // console.error('[direct-rag-search] Error:', error);
 
-      // Return empty results instead of error to prevent UI issues
-      return addSecurityHeaders(
-        NextResponse.json(
-          {
-            success: true,
-            searchType: 'direct-rag',
-            results: [],
-            query: '',
-            maxResults: 10,
-            timestamp: new Date().toISOString(),
-            error: 'Search temporarily unavailable',
-          },
-          { status: 200 }
-        )
-      );
-    }
+        // Return empty results instead of error to prevent UI issues
+        return addSecurityHeaders(
+          NextResponse.json(
+            {
+              success: true,
+              searchType: 'direct-rag',
+              results: [],
+              query: '',
+              maxResults: 10,
+              timestamp: new Date().toISOString(),
+              error: 'Search temporarily unavailable',
+            },
+            { status: 200 }
+          )
+        );
+      }
+    });
   });
 }
 

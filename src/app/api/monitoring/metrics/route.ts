@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withMonitoring } from '@/lib/monitoring/middleware';
 import { debateMetrics } from '@/lib/monitoring/opentelemetry';
 import { apiPerformance, dbPerformance, openaiPerformance, elevenLabsPerformance } from '@/lib/monitoring/performance';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
+import { optionalAuth } from '@/lib/auth-middleware';
 
 interface MetricsResponse {
   timestamp: string;
@@ -60,10 +61,8 @@ interface MetricsResponse {
 
 // Get usage metrics from database
 async function getUsageMetrics() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  // Use authenticated client that respects RLS
+  const supabase = createClient();
 
   const now = new Date();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);

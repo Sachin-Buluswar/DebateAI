@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { corsMiddleware } from './middleware/cors';
+import { authMiddleware } from './middleware/auth';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Handle CORS first
   const corsResponse = corsMiddleware(request);
   if (request.method === 'OPTIONS') {
     return corsResponse;
   }
   
-  const response = corsResponse || NextResponse.next();
+  // Check authentication for protected routes
+  const authResponse = await authMiddleware(request);
+  if (authResponse.status === 401 || authResponse.status === 403 || authResponse.headers.get('location')) {
+    // Auth check failed or redirect needed
+    return authResponse;
+  }
+  
+  const response = corsResponse || authResponse || NextResponse.next();
   
   // In development, allow 'unsafe-eval' for Next.js dev tools and Sentry
   if (process.env.NODE_ENV === 'development') {
