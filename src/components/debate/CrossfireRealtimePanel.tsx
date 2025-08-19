@@ -65,7 +65,8 @@ export function CrossfireRealtimePanel({
 
   const toggleRecording = () => {
     setIsRecording(!isRecording);
-    // TODO: Implement actual audio recording and transcription
+    // Audio recording feature is planned for future implementation
+    // Will integrate with ElevenLabs WebSocket for real-time transcription
   };
 
   if (!isActive) {

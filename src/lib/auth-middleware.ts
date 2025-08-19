@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { User } from '@supabase/supabase-js';
+import { authLogger } from '@/lib/monitoring/logger';
 
 export interface AuthenticatedRequest extends NextRequest {
   user: User;
@@ -46,7 +47,11 @@ export async function requireAuth(
     
     return handler(request as AuthenticatedRequest);
   } catch (error) {
-    console.error('[auth-middleware] Error checking authentication:', error);
+    authLogger.error('Error checking authentication', { 
+      service: 'auth-middleware',
+      action: 'requireAuth',
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    });
     return NextResponse.json(
       { 
         error: 'Authentication error',
@@ -110,7 +115,11 @@ export async function requireAdmin(
     (request as AuthenticatedRequest).user = user;
     return handler(request as AuthenticatedRequest);
   } catch (error) {
-    console.error('[auth-middleware] Error checking admin role:', error);
+    authLogger.error('Error checking admin role', {
+      service: 'auth-middleware',
+      action: 'requireAdmin',
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    });
     return NextResponse.json(
       { 
         error: 'Authorization error',
@@ -141,7 +150,11 @@ export async function optionalAuth(
     return handler(request as NextRequest & { user?: User });
   } catch (error) {
     // Log error but continue without auth
-    console.error('[auth-middleware] Error checking optional auth:', error);
+    authLogger.warn('Error checking optional authentication', {
+      service: 'auth-middleware',
+      action: 'optionalAuth',
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    });
     return handler(request);
   }
 }
@@ -192,7 +205,11 @@ export async function hasRole(
     
     return userRoleLevel >= requiredRoleLevel;
   } catch (error) {
-    console.error('[auth-middleware] Error checking role:', error);
+    authLogger.error('Error checking user role', {
+      service: 'auth-middleware',
+      action: 'hasRole',
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    });
     return false;
   }
 }

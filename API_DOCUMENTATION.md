@@ -368,36 +368,23 @@ Reindex a document in the vector store.
 
 ### System Utilities
 
-#### POST `/api/migrations`
-Execute database migrations (requires API key).
+#### ~~POST `/api/migrations`~~ (DISABLED)
+**Status**: ⛔ **PERMANENTLY DISABLED FOR SECURITY**
 
-**Request Body:**
-```json
-{
-  "key": "migration-api-key"
-}
-```
+This endpoint has been disabled in production for security reasons. Database migrations should be executed directly through the Supabase dashboard or CI/CD pipeline.
 
-**Security:**
-- Requires `MIGRATIONS_API_KEY` environment variable
-- Optional IP whitelisting via `MIGRATIONS_ALLOWED_IPS`
+**Previous Purpose**: Execute database migrations
+**Reason for Disabling**: Security risk - potential for unauthorized database modifications
+**Alternative**: Use Supabase dashboard SQL editor or migration tools
 
-#### POST `/api/sql`
-Execute raw SQL queries (admin only).
+#### ~~POST `/api/sql`~~ (DISABLED)
+**Status**: ⛔ **PERMANENTLY DISABLED FOR SECURITY**
 
-**Headers:**
-- `x-admin-key`: Admin key
+This endpoint has been disabled in production for security reasons. Direct SQL execution through API endpoints poses significant security risks.
 
-**Request Body:**
-```json
-{
-  "query": "SELECT * FROM table"
-}
-```
-
-**Security:**
-- Requires `ENABLE_SQL_ENDPOINT=true`
-- Requires `ADMIN_SQL_KEY` match
+**Previous Purpose**: Execute raw SQL queries
+**Reason for Disabling**: Critical security risk - SQL injection, data exposure
+**Alternative**: Use Supabase dashboard for administrative SQL queries match
 
 ### Monitoring & Metrics
 
@@ -409,6 +396,178 @@ Prometheus-compatible metrics endpoint.
 - Active connections
 - Error rates
 - Custom business metrics
+
+### Educational Resources
+
+#### GET `/api/resources`
+Retrieve educational resources and learning materials.
+
+**Response:**
+```json
+{
+  "resources": [
+    {
+      "id": "string",
+      "title": "string",
+      "description": "string",
+      "category": "string",
+      "difficulty": "beginner|intermediate|advanced",
+      "content": "string",
+      "slug": "string"
+    }
+  ]
+}
+```
+
+#### GET `/api/resources/[slug]`
+Retrieve a specific educational resource by its slug.
+
+**Parameters:**
+- `slug`: Resource identifier
+
+**Response:**
+```json
+{
+  "resource": {
+    "id": "string",
+    "title": "string",
+    "content": "string",
+    "metadata": {}
+  }
+}
+```
+
+#### POST `/api/resources/track`
+Track user interaction with educational resources.
+
+**Request Body:**
+```json
+{
+  "resourceId": "string",
+  "action": "view|complete|bookmark",
+  "metadata": {}
+}
+```
+
+### System Status Endpoints
+
+#### GET `/api/rag-status`
+Check the status of the RAG (Retrieval-Augmented Generation) system.
+
+**Response:**
+```json
+{
+  "status": "operational|degraded|offline",
+  "vectorStore": {
+    "connected": true,
+    "documentCount": 1000
+  },
+  "lastIndexed": "2025-08-19T12:00:00Z"
+}
+```
+
+#### GET `/api/search-status`
+Check the status of the search system.
+
+**Response:**
+```json
+{
+  "status": "operational|degraded|offline",
+  "searchEngines": {
+    "semantic": "active",
+    "keyword": "active",
+    "hybrid": "active"
+  },
+  "performance": {
+    "avgResponseTime": 245,
+    "successRate": 0.99
+  }
+}
+```
+
+#### GET `/api/debug` (Development Only)
+**Status**: ⛔ **Returns 404 in production**
+
+Debug endpoint for development troubleshooting. Automatically disabled in production environments.
+
+### Additional Search Endpoints
+
+#### POST `/api/wiki-generate`
+Generate wiki-style content based on a prompt.
+
+**Request Body:**
+```json
+{
+  "prompt": "string",
+  "context": "string (optional)",
+  "maxTokens": 500
+}
+```
+
+#### POST `/api/wiki-rag-search-enhanced`
+Enhanced RAG search with additional context and filtering.
+
+**Request Body:**
+```json
+{
+  "query": "string",
+  "filters": {
+    "category": "string",
+    "dateRange": "string"
+  },
+  "enhancedContext": true
+}
+```
+
+#### POST `/api/wiki-rag-search-direct`
+Direct RAG search without preprocessing.
+
+**Request Body:**
+```json
+{
+  "query": "string",
+  "vectorOnly": true
+}
+```
+
+#### POST `/api/wiki-index`
+Index new content into the wiki search system.
+
+**Request Body:**
+```json
+{
+  "documents": [
+    {
+      "title": "string",
+      "content": "string",
+      "metadata": {}
+    }
+  ]
+}
+```
+
+**Security:**
+- Requires admin authentication
+
+#### GET `/api/debate-advice`
+Get AI-generated debate advice and strategies.
+
+**Query Parameters:**
+- `topic`: Debate topic
+- `position`: pro/con
+- `level`: novice/intermediate/advanced
+
+**Response:**
+```json
+{
+  "advice": {
+    "strategy": "string",
+    "keyPoints": ["string"],
+    "anticipatedCounterarguments": ["string"],
+    "suggestedEvidence": ["string"]
+  }
+}
+```
 
 ### Prototype Endpoints
 
