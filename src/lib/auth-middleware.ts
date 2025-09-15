@@ -29,7 +29,7 @@ export async function requireAuth(
   handler: (request: AuthenticatedRequest) => Promise<NextResponse | Response>
 ): Promise<NextResponse | Response> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error || !user) {
@@ -75,7 +75,7 @@ export async function requireAdmin(
   handler: (request: AuthenticatedRequest) => Promise<NextResponse | Response>
 ): Promise<NextResponse | Response> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error || !user) {
@@ -147,7 +147,7 @@ export async function optionalAuth(
   handler: (request: NextRequest & { user?: User }) => Promise<NextResponse | Response>
 ): Promise<NextResponse | Response> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     // Attach user if authenticated, but don't fail if not
@@ -191,7 +191,7 @@ export async function hasRole(
   requiredRole: 'user' | 'moderator' | 'admin' | 'super_admin'
 ): Promise<boolean> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')

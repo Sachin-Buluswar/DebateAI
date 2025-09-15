@@ -31,23 +31,26 @@ const nextConfig = {
       '@ffprobe-installer/ffprobe': false
     };
     
+    // Suppress non-critical warnings for cleaner build output
+    config.ignoreWarnings = [
+      // Suppress OpenTelemetry dynamic import warnings
+      /Critical dependency: the request of a dependency is an expression/,
+      /require function is used in a way in which dependencies cannot be statically extracted/,
+    ];
+    
     return config;
   },
   
   // Ensure strict mode is enabled for React
   reactStrictMode: true,
   
-  // Enable SWC minification for better performance
-  swcMinify: true,
-  
   // Optimize production builds
   productionBrowserSourceMaps: false,
-  
+
   // Enable experimental optimizations
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['recharts', 'react-markdown', '@heroicons/react'],
-    instrumentationHook: true, // Enable instrumentation for monitoring
   },
   
   // Adding a custom path for the API server

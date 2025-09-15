@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { z } from 'zod';
 
 // Request validation schema for ending a debate
@@ -59,95 +60,87 @@ const endDebateSchema = z.object({
 export async function POST(request: NextRequest) {
   // Apply rate limiting to prevent abuse
   return await withRateLimit(request, debateRateLimiter, async () => {
-    try {
-      // Get authenticated user's session
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Unauthorized - Please log in to end a debate' },
-            { status: 401 }
-          )
-        );
-      }
+    return requireAuth(request, async (req: AuthenticatedRequest) => {
+      try {
+        const supabase = createClient();
+        const user = req.user;
 
-      const body = await request.json();
-      const validated = endDebateSchema.parse(body);
+        const body = await request.json();
+        const validated = endDebateSchema.parse(body);
 
-      // First, verify the user owns this debate session
-      const { data: existingSession, error: checkError } = await supabase
-        .from('debate_sessions')
-        .select('id, user_id')
-        .eq('id', validated.sessionId)
-        .single();
+        // First, verify the user owns this debate session
+        const { data: existingSession, error: checkError } = await supabase
+          .from('debate_sessions')
+          .select('id, user_id')
+          .eq('id', validated.sessionId)
+          .single();
 
-      if (checkError || !existingSession) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Debate session not found' },
-            { status: 404 }
-          )
-        );
-      }
+        if (checkError || !existingSession) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: 'Debate session not found' },
+              { status: 404 }
+            )
+          );
+        }
 
-      if (existingSession.user_id !== user.id) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Forbidden - Cannot end another user\'s debate' },
-            { status: 403 }
-          )
-        );
-      }
+        if (existingSession.user_id !== user.id) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: 'Forbidden - Cannot end another user\'s debate' },
+              { status: 403 }
+            )
+          );
+        }
 
-      // Update debate session status in database (now with proper ownership check)
-      const { data: session, error } = await supabase
-        .from('debate_sessions')
-        .update({
-          status: 'completed', // Change from 'active' to 'completed'
-          winner: validated.winner, // Optional: 'PRO', 'CON', or 'DRAW'
-          end_reason: validated.reason, // Optional: why debate ended
-          ended_at: new Date().toISOString(), // Record exact end time
-        })
-        .eq('id', validated.sessionId) // Match by session ID
-        .eq('user_id', user.id) // Ensure user owns the session
-        .select() // Return updated record
-        .single(); // Expect single result
+        // Update debate session status in database (now with proper ownership check)
+        const { data: session, error } = await supabase
+          .from('debate_sessions')
+          .update({
+            status: 'completed', // Change from 'active' to 'completed'
+            winner: validated.winner, // Optional: 'PRO', 'CON', or 'DRAW'
+            end_reason: validated.reason, // Optional: why debate ended
+            ended_at: new Date().toISOString(), // Record exact end time
+          })
+          .eq('id', validated.sessionId) // Match by session ID
+          .eq('user_id', user.id) // Ensure user owns the session
+          .select() // Return updated record
+          .single(); // Expect single result
 
-      if (error) {
-        // PRODUCTION: Logging disabled
+        if (error) {
+          // PRODUCTION: Logging disabled
 // console.error('Error ending debate session:', error);
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: 'Failed to end debate session' },
+              { status: 500 }
+            )
+          );
+        }
+
+        // Return success response with session details
+        // Frontend should:
+        // 1. Close WebSocket connections
+        // 2. Show debate summary/results
+        // 3. Optionally redirect to analysis page
+        return addSecurityHeaders(
+          NextResponse.json({
+            success: true,
+            sessionId: session.id, // Confirm which session was ended
+            message: 'Debate session ended successfully',
+            winner: session.winner, // Echo back the winner if provided
+          })
+        );
+      } catch (error) {
+        // PRODUCTION: Logging disabled
+// console.error('Error in debate end:', error);
         return addSecurityHeaders(
           NextResponse.json(
-            { error: 'Failed to end debate session' },
-            { status: 500 }
+            { error: 'Invalid request' },
+            { status: 400 }
           )
         );
       }
-
-      // Return success response with session details
-      // Frontend should:
-      // 1. Close WebSocket connections
-      // 2. Show debate summary/results
-      // 3. Optionally redirect to analysis page
-      return addSecurityHeaders(
-        NextResponse.json({
-          success: true,
-          sessionId: session.id, // Confirm which session was ended
-          message: 'Debate session ended successfully',
-          winner: session.winner, // Echo back the winner if provided
-        })
-      );
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('Error in debate end:', error);
-      return addSecurityHeaders(
-        NextResponse.json(
-          { error: 'Invalid request' },
-          { status: 400 }
-        )
-      );
-    }
+    });
   });
 }

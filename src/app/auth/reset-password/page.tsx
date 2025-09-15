@@ -62,11 +62,11 @@ export default function ResetPasswordPage() {
       
       if (error) throw error;
       
-      const successMessage = 'Password updated successfully! Redirecting to login...';
+      const successMessage = 'Password updated successfully! Redirecting to dashboard...';
       setMessage(successMessage);
       addToast({ message: successMessage, type: 'success' });
       setTimeout(() => {
-        router.push('/auth');
+        router.push('/dashboard');
       }, 2000);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');

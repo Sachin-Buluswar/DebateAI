@@ -22,9 +22,9 @@ Most endpoints require authentication via Supabase Auth:
 
 All endpoints implement rate limiting with different tiers:
 - `apiRateLimiter`: General API endpoints (100 requests/15 minutes)
-- `debateRateLimiter`: Debate-related endpoints (50 requests/15 minutes)
-- `speechFeedbackRateLimiter`: Speech upload endpoints (10 requests/15 minutes)
-- `wikiSearchRateLimiter`: Search endpoints (100 requests/15 minutes)
+- `debateRateLimiter`: Debate-related endpoints (5 requests/1 hour)
+- `speechFeedbackRateLimiter`: Speech upload endpoints (10 requests/1 hour)
+- `wikiSearchRateLimiter`: Search endpoints (30 requests/1 minute)
 
 ### Error Response Format
 

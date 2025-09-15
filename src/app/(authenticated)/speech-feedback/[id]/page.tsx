@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
@@ -188,13 +188,15 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
   );
 }
 
-export default function SpeechFeedbackDetail({ params }: { params: { id: string } }) {
+export default function SpeechFeedbackDetail() {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exportingPDF, setExportingPDF] = useState(false);
-  
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -215,7 +217,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         const { data: feedbackData, error: feedbackError } = await supabase
           .from('speech_feedback')
           .select('*')
-          .eq('id', params.id)
+          .eq('id', id)
           .eq('user_id', data.session.user.id)
           .single();
         
@@ -242,7 +244,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
     };
     
     checkUser();
-  }, [router, params.id]);
+  }, [router, id]);
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

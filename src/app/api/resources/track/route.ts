@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    const headersList = headers();
+    const headersList = await headers();
     const userAgent = headersList.get('user-agent') || undefined;
     const referrer = headersList.get('referer') || undefined;
     

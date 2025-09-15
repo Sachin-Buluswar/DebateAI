@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
+import { createClient } from '@/utils/supabase/client';
 
 const features = [
   {
@@ -27,6 +30,46 @@ const features = [
 ]
 
 export default function HomePage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Check if user is authenticated and redirect to dashboard if they are
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          // User is authenticated, redirect to dashboard
+          router.push('/dashboard');
+          return;
+        }
+
+        // User is not authenticated, show landing page
+        setIsLoading(false);
+      } catch {
+        // Error checking auth, show landing page
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router, supabase]);
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show marketing content if user is not authenticated
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <Navbar />

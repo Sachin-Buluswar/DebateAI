@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
 import { withMonitoring } from '@/lib/monitoring/middleware';
 import { traceAsync } from '@/lib/monitoring/opentelemetry';
@@ -36,10 +36,8 @@ async function checkSupabase(): Promise<HealthCheckResult> {
   const start = Date.now();
   
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Create authenticated Supabase client that respects RLS
+    const supabase = createClient();
 
     // Simple query to check database connectivity
     const { error } = await supabase

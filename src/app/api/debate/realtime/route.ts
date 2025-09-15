@@ -31,9 +31,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 // Request validation schemas using Zod
 
@@ -50,19 +50,8 @@ const startDebateSchema = z.object({
   }))
 });
 
-// Helper to get service client for Realtime operations only
-function getRealtimeServiceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  );
-}
+// Note: Realtime operations should be handled client-side
+// Clients should connect directly to Supabase Realtime channels
 
 // Schema for joining an existing debate
 const joinDebateSchema = z.object({
@@ -82,17 +71,11 @@ const joinDebateSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   return await withRateLimit(request, debateRateLimiter, async () => {
-    try {
-      // Get authenticated user's session
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        return NextResponse.json(
-          { error: 'Unauthorized - Please log in' },
-          { status: 401 }
-        );
-      }
+    return requireAuth(request, async (req: AuthenticatedRequest) => {
+      try {
+        // Create authenticated Supabase client that respects RLS
+        const supabase = createClient();
+        const user = req.user;
 
       // Extract action from URL path (e.g., 'start', 'join', 'end')
       const { pathname } = new URL(request.url);
@@ -129,21 +112,9 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to create debate' }, { status: 500 });
         }
 
-        // Use service client only for Realtime channel operations
-        const realtimeClient = getRealtimeServiceClient();
-        const channel = realtimeClient.channel(`debate:${debateId}`);
-        
-        await channel.send({
-          type: 'broadcast',
-          event: 'debate_initialized',
-          payload: {
-            debateId,
-            topic,
-            participants,
-            phase: 'PRO_CONSTRUCTIVE',
-            timestamp: Date.now()
-          }
-        });
+        // Note: Realtime initialization is handled client-side
+        // Clients should subscribe to debate:${debateId} channel directly
+        // The database update above triggers Realtime events automatically
 
         // Return success with channel info
         // Frontend should use this channel name to subscribe via Supabase Realtime
@@ -230,17 +201,8 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to end debate' }, { status: 500 });
         }
 
-        // Use service client only for Realtime notifications
-        const realtimeClient = getRealtimeServiceClient();
-        const channel = realtimeClient.channel(`debate:${debateId}`);
-        await channel.send({
-          type: 'broadcast',
-          event: 'debate_ended',
-          payload: { 
-            debateId, 
-            timestamp: Date.now()
-          }
-        });
+        // Note: Realtime notification is handled via database change
+        // Clients subscribed to the channel will see the status update automatically
 
         return NextResponse.json({ success: true });
       }
@@ -248,14 +210,15 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
-  } catch (error) {
-    // PRODUCTION: Logging disabled
+      } catch (error) {
+        // PRODUCTION: Logging disabled
 // console.error('Debate realtime API error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
-  }
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Internal server error' },
+          { status: 500 }
+        );
+      }
+    });
   });
 }
 
@@ -279,36 +242,31 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   return await withRateLimit(request, debateRateLimiter, async () => {
-    // Get authenticated user's session
-    const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    return requireAuth(request, async (req: AuthenticatedRequest) => {
+      // Create authenticated Supabase client that respects RLS
+      const supabase = createClient();
+      const user = req.user;
     
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-    
-    // Extract debate ID from query parameters
-    const { searchParams } = new URL(request.url);
-    const debateId = searchParams.get('debateId');
+      // Extract debate ID from query parameters
+      const { searchParams } = new URL(request.url);
+      const debateId = searchParams.get('debateId');
 
-    if (!debateId) {
-      return NextResponse.json({ error: 'Debate ID required' }, { status: 400 });
-    }
+      if (!debateId) {
+        return NextResponse.json({ error: 'Debate ID required' }, { status: 400 });
+      }
 
-    // Query database for debate record using authenticated client
-    const { data: debate, error } = await supabase
-      .from('debates')
-      .select('*')
-      .eq('id', debateId)
-      .single();
+      // Query database for debate record using authenticated client
+      const { data: debate, error } = await supabase
+        .from('debates')
+        .select('*')
+        .eq('id', debateId)
+        .single();
 
-    if (error || !debate) {
-      return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
-    }
+      if (error || !debate) {
+        return NextResponse.json({ error: 'Debate not found' }, { status: 404 });
+      }
 
-    return NextResponse.json({ debate });
+      return NextResponse.json({ debate });
+    });
   });
 }

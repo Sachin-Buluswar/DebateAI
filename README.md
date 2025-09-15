@@ -6,11 +6,11 @@ AI-powered debate platform with real-time debates, speech analysis, and evidence
 
 **Version**: 1.0.0  
 **Status**: ✅ Production Ready  
-**Last Deployment**: August 18, 2025 (Vercel)  
+**Last Deployment**: September 15, 2025 (Vercel)  
 **Build Status**: ✅ Builds and deploys successfully
 
 ### ✅ What's Working
-- **Full production deployment** - Successfully deployed to Vercel (August 18, 2025)
+- **Full production deployment** - Successfully deployed to Vercel (September 15, 2025)
 - **All security vulnerabilities fixed** - Centralized auth, removed service role exposures
 - **Core features operational** - Real-time debates, speech analysis, evidence search
 - **Speech feedback system** - Enhanced with training plans and skill-level adaptation
@@ -47,7 +47,7 @@ AI-powered debate platform with real-time debates, speech analysis, and evidence
 
 ```bash
 # Clone repository
-git clone https://github.com/[your-username]/eris-debate.git
+git clone https://github.com/Sachin-Buluswar/DebateAI.git
 cd eris-debate
 
 # Install dependencies

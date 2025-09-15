@@ -3,17 +3,17 @@
  * Returns information about the current state of the RAG system
  */
 
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { optionalAuth } from '@/lib/auth-middleware';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function GET() {
-  try {
+export async function GET(request: NextRequest) {
+  return optionalAuth(request, async (req) => {
+    // Create authenticated Supabase client that respects RLS
+    const supabase = createClient();
+    
+    try {
     const status = {
       timestamp: new Date().toISOString(),
       database: {
@@ -125,27 +125,28 @@ export async function GET() {
     // Calculate health score
     const healthScore = calculateHealthScore(status);
 
-    return addSecurityHeaders(
-      NextResponse.json({
-        healthy: healthScore >= 70,
-        healthScore,
-        status,
-        recommendations: getRecommendations(status),
-      })
-    );
-  } catch (error) {
-    // PRODUCTION: Logging disabled
+      return addSecurityHeaders(
+        NextResponse.json({
+          healthy: healthScore >= 70,
+          healthScore,
+          status,
+          recommendations: getRecommendations(status),
+        })
+      );
+    } catch (error) {
+      // PRODUCTION: Logging disabled
 // console.error('RAG status check failed:', error);
-    return addSecurityHeaders(
-      NextResponse.json(
-        {
-          healthy: false,
-          error: 'Failed to check RAG system status',
-        },
-        { status: 500 }
-      )
-    );
-  }
+      return addSecurityHeaders(
+        NextResponse.json(
+          {
+            healthy: false,
+            error: 'Failed to check RAG system status',
+          },
+          { status: 500 }
+        )
+      );
+    }
+  });
 }
 
 function calculateHealthScore(status: any): number {

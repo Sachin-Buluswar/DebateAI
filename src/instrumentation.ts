@@ -5,6 +5,15 @@
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Suppress punycode deprecation warning from dev/test dependencies
+    // This is coming from ESLint and Jest dependencies, will be resolved by upstream updates
+    process.removeAllListeners('warning');
+    process.on('warning', (warning) => {
+      if (warning.name !== 'DeprecationWarning' || !warning.message.includes('punycode')) {
+        console.warn(warning);
+      }
+    });
+    
     // Initialize Sentry for server-side
     await import('../sentry.server.config');
     

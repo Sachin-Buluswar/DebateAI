@@ -4,7 +4,7 @@
 
 Eris Debate is an AI-powered debate platform built with Next.js 14, TypeScript, and modern web technologies. The platform enables real-time debates with AI opponents, provides comprehensive speech analysis, and offers semantic search capabilities for debate evidence.
 
-**Current Status**: ✅ Production Ready - Deployed August 18, 2025
+**Current Status**: ✅ Production Ready - Deployed September 15, 2025
 **Build Status**: ✅ Builds and deploys successfully
 **Production Deployment**: Live on Vercel with full functionality
 **Recent Updates**: All security vulnerabilities fixed, centralized auth implemented
@@ -165,7 +165,7 @@ eris-debate/
 ### Setup
 ```bash
 # Clone and install
-git clone https://github.com/[username]/eris-debate.git
+git clone https://github.com/Sachin-Buluswar/DebateAI.git
 cd eris-debate
 npm install
 

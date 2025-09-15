@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/ORIGINAL_OWNER/eris-debate.git
+git clone https://github.com/Sachin-Buluswar/DebateAI.git
 cd eris-debate
 npm install
 cp .env.example .env.local

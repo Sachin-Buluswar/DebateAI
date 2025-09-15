@@ -3,186 +3,178 @@ import { createClient } from '@/utils/supabase/server';
 import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
 import { speechFeedbackRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders, validateAudioFile } from '@/middleware/inputValidation';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 export async function POST(request: Request) {
   // Apply rate limiting for speech uploads
   const rateLimitResult = await withRateLimit(request, speechFeedbackRateLimiter, async () => {
-    try {
-      // Get authenticated user's session first
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Unauthorized - Please log in to submit speech feedback' },
-            { status: 401 }
-          )
-        );
-      }
-      
-      // PRODUCTION: Logging disabled
-// console.log('[speech-feedback] Processing incoming request');
-      
-      // Parse FormData from the request
-      const formData = await request.formData();
-      
-      // Extract and validate audio file
-      const audioFile = formData.get('audio') as File;
-      if (!audioFile || !(audioFile instanceof File)) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'No audio file provided or invalid file format' },
-            { status: 400 }
-          )
-        );
-      }
-
-      // Validate audio file
-      const fileValidation = validateAudioFile(audioFile);
-      if (!fileValidation.valid) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: fileValidation.error },
-            { status: 400 }
-          )
-        );
-      }
-
-      // Create data object for validation
-      const requestData = {
-        topic: formData.get('topic') as string,
-        speechType: formData.get('speechType') as string,
-        userSide: formData.get('userSide') as string,
-        skillLevel: formData.get('skillLevel') as string,
-        customInstructions: formData.get('customInstructions') as string,
-        userId: formData.get('userId') as string,
-      };
-
-      // Validate text fields using the validation schema
-      const validation = await validateRequest(
-        new Request(request.url, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(requestData)
-        }),
-        validationSchemas.speechFeedback,
-        { body: true, sanitize: true }
-      );
-
-      if (!validation.success) {
+    return requireAuth(request as any, async (req: AuthenticatedRequest) => {
+      try {
+        const user = req.user;
+        
         // PRODUCTION: Logging disabled
-// console.warn('[speech-feedback] Invalid request:', validation.error);
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Invalid request data', details: validation.details },
-            { status: 400 }
-          )
-        );
-      }
-
-      const { topic, customInstructions } = validation.data;
-      
-      // Use authenticated user's ID instead of form data
-      const userId = user.id;
-      
-      // Verify the userId from form matches authenticated user (if provided)
-      if (validation.data.userId && validation.data.userId !== user.id) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Forbidden - Cannot submit feedback for another user' },
-            { status: 403 }
-          )
-        );
-      }
-      
-      // Convert audio to buffer
-      const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
-      
-      // Additional security checks
-      if (audioBuffer.length === 0) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Empty audio file provided' },
-            { status: 400 }
-          )
-        );
-      }
-
-      // Get speech type, user side, and skill level from request
-      const speechType = requestData.speechType || 'debate';
-      const userSide = requestData.userSide || 'None';
-      const skillLevel = (requestData.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate';
-      
-      // PRODUCTION: Logging disabled
-// console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
-
-      // Process the speech feedback (service will handle storage with service role)
-      const result = await processSpeechFeedback({
-        audioBuffer,
-        filename: audioFile.name || 'audio.mp3',
-        mimeType: audioFile.type || 'audio/mpeg',
-        topic,
-        userId,
-        speechType,
-        userSide,
-        skillLevel,
-        customInstructions
-      });
-      
-      // PRODUCTION: Logging disabled
-// console.log('[speech-feedback] Processing complete, returning feedback');
-      
-      // Return response with id for frontend redirect
-      return addSecurityHeaders(
-        NextResponse.json({
-          id: result.feedbackId,
-          success: true
-        }, { status: 200 })
-      );
-      
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('[speech-feedback] Error processing request:', error);
-      
-      // Enhanced error handling
-      if (error instanceof Error) {
-        if (error.message.includes('Storage limit exceeded')) {
+// console.log('[speech-feedback] Processing incoming request');
+        
+        // Parse FormData from the request
+        const formData = await request.formData();
+        
+        // Extract and validate audio file
+        const audioFile = formData.get('audio') as File;
+        if (!audioFile || !(audioFile instanceof File)) {
           return addSecurityHeaders(
             NextResponse.json(
-              { error: 'Storage limit exceeded. Please delete some existing recordings.' },
-              { status: 413 }
+              { error: 'No audio file provided or invalid file format' },
+              { status: 400 }
+            )
+          );
+        }
+
+        // Validate audio file
+        const fileValidation = validateAudioFile(audioFile);
+        if (!fileValidation.valid) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: fileValidation.error },
+              { status: 400 }
+            )
+          );
+        }
+
+        // Create data object for validation
+        const requestData = {
+          topic: formData.get('topic') as string,
+          speechType: formData.get('speechType') as string,
+          userSide: formData.get('userSide') as string,
+          skillLevel: formData.get('skillLevel') as string,
+          customInstructions: formData.get('customInstructions') as string,
+          userId: formData.get('userId') as string,
+        };
+
+        // Validate text fields using the validation schema
+        const validation = await validateRequest(
+          new Request(request.url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(requestData)
+          }),
+          validationSchemas.speechFeedback,
+          { body: true, sanitize: true }
+        );
+
+        if (!validation.success) {
+          // PRODUCTION: Logging disabled
+// console.warn('[speech-feedback] Invalid request:', validation.error);
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: 'Invalid request data', details: validation.details },
+              { status: 400 }
+            )
+          );
+        }
+
+        const { topic, customInstructions } = validation.data;
+        
+        // Use authenticated user's ID instead of form data
+        const userId = user.id;
+        
+        // Verify the userId from form matches authenticated user (if provided)
+        if (validation.data.userId && validation.data.userId !== user.id) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: 'Forbidden - Cannot submit feedback for another user' },
+              { status: 403 }
             )
           );
         }
         
-        if (error.message.includes('File exceeds maximum size')) {
+        // Convert audio to buffer
+        const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
+        
+        // Additional security checks
+        if (audioBuffer.length === 0) {
           return addSecurityHeaders(
             NextResponse.json(
-              { error: 'Audio file too large. Maximum size is 50MB.' },
-              { status: 413 }
+              { error: 'Empty audio file provided' },
+              { status: 400 }
             )
           );
         }
 
-        if (error.message.includes('Rate limit') || error.message.includes('quota')) {
-          return addSecurityHeaders(
-            NextResponse.json(
-              { error: 'Service temporarily overloaded. Please try again in a few minutes.' },
-              { status: 503 }
-            )
-          );
+        // Get speech type, user side, and skill level from request
+        const speechType = requestData.speechType || 'debate';
+        const userSide = requestData.userSide || 'None';
+        const skillLevel = (requestData.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate';
+        
+        // PRODUCTION: Logging disabled
+// console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
+
+        // Process the speech feedback (service will handle storage with service role)
+        const result = await processSpeechFeedback({
+          audioBuffer,
+          filename: audioFile.name || 'audio.mp3',
+          mimeType: audioFile.type || 'audio/mpeg',
+          topic,
+          userId,
+          speechType,
+          userSide,
+          skillLevel,
+          customInstructions
+        });
+        
+        // PRODUCTION: Logging disabled
+// console.log('[speech-feedback] Processing complete, returning feedback');
+        
+        // Return response with id for frontend redirect
+        return addSecurityHeaders(
+          NextResponse.json({
+            id: result.feedbackId,
+            success: true
+          }, { status: 200 })
+        );
+        
+      } catch (error) {
+        // PRODUCTION: Logging disabled
+// console.error('[speech-feedback] Error processing request:', error);
+        
+        // Enhanced error handling
+        if (error instanceof Error) {
+          if (error.message.includes('Storage limit exceeded')) {
+            return addSecurityHeaders(
+              NextResponse.json(
+                { error: 'Storage limit exceeded. Please delete some existing recordings.' },
+                { status: 413 }
+              )
+            );
+          }
+          
+          if (error.message.includes('File exceeds maximum size')) {
+            return addSecurityHeaders(
+              NextResponse.json(
+                { error: 'Audio file too large. Maximum size is 50MB.' },
+                { status: 413 }
+              )
+            );
+          }
+
+          if (error.message.includes('Rate limit') || error.message.includes('quota')) {
+            return addSecurityHeaders(
+              NextResponse.json(
+                { error: 'Service temporarily overloaded. Please try again in a few minutes.' },
+                { status: 503 }
+              )
+            );
+          }
         }
+
+        // Generic error (don't expose internal details)
+        return addSecurityHeaders(
+          NextResponse.json(
+            { error: 'Failed to process speech feedback. Please try again later.' },
+            { status: 500 }
+          )
+        );
       }
-
-      // Generic error (don't expose internal details)
-      return addSecurityHeaders(
-        NextResponse.json(
-          { error: 'Failed to process speech feedback. Please try again later.' },
-          { status: 500 }
-        )
-      );
-    }
+    });
   });
 
   // Return rate limit response if blocked

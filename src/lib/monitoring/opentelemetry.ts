@@ -4,7 +4,8 @@
  */
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   SEMRESATTRS_SERVICE_NAME,
@@ -68,11 +69,17 @@ export function initializeOpenTelemetry() {
       traceExporter,
       metricReader,
       instrumentations: [
-        getNodeAutoInstrumentations({
-          // Disable fs instrumentation to reduce noise
-          '@opentelemetry/instrumentation-fs': {
-            enabled: false,
+        // Use specific instrumentations instead of auto-instrumentations
+        // to reduce webpack warnings and bundle size
+        new HttpInstrumentation({
+          // Ignore health check endpoints to reduce noise
+          ignoreIncomingRequestHook: (req) => {
+            const url = req.url || '';
+            return url.includes('/api/health') || url.includes('/monitoring');
           },
+        }),
+        new ExpressInstrumentation({
+          // Express instrumentation config
         }),
       ],
     });
