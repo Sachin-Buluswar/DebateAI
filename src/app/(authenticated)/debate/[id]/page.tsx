@@ -28,10 +28,11 @@ export default function DebateDetail() {
     const fetchData = async () => {
       // Check authentication
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/auth');
-        return;
-      }
+      // GUEST MODE: Allow viewing debates without session
+      // if (!session) {
+      //   router.push('/auth');
+      //   return;
+      // }
       
       // Fetch the debate by ID
       try {
@@ -55,8 +56,8 @@ export default function DebateDetail() {
           return;
         }
         
-        // Check if user owns this debate
-        if (data.user_id !== session.user.id) {
+        // Check if user owns this debate (only if authenticated)
+        if (session?.user?.id && data.user_id !== session.user.id) {
           setError('You do not have permission to view this debate.');
           setLoading(false);
           return;

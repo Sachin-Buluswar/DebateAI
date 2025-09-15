@@ -68,43 +68,55 @@ export default function Dashboard() {
   const [page] = useState(1);
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in (with timeout to prevent hanging)
     const checkUser = async () => {
+      // Set a timeout to prevent indefinite loading
+      const timeoutId = setTimeout(() => {
+        // If still loading after 5 seconds, assume guest mode
+        if (loading) {
+          setLoading(false);
+          // Guest mode - no data to show
+        }
+      }, 5000);
+
       try {
         const { data, error: sessionError } = await supabase.auth.getSession();
 
+        // Clear timeout if we get a response
+        clearTimeout(timeoutId);
+
         if (sessionError) {
-          setError('Authentication error. Please try signing in again.');
+          // Don't block guest access on error
           setLoading(false);
           return;
         }
 
-        if (!data.session) {
-          router.push('/auth');
-          return;
-        }
+        // GUEST MODE: Allow access without session
+        // No redirect to auth - allow guest access
 
         let fetchedDebates: Debate[] = [];
         let fetchedSpeeches: SpeechFeedback[] = [];
 
         try {
-          // Fetch debates with pagination
-          const { data: debatesData, error: debatesError } = await supabase
-            .from('debate_history')
-            .select('*')
-            .eq('user_id', data.session.user.id)
-            .order('created_at', { ascending: false })
-            .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
+          // Only fetch debates if user is authenticated
+          if (data?.session?.user?.id) {
+            const { data: debatesData, error: debatesError } = await supabase
+              .from('debate_history')
+              .select('*')
+              .eq('user_id', data.session.user.id)
+              .order('created_at', { ascending: false })
+              .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
-          if (!debatesError) {
-            // Success - set the data
-            fetchedDebates = debatesData || [];
-            setDebateHistory(fetchedDebates);
-          } else if (debatesError.code !== '42P01') {
-            // Error that's not "table doesn't exist" - show error
-            // PRODUCTION: Console disabled
-            // console.error('Error fetching debates:', debatesError);
-            setError('Failed to load debates. Please try refreshing the page.');
+            if (!debatesError) {
+              // Success - set the data
+              fetchedDebates = debatesData || [];
+              setDebateHistory(fetchedDebates);
+            } else if (debatesError.code !== '42P01') {
+              // Error that's not "table doesn't exist" - show error
+              // PRODUCTION: Console disabled
+              // console.error('Error fetching debates:', debatesError);
+              setError('Failed to load debates. Please try refreshing the page.');
+            }
           }
         } catch (_debateError) {
           // PRODUCTION: Console disabled
@@ -112,23 +124,25 @@ export default function Dashboard() {
         }
 
         try {
-          // Fetch speech recordings with pagination
-          const { data: speechData, error: speechError } = await supabase
-            .from('speech_feedback')
-            .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url')
-            .eq('user_id', data.session.user.id)
-            .order('created_at', { ascending: false })
-            .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
+          // Only fetch speech recordings if user is authenticated
+          if (data?.session?.user?.id) {
+            const { data: speechData, error: speechError } = await supabase
+              .from('speech_feedback')
+              .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url')
+              .eq('user_id', data.session.user.id)
+              .order('created_at', { ascending: false })
+              .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
-          if (!speechError) {
-            // Success - set the data
-            fetchedSpeeches = speechData || [];
-            setSpeechHistory(fetchedSpeeches);
-          } else if (speechError.code !== '42P01') {
-            // Error that's not "table doesn't exist" - show error
-            // PRODUCTION: Console disabled
-            // console.error('Error fetching speech feedback:', speechError);
-            setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
+            if (!speechError) {
+              // Success - set the data
+              fetchedSpeeches = speechData || [];
+              setSpeechHistory(fetchedSpeeches);
+            } else if (speechError.code !== '42P01') {
+              // Error that's not "table doesn't exist" - show error
+              // PRODUCTION: Console disabled
+              // console.error('Error fetching speech feedback:', speechError);
+              setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
+            }
           }
 
           // Calculate stats from speech feedback only if we have data

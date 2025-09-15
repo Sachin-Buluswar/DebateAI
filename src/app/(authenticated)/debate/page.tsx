@@ -259,18 +259,13 @@ export default function DebatePage() {
     }
   }, []);
 
-  // Initialize socket with authentication
+  // Initialize socket with optional authentication (guest mode allowed)
   const initializeSocket = useCallback(async () => {
-      // Get the current session
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        // PRODUCTION: Console disabled - Critical file
-        // console.error('No authenticated session found');
-        setConnectionError('You must be logged in to participate in debates');
-        setIsConnecting(false);
-        return;
-      }
+      // Get the current session - but allow guest mode
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Guest mode: Continue even without session
+      // In guest mode, debates are stored locally
       
       // Initialize real-time connection (Socket.IO or Supabase)
       let socket: RealtimeSocket;
@@ -283,10 +278,11 @@ export default function DebatePage() {
           // PRODUCTION: Console disabled - Critical file
           // console.log('Running on Vercel - using Supabase Realtime for WebSocket features');
         }
-        
+
         // Create real-time connection (will use Supabase on Vercel)
+        // In guest mode, pass undefined token
         socket = await createRealtimeConnection({
-          token: session.access_token,
+          token: session?.access_token,
           useSupabase: isVercel() // Force Supabase on Vercel
         });
         

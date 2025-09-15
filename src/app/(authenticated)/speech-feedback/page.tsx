@@ -268,37 +268,49 @@ export default function SpeechFeedback() {
 
   useEffect(() => {
     const checkUser = async () => {
+      // Set a timeout to prevent indefinite loading
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          setLoading(false);
+          // Guest mode - continue without auth
+        }
+      }, 3000); // 3 second timeout
+
       try {
         const { data, error: sessionError } = await supabase.auth.getSession();
-        
+
+        // Clear timeout if we get a response
+        clearTimeout(timeoutId);
+
         if (sessionError) {
           // PRODUCTION: Console disabled
           // console.error('Session error:', sessionError);
-          setError('Authentication error. Please try signing in again.');
+          // Don't block guest access on error
           setLoading(false);
           return;
         }
         
-        if (!data.session) {
-          // PRODUCTION: Console disabled
-          // console.log('No session found, redirecting to auth');
-          router.push('/auth');
-          return;
-        }
+        // GUEST MODE: Allow access without session
+        // if (!data.session) {
+        //   router.push('/auth');
+        //   return;
+        // }
         
         // PRODUCTION: Console disabled
-        
         // console.log('User authenticated:', data.session.user);
-        setUser(data.session.user as User);
+
+        // Set user if session exists, otherwise guest mode
+        if (data?.session?.user) {
+          setUser(data.session.user as User);
+          // Fetch user's storage usage
+          fetchStorageUsage(data.session.user.id);
+        }
         setLoading(false);
-        
-        // Fetch user's storage usage
-        fetchStorageUsage(data.session.user.id);
       } catch (err) {
         // PRODUCTION: Console disabled
         // console.error('Error checking user session:', err);
-        setError('Failed to authenticate user. Please try logging in again.');
-        router.push('/auth');
+        // GUEST MODE: Don't redirect on error - allow guest access
+        setLoading(false);
       }
     };
     

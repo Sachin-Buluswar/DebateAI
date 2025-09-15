@@ -17,12 +17,12 @@ function AuthPageContent() {
   
   useEffect(() => {
     setIsClient(true);
-    
+
     // Check for error parameters from URL (from callback redirects)
     const urlError = searchParams?.get('error');
     const errorCode = searchParams?.get('code');
     const urlErrorDescription = searchParams?.get('error_description');
-    
+
     if (urlError) {
       // Map error codes to user-friendly messages
       const errorMessages: Record<string, string> = {
@@ -36,20 +36,28 @@ function AuthPageContent() {
         'unexpected_error': 'An unexpected error occurred. Please try again or contact support if the issue persists.',
         'authentication_failed': 'Authentication failed. Please check your credentials and try again.'
       };
-      
+
       // Use specific message if available, otherwise use generic message
-      const message = errorMessages[urlError] || 
-                     (urlErrorDescription || 
+      const message = errorMessages[urlError] ||
+                     (urlErrorDescription ||
                       `Authentication error: ${urlError}. Please try again or contact support.`);
-      
+
       setError(message);
-      
+
       // Log error code for debugging (only in development)
       if (process.env.NODE_ENV === 'development' && errorCode) {
         // console.log(`[auth] Error code: ${errorCode}, Error: ${urlError}`);
       }
     }
-    
+
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+        // Don't set error - just show the login form
+      }
+    }, 3000); // 3 second timeout
+
     // Check if user is already logged in
     const checkUser = async () => {
       try {
@@ -61,14 +69,14 @@ function AuthPageContent() {
             .select('status')
             .limit(1)
             .single();
-            
+
           if (healthError) {
             // Fallback to user_profiles table
             const { error: profileError } = await supabase
               .from('user_profiles')
               .select('count')
               .limit(1);
-              
+
             if (profileError) {
               setError(`Database connection error: ${profileError.message}`);
               setLoading(false);
@@ -79,14 +87,14 @@ function AuthPageContent() {
           // PRODUCTION: Console disabled
           // console.error('Supabase health check exception:', healthErr);
         }
-        
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           setError(`Authentication error: ${sessionError.message}`);
           setLoading(false);
           return;
         }
-        
+
         if (session) {
           // PRODUCTION: Console disabled
           // console.log('[auth] User already logged in, redirecting to dashboard');
@@ -100,15 +108,15 @@ function AuthPageContent() {
         setLoading(false);
       }
     };
-    
+
     checkUser();
-    
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
         // PRODUCTION: Console disabled
         // console.log('[auth] Auth state changed:', event, session?.user?.email);
-        
+
         if (event === 'SIGNED_IN' && session) {
           // PRODUCTION: Console disabled
           // console.log('[auth] User signed in, redirecting to dashboard');
@@ -120,8 +128,10 @@ function AuthPageContent() {
         }
       }
     );
-    
+
+    // Clean up both timeout and subscription
     return () => {
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [router, searchParams]);
