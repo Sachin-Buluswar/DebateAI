@@ -27,10 +27,30 @@ export default function ResetPasswordButton({ userEmail }: ResetPasswordButtonPr
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
       
-      if (error) throw error;
+      if (error) {
+        // Check for rate limiting error
+        if (error.message?.includes('rate limit') || error.status === 429) {
+          addToast({ 
+            message: 'Too many password reset attempts. Please wait a few minutes before trying again. Check your email (including spam folder) for previously sent reset links.', 
+            type: 'error' 
+          });
+        } else if (error.message?.includes('not found')) {
+          addToast({ 
+            message: 'Email address not found. Please check your email and try again.', 
+            type: 'error' 
+          });
+        } else {
+          addToast({ 
+            message: `Failed to send reset email: ${error.message || 'Please try again later.'}`, 
+            type: 'error' 
+          });
+        }
+        setShowConfirm(false);
+        return;
+      }
       
       addToast({ 
-        message: 'Password reset email sent! Please check your inbox.', 
+        message: 'Password reset email sent! Please check your inbox and spam folder. The link will expire in 1 hour.', 
         type: 'success' 
       });
       setShowConfirm(false);
@@ -38,7 +58,7 @@ export default function ResetPasswordButton({ userEmail }: ResetPasswordButtonPr
       // PRODUCTION: Logging disabled
       // console.error('Error sending reset email:', error);
       addToast({ 
-        message: 'Failed to send reset email. Please try again.', 
+        message: 'An unexpected error occurred. Please try again later.', 
         type: 'error' 
       });
     } finally {

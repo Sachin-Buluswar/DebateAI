@@ -1,13 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 import EnhancedInput from '@/components/ui/EnhancedInput';
 import EnhancedButton from '@/components/ui/EnhancedButton';
 import { getAuthCallbackUrl, getPasswordResetUrl } from '@/lib/auth-helpers';
 
-export default function CustomAuthForm() {
+interface CustomAuthFormProps {
+  redirectTo?: string;
+}
+
+export default function CustomAuthForm({ redirectTo = '/dashboard' }: CustomAuthFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -18,7 +23,6 @@ export default function CustomAuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   
   const supabase = createClient();
-  const router = useRouter();
 
   // Clear error and message when switching forms
   useEffect(() => {
@@ -28,9 +32,20 @@ export default function CustomAuthForm() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isLoading) {
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     setMessage(null);
+    
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[auth] Form submitted:', { email, passwordLength: password.length, isSignUp, showForgotPassword });
+    }
 
     // Client-side validation for password length
     if (!showForgotPassword && password.length < 6) {
@@ -57,7 +72,7 @@ export default function CustomAuthForm() {
           email,
           password,
           options: {
-            emailRedirectTo: getAuthCallbackUrl(),
+            emailRedirectTo: getAuthCallbackUrl(redirectTo),
           },
         });
         
@@ -77,8 +92,12 @@ export default function CustomAuthForm() {
           // Auto-signed in (email confirmation disabled)
           // PRODUCTION: Logging disabled
           // console.log('[auth] Sign up successful, redirecting to dashboard');
-          router.push('/dashboard');
-          router.refresh();
+          
+          // Wait briefly for auth state to propagate, then use router for clean navigation
+          setTimeout(() => {
+            router.push(redirectTo);
+            router.refresh();
+          }, 100);
         }
       } else {
         // PRODUCTION: Logging disabled
@@ -97,16 +116,23 @@ export default function CustomAuthForm() {
         if (data.session) {
           // PRODUCTION: Logging disabled
           // console.log('[auth] Sign in successful, redirecting to dashboard');
-          router.push('/dashboard');
-          router.refresh();
+          
+          // Wait briefly for auth state to propagate, then use router for clean navigation
+          setTimeout(() => {
+            router.push(redirectTo);
+            router.refresh();
+          }, 100);
         } else {
           throw new Error('Sign in failed - no session created');
         }
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Logging disabled
-      // console.error('[auth] Authentication error:', error);
+      
+      // Debug logging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[auth] Authentication error:', error);
+      }
       
       // Provide more user-friendly error messages
       let friendlyMessage = error.message;
@@ -200,9 +226,22 @@ export default function CustomAuthForm() {
         <EnhancedButton
           type="submit"
           loading={isLoading}
+          disabled={isLoading || (!showForgotPassword && (!email || !password))}
           variant="primary"
           size="lg"
           className="w-full"
+          onClick={(e) => {
+            // Ensure form submission on button click
+            if (!isLoading && email && (showForgotPassword || password)) {
+              const form = e.currentTarget.closest('form');
+              if (form && !form.requestSubmit) {
+                // Fallback for browsers that don't support requestSubmit
+                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+              } else if (form) {
+                form.requestSubmit();
+              }
+            }
+          }}
         >
           {showForgotPassword ? 'Send Reset Email' : isSignUp ? 'Sign Up' : 'Sign In'}
         </EnhancedButton>

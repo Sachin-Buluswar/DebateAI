@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/utils/supabase/client';
 import CustomAuthForm from '@/components/auth/CustomAuthForm';
 import './auth.css';
 
@@ -14,6 +14,12 @@ function AuthPageContent() {
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Create Supabase client once per component lifecycle
+  const supabase = createClient();
+  
+  // Get redirect URL from query params (set by middleware for protected routes)
+  const redirectTo = searchParams?.get('redirect') || '/dashboard';
   
   useEffect(() => {
     setIsClient(true);
@@ -53,33 +59,6 @@ function AuthPageContent() {
     // Check if user is already logged in
     const checkUser = async () => {
       try {
-        // Test the Supabase connection first
-        try {
-          // First try the health_check table
-          const { error: healthError } = await supabase
-            .from('health_check')
-            .select('status')
-            .limit(1)
-            .single();
-            
-          if (healthError) {
-            // Fallback to user_profiles table
-            const { error: profileError } = await supabase
-              .from('user_profiles')
-              .select('count')
-              .limit(1);
-              
-            if (profileError) {
-              setError(`Database connection error: ${profileError.message}`);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch (healthErr) {
-          // PRODUCTION: Console disabled
-          // console.error('Supabase health check exception:', healthErr);
-        }
-        
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           setError(`Authentication error: ${sessionError.message}`);
@@ -89,8 +68,8 @@ function AuthPageContent() {
         
         if (session) {
           // PRODUCTION: Console disabled
-          // console.log('[auth] User already logged in, redirecting to dashboard');
-          router.push('/dashboard');
+          // console.log('[auth] User already logged in, redirecting to:', redirectTo);
+          router.push(redirectTo);
           return;
         } else {
           setLoading(false);
@@ -109,14 +88,18 @@ function AuthPageContent() {
         // PRODUCTION: Console disabled
         // console.log('[auth] Auth state changed:', event, session?.user?.email);
         
-        if (event === 'SIGNED_IN' && session) {
-          // PRODUCTION: Console disabled
-          // console.log('[auth] User signed in, redirecting to dashboard');
-          router.push('/dashboard');
-        } else if (event === 'SIGNED_OUT') {
+        // Don't redirect on SIGNED_IN here - let the form handle it
+        // This prevents double redirects
+        if (event === 'SIGNED_OUT') {
           // PRODUCTION: Console disabled
           // console.log('[auth] User signed out');
           setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Handle token refresh if needed
+          setLoading(false);
+        } else if (event === 'SIGNED_IN' && session) {
+          // Re-check auth status when signed in
+          checkUser();
         }
       }
     );
@@ -124,7 +107,7 @@ function AuthPageContent() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, searchParams]);
+  }, [router, searchParams, supabase]);
 
   if (loading) {
     return (
@@ -155,7 +138,7 @@ function AuthPageContent() {
             <p className="text-xs text-red-600 dark:text-red-300 mt-1">Please try again or contact support.</p>
           </div>
         )}
-        {isClient && <CustomAuthForm />}
+        {isClient && <CustomAuthForm redirectTo={redirectTo} />}
       </div>
     </main>
   );

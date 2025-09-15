@@ -52,11 +52,18 @@ export async function GET(request: NextRequest) {
       preferences = { ...preferences, ...profileData.preferences };
     }
     
-    return NextResponse.json({
+    // Create response with proper headers for Supabase client compatibility
+    const response = NextResponse.json({
       user_id: user.id,
       preferences,
       timestamp: new Date().toISOString()
     });
+    
+    // Add headers to satisfy Supabase client expectations
+    response.headers.set('Content-Type', 'application/json');
+    response.headers.set('Accept', 'application/json');
+    
+    return response;
   } catch (error) {
     // PRODUCTION: Logging disabled
 // console.error('Error fetching user preferences:', error);

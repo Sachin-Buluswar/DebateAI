@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMonitoring } from '@/lib/monitoring/middleware';
-import { debateMetrics } from '@/lib/monitoring/opentelemetry';
 import { apiPerformance, dbPerformance, openaiPerformance, elevenLabsPerformance } from '@/lib/monitoring/performance';
 import { createClient } from '@/utils/supabase/server';
-import { optionalAuth } from '@/lib/auth-middleware';
 
 interface MetricsResponse {
   timestamp: string;

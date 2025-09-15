@@ -79,7 +79,10 @@ export async function GET(request: NextRequest) {
             
             if (insertError) {
               // Log but don't fail - profile will be created on first dashboard visit
-              console.warn('[auth-callback] Profile creation deferred:', insertError.code)
+              // Only log in development to avoid production console warnings
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[auth-callback] Profile creation deferred:', insertError.code)
+              }
             }
           } else {
             // Update existing profile
@@ -91,16 +94,25 @@ export async function GET(request: NextRequest) {
               .eq('id', data.user.id)
             
             if (updateError) {
-              console.warn('[auth-callback] Profile update deferred:', updateError.code)
+              // Only log in development to avoid production console warnings
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[auth-callback] Profile update deferred:', updateError.code)
+              }
             }
           }
         } catch (profileError) {
           // Profile operations failed but auth succeeded - continue
-          console.warn('[auth-callback] Profile operation skipped')
+          // Only log in development to avoid production console warnings
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[auth-callback] Profile operation skipped:', profileError)
+          }
         }
 
-        // Redirect to dashboard on successful authentication
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard`)
+        // Get redirect parameter from URL or default to dashboard
+        const redirectTo = requestUrl.searchParams.get('redirect') || '/dashboard'
+        
+        // Redirect to intended destination on successful authentication
+        return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`)
       }
       
       // Session creation failed for unknown reason
@@ -109,7 +121,10 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       // Unexpected error - provide a more specific message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[auth-callback] Unexpected error:', errorMessage)
+      // Only log in development to avoid production console errors
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[auth-callback] Unexpected error:', errorMessage)
+      }
       
       return NextResponse.redirect(`${requestUrl.origin}/auth?error=unexpected_error&code=system_error`)
     }

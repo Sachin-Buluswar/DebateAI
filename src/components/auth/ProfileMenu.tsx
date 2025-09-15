@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/utils/supabase/client';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function ProfileMenu() {
@@ -15,6 +15,8 @@ export default function ProfileMenu() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   
+  // Create Supabase client once per component lifecycle
+  const supabase = createClient();
   useEffect(() => {
     // Fetch user info when component mounts
     const fetchUserInfo = async () => {
@@ -38,6 +40,19 @@ export default function ProfileMenu() {
     
     fetchUserInfo();
     
+    // Set up auth state listener for real-time updates
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        const email = session.user.email || '';
+        const name = email.split('@')[0] || 'user';
+        setUserName(name.toLowerCase());
+        setIsAuthenticated(true);
+      } else {
+        setUserName('');
+        setIsAuthenticated(false);
+      }
+    });
+    
     // Add click outside listener to close dropdown
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -48,8 +63,9 @@ export default function ProfileMenu() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
   
   const handleLogout = async () => {
     try {

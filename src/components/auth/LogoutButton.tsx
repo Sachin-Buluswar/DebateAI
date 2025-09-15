@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/lib/toast';
 
 export default function LogoutButton({ className = '' }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const router = useRouter();
+  const toast = useToast();
 
   const handleLogout = async () => {
     try {
@@ -17,16 +19,27 @@ export default function LogoutButton({ className = '' }) {
       
       if (error) {
         // PRODUCTION: Logging disabled
-        // console.error('Error signing out:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error signing out:', error);
+        }
+        toast.error('Failed to sign out. Please try again.');
+        setShowLogoutConfirm(false);
         return;
       }
+      
+      // Close dialog before redirect
+      setShowLogoutConfirm(false);
       
       // Redirect to home page after successful logout
       router.push('/');
       router.refresh();
     } catch (error) {
       // PRODUCTION: Logging disabled
-      // console.error('Exception during logout:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Exception during logout:', error);
+      }
+      toast.error('An unexpected error occurred. Please try again.');
+      setShowLogoutConfirm(false);
     } finally {
       setIsLoggingOut(false);
     }

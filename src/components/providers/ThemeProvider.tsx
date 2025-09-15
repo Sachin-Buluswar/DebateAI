@@ -36,9 +36,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         if (session) {
           // User is logged in, try to get their preference
           const { data } = await supabase
-            .from('user_preferences')
+            .from('user_profiles')
             .select('preferences')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)
             .single();
           
           if (data && data.preferences && typeof data.preferences.darkMode === 'boolean') {
@@ -92,12 +92,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       
       if (session) {
         await supabase
-          .from('user_preferences')
+          .from('user_profiles')
           .upsert({
-            user_id: session.user.id,
+            id: session.user.id,
+            email: session.user.email,
             preferences: { darkMode: newValue },
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id' });
+          }, { onConflict: 'id' });
       }
     } catch (error) {
       // PRODUCTION: Console disabled

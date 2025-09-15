@@ -52,10 +52,14 @@ export async function authMiddleware(request: NextRequest) {
     const cookieHeader = request.headers.get('cookie');
     
     // Look for Supabase auth cookies
+    // Supabase SSR uses cookie chunking with names like:
+    // sb-<project-ref>-auth-token, sb-<project-ref>-auth-token.0, etc.
     const hasAuthCookie = cookieHeader && (
-      cookieHeader.includes('sb-access-token') ||
-      cookieHeader.includes('sb-refresh-token') ||
-      cookieHeader.includes('supabase-auth-token')
+      cookieHeader.includes('sb-') && (
+        cookieHeader.includes('-auth-token') ||
+        cookieHeader.includes('access-token') ||
+        cookieHeader.includes('refresh-token')
+      )
     );
     
     if (!hasAuthCookie) {

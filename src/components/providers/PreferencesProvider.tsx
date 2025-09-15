@@ -44,12 +44,12 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
         
         if (session) {
           const { data, error } = await supabase
-            .from('user_preferences')
+            .from('user_profiles')
             .select('preferences')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)
             .single();
 
-          if (!error && data) {
+          if (!error && data?.preferences) {
             setPreferences({ ...defaultPreferences, ...data.preferences });
           }
         }
@@ -73,11 +73,11 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        await supabase.from('user_preferences').upsert({
-          user_id: session.user.id,
+        await supabase.from('user_profiles').upsert({
+          id: session.user.id,
           preferences: newPreferences,
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
+        }, { onConflict: 'id' });
       }
     } catch (err) {
       // PRODUCTION: Console disabled

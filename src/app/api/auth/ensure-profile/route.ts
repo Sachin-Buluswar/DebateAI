@@ -1,118 +1,93 @@
-import { createClient } from '@/utils/supabase/server';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+import { requireAuth } from '@/lib/auth-middleware';
 
 /**
  * Ensures a user profile exists for the authenticated user
- * This endpoint uses the service role key to bypass RLS policies
+ * Uses authenticated client that respects RLS policies
  * Called after successful authentication if profile creation failed
  */
 export async function POST(request: NextRequest) {
-  try {
-    // Get the current user session
+  return requireAuth(request, async (authenticatedRequest) => {
+    const user = authenticatedRequest.user;
     const supabase = createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-    
-    // Check if profile already exists
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-    
-    if (existingProfile) {
-      return NextResponse.json(
-        { message: 'Profile already exists' },
-        { status: 200 }
-      );
-    }
-    
-    // Create profile using service role client if available
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const serviceClient = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false
-          }
-        }
-      );
-      
-      const profileData = {
-        id: user.id,
-        email: user.email!,
-        full_name: user.user_metadata?.full_name || 
-                  user.email?.split('@')[0] || 
-                  'User',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const { error: insertError } = await serviceClient
+
+    try {
+      // Check if profile exists
+      const { data: existingProfile, error: selectError } = await supabase
         .from('user_profiles')
-        .insert(profileData);
-      
-      if (insertError) {
-        console.error('[ensure-profile] Service role insert failed:', insertError);
-        // Try with regular client as fallback
-        const { error: fallbackError } = await supabase
-          .from('user_profiles')
-          .insert(profileData);
-        
-        if (fallbackError) {
-          return NextResponse.json(
-            { error: 'Failed to create profile', details: fallbackError.message },
-            { status: 500 }
-          );
-        }
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (existingProfile) {
+        // Profile already exists
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Profile already exists' 
+        });
       }
-      
-      return NextResponse.json(
-        { message: 'Profile created successfully' },
-        { status: 201 }
-      );
-    } else {
-      // No service role key, try with regular client
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        // Error other than "not found"
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[ensure-profile] Error checking profile:', selectError);
+        }
+        return NextResponse.json(
+          { error: 'Failed to check profile', details: selectError.message },
+          { status: 500 }
+        );
+      }
+
+      // Create new profile using authenticated client (respects RLS)
       const profileData = {
         id: user.id,
-        email: user.email!,
+        email: user.email,
         full_name: user.user_metadata?.full_name || 
                   user.email?.split('@')[0] || 
                   'User',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
+
       const { error: insertError } = await supabase
         .from('user_profiles')
         .insert(profileData);
-      
+
       if (insertError) {
+        // Check if it's a unique constraint violation (profile was created by another request)
+        if (insertError.code === '23505') {
+          return NextResponse.json({ 
+            success: true, 
+            message: 'Profile already exists (concurrent creation)' 
+          });
+        }
+        
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[ensure-profile] Error creating profile:', insertError);
+        }
         return NextResponse.json(
           { error: 'Failed to create profile', details: insertError.message },
           { status: 500 }
         );
       }
-      
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Profile created successfully' 
+      });
+
+    } catch (error) {
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[ensure-profile] Unexpected error:', error);
+      }
       return NextResponse.json(
-        { message: 'Profile created successfully' },
-        { status: 201 }
+        { error: 'An unexpected error occurred' },
+        { status: 500 }
       );
     }
-  } catch (error) {
-    console.error('[ensure-profile] Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 }

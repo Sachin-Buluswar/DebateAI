@@ -65,9 +65,9 @@ export async function GET(request: NextRequest) {
           .not('indexed_at', 'is', null);
         
         status.database.indexedDocuments = indexedCount || 0;
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-// console.error('Database check failed:', error);
+// console.error('Database check failed:', _error);
       }
 
       // Check storage bucket

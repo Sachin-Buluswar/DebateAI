@@ -34,12 +34,6 @@
       "args": [
         "@playwright/mcp@latest"
       ]
-    },
-    "ElevenLabs": {
-      "command": "elevenlabs-mcp",
-      "env": {
-        "ELEVENLABS_API_KEY": "sk_97c9aa7b4f6a06045de7f8bb1a10c40cff9358cc0d77556f"
-      }
     }
   }
 }

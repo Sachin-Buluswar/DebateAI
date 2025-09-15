@@ -44,10 +44,16 @@ export function getRedirectUrl(path: string = ''): string {
 }
 
 /**
- * Get auth callback URL
+ * Get auth callback URL with optional redirect parameter
  */
-export function getAuthCallbackUrl(): string {
-  return getRedirectUrl('/auth/callback');
+export function getAuthCallbackUrl(redirectTo?: string): string {
+  const callbackUrl = getRedirectUrl('/auth/callback');
+  if (redirectTo) {
+    const url = new URL(callbackUrl);
+    url.searchParams.set('redirect', redirectTo);
+    return url.toString();
+  }
+  return callbackUrl;
 }
 
 /**

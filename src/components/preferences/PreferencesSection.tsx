@@ -37,9 +37,9 @@ export default function PreferencesSection() {
 
         if (session) {
           const { data, error } = await supabase
-            .from('user_preferences')
+            .from('user_profiles')
             .select('preferences')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)
             .single();
 
           if (!error) {
@@ -94,13 +94,14 @@ export default function PreferencesSection() {
       }
 
       const prefsToSave = { ...preferences, darkMode: isDarkMode };
-      const { error } = await supabase.from('user_preferences').upsert(
+      const { error } = await supabase.from('user_profiles').upsert(
         {
-          user_id: session.user.id,
+          id: session.user.id,
+          email: session.user.email,
           preferences: prefsToSave,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: 'user_id' }
+        { onConflict: 'id' }
       );
 
       if (!error) {
