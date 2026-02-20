@@ -116,9 +116,9 @@ export async function POST(request: NextRequest) {
           message: 'Debate session created. Connect via WebSocket for real-time interaction.',
         })
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error in debate start:', error);
+// console.error('Error in debate start:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Invalid request' },

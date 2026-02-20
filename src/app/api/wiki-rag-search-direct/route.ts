@@ -133,7 +133,7 @@ async function performDirectRagSearch(
     
     // Transform to EnhancedSearchResult format
     const enhancedResults: EnhancedSearchResult[] = await Promise.all(
-      topResults.map(async ({ chunk, score }, index) => {
+      topResults.map(async ({ chunk, score }) => {
         // Get surrounding context
         const { data: contextChunks } = await supabase
           .from('document_chunks')
@@ -176,10 +176,10 @@ async function performDirectRagSearch(
 // console.log(`[direct-rag-search] Returning ${enhancedResults.length} results`);
     return enhancedResults;
     
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('[direct-rag-search] Search error:', error);
-    throw error;
+// console.error('[direct-rag-search] Search error:', _error);
+    throw _error;
   }
 }
 
@@ -246,9 +246,9 @@ export async function POST(request: NextRequest) {
             { status: 200 }
           )
         );
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-// console.error('[direct-rag-search] Error:', error);
+// console.error('[direct-rag-search] Error:', _error);
 
         // Return empty results instead of error to prevent UI issues
         return addSecurityHeaders(

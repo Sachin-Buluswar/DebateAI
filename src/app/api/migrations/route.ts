@@ -15,7 +15,7 @@ import { blockEndpoint } from '@/lib/auth-middleware';
  * NEVER through an API endpoint.
  */
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(_request: NextRequest): Promise<NextResponse> {
   // This endpoint is permanently disabled for security
   return blockEndpoint(
     'Database migrations cannot be run through API endpoints. ' +
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   );
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   // Also block GET requests
   return blockEndpoint(
     'Database migrations cannot be accessed through API endpoints. ' +

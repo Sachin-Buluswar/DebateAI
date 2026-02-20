@@ -36,7 +36,7 @@ import * as Recharts from 'recharts';
 
 // Add global error handler to catch unhandled errors
 if (typeof window !== 'undefined') {
-  window.onerror = function (_message, _source, _lineno, _colno, _error) {
+  window.onerror = function () {
     // PRODUCTION: Console disabled
     // console.log('Global error caught:', { message, source, lineno, colno, error });
     return false;
@@ -118,7 +118,7 @@ export default function Dashboard() {
               setError('Failed to load debates. Please try refreshing the page.');
             }
           }
-        } catch (_debateError) {
+        } catch {
           // PRODUCTION: Console disabled
           // console.error('Exception fetching debates:', debateError);
         }
@@ -269,11 +269,11 @@ export default function Dashboard() {
               setHighestScore(null);
               setScoreTrendData([]);
             }
-        } catch (_speechError) {
+        } catch {
           // PRODUCTION: Console disabled
           // console.error('Exception fetching speech feedback:', speechError);
         }
-      } catch (_error) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Error fetching user data:', error);
         setError('An unexpected error occurred. Please try again later.');

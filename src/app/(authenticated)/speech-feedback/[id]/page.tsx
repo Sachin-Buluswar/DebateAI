@@ -48,7 +48,7 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
     } else {
       // Reset error state when attempting to play
       setError(null);
-      audioRef.current.play().catch(err => {
+      audioRef.current.play().catch(_err => {
         // PRODUCTION: Console disabled
         // console.error('Playback error:', err);
         setError('Unable to play audio. The file may be corrupted or inaccessible.');

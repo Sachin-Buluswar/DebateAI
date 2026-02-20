@@ -83,7 +83,7 @@ function AuthPageContent() {
               return;
             }
           }
-        } catch (healthErr) {
+        } catch {
           // PRODUCTION: Console disabled
           // console.error('Supabase health check exception:', healthErr);
         }

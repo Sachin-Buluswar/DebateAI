@@ -175,7 +175,7 @@ export class ElevenLabsWebSocketService {
                   this.onAudioChunk(data);
                 }
               }
-            } catch (error) {
+            } catch (_error) {
               // If parsing fails, assume it's audio data
               // This handles edge cases where JSON detection fails
               if (this.onAudioChunk) {
@@ -197,7 +197,7 @@ export class ElevenLabsWebSocketService {
             reject(error);
           });
 
-          this.ws.on('close', (code, reason) => {
+          this.ws.on('close', (code, _reason) => {
             // PRODUCTION: Console disabled - Critical file
             // console.log(`ElevenLabs WebSocket closed: ${code} - ${reason}`);
             this.isConnected = false;
@@ -220,9 +220,9 @@ export class ElevenLabsWebSocketService {
       {
         retryOptions: {
           maxRetries: 3,
-          onRetry: (error, attempt) => {
+          onRetry: (_error, _attempt) => {
             // PRODUCTION: Console disabled - Critical file
-            // console.warn(`ElevenLabs WebSocket connection retry ${attempt}:`, error.message);
+            // console.warn(`ElevenLabs WebSocket connection retry ${_attempt}:`, _error.message);
           }
         }
       }
@@ -276,7 +276,7 @@ export class ElevenLabsWebSocketService {
       {
         retryOptions: {
           maxRetries: 2,
-          shouldRetry: (error) => {
+          shouldRetry: (_error) => {
             // Don't retry if WebSocket is closing or closed
             if (this.ws?.readyState === WebSocket.CLOSING || 
                 this.ws?.readyState === WebSocket.CLOSED) {
@@ -380,9 +380,9 @@ export class ElevenLabsWebSocketService {
     setTimeout(async () => {
       try {
         await this.connect();
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Console disabled - Critical file
-        // console.error('ElevenLabs WebSocket reconnection failed:', error);
+        // console.error('ElevenLabs WebSocket reconnection failed:', _error);
       }
     }, delay);
   }
@@ -407,9 +407,9 @@ export class ElevenLabsWebSocketService {
       if (message) {
         try {
           await this.sendText(message.text, message.flush);
-        } catch (error) {
+        } catch (_error) {
           // PRODUCTION: Console disabled - Critical file
-          // console.error('Failed to send queued message:', error);
+          // console.error('Failed to send queued message:', _error);
           // Put it back at the front of the queue
           this.messageQueue.unshift(message);
           break;

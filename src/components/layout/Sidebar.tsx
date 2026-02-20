@@ -85,9 +85,9 @@ export default function Sidebar() {
         } else {
           setIsAuthenticated(false);
         }
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Console disabled
-        // console.error('Error getting user info:', error);
+        // console.error('Error getting user info:', _error);
         setIsAuthenticated(false);
       }
     };
@@ -124,9 +124,9 @@ export default function Sidebar() {
       
       router.push('/');
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
-      // console.error('Exception during logout:', error);
+      // console.error('Exception during logout:', _error);
     } finally {
       setIsLoggingOut(false);
     }

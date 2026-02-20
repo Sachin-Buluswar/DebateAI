@@ -73,7 +73,7 @@ function sanitizeSessionId(sessionId: string): string {
  * @deprecated Use direct service invocation instead
  */
 // Forward the reassembled file to the main speech‑feedback endpoint using native FormData
-async function forwardToMainEndpoint(sessionId: string, metadata: Metadata, fileBuffer: Buffer): Promise<Response> {
+async function _forwardToMainEndpoint(sessionId: string, metadata: Metadata, fileBuffer: Buffer): Promise<Response> {
   try {
     // Use native FormData
     const form = new FormData();
@@ -226,9 +226,9 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
         // PRODUCTION: Logging disabled
 // console.warn(`[finalize] Size mismatch - expected: ${metadata.totalSize}, actual: ${fileBuffer.length}`);
       }
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('[finalize] Error merging chunks:', error);
+// console.error('[finalize] Error merging chunks:', _error);
       throw new Error('Failed to merge uploaded chunks');
     }
 
@@ -298,9 +298,9 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     // This prevents memory leaks from failed uploads
     if (sessionId) {
       await UploadSessionStore.deleteSession(sanitizeSessionId(sessionId))
-        .catch(err => {
+        .catch(_err => {
           // PRODUCTION: Logging disabled
-          // console.error(`[finalize] Failed to clean up session on error:`, err)
+          // console.error(`[finalize] Failed to clean up session on error:`, _err)
         });
     }
     

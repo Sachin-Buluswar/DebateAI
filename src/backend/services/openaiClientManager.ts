@@ -112,8 +112,8 @@ class OpenAIClientManager {
           maxRetries: options?.maxRetries ?? 3,
           shouldRetry: options?.shouldRetry ?? ((error: unknown) => {
             // Retry on rate limits, timeouts, and server errors
-            const err = error as any;
-            if (err?.status >= 500) return true;
+            const err = error as Record<string, unknown>;
+            if (typeof err?.status === 'number' && err.status >= 500) return true;
             if (err?.status === 429) return true;
             if (err?.code === 'ETIMEDOUT') return true;
             if (err?.code === 'ECONNRESET') return true;
@@ -155,33 +155,34 @@ class OpenAIClientManager {
   async createTranscription(
     params: OpenAI.Audio.TranscriptionCreateParams,
     options?: {
-      fallbackResponse?: any;
+      fallbackResponse?: OpenAI.Audio.Transcription;
       shouldRetry?: (error: unknown) => boolean;
       maxRetries?: number;
     }
   ): Promise<OpenAI.Audio.Transcription> {
     const client = await this.getClient();
-    
-    return globalErrorRecovery.executeWithRecovery(
+
+    return globalErrorRecovery.executeWithRecovery<OpenAI.Audio.Transcription>(
       'openai-transcription',
-      async () => {
+      async (): Promise<OpenAI.Audio.Transcription> => {
         // Use trackAPICall to automatically handle timing and logging
-        return await openaiPerformance.trackAPICall(
+        const result = await openaiPerformance.trackAPICall(
           'audio.transcriptions',
-          async () => await client.audio.transcriptions.create(params as any),
+          async () => await (client.audio.transcriptions.create as (params: OpenAI.Audio.TranscriptionCreateParams) => Promise<OpenAI.Audio.Transcription>)(params),
           {
             model: params.model,
             responseFormat: params.response_format
           }
         );
+        return result as OpenAI.Audio.Transcription;
       },
       {
         retryOptions: {
           maxRetries: options?.maxRetries ?? 3,
           shouldRetry: options?.shouldRetry ?? ((error: unknown) => {
             // Same retry logic as chat completions
-            const err = error as any;
-            if (err?.status >= 500) return true;
+            const err = error as Record<string, unknown>;
+            if (typeof err?.status === 'number' && err.status >= 500) return true;
             if (err?.status === 429) return true;
             if (err?.code === 'ETIMEDOUT') return true;
             if (err?.code === 'ECONNRESET') return true;
@@ -191,7 +192,7 @@ class OpenAIClientManager {
         useCircuitBreaker: true,
         useRetryQueue: true,
         fallbacks: options?.fallbackResponse ? [
-          async () => options.fallbackResponse,
+          async () => options.fallbackResponse!,
         ] : undefined,
       }
     );

@@ -58,9 +58,9 @@ export async function GET() {
       status.database.documents = docCount || 0;
       status.database.chunks = chunkCount || 0;
       status.database.indexedDocuments = indexedCount || 0;
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Database check failed:', error);
+// console.error('Database check failed:', _error);
     }
 
     // Check storage bucket
@@ -77,21 +77,21 @@ export async function GET() {
         
         status.storage.fileCount = files?.length || 0;
       }
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Storage check failed:', error);
+// console.error('Storage check failed:', _error);
     }
 
     // Check search capabilities
     try {
       // Check if pg_trgm extension exists
-      let extensions: any[] = [];
+      let extensions: Array<{ extname?: string }> = [];
       try {
-        const result = await supabase.rpc('get_installed_extensions' as any);
-        extensions = result.data || [];
-      } catch (error) {
+        const result = await supabase.rpc('get_installed_extensions' as string);
+        extensions = (result.data as Array<{ extname?: string }>) || [];
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-// console.error('Failed to get extensions:', error);
+// console.error('Failed to get extensions:', _error);
       }
       
       if (Array.isArray(extensions)) {
@@ -99,16 +99,16 @@ export async function GET() {
       }
 
       // Check if search indexes exist
-      let indexes: any[] = [];
+      let indexes: Array<{ indexname?: string }> = [];
       try {
         const result = await supabase
-          .from('pg_indexes' as any)
+          .from('pg_indexes' as string)
           .select('indexname')
           .eq('tablename', 'document_chunks');
-        indexes = result.data || [];
-      } catch (error) {
+        indexes = (result.data as Array<{ indexname?: string }>) || [];
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-// console.error('Failed to get indexes:', error);
+// console.error('Failed to get indexes:', _error);
       }
       
       if (indexes && indexes.length > 0) {
@@ -117,9 +117,9 @@ export async function GET() {
         );
         status.search.indexesCreated = indexes.length > 2;
       }
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Search capability check failed:', error);
+// console.error('Search capability check failed:', _error);
     }
 
     // Calculate health score
@@ -133,9 +133,9 @@ export async function GET() {
         recommendations: getRecommendations(status),
       })
     );
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('RAG status check failed:', error);
+// console.error('RAG status check failed:', _error);
     return addSecurityHeaders(
       NextResponse.json(
         {
@@ -148,7 +148,14 @@ export async function GET() {
   }
 }
 
-function calculateHealthScore(status: any): number {
+interface RagStatusInfo {
+  database: { connected: boolean; documents: number; chunks: number; indexedDocuments: number };
+  storage: { bucketExists: boolean; fileCount: number };
+  search: { fullTextEnabled: boolean; trigramEnabled: boolean; indexesCreated: boolean };
+  configuration: { supabaseUrl: boolean; supabaseKey: boolean; openaiKey: boolean; vectorStoreId: boolean };
+}
+
+function calculateHealthScore(status: RagStatusInfo): number {
   let score = 0;
   
   // Database health (40 points)
@@ -175,7 +182,7 @@ function calculateHealthScore(status: any): number {
   return score;
 }
 
-function getRecommendations(status: any): string[] {
+function getRecommendations(status: RagStatusInfo): string[] {
   const recommendations: string[] = [];
   
   if (!status.database.connected) {

@@ -72,9 +72,9 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
           message: 'Document reindexed successfully',
         })
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error reindexing document:', error);
+// console.error('Error reindexing document:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Failed to reindex document' },

@@ -109,9 +109,9 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                     // console.error('ElevenLabs API Error:', errorData);
                     
                     // Create error with status for retry logic
-                    const error = new Error(`ElevenLabs TTS failed: ${errorData.detail?.message || 'Unknown error'}`);
-                    (error as any).status = res.status;
-                    throw error;
+                    const ttsError = new Error(`ElevenLabs TTS failed: ${errorData.detail?.message || 'Unknown error'}`);
+                    (ttsError as unknown as Record<string, unknown>).status = res.status;
+                    throw ttsError;
                 }
 
                 return res;
@@ -119,9 +119,9 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
             {
                 retryOptions: {
                     maxRetries: 3,
-                    onRetry: (error, attempt) => {
+                    onRetry: (_error, _attempt) => {
                         // PRODUCTION: Console disabled
-                        // console.warn(`ElevenLabs TTS retry attempt ${attempt}:`, error.message);
+                        // console.warn(`ElevenLabs TTS retry attempt ${_attempt}:`, _error.message);
                     },
                     shouldRetry: (error) => {
                         // Retry Strategy:
@@ -130,8 +130,8 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                         // - 429: Rate limit - retry with backoff
                         // - 5xx: Server errors - transient, retry
                         // - Network errors - retry
-                        if ((error as any).status === 401) return false;
-                        if ((error as any).status === 400) return false;
+                        if ((error as unknown as Record<string, unknown>).status === 401) return false;
+                        if ((error as unknown as Record<string, unknown>).status === 400) return false;
                         return true;
                     }
                 },
@@ -171,9 +171,9 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
         );
 
         return response;
-    } catch (error) {
+    } catch (_error) {
         // PRODUCTION: Console disabled
-        // console.error('Error generating audio stream after all recovery attempts:', error);
+        // console.error('Error generating audio stream after all recovery attempts:', _error);
         return null;
     }
 }

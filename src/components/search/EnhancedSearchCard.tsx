@@ -4,6 +4,15 @@ import { useState } from 'react';
 import { cn } from '@/utils/cn';
 import type { SearchResult } from '@/types';
 
+interface SearchResultMetadata {
+  chunk_index?: number;
+  file_id?: string;
+  file_name?: string;
+  page_number?: number;
+  start_char?: number;
+  end_char?: number;
+}
+
 interface EnhancedSearchCardProps {
   result: SearchResult;
   index: number;
@@ -20,7 +29,7 @@ export default function EnhancedSearchCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
   
-  const metadata = (result as any).metadata;
+  const metadata = (result as SearchResult & { metadata?: SearchResultMetadata }).metadata;
 
   return (
     <div

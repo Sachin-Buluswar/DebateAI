@@ -58,12 +58,12 @@ export function isUsingSupabaseRealtime(): boolean {
  * Convert Socket.IO events to Supabase Realtime events
  */
 export function setupRealtimeHandlers(socket: RealtimeSocket, handlers: {
-  onDebateStarted?: (data: any) => void;
-  onDebateUpdate?: (state: any) => void;
-  onSpeechStart?: (data: any) => void;
-  onSpeechEnd?: (data: any) => void;
-  onAudioChunk?: (chunk: any) => void;
-  onCrossfireMessage?: (data: any) => void;
+  onDebateStarted?: (data: unknown) => void;
+  onDebateUpdate?: (state: unknown) => void;
+  onSpeechStart?: (data: unknown) => void;
+  onSpeechEnd?: (data: unknown) => void;
+  onAudioChunk?: (chunk: unknown) => void;
+  onCrossfireMessage?: (data: unknown) => void;
   onError?: (error: unknown) => void;
 }): void {
   // Common events

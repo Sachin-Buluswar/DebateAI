@@ -165,9 +165,9 @@ export const enhancedSearchVectorStore = async (
                     result.source = document.file_name;
                   }
                 }
-              } catch (error) {
+              } catch (_error) {
                 // PRODUCTION: Console disabled
-                // console.warn(`[enhancedSearchVectorStore] Could not retrieve metadata for file ${openaiFileId}:`, error);
+                // console.warn(`[enhancedSearchVectorStore] Could not retrieve metadata for file ${openaiFileId}:`, _error);
               }
             }
           }
@@ -189,9 +189,9 @@ export const enhancedSearchVectorStore = async (
 
     return limited;
     
-  } catch (assistErr) {
+  } catch (_assistErr) {
     // PRODUCTION: Console disabled
-    // console.error('[enhancedSearchVectorStore] Enhanced search failed:', assistErr);
+    // console.error('[enhancedSearchVectorStore] Enhanced search failed:', _assistErr);
     
     // Fallback to error results
     const fallbackResults: EnhancedSearchResult[] = [

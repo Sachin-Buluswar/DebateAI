@@ -3,13 +3,7 @@
  * Uses Supabase to store upload sessions and chunks
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Use service role client for server-side operations
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Note: Supabase client removed - upload sessions use in-memory storage only
 
 interface SessionMetadata {
   filename: string;

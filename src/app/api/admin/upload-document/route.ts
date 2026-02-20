@@ -110,9 +110,9 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
           fileName: file.name,
         })
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error uploading document:', error);
+// console.error('Error uploading document:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Failed to upload document' },

@@ -163,13 +163,14 @@ export function initializeSocketIO(io: SocketIOServer) {
      * The adapter translates between different event naming conventions
      * used by various client versions.
      */
-    let adapter: any;
+    let adapter: { cleanup?: () => void } | undefined;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { initializeDebateAdapter } = require('@/lib/socket/debateSocketAdapter');
       adapter = initializeDebateAdapter(socket);
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled - Critical file
-      // console.error('Failed to initialize debate adapter:', error);
+      // console.error('Failed to initialize debate adapter:', _error);
     }
 
     /**
@@ -254,9 +255,9 @@ export function initializeSocketIO(io: SocketIOServer) {
                       status: 'completed'
                     })
                     .eq('id', sessionId);
-                } catch (error) {
+                } catch (_error) {
                   // PRODUCTION: Console disabled - Critical file
-                  // console.error('Error generating post-debate analysis:', error);
+                  // console.error('Error generating post-debate analysis:', _error);
                 }
               }
             }
@@ -542,9 +543,9 @@ export function initializeSocketIO(io: SocketIOServer) {
           socket.emit('debateSaved', { success: true, sessionId });
           // PRODUCTION: Console disabled - Critical file
           // console.log('Debate saved successfully');
-        } catch (error) {
+        } catch (_error) {
           // PRODUCTION: Console disabled - Critical file
-          // console.error('Error saving debate:', error);
+          // console.error('Error saving debate:', _error);
           socket.emit('debateSaved', { success: false, error: 'Failed to save debate' });
         }
       }
@@ -596,9 +597,9 @@ export function initializeSocketIO(io: SocketIOServer) {
                           status: 'completed'
                         })
                         .eq('id', sessionId);
-                    } catch (error) {
+                    } catch (_error) {
                       // PRODUCTION: Console disabled - Critical file
-                      // console.error('Error generating post-debate analysis:', error);
+                      // console.error('Error generating post-debate analysis:', _error);
                     }
                   }
                 }
@@ -654,9 +655,9 @@ export function initializeSocketIO(io: SocketIOServer) {
                             // PRODUCTION: Console disabled - Critical file
                             // console.log(`TTS audio streamed to client for ${currentSpeaker.name}`);
                           }
-                        } catch (error) {
+                        } catch (_error) {
                           // PRODUCTION: Console disabled - Critical file
-                          // console.warn('WebSocket streaming failed, falling back to HTTP:', error);
+                          // console.warn('WebSocket streaming failed, falling back to HTTP:', _error);
                           const audioBuffer = await generateAudioArrayBuffer(speechText, currentSpeaker.name);
                           if (audioBuffer) {
                             const buffer = Buffer.from(audioBuffer);
@@ -708,9 +709,9 @@ export function initializeSocketIO(io: SocketIOServer) {
           // PRODUCTION: Console disabled - Critical file
           // console.log('Debate loaded successfully');
         }
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Console disabled - Critical file
-        // console.error('Error loading debate:', error);
+        // console.error('Error loading debate:', _error);
         socket.emit('debateLoaded', { success: false, error: 'Failed to load debate' });
       }
     });
@@ -824,14 +825,14 @@ export function initializeSocketIO(io: SocketIOServer) {
                 
                 // console.log('Audio recording saved to storage:', fileName);
               }
-            } catch (error) {
+            } catch (_error) {
               // PRODUCTION: Console disabled - Critical file
-              // console.error('Error saving audio recording:', error);
+              // console.error('Error saving audio recording:', _error);
             }
           }
-        }).catch(error => {
+        }).catch(_error => {
           // PRODUCTION: Console disabled - Critical file
-          // console.error('Error saving user speech:', error);
+          // console.error('Error saving user speech:', _error);
         });
         
         // Append to running transcript

@@ -61,10 +61,10 @@ export function WikiSearchPanel({
       } else {
         setError(data.error || 'Failed to get advice');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Network error while getting advice');
       // PRODUCTION: Console disabled
-      // console.error('Advice error:', err);
+      // console.error('Advice error:', _err);
     } finally {
       setIsLoading(false);
     }

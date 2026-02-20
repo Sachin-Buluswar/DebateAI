@@ -118,7 +118,7 @@ async function performRagSearch(
       input: query,
     });
 
-    const queryEmbedding = embeddingResponse.data[0].embedding;
+    const _queryEmbedding = embeddingResponse.data[0].embedding;
 
     // Create a temporary assistant for vector search
     // The Assistant API provides a managed way to search through vector stores.
@@ -207,8 +207,8 @@ Return up to ${maxResults} results ordered by relevance.`,
           if (citations.length > 0) {
             // Process each citation as a separate result
             for (let i = 0; i < citations.length && results.length < maxResults; i++) {
-              const citation = citations[i] as any;
-              const fileId = citation.file_citation?.file_id;
+              const citation = citations[i] as { file_citation?: { file_id: string }; text?: string };
+              const fileId = citation.file_citation?.file_id || '';
 
               // Get file information
               let fileName = 'Unknown Document';
@@ -267,9 +267,9 @@ Return up to ${maxResults} results ordered by relevance.`,
 
     // Return results
     return results.slice(0, maxResults);
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('[rag-search] RAG search error:', error);
+// console.error('[rag-search] RAG search error:', _error);
 
     // Return error result
     return [
@@ -385,9 +385,9 @@ export async function POST(request: Request) {
           { status: 200 }
         )
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('[rag-search] Error:', error);
+// console.error('[rag-search] Error:', _error);
 
       return addSecurityHeaders(
         NextResponse.json(

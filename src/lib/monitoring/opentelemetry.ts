@@ -108,7 +108,7 @@ const tracer = trace.getTracer(SERVICE_NAME, SERVICE_VERSION);
 /**
  * Create a custom span for tracing
  */
-export function createSpan(name: string, attributes?: Record<string, any>): Span {
+export function createSpan(name: string, attributes?: Record<string, string | number | boolean>): Span {
   const span = tracer.startSpan(name);
   if (attributes) {
     span.setAttributes(attributes);
@@ -122,7 +122,7 @@ export function createSpan(name: string, attributes?: Record<string, any>): Span
 export async function traceAsync<T>(
   name: string,
   operation: () => Promise<T>,
-  attributes?: Record<string, any>
+  attributes?: Record<string, string | number | boolean>
 ): Promise<T> {
   const span = createSpan(name, attributes);
   
@@ -148,7 +148,7 @@ export async function traceAsync<T>(
 export function traceSync<T>(
   name: string,
   operation: () => T,
-  attributes?: Record<string, any>
+  attributes?: Record<string, string | number | boolean>
 ): T {
   const span = createSpan(name, attributes);
   
@@ -171,7 +171,7 @@ export function traceSync<T>(
 /**
  * Add event to current span
  */
-export function addSpanEvent(name: string, attributes?: Record<string, any>) {
+export function addSpanEvent(name: string, attributes?: Record<string, string | number | boolean>) {
   const span = trace.getActiveSpan();
   if (span) {
     span.addEvent(name, attributes);
@@ -181,7 +181,7 @@ export function addSpanEvent(name: string, attributes?: Record<string, any>) {
 /**
  * Set attributes on current span
  */
-export function setSpanAttributes(attributes: Record<string, any>) {
+export function setSpanAttributes(attributes: Record<string, string | number | boolean>) {
   const span = trace.getActiveSpan();
   if (span) {
     span.setAttributes(attributes);
@@ -189,8 +189,8 @@ export function setSpanAttributes(attributes: Record<string, any>) {
 }
 
 // Custom instrumentation for Socket.IO
-export function instrumentSocketIO(io: any) {
-  io.on('connection', (socket: any) => {
+export function instrumentSocketIO(io: { on: (event: string, cb: (socket: { id: string; handshake: { address: string }; emit: (event: string, ...args: unknown[]) => unknown; on: (event: string, cb: () => void) => void }) => void) => void }) {
+  io.on('connection', (socket: { id: string; handshake: { address: string }; emit: (event: string, ...args: unknown[]) => unknown; on: (event: string, cb: () => void) => void }) => {
     const connectionSpan = createSpan('socket.io.connection', {
       'socket.id': socket.id,
       'socket.handshake.address': socket.handshake.address,
@@ -203,7 +203,7 @@ export function instrumentSocketIO(io: any) {
 
     // Instrument socket events
     const originalEmit = socket.emit;
-    socket.emit = function(event: string, ...args: any[]) {
+    socket.emit = function(event: string, ...args: unknown[]) {
       const span = createSpan(`socket.io.emit.${event}`, {
         'socket.id': socket.id,
         'event.name': event,

@@ -42,9 +42,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     initializeSocketIO(io);
     // PRODUCTION: Console disabled
     // console.log('Socket.IO server initialized successfully');
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('Failed to initialize Socket.IO server:', error);
   }
   
   res.end();

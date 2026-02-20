@@ -206,8 +206,8 @@ export async function POST(request: NextRequest) {
         
         // Check if user is the creator or a participant
         const isCreator = debate.user_id === user.id;
-        const isParticipant = (debate.participants as any[])?.some(
-          (p: any) => p.id === user.id
+        const isParticipant = (debate.participants as Array<{ id: string }>)?.some(
+          (p: { id: string }) => p.id === user.id
         );
         
         if (!isCreator && !isParticipant) {
@@ -248,11 +248,11 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('Debate realtime API error:', error);
+// console.error('Debate realtime API error:', _error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: _error instanceof Error ? _error.message : 'Internal server error' },
       { status: 500 }
     );
   }

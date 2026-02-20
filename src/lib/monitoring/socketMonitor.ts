@@ -5,7 +5,7 @@
 
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { socketLogger } from './logger';
-import { createSpan, setSpanAttributes, debateMetrics } from './opentelemetry';
+import { createSpan, debateMetrics } from './opentelemetry';
 import { sentryServer } from '../../../sentry.server.config';
 
 interface SocketMetrics {
@@ -87,7 +87,7 @@ export class SocketMonitor {
     const connectionSpan = createSpan('socket.connection', {
       'socket.id': socket.id,
       'socket.handshake.address': socket.handshake.address,
-      'socket.handshake.headers.user-agent': socket.handshake.headers['user-agent'],
+      'socket.handshake.headers.user-agent': String(socket.handshake.headers['user-agent'] || ''),
     });
 
     // Track connection
@@ -187,7 +187,7 @@ export class SocketMonitor {
   private instrumentSocket(socket: Socket) {
     // Wrap emit to track sent events
     const originalEmit = socket.emit.bind(socket);
-    socket.emit = (event: string, ...args: any[]) => {
+    socket.emit = (event: string, ...args: unknown[]) => {
       this.trackEvent('sent', event);
       
       const span = createSpan(`socket.emit.${event}`, {
@@ -333,7 +333,7 @@ export class SocketMonitor {
     };
   }
 
-  public getConnectionInfo(socketId?: string): any {
+  public getConnectionInfo(socketId?: string): Record<string, unknown> | Record<string, unknown>[] | null {
     if (socketId) {
       const socket = this.io.sockets.sockets.get(socketId);
       if (socket) {
@@ -350,7 +350,7 @@ export class SocketMonitor {
     }
 
     // Return all connections
-    const connections: any[] = [];
+    const connections: Record<string, unknown>[] = [];
     this.io.sockets.sockets.forEach((socket) => {
       connections.push({
         id: socket.id,

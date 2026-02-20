@@ -1,7 +1,7 @@
 'use client';
 
 import StatsCard from './StatsCard';
-import { formatScore, detectScoreType, getScaleLabel } from '@/utils/scoring';
+import { formatScore } from '@/utils/scoring';
 
 interface StatsSectionProps {
   totalSpeeches: number;
@@ -69,8 +69,9 @@ export default function StatsSection({
 
   // Format the score with proper scale detection
   // averageScore should already be in NSDA format (25-30)
-  const scoreInfo = formatScore(averageScore, 'nsda');
-  
+  // Format the score (keep call for potential side effects / future use)
+  formatScore(averageScore, 'nsda');
+
   const stats = [
     {
       title: 'total speeches',

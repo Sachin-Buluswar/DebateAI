@@ -14,8 +14,8 @@ declare module 'pdf-parse' {
   }
 
   interface PDFMetadata {
-    _metadata?: any;
-    metadata?: any;
+    _metadata?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
   }
 
   interface PDFData {
@@ -28,7 +28,7 @@ declare module 'pdf-parse' {
   }
 
   interface PDFOptions {
-    pagerender?: (pageData: any) => string;
+    pagerender?: (pageData: unknown) => string;
     max?: number;
     version?: string;
   }

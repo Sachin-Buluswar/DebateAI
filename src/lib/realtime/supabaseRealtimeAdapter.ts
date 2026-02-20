@@ -1,11 +1,8 @@
-import { RealtimeChannel, RealtimeClient } from '@supabase/supabase-js';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { EventEmitter } from 'events';
-import type { Socket } from 'socket.io-client';
-import { 
-  Participant, 
-  DebateState, 
-  DebatePhase 
+import {
+  DebateState,
 } from '@/backend/modules/realtimeDebate/debate-types';
 
 /**
@@ -16,7 +13,7 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   private channel: RealtimeChannel | null = null;
   private debateId: string | null = null;
   private userId: string;
-  private presence: any = {};
+  private presence: Record<string, unknown> = {};
   public connected = false;  // Made public for Socket.IO compatibility
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -133,6 +130,7 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   /**
    * Emit event to all participants (Socket.IO compatibility)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event: string, data?: any): boolean {
     // Handle local events
     if (event === 'connect' || event === 'disconnect' || event === 'connect_error') {
@@ -162,12 +160,14 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   /**
    * Socket.IO compatibility methods
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on(event: string, listener: (...args: any[]) => void): this {
     super.on(event, listener);
     return this;
   }
 
-  off(event: string, listener?: (...args: any[]) => void): this {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(event: string, listener?: ((...args: any[]) => void)): this {
     if (listener) {
       super.off(event, listener);
     } else {
@@ -226,7 +226,7 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   /**
    * Get current presence state
    */
-  getPresence(): any {
+  getPresence(): Record<string, unknown> {
     return this.presence;
   }
 
@@ -240,7 +240,7 @@ export class SupabaseRealtimeAdapter extends EventEmitter {
   /**
    * Special handling for crossfire events with low latency
    */
-  async sendCrossfireMessage(message: any): Promise<void> {
+  async sendCrossfireMessage(message: Record<string, unknown>): Promise<void> {
     if (!this.channel || !this.connected) {
       throw new Error('Not connected to debate channel');
     }
@@ -280,7 +280,7 @@ export function createSupabaseRealtimeSocket(userId: string): SupabaseRealtimeAd
   const adapter = new SupabaseRealtimeAdapter(userId);
   
   // Add Socket.IO compatibility methods
-  (adapter as any).close = () => adapter.disconnect();
+  (adapter as SupabaseRealtimeAdapter & { close?: () => Promise<void> }).close = () => adapter.disconnect();
   
   return adapter;
 }

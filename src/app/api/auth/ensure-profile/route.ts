@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * This endpoint uses the service role key to bypass RLS policies
  * Called after successful authentication if profile creation failed
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Get the current user session
     const supabase = createClient();
@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
         .insert(profileData);
       
       if (insertError) {
-        console.error('[ensure-profile] Service role insert failed:', insertError);
+        // PRODUCTION: Logging disabled
+        // console.error('[ensure-profile] Service role insert failed:', insertError);
         // Try with regular client as fallback
         const { error: fallbackError } = await supabase
           .from('user_profiles')
@@ -108,8 +109,9 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     }
-  } catch (error) {
-    console.error('[ensure-profile] Unexpected error:', error);
+  } catch (_error) {
+    // PRODUCTION: Logging disabled
+    // console.error('[ensure-profile] Unexpected error:', _error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

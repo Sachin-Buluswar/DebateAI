@@ -1,8 +1,6 @@
 import { OpenAI } from 'openai';
 import { DocumentStorageService } from './documentStorageService';
 import { DocumentChunk } from '@/types/documents';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as stream from 'stream';
 import fetch from 'node-fetch';
 
@@ -50,31 +48,35 @@ export class EnhancedIndexingService {
       let totalPages = 0;
       
       const pdfData = await pdfParse(pdfBuffer, {
-        pagerender: (pageData: any) => {
-          return pageData.getTextContent()
-            .then((textContent: any) => {
+        // pdf-parse accepts async pagerender despite type definition saying sync
+        pagerender: ((pageData: unknown) => {
+          const pd = pageData as { getTextContent: () => Promise<{ items: Array<{ str: string }> }> };
+          return pd.getTextContent()
+            .then((textContent) => {
               let text = '';
               for (const item of textContent.items) {
                 text += item.str + ' ';
               }
               return text;
             });
-        },
+        }) as unknown as (pageData: unknown) => string,
         // renderTextLayer: false, // This option doesn't exist in pdf-parse
       });
-      
+
       // Get total pages
       totalPages = pdfData.numpages;
-      
+
       // Parse PDF again to extract page-by-page content
       for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-        const pagePdfData = await pdfParse(pdfBuffer, {
+        await pdfParse(pdfBuffer, {
           max: pageNum,
-          pagerender: (pageData: any) => {
-            const currentPage = pageData.pageNumber || pageData.pageIndex + 1;
+          // pdf-parse accepts async pagerender despite type definition saying sync
+          pagerender: ((pageData: unknown) => {
+            const pd = pageData as { pageNumber?: number; pageIndex?: number; getTextContent: () => Promise<{ items: Array<{ str: string }> }> };
+            const currentPage = pd.pageNumber || (pd.pageIndex ?? 0) + 1;
             if (currentPage === pageNum) {
-              return pageData.getTextContent()
-                .then((textContent: any) => {
+              return pd.getTextContent()
+                .then((textContent) => {
                   let text = '';
                   for (const item of textContent.items) {
                     text += item.str + ' ';
@@ -84,7 +86,7 @@ export class EnhancedIndexingService {
                 });
             }
             return '';
-          },
+          }) as unknown as (pageData: unknown) => string,
         });
       }
       
@@ -139,13 +141,11 @@ export class EnhancedIndexingService {
   ): Promise<Array<{ content: string; metadata: ChunkMetadata }>> {
     const chunks: Array<{ content: string; metadata: ChunkMetadata }> = [];
     let docCharOffset = 0;
-    let chunkIndex = 0;
-    
+
     // Process each page
     for (const page of pages) {
       const pageText = page.text;
       const pageNumber = page.pageNumber;
-      const pageStartChar = 0;
       
       // Skip empty pages
       if (!pageText.trim()) {
@@ -187,8 +187,6 @@ export class EnhancedIndexingService {
               sectionTitle: section.title,
             },
           });
-          
-          chunkIndex++;
         }
       }
       
@@ -317,12 +315,13 @@ export class EnhancedIndexingService {
         readableStream.push(null);
         
         // Add required properties for OpenAI SDK
-        (readableStream as any).name = chunkFileName;
-        (readableStream as any).size = buffer.length;
-        
+        const fileStream = readableStream as stream.Readable & { name: string; size: number };
+        fileStream.name = chunkFileName;
+        fileStream.size = buffer.length;
+
         // Upload to OpenAI
         const fileObject = await openai.files.create({
-          file: readableStream as any,
+          file: fileStream as unknown as File,
           purpose: 'assistants',
         });
         
@@ -380,9 +379,9 @@ export class EnhancedIndexingService {
         // console.log(`Reindexing: ${document.file_name}`);
         try {
           await this.indexPDFDocument(document.id, document.file_url, document.file_name);
-        } catch (error) {
+        } catch (_error) {
           // PRODUCTION: Console disabled
-          // console.error(`Failed to reindex ${document.file_name}:`, error);
+          // console.error(`Failed to reindex ${document.file_name}:`, _error);
         }
       }
     }

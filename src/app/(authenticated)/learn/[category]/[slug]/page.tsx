@@ -87,7 +87,7 @@ export default function ResourceViewerPage() {
       } else if (eventType === 'download') {
         setResource(prev => prev ? { ...prev, download_count: prev.download_count + 1 } : prev);
       }
-    } catch (_err) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Failed to track event:', err);
     }
@@ -158,7 +158,7 @@ export default function ResourceViewerPage() {
         await navigator.clipboard.writeText(window.location.href);
         toast.success('Link copied to clipboard!', { duration: 3000 });
       }
-    } catch (_err) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Error sharing:', err);
       toast.error('Failed to share. Please try again.', { duration: 5000 });

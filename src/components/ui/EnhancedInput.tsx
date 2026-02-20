@@ -38,7 +38,7 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setHasValue(!!e.target.value);
       if ('onChange' in props && props.onChange) {
-        (props.onChange as any)(e);
+        (props.onChange as React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>)(e);
       }
     };
 
@@ -96,7 +96,7 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
       <div className="relative w-full box-border">
         <div className="relative w-full">
           <Component
-            ref={ref as any}
+            ref={ref as React.Ref<HTMLInputElement & HTMLTextAreaElement>}
             id={inputId}
             className={baseInputStyles}
             onFocus={handleFocus}
@@ -104,7 +104,7 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
             onChange={handleChange}
             placeholder=" "
             style={{ resize: 'none' }}
-            {...(componentProps as any)}
+            {...(componentProps as Record<string, unknown>)}
           />
           <label
             htmlFor={inputId}

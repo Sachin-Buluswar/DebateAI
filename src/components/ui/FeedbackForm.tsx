@@ -52,9 +52,9 @@ export default function FeedbackForm() {
         // Reset success message after 5 seconds
         setTimeout(() => setSuccess(false), 5000);
       }
-    } catch (err) {
+    } catch (_err) {
       // PRODUCTION: Console disabled
-      // console.error('Exception submitting feedback:', err);
+      // console.error('Exception submitting feedback:', _err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

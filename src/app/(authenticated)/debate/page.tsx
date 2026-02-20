@@ -121,7 +121,7 @@ export default function DebatePage() {
   } | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [, setFormErrors] = useState<Record<string, string>>({});
 
   // Form validator
   const validator = useMemo(() => new FormValidator({
@@ -286,7 +286,7 @@ export default function DebatePage() {
           useSupabase: isVercel() // Force Supabase on Vercel
         });
         
-      } catch (_error) {
+      } catch {
         // PRODUCTION: Console disabled - Critical file
         // console.error('Failed to initialize real-time connection:', error);
         setConnectionError('Failed to connect to debate server. Please try again.');
@@ -342,7 +342,7 @@ export default function DebatePage() {
       }
     });
     
-    socket.on('reconnect', (_attemptNumber) => {
+    socket.on('reconnect', () => {
       // PRODUCTION: Console disabled - Critical file
       // console.log('Socket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);

@@ -2,6 +2,13 @@ import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Skip ESLint during build - we run it separately via `npm run lint`
+  // with our full @typescript-eslint config. Next.js's built-in ESLint
+  // doesn't include @typescript-eslint rules, causing false errors.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Enable standalone output for Docker deployments
   output: 'standalone',
   

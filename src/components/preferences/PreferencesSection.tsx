@@ -65,9 +65,9 @@ export default function PreferencesSection() {
             setError('Failed to fetch preferences. Please try refreshing the page.');
           }
         }
-      } catch (err) {
+      } catch (_err) {
         // PRODUCTION: Console disabled
-        // console.error('Exception fetching preferences:', err);
+        // console.error('Exception fetching preferences:', _err);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -115,9 +115,9 @@ export default function PreferencesSection() {
         setError('Failed to save preferences. Please try again.');
         addToast({ message: 'Failed to save preferences. Please try again.', type: 'error' });
       }
-    } catch (err) {
+    } catch (_err) {
       // PRODUCTION: Console disabled
-      // console.error('Exception saving preferences:', err);
+      // console.error('Exception saving preferences:', _err);
       setError('An unexpected error occurred');
       addToast({ message: 'Unexpected error saving preferences', type: 'error' });
     } finally {
@@ -129,7 +129,7 @@ export default function PreferencesSection() {
     setPreferences({ ...preferences, [key]: !preferences[key as keyof Preferences] });
   };
 
-  const handleSelect = (key: keyof Preferences, value: string) => {
+  const _handleSelect = (key: keyof Preferences, value: string) => {
     setPreferences({ ...preferences, [key]: value });
   };
 

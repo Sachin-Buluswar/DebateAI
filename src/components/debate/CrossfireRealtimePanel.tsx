@@ -14,10 +14,10 @@ interface CrossfireRealtimePanelProps {
 }
 
 export function CrossfireRealtimePanel({ 
-  debateId, 
-  userId, 
-  userName,
-  isActive 
+  debateId,
+  userId,
+  userName: _userName,
+  isActive
 }: CrossfireRealtimePanelProps) {
   const { connected, messages, participants, sendMessage } = useCrossfireRealtime(debateId, userId);
   const [isRecording, setIsRecording] = useState(false);
@@ -57,7 +57,6 @@ export function CrossfireRealtimePanel({
 
   const handleSendMessage = async () => {
     if (inputText.trim() && connected) {
-      const startTime = Date.now();
       await sendMessage(inputText);
       setInputText('');
     }
@@ -110,7 +109,7 @@ export function CrossfireRealtimePanel({
               }`}
             >
               <div className="text-xs text-gray-500 mb-1">
-                {msg.userId === userId ? 'You' : `Participant ${msg.userId.slice(0, 8)}`}
+                {msg.userId === userId ? 'You' : `Participant ${(msg.userId ?? '').slice(0, 8)}`}
               </div>
               <div className="text-sm">{msg.text}</div>
               {msg.timestamp && (

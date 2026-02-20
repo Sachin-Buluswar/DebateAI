@@ -14,7 +14,7 @@ export const isVercel = () => {
     hostname === 'erisdebate.com' ||
     hostname === 'www.erisdebate.com' ||
     // Check for Vercel environment variable in window
-    (window as any).NEXT_PUBLIC_VERCEL === '1'
+    (window as Window & { NEXT_PUBLIC_VERCEL?: string }).NEXT_PUBLIC_VERCEL === '1'
   );
 };
 
@@ -70,9 +70,8 @@ export const createSocket = async (token?: string): Promise<Socket> => {
       // PRODUCTION: Console disabled
       // console.warn('Socket.IO initialization returned non-OK status:', initResponse.status);
     }
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('Failed to initialize Socket.IO server:', error);
     // Continue anyway - the server might already be initialized
   }
   
@@ -92,9 +91,8 @@ export const createSocket = async (token?: string): Promise<Socket> => {
     // console.log('Socket connected successfully via:', socket.io.engine.transport.name);
   });
   
-  socket.on('connect_error', (error) => {
+  socket.on('connect_error', (_error) => {
     // PRODUCTION: Console disabled
-    // console.error('Socket connection error:', error.message);
   });
   
   return socket;
@@ -110,9 +108,8 @@ export const checkSocketIOAvailability = async (): Promise<boolean> => {
       },
     });
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('Socket.IO availability check failed:', error);
     return false;
   }
 };

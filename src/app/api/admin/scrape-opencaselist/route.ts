@@ -39,9 +39,9 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
     const scraper = new OpenCaseListScraper();
 
     // Start scraping in background
-    scraper.scrapeWikiFiles().catch(error => {
+    scraper.scrapeWikiFiles().catch(_error => {
       // PRODUCTION: Logging disabled
-// console.error('Scraping error:', error);
+// console.error('Scraping error:', _error);
     });
 
       return addSecurityHeaders(
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
           message: 'Scraping started. Check status endpoint for progress.',
         })
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error starting scrape:', error);
+// console.error('Error starting scrape:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Failed to start scraping' },

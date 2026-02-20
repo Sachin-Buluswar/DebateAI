@@ -160,9 +160,9 @@ export const searchVectorStore = async (
 
     return limited;
     
-  } catch (assistErr) {
+  } catch (_assistErr) {
     // PRODUCTION: Console disabled
-    // console.error('[searchVectorStore] Assistant-based search failed:', assistErr);
+    // console.error('[searchVectorStore] Assistant-based search failed:', _assistErr);
     
     // -------- Fallback: Return informative error results --------
     // PRODUCTION: Console disabled

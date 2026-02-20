@@ -139,9 +139,9 @@ export async function POST(request: NextRequest) {
           winner: session.winner, // Echo back the winner if provided
         })
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error in debate end:', error);
+// console.error('Error in debate end:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Invalid request' },

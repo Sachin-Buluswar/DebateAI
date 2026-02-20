@@ -83,9 +83,9 @@ export async function GET(request: NextRequest) {
         hasMore: data?.length === params.limit
       }
     });
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
-      // console.error('API Error [/api/resources]:', error);
+      // console.error('API Error [/api/resources]:', _error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id); // Ensure user owns the session
       
       // updateError is non-critical - speech was saved successfully
+      void updateError;
 
       // Return success with speech ID
       // Frontend can use speechId to:
@@ -160,9 +161,9 @@ export async function POST(request: NextRequest) {
           message: 'Speech saved successfully',
         })
       );
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error in debate speech:', error);
+// console.error('Error in debate speech:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Invalid request' },

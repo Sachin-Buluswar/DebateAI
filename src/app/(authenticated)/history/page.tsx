@@ -38,7 +38,7 @@ const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
       audioRef.current.pause();
     } else {
       setError(null);
-      audioRef.current.play().catch(err => {
+      audioRef.current.play().catch(_err => {
         // PRODUCTION: Console disabled
         // console.error('Playback error in history player:', err);
         setError('Unable to play audio');
@@ -338,7 +338,7 @@ export default function History() {
           // console.error('Error fetching debates:', debatesError);
           hasDebateError = true;
         }
-      } catch (_debateError) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Exception fetching debates:', debateError);
         hasDebateError = true;
@@ -367,7 +367,7 @@ export default function History() {
           // console.error('Error fetching speech feedback:', speechError);
           hasSpeechError = true;
         }
-      } catch (_speechError) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Exception fetching speech feedback:', speechError);
         hasSpeechError = true;
@@ -389,7 +389,7 @@ export default function History() {
         setError(null);
       }
       
-    } catch (_error) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Error fetching user data:', error);
       setError('An unexpected error occurred. Please try again later.');
@@ -460,7 +460,7 @@ export default function History() {
                 }
               }
             }
-          } catch (_urlParseError) {
+          } catch {
             // PRODUCTION: Console disabled
             // console.error('Error parsing audio URL for deletion:', urlParseError);
           }

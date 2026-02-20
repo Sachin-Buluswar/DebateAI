@@ -31,20 +31,6 @@ export async function generatePostDebateAnalysis(
     .replace('{{userName}}', userName)
     .replace('{{transcript}}', transcript);
 
-  // Default fallback analysis
-  const fallbackAnalysis: DebateAnalysis = {
-    overallScore: 75,
-    strengthsAreas: ['Active participation in the debate', 'Maintained focus on the topic'],
-    improvementAreas: ['Develop more structured arguments', 'Incorporate more evidence'],
-    argumentQuality: 7,
-    deliveryClarity: 7,
-    evidenceUsage: 6,
-    rebuttalEffectiveness: 6,
-    detailedFeedback: 'Your debate performance showed good engagement with the topic. To improve, focus on structuring your arguments more clearly and incorporating specific evidence to support your positions. Practice anticipating counterarguments and preparing stronger rebuttals.',
-    keyMoments: ['Good opening statement', 'Engaged with opponent\'s arguments'],
-    recommendedNextSteps: ['Study argument structure techniques', 'Research evidence for common debate topics', 'Practice timed rebuttals']
-  };
-
   try {
     logger.info('Generating debate analysis', {
       metadata: {

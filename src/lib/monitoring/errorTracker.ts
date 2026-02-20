@@ -12,7 +12,7 @@ export interface ErrorDetails {
   statusCode: number;
   retryable: boolean;
   userMessage?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class AppError extends Error {
@@ -20,7 +20,7 @@ export class AppError extends Error {
   public readonly statusCode: number;
   public readonly retryable: boolean;
   public readonly userMessage?: string;
-  public readonly metadata?: Record<string, any>;
+  public readonly metadata?: Record<string, unknown>;
 
   constructor(details: ErrorDetails) {
     super(details.message);
@@ -144,7 +144,7 @@ export class ErrorTracker {
   /**
    * Track and handle errors with appropriate logging and response
    */
-  track(error: Error | AppError, context?: any): NextResponse {
+  track(error: Error | AppError, context?: Record<string, unknown>): NextResponse {
     // Determine error details
     let errorDetails: ErrorDetails;
     
@@ -175,7 +175,7 @@ export class ErrorTracker {
     );
 
     // Create response
-    const response: any = {
+    const response: { error: { code: string; message: string; details?: { message: string; stack?: string; metadata?: Record<string, unknown> } } } = {
       error: {
         code: errorDetails.code,
         message: errorDetails.userMessage || errorDetails.message
@@ -253,9 +253,9 @@ export class ErrorTracker {
    */
   static createErrorResponse(
     error: ErrorDetails,
-    additionalData?: any
+    additionalData?: Record<string, unknown>
   ): NextResponse {
-    const response: any = {
+    const response: { error: { code: string; message: string; data?: Record<string, unknown> } } = {
       error: {
         code: error.code,
         message: error.userMessage || error.message
@@ -275,9 +275,9 @@ export class ErrorTracker {
    * Wrap an async handler with error tracking
    */
   wrapHandler(
-    handler: (req: Request, context?: any) => Promise<NextResponse>
+    handler: (req: Request, context?: Record<string, unknown>) => Promise<NextResponse>
   ) {
-    return async (req: Request, context?: any): Promise<NextResponse> => {
+    return async (req: Request, context?: Record<string, unknown>): Promise<NextResponse> => {
       try {
         return await handler(req, context);
       } catch (error) {

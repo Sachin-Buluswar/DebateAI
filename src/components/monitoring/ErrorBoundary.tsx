@@ -1,7 +1,6 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import * as Sentry from '@sentry/nextjs';
 import { sentryClient } from '../../../instrumentation-client';
 import { Button } from '../ui/Button';
 

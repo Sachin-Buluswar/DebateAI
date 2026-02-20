@@ -8,7 +8,7 @@ interface HealthCheckResult {
   service: string;
   status: 'healthy' | 'degraded' | 'unhealthy';
   responseTime?: number;
-  details?: any;
+  details?: Record<string, unknown>;
   error?: string;
 }
 
@@ -63,12 +63,12 @@ async function checkSupabase(): Promise<HealthCheckResult> {
       status: responseTime < 1000 ? 'healthy' : 'degraded',
       responseTime,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       service: 'supabase',
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: _error instanceof Error ? _error.message : 'Unknown error',
     };
   }
 }
@@ -101,12 +101,12 @@ async function checkOpenAI(): Promise<HealthCheckResult> {
       status: responseTime < 2000 ? 'healthy' : 'degraded',
       responseTime,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       service: 'openai',
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: _error instanceof Error ? _error.message : 'Unknown error',
     };
   }
 }
@@ -139,12 +139,12 @@ async function checkElevenLabs(): Promise<HealthCheckResult> {
       status: responseTime < 2000 ? 'healthy' : 'degraded',
       responseTime,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       service: 'elevenlabs',
       status: 'unhealthy',
       responseTime: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: _error instanceof Error ? _error.message : 'Unknown error',
     };
   }
 }
@@ -152,8 +152,6 @@ async function checkElevenLabs(): Promise<HealthCheckResult> {
 // Main health check handler
 export const GET = withMonitoring(async (_request: NextRequest) => {
   return traceAsync('health-check', async () => {
-    const _startTime = process.hrtime();
-    
     // Run all health checks in parallel
     const [supabaseCheck, openaiCheck, elevenlabsCheck] = await Promise.allSettled([
       checkSupabase(),

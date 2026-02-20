@@ -202,7 +202,7 @@ async function performDirectDocumentSearch(
     
     // Transform to EnhancedSearchResult format
     const enhancedResults: EnhancedSearchResult[] = await Promise.all(
-      topResults.map(async ({ chunk, score }, index) => {
+      topResults.map(async ({ chunk, score }) => {
         // Get surrounding context for better understanding
         // Retrieves 2 chunks before and after the matched chunk
         // This provides ~1000-2000 tokens of context (assuming 500 tokens per chunk)
@@ -249,10 +249,10 @@ async function performDirectDocumentSearch(
 // console.log(`[document-search] Returning ${enhancedResults.length} results`);
     return enhancedResults;
     
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('[document-search] Search error:', error);
-    throw error;
+// console.error('[document-search] Search error:', _error);
+    throw _error;
   }
 }
 
@@ -338,9 +338,9 @@ export async function POST(request: NextRequest) {
             { status: 200 }
           )
         );
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-// console.error('[document-search] Error:', error);
+// console.error('[document-search] Error:', _error);
 
         // Return empty results instead of error to prevent UI issues
         return addSecurityHeaders(

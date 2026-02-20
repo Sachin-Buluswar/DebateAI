@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { apiLogger } from './logger';
-import { apiErrorTracker, AppError } from './errorTracker';
+import { apiErrorTracker } from './errorTracker';
 import { apiPerformance } from './performance';
 
 interface MonitoringContext {
@@ -35,9 +35,9 @@ function createContext(request: NextRequest): MonitoringContext {
  * Monitoring middleware wrapper for API routes
  */
 export function withMonitoring(
-  handler: (request: NextRequest, context?: any) => Promise<NextResponse>
+  handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+  return async (request: NextRequest, context?: Record<string, unknown>): Promise<NextResponse> => {
     const monitoringContext = createContext(request);
     const { pathname } = new URL(request.url);
     const method = request.method;
@@ -181,9 +181,9 @@ export function withRateLimit(
   setInterval(() => tracker.cleanup(), 60000); // Every minute
   
   return function(
-    handler: (request: NextRequest, context?: any) => Promise<NextResponse>
+    handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>
   ) {
-    return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+    return async (request: NextRequest, context?: Record<string, unknown>): Promise<NextResponse> => {
       // Get identifier (default to IP address)
       const identifier = options.identifier
         ? options.identifier(request)
@@ -220,10 +220,12 @@ export function withRateLimit(
 /**
  * Combine multiple middleware functions
  */
+type MiddlewareFn = (handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>) => (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>;
+
 export function composeMiddleware(
-  ...middlewares: Array<(handler: any) => any>
+  ...middlewares: Array<MiddlewareFn>
 ) {
-  return function(handler: any) {
+  return function(handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>) {
     return middlewares.reduceRight((acc, middleware) => middleware(acc), handler);
   };
 }

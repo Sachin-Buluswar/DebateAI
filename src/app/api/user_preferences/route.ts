@@ -57,12 +57,12 @@ export async function GET(request: NextRequest) {
       preferences,
       timestamp: new Date().toISOString()
     });
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('Error fetching user preferences:', error);
-    return NextResponse.json({ 
+// console.error('Error fetching user preferences:', _error);
+    return NextResponse.json({
       message: 'Error fetching preferences',
-      preferences: {} 
+      preferences: {}
     }, { status: 500 });
   }
   });
@@ -117,10 +117,10 @@ export async function PUT(request: NextRequest) {
       preferences,
       timestamp: new Date().toISOString()
     });
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-// console.error('Error updating user preferences:', error);
-    return NextResponse.json({ 
+// console.error('Error updating user preferences:', _error);
+    return NextResponse.json({
       message: 'Error updating preferences'
     }, { status: 500 });
   }

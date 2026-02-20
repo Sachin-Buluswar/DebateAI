@@ -24,9 +24,9 @@ export default function LogoutButton({ className = '' }) {
       // Redirect to home page after successful logout
       router.push('/');
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-      // console.error('Exception during logout:', error);
+      // console.error('Exception during logout:', _error);
     } finally {
       setIsLoggingOut(false);
     }

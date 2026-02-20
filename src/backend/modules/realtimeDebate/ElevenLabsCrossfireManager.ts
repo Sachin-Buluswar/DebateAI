@@ -266,9 +266,9 @@ export class ElevenLabsCrossfireManager {
       }
     };
 
-    ws.onerror = (error) => {
+    ws.onerror = (_error) => {
       // PRODUCTION: Console disabled
-      // console.error(`Crossfire WebSocket error for session ${sessionId}:`, error);
+      // console.error(`Crossfire WebSocket error for session ${sessionId}:`, _error);
     };
 
     ws.onclose = () => {

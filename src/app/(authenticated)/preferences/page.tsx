@@ -27,7 +27,7 @@ export default function PreferencesPage() {
         
         setUser(session.user as User);
         setLoading(false);
-      } catch (error) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Error checking authentication:', error);
         setLoading(false);

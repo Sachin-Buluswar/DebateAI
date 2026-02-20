@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// Import CSS files - TypeScript will ignore these
-// @ts-ignore
+// Import CSS files for react-pdf
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-// @ts-ignore
 import 'react-pdf/dist/Page/TextLayer.css';
 import { 
   XMarkIcon, 
@@ -71,7 +69,7 @@ export function EnhancedPDFViewer({
     setError(null);
   };
 
-  const onDocumentLoadError = (error: Error) => {
+  const onDocumentLoadError = (_error: Error) => {
     // PRODUCTION: Console disabled
     // console.error('PDF loading error:', error);
     setError('Failed to load PDF. Please try downloading the file instead.');

@@ -5,7 +5,7 @@ import type { Socket as NetSocket } from 'net';
 import { initializeSocketIO } from '@/backend/modules/realtimeDebate/SocketManager';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/shared/env';
-import { initializeDebateAdapter } from '@/lib/socket/debateSocketAdapter';
+// initializeDebateAdapter imported dynamically when needed
 
 // This is a type assertion to add the custom 'io' property to the server object.
 interface NextApiResponseWithSocket extends NextApiResponse {
@@ -104,10 +104,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         // PRODUCTION: Logging disabled
         // console.log('Socket authenticated for user:', user.id);
         next();
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-        // console.error('Socket authentication error:', error);
-        
+
         // In development, allow connection on error
         if (process.env.NODE_ENV === 'development') {
           socket.data.user = null;
@@ -125,9 +124,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     // Delegate all connection logic to the SocketManager
     initializeSocketIO(io);
     // Socket.IO server initialized with authentication
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Logging disabled
-    // console.error('Failed to initialize Socket.IO server:', error);
   }
   
   res.end();

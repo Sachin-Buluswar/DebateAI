@@ -70,13 +70,13 @@ export default function DebateDetail() {
           try {
             const parsedTranscript = JSON.parse(data.transcript);
             setTranscript(Array.isArray(parsedTranscript) ? parsedTranscript : []);
-          } catch (_e) {
+          } catch {
             // PRODUCTION: Console disabled
             // console.error('Error parsing transcript:', _e);
             setTranscript(['Transcript data could not be displayed.']);
           }
         }
-      } catch (_error) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Error in data fetching:', error);
         setError('An unexpected error occurred while loading the debate details.');

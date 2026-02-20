@@ -63,9 +63,9 @@ export async function GET() {
       changeEmailTemplate,
       message: "Copy these templates and use them in your Supabase dashboard Email Templates settings"
     });
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('[auth-email-templates] Error:', error);
+    // console.error('[auth-email-templates] Error:', _error);
     return NextResponse.json(
       { error: 'Failed to generate email templates' },
       { status: 500 }

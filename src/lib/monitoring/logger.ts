@@ -13,7 +13,7 @@ interface LogContext {
   requestId?: string;
   service?: string;
   action?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface LogEntry {
@@ -102,7 +102,7 @@ class Logger {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        code: (error as any).code
+        code: (error as Error & { code?: string }).code
       };
     }
 
@@ -128,7 +128,7 @@ class Logger {
     }
   }
 
-  private async sendToMonitoringService(entry: LogEntry) {
+  private async sendToMonitoringService(_entry: LogEntry) {
     // Integration point for services like Sentry, DataDog, etc.
     // For now, we'll just log that we would send it
     if (process.env.MONITORING_ENDPOINT) {

@@ -27,10 +27,10 @@ export default function AudioRecorder({ onTranscription, disabled = false, onRec
             mediaRecorderRef.current.onstop = handleSendAudio;
             mediaRecorderRef.current.start();
             setIsRecording(true);
-        } catch (err) {
+        } catch (_err) {
             setError('Could not access microphone. Please grant permission.');
             // PRODUCTION: Console disabled
-            // console.error('Error getting user media:', err);
+            // console.error('Error getting user media:', _err);
         }
     };
 

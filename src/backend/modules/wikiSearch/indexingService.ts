@@ -57,9 +57,9 @@ const storeChunksInVectorStore = async (
         // console.log(`[storeChunks] Uploaded chunk ${index}, File ID: ${fileObject.id}`);
         uploadedFileIds.push(fileObject.id); // Add to list only on successful upload
         return fileObject.id;
-      } catch (uploadError) {
+      } catch (_uploadError) {
         // PRODUCTION: Console disabled
-        // console.error(`[storeChunks] Failed to upload chunk ${index} (${chunkFileName}):`, uploadError);
+        // console.error(`[storeChunks] Failed to upload chunk ${index} (${chunkFileName}):`, _uploadError);
         // Decide how to handle partial failures: throw immediately or collect errors?
         // For now, log and return null/undefined to filter out later
         return null;
@@ -112,10 +112,10 @@ const storeChunksInVectorStore = async (
         // PRODUCTION: Console disabled
         // console.error(`[storeChunks] FATAL ERROR during createAndPoll for vector store ${vectorStoreId}:`, batchCreateError);
         // console.log(`[storeChunks] Attempting to delete ${uploadedFileIds.length} uploaded files due to batch creation failure...`);
-        const deletePromises = uploadedFileIds.map(id => 
-            openai.files.delete(id).catch(delErr => {
+        const deletePromises = uploadedFileIds.map(id =>
+            openai.files.delete(id).catch(_delErr => {
                 // PRODUCTION: Console disabled
-                // console.error(`[storeChunks] Failed to delete uploaded file ${id}:`, delErr);
+                // console.error(`[storeChunks] Failed to delete uploaded file ${id}:`, _delErr);
                 return null; // Silently handle errors
             })
         );

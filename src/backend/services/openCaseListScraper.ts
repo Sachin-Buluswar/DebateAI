@@ -2,9 +2,7 @@ import puppeteer, { type Page } from 'puppeteer';
 import { DocumentStorageService } from './documentStorageService';
 import { createClient } from '@supabase/supabase-js';
 import fetch from 'node-fetch';
-import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -151,7 +149,7 @@ export class OpenCaseListScraper {
       const fileBuffer = await this.downloadFile(page, fullUrl);
       
       // Upload to Supabase Storage
-      const { url: storageUrl, path: storagePath } = await this.documentStorage.uploadPDF(
+      const { url: storageUrl } = await this.documentStorage.uploadPDF(
         fileBuffer,
         fileName
       );
@@ -161,7 +159,7 @@ export class OpenCaseListScraper {
       
       // Create document record
       const document = await this.documentStorage.createDocument(
-        metadata.title || fileName,
+        (metadata.title as string) || fileName,
         fileName,
         storageUrl,
         fileBuffer.length,
@@ -204,7 +202,7 @@ export class OpenCaseListScraper {
   private async downloadFile(page: Page, url: string): Promise<Buffer> {
     // Get cookies from puppeteer
     const cookies = await page.cookies();
-    const cookieString = cookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
+    const cookieString = cookies.map((c: { name: string; value: string }) => `${c.name}=${c.value}`).join('; ');
     
     // Download file using fetch with cookies
     const response = await fetch(url, {
@@ -222,8 +220,8 @@ export class OpenCaseListScraper {
     return buffer;
   }
 
-  private extractMetadata(fileName: string, filePath: string): Record<string, any> {
-    const metadata: Record<string, any> = {};
+  private extractMetadata(fileName: string, filePath: string): Record<string, unknown> {
+    const metadata: Record<string, unknown> = {};
     
     // Extract year from path if present
     const yearMatch = filePath.match(/20\d{2}/);

@@ -7,7 +7,7 @@ export interface Document {
   page_count?: number;
   source_url?: string;
   source_type: 'upload' | 'opencaselist' | 'other';
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   indexed_at?: string;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ export interface DocumentChunk {
   section_title?: string;
   openai_file_id?: string;
   embedding?: number[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 

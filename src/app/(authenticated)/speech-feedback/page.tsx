@@ -258,7 +258,7 @@ export default function SpeechFeedback() {
       // Sum up file sizes
       const totalBytes = data?.reduce((sum, item) => sum + (item.file_size_bytes || 0), 0) || 0;
       setStorageUsed(totalBytes);
-    } catch (err) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Error calculating storage usage:', err);
     } finally {
@@ -306,7 +306,7 @@ export default function SpeechFeedback() {
           fetchStorageUsage(data.session.user.id);
         }
         setLoading(false);
-      } catch (err) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Error checking user session:', err);
         // GUEST MODE: Don't redirect on error - allow guest access
@@ -665,7 +665,7 @@ export default function SpeechFeedback() {
         await fetch(`/api/speech-feedback/cancel?sessionId=${sessionId}`, {
           method: 'DELETE',
         });
-      } catch (cleanupError) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Failed to clean up partial upload:', cleanupError);
       }

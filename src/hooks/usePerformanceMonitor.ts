@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { sentryClient } from '../../instrumentation-client';
-import { debateMetrics } from '@/lib/monitoring/opentelemetry';
 
 interface PerformanceEntry {
   name: string;
   startTime: number;
   duration: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface UsePerformanceMonitorOptions {
@@ -63,7 +62,7 @@ export function usePerformanceMonitor({
   useEffect(() => {
     if (!enableWebVitals || typeof window === 'undefined') return;
 
-    const reportWebVital = (metric: any) => {
+    const reportWebVital = (metric: { name: string; value: number; rating: string }) => {
       sentryClient.addBreadcrumb({
         category: 'web-vital',
         message: metric.name,
@@ -89,7 +88,7 @@ export function usePerformanceMonitor({
       try {
         const lcpObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1] as any;
+          const lastEntry = entries[entries.length - 1] as PerformanceEntry;
           reportWebVital({
             name: 'LCP',
             value: lastEntry.startTime,
@@ -101,14 +100,14 @@ export function usePerformanceMonitor({
         return () => {
           lcpObserver.disconnect();
         };
-      } catch (_e) {
+      } catch {
         // Silently fail if observer is not supported
       }
     }
   }, [componentName, enableWebVitals]);
 
   // Start timing an operation
-  const startTimer = useCallback((name: string, metadata?: Record<string, any>) => {
+  const startTimer = useCallback((name: string, metadata?: Record<string, unknown>) => {
     entries.current.set(name, {
       name,
       startTime: performance.now(),
@@ -118,7 +117,7 @@ export function usePerformanceMonitor({
   }, []);
 
   // End timing an operation
-  const endTimer = useCallback((name: string, additionalMetadata?: Record<string, any>) => {
+  const endTimer = useCallback((name: string, additionalMetadata?: Record<string, unknown>) => {
     const entry = entries.current.get(name);
     if (!entry) {
       // PRODUCTION: Console disabled
@@ -156,7 +155,7 @@ export function usePerformanceMonitor({
   const timeAsync = useCallback(async <T,>(
     name: string,
     operation: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> => {
     startTimer(name, metadata);
     
@@ -177,7 +176,7 @@ export function usePerformanceMonitor({
   const timeSync = useCallback(<T,>(
     name: string,
     operation: () => T,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): T => {
     startTimer(name, metadata);
     
@@ -195,7 +194,7 @@ export function usePerformanceMonitor({
   }, [startTimer, endTimer]);
 
   // Mark a specific point in time
-  const mark = useCallback((name: string, metadata?: Record<string, any>) => {
+  const mark = useCallback((name: string, metadata?: Record<string, unknown>) => {
     performance.mark(`${componentName}:${name}`);
     
     sentryClient.addBreadcrumb({
@@ -236,9 +235,8 @@ export function usePerformanceMonitor({
       }
       
       return lastMeasure?.duration;
-    } catch (_e) {
+    } catch {
       // PRODUCTION: Console disabled
-      // console.error(`[Performance] Failed to measure ${name}:`, _e);
       return null;
     }
   }, [componentName, reportThreshold]);
@@ -263,7 +261,7 @@ export function useAPIPerformance() {
   const trackAPICall = useCallback(async <T,>(
     endpoint: string,
     request: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> => {
     return performanceMonitor.timeAsync(
       `API:${endpoint}`,
@@ -306,7 +304,7 @@ export function useRUM(pageName: string) {
 
     // Track page unload
     const handleBeforeUnload = () => {
-      const navigationTiming = performance.getEntriesByType('navigation')[0] as any;
+      const navigationTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       if (navigationTiming) {
         sentryClient.addBreadcrumb({
           category: 'navigation',

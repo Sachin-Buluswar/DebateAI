@@ -29,9 +29,9 @@ export default function ProfileMenu() {
         } else {
           setIsAuthenticated(false);
         }
-      } catch (error) {
+      } catch (_error) {
         // PRODUCTION: Logging disabled
-        // console.error('Error fetching user info:', error);
+        // console.error('Error fetching user info:', _error);
         setIsAuthenticated(false);
       }
     };
@@ -65,9 +65,9 @@ export default function ProfileMenu() {
       // Redirect to home page after successful logout
       router.push('/');
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-      // console.error('Exception during logout:', error);
+      // console.error('Exception during logout:', _error);
     } finally {
       setIsLoggingOut(false);
     }

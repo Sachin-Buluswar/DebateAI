@@ -16,7 +16,7 @@ interface ParticipantPanelProps {
   debatePhase?: string;
 }
 
-export default function ParticipantPanel({ participants, currentSpeakerId, debatePhase }: ParticipantPanelProps) {
+export default function ParticipantPanel({ participants, currentSpeakerId, debatePhase: _debatePhase }: ParticipantPanelProps) {
   const proTeam = participants.filter(p => p.team === 'PRO');
   const conTeam = participants.filter(p => p.team === 'CON');
 

@@ -1,6 +1,6 @@
 // Fallback handler for environments where Socket.IO isn't available
 export interface FallbackDebateManager {
-  startDebate: (topic: string, participants: any[]) => Promise<void>;
+  startDebate: (topic: string, participants: { id: string; name: string; team: string }[]) => Promise<void>;
   submitSpeech: (text: string, speakerId: string, side?: 'PRO' | 'CON') => Promise<void>;
   endDebate: (winner?: 'PRO' | 'CON' | 'DRAW', reason?: string) => Promise<void>;
   pauseDebate: () => void;
@@ -20,7 +20,7 @@ export class SocketIOFallback implements FallbackDebateManager {
     this.userId = userId;
   }
 
-  async startDebate(topic: string, participants: any[]): Promise<void> {
+  async startDebate(topic: string, participants: { id: string; name: string; team: string }[]): Promise<void> {
     if (!this.userId) {
       throw new Error('User ID required to start debate');
     }

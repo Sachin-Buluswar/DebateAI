@@ -40,9 +40,9 @@ export async function GET(request: NextRequest): Promise<NextResponse | Response
     const status = await scraper.getScrapingStatus();
 
       return addSecurityHeaders(NextResponse.json(status));
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Logging disabled
-// console.error('Error getting scrape status:', error);
+// console.error('Error getting scrape status:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           { error: 'Failed to get scraping status' },

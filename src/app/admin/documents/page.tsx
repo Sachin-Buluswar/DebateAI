@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import EnhancedButton from '@/components/ui/EnhancedButton';
@@ -32,7 +31,7 @@ function AdminDocumentsContent() {
 
       if (error) throw error;
       setDocuments(data || []);
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
       // console.error('Error loading documents:', error);
       addToast({ message: 'Failed to load documents', type: 'error' });
@@ -61,7 +60,7 @@ function AdminDocumentsContent() {
       addToast({ message: `Document uploaded: ${result.fileName}`, type: 'success' });
       setSelectedFile(null);
       await loadDocuments();
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
       // console.error('Error uploading file:', error);
       addToast({ message: 'Failed to upload document', type: 'error' });
@@ -83,7 +82,7 @@ function AdminDocumentsContent() {
 
       addToast({ message: 'Document reindexed successfully', type: 'success' });
       await loadDocuments();
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
       // console.error('Error reindexing document:', error);
       addToast({ message: 'Failed to reindex document', type: 'error' });
@@ -106,7 +105,7 @@ function AdminDocumentsContent() {
 
       addToast({ message: 'Document deleted successfully', type: 'success' });
       await loadDocuments();
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
       // console.error('Error deleting document:', error);
       addToast({ message: 'Failed to delete document', type: 'error' });
@@ -136,7 +135,7 @@ function AdminDocumentsContent() {
           await loadDocuments();
         }
       }, 5000);
-    } catch (error) {
+    } catch (_error) {
       // PRODUCTION: Console disabled
       // console.error('Error starting scrape:', error);
       addToast({ message: 'Failed to start scraping', type: 'error' });

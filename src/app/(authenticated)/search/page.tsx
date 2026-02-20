@@ -75,7 +75,7 @@ export default function SearchPage() {
           setUser(data.session.user as User);
         }
         setLoading(false);
-      } catch (_error) {
+      } catch {
         // PRODUCTION: Console disabled
         // console.error('Error checking user session:', error);
         // GUEST MODE: Don't redirect on error - allow guest access
@@ -105,7 +105,7 @@ export default function SearchPage() {
       }
 
       setSearchHistory(data || []);
-    } catch (_error) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Failed to fetch search history:', error);
     }
@@ -130,7 +130,7 @@ export default function SearchPage() {
 
       // Refresh search history
       fetchSearchHistory();
-    } catch (_error) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Failed to delete search:', error);
     }
@@ -190,7 +190,7 @@ export default function SearchPage() {
           // console.error('Error inserting search:', insertError);
         }
       }
-    } catch (_error) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Failed to upsert search history:', error);
     }
@@ -256,7 +256,7 @@ export default function SearchPage() {
 
       // Refresh search history after successful search
       fetchSearchHistory();
-    } catch (_error) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Error performing search:', error);
       setError('An unexpected error occurred. Please try again later.');
@@ -293,7 +293,7 @@ export default function SearchPage() {
 
       const generatedData = await generateResponse.json();
       setGeneratedAnswer(generatedData);
-    } catch (_error) {
+    } catch {
       // PRODUCTION: Console disabled
       // console.error('Error generating answer:', error);
       setError('Failed to generate an answer. Please try again later.');

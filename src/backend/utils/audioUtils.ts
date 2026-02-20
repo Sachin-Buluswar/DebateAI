@@ -5,7 +5,6 @@
 
 import * as mm from 'music-metadata';
 import * as fs from 'fs';
-import * as path from 'path';
 
 /**
  * Get audio file duration in seconds using music-metadata
@@ -56,10 +55,10 @@ export async function getAudioDuration(filePath: string): Promise<number> {
       }
       return 60; // Fallback to default
     }
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error getting audio duration:', error);
-    
+    // console.error('[audioUtils] Error getting audio duration:', _error);
+
     // Try fallback method using file stats for rough estimation
     try {
       const stats = fs.statSync(filePath);
@@ -70,11 +69,11 @@ export async function getAudioDuration(filePath: string): Promise<number> {
         // console.log(`[audioUtils] Fallback estimation based on file size: ${estimatedDuration} seconds`);
         return Math.round(estimatedDuration);
       }
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       // PRODUCTION: Console disabled
-      // console.error('[audioUtils] Fallback estimation also failed:', fallbackError);
+      // console.error('[audioUtils] Fallback estimation also failed:', _fallbackError);
     }
-    
+
     return 60; // Return default duration on all errors
   }
 }
@@ -110,15 +109,15 @@ export async function getAudioDurationFromBuffer(
     const duration = await getAudioDuration(tempFilePath);
     
     // Clean up temp file
-    await fs.promises.unlink(tempFilePath).catch((error) => {
+    await fs.promises.unlink(tempFilePath).catch((_error) => {
       // PRODUCTION: Console disabled
-      // console.warn(`[audioUtils] Could not delete temp file ${tempFilePath}:`, error);
+      // console.warn(`[audioUtils] Could not delete temp file ${tempFilePath}:`, _error);
     });
-    
+
     return duration;
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error processing audio buffer:', error);
+    // console.error('[audioUtils] Error processing audio buffer:', _error);
     
     // Try to estimate from buffer size as last resort
     if (audioBuffer && audioBuffer.length > 0) {
@@ -152,9 +151,9 @@ export async function isValidAudioFile(filePath: string): Promise<boolean> {
     const container = metadata.format.container?.toLowerCase();
     
     return container ? validFormats.includes(container) : false;
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error validating audio file:', error);
+    // console.error('[audioUtils] Error validating audio file:', _error);
     return false;
   }
 }
@@ -186,9 +185,9 @@ export async function getAudioMetadata(filePath: string): Promise<{
       codec: metadata.format.codec,
       container: metadata.format.container
     };
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error getting audio metadata:', error);
+    // console.error('[audioUtils] Error getting audio metadata:', _error);
     return { duration: 60 };
   }
 }

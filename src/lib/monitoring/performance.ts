@@ -10,7 +10,7 @@ interface PerformanceMetric {
   startTime: number;
   endTime?: number;
   duration?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   threshold?: number; // ms
 }
 
@@ -33,7 +33,7 @@ export class PerformanceMonitor {
   /**
    * Start timing an operation
    */
-  startTimer(name: string, metadata?: Record<string, any>, threshold?: number): void {
+  startTimer(name: string, metadata?: Record<string, unknown>, threshold?: number): void {
     this.metrics.set(name, {
       name,
       startTime: performance.now(),
@@ -45,7 +45,7 @@ export class PerformanceMonitor {
   /**
    * End timing an operation
    */
-  endTimer(name: string, additionalMetadata?: Record<string, any>): number | null {
+  endTimer(name: string, additionalMetadata?: Record<string, unknown>): number | null {
     const metric = this.metrics.get(name);
     if (!metric) {
       this.logger.warn(`No timer found for: ${name}`);
@@ -79,7 +79,7 @@ export class PerformanceMonitor {
   async timeAsync<T>(
     name: string,
     operation: () => Promise<T>,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     threshold?: number
   ): Promise<T> {
     this.startTimer(name, metadata, threshold);
@@ -103,7 +103,7 @@ export class PerformanceMonitor {
   timeSync<T>(
     name: string,
     operation: () => T,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     threshold?: number
   ): T {
     this.startTimer(name, metadata, threshold);
@@ -216,7 +216,7 @@ export class DatabasePerformanceTracker {
   async trackQuery<T>(
     queryName: string,
     query: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     return this.monitor.timeAsync(
       queryName,
@@ -229,7 +229,7 @@ export class DatabasePerformanceTracker {
   async trackTransaction<T>(
     transactionName: string,
     transaction: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     return this.monitor.timeAsync(
       transactionName,
@@ -255,7 +255,7 @@ export class ExternalAPIPerformanceTracker {
   async trackAPICall<T>(
     endpoint: string,
     apiCall: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     return this.monitor.timeAsync(
       endpoint,

@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
               console.warn('[auth-callback] Profile update deferred:', updateError.code)
             }
           }
-        } catch (profileError) {
+        } catch (_profileError) {
           // Profile operations failed but auth succeeded - continue
           console.warn('[auth-callback] Profile operation skipped')
         }

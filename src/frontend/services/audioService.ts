@@ -27,7 +27,7 @@ export async function playTextToSpeech(text: string): Promise<void> {
       URL.revokeObjectURL(audioUrl);
     };
 
-  } catch (error) {
+  } catch (_error) {
     // PRODUCTION: Console disabled
     // console.error('Error playing text to speech:', error);
   }
