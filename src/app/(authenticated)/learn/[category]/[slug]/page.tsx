@@ -167,16 +167,16 @@ export default function ResourceViewerPage() {
 
   if (loading) {
     return (
-      <main className="breathing-room max-w-6xl mx-auto text-center">
+      <div className="breathing-room max-w-6xl mx-auto text-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
         <p className="mt-4 text-gray-600 dark:text-gray-400">Loading resource...</p>
-      </main>
+      </div>
     );
   }
 
   if (error || !resource) {
     return (
-      <main className="breathing-room max-w-6xl mx-auto">
+      <div className="breathing-room max-w-6xl mx-auto">
         <BackButton className="mb-8" />
         <div className="text-center py-12">
           <h1 className="text-2xl text-gray-900 dark:text-gray-100 mb-4">
@@ -186,7 +186,7 @@ export default function ResourceViewerPage() {
             ← Back to all resources
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -194,7 +194,7 @@ export default function ResourceViewerPage() {
   const encodedUrl = encodeURIComponent(fullFileUrl);
 
   return (
-    <main className="breathing-room max-w-6xl mx-auto">
+    <div className="breathing-room max-w-6xl mx-auto">
         <BackButton href="/learn" className="mb-8" />
         
         {/* Resource Header */}
@@ -401,6 +401,6 @@ export default function ResourceViewerPage() {
             </div>
           ) : null}
         </div>
-    </main>
+    </div>
   );
 }

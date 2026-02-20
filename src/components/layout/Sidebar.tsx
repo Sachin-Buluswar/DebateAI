@@ -136,7 +136,7 @@ export default function Sidebar() {
     if (isAuthenticated) {
       setShowLogoutConfirm(true);
     } else {
-      // GUEST MODE: router.push('/auth') - disabled;
+      router.push('/auth');
     }
   };
 

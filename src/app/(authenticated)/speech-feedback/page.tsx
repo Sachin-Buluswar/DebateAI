@@ -1095,9 +1095,26 @@ export default function SpeechFeedback() {
              {renderUploadForm()} 
             </> 
           ) : (
-             <div className="text-center py-10">
-              <p className="text-lg text-red-600">Please sign in to use the Speech Feedback tool.</p>
-              {/* Optionally add a sign-in button here */}
+             <div className="flex flex-col items-center justify-center py-16 space-y-6">
+              <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full">
+                <MicrophoneIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+              </div>
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-light text-gray-900 dark:text-gray-100">
+                  sign in to get started
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                  create an account or sign in to record speeches and receive ai-powered feedback on your delivery and arguments.
+                </p>
+              </div>
+              <EnhancedButton
+                variant="primary"
+                size="lg"
+                onClick={() => router.push('/auth')}
+                icon={<MicrophoneIcon className="w-5 h-5" />}
+              >
+                sign in to practice
+              </EnhancedButton>
              </div>
           )}
         </div>

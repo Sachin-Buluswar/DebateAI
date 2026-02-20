@@ -31,17 +31,17 @@ import {
   ClockIcon,
   FireIcon,
 } from '@heroicons/react/24/solid';
-// Lazy load the entire recharts library when needed
-import * as Recharts from 'recharts';
-
-// Add global error handler to catch unhandled errors
-if (typeof window !== 'undefined') {
-  window.onerror = function () {
-    // PRODUCTION: Console disabled
-    // console.log('Global error caught:', { message, source, lineno, colno, error });
-    return false;
-  };
-}
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
 
 // Use standardized score extraction
 const extractScore = extractScoreFromFeedback;
@@ -297,7 +297,7 @@ export default function Dashboard() {
     }, 30000); // 30 seconds timeout
 
     return () => clearTimeout(loadingTimeout);
-  }, [router, page]);
+  }, [page]); // Only re-fetch when page changes
 
   // Memoized function to filter score data based on date range
   const getFilteredScoreData = useMemo(() => {
@@ -735,19 +735,19 @@ export default function Dashboard() {
 const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[] }) => {
   return (
     <div className="h-60 md:h-72 w-full">
-      <Recharts.ResponsiveContainer width="100%" height="100%">
-        <Recharts.LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
           <defs>
             <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#87A96B" stopOpacity={0.3}/>
               <stop offset="95%" stopColor="#87A96B" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <Recharts.CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
-          <Recharts.XAxis 
-            dataKey="date" 
-            fontSize={11} 
-            tickLine={false} 
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <XAxis
+            dataKey="date"
+            fontSize={11}
+            tickLine={false}
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             interval={data.length > 20 ? 'preserveStartEnd' : data.length > 10 ? 2 : 0}
             angle={data.length > 10 ? -45 : 0}
@@ -755,16 +755,16 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
             height={data.length > 10 ? 60 : 30}
             tick={{ fill: '#6b7280' }}
           />
-          <Recharts.YAxis 
-            domain={[25, 30]} 
-            fontSize={11} 
-            tickLine={false} 
+          <YAxis
+            domain={[25, 30]}
+            fontSize={11}
+            tickLine={false}
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
             ticks={[25, 26, 27, 28, 29, 30]}
             tickFormatter={(value) => value.toString()}
           />
-          <Recharts.Tooltip
+          <Tooltip
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
@@ -775,7 +775,7 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
             labelStyle={{ color: '#111827', fontWeight: 'bold', marginBottom: '4px' }}
             formatter={(value: number) => [`${value.toFixed(1)}/30`, 'Speaker Score']}
           />
-          <Recharts.Line
+          <Line
             type="monotone"
             dataKey="score"
             stroke="#87A96B"
@@ -784,8 +784,8 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
             activeDot={{ r: 7, fill: '#6e8a57', stroke: '#ffffff', strokeWidth: 2 }}
             fill="url(#scoreGradient)"
           />
-        </Recharts.LineChart>
-      </Recharts.ResponsiveContainer>
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 });
@@ -799,30 +799,30 @@ const WeeklyActivityChart = memo(({
 }) => {
   return (
     <div className="h-60 md:h-72 w-full">
-      <Recharts.ResponsiveContainer width="100%" height="100%">
-        <Recharts.BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#87A96B" stopOpacity={1}/>
               <stop offset="100%" stopColor="#6e8a57" stopOpacity={1}/>
             </linearGradient>
           </defs>
-          <Recharts.CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
-          <Recharts.XAxis 
-            dataKey="name" 
-            fontSize={11} 
-            tickLine={false} 
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
+          <XAxis
+            dataKey="name"
+            fontSize={11}
+            tickLine={false}
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
           />
-          <Recharts.YAxis 
-            fontSize={11} 
-            tickLine={false} 
+          <YAxis
+            fontSize={11}
+            tickLine={false}
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
             tickFormatter={(value) => value === 0 ? '0' : `${value}h`}
           />
-          <Recharts.Tooltip
+          <Tooltip
             contentStyle={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
@@ -840,18 +840,16 @@ const WeeklyActivityChart = memo(({
               return [`${hours} hr ${minutes} min`, 'Practice Time'];
             }}
           />
-          <Recharts.Bar
+          <Bar
             dataKey="hours"
             fill="url(#barGradient)"
             name="Practice Hours"
             radius={[8, 8, 0, 0]}
             maxBarSize={60}
           />
-        </Recharts.BarChart>
-      </Recharts.ResponsiveContainer>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 });
 WeeklyActivityChart.displayName = 'WeeklyActivityChart';
-
-// Removed unused ProgressItem component - can be added back if needed
