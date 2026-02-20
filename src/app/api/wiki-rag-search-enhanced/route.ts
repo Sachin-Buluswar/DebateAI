@@ -25,9 +25,10 @@
  * @returns {EnhancedSearchResult[]} Rich search results with PDF links and context
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import {
   validateRequest,
   validationSchemas,
@@ -318,8 +319,9 @@ async function performEnhancedRagSearch(
  * @param {Request} request - HTTP request with {query, maxResults}
  * @returns {Response} Enhanced search results with full metadata
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
       // PRODUCTION: Logging disabled
@@ -405,6 +407,7 @@ export async function POST(request: Request) {
         )
       );
     }
+    });
   });
 }
 

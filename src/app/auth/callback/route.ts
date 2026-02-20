@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { authLogger } from '@/lib/monitoring/logger'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
             
             if (insertError) {
               // Log but don't fail - profile will be created on first dashboard visit
-              console.warn('[auth-callback] Profile creation deferred:', insertError.code)
+              authLogger.warn('Profile creation deferred', { service: 'auth-callback', metadata: { errorCode: insertError.code } })
             }
           } else {
             // Update existing profile
@@ -91,12 +92,12 @@ export async function GET(request: NextRequest) {
               .eq('id', data.user.id)
             
             if (updateError) {
-              console.warn('[auth-callback] Profile update deferred:', updateError.code)
+              authLogger.warn('Profile update deferred', { service: 'auth-callback', metadata: { errorCode: updateError.code } })
             }
           }
         } catch (_profileError) {
           // Profile operations failed but auth succeeded - continue
-          console.warn('[auth-callback] Profile operation skipped')
+          authLogger.warn('Profile operation skipped', { service: 'auth-callback' })
         }
 
         // Redirect to dashboard on successful authentication
@@ -109,7 +110,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       // Unexpected error - provide a more specific message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[auth-callback] Unexpected error:', errorMessage)
+      authLogger.error('Unexpected error in auth callback', error instanceof Error ? error : undefined, { service: 'auth-callback', metadata: { errorMessage } })
       
       return NextResponse.redirect(`${requestUrl.origin}/auth?error=unexpected_error&code=system_error`)
     }

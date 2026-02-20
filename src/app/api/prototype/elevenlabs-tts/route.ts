@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/shared/env';
-import fetch from 'node-fetch';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 // A default voice ID from ElevenLabs. You can find more on their website.
 const VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Rachel
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return await withRateLimit(request, speechFeedbackRateLimiter, async () => {
+    return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     try {
       const { text } = await request.json();
 
@@ -71,5 +72,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    });
   });
 } 

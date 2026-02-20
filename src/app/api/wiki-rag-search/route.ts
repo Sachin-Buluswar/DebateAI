@@ -18,9 +18,10 @@
  * @returns {RagSearchResult[]} Array of search results with content, source, and metadata
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import {
   validateRequest,
   validationSchemas,
@@ -309,8 +310,9 @@ Return up to ${maxResults} results ordered by relevance.`,
  * @param {Request} request - HTTP request with JSON body containing {query, maxResults}
  * @returns {Response} JSON response with search results or error
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
       // PRODUCTION: Logging disabled
@@ -398,6 +400,7 @@ export async function POST(request: Request) {
         )
       );
     }
+    });
   });
 }
 

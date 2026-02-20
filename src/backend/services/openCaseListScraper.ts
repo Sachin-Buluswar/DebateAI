@@ -1,7 +1,6 @@
 import puppeteer, { type Page } from 'puppeteer';
 import { DocumentStorageService } from './documentStorageService';
 import { createClient } from '@supabase/supabase-js';
-import fetch from 'node-fetch';
 import * as path from 'path';
 
 const supabase = createClient(
@@ -216,8 +215,8 @@ export class OpenCaseListScraper {
       throw new Error(`Failed to download file: ${response.statusText}`);
     }
     
-    const buffer = await response.buffer();
-    return buffer;
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
   private extractMetadata(fileName: string, filePath: string): Record<string, unknown> {

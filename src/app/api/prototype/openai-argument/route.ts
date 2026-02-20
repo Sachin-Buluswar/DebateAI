@@ -1,14 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { env } from '@/shared/env';
 import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return await withRateLimit(request, apiRateLimiter, async () => {
+    return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     try {
       const { topic, stance } = await request.json();
 
@@ -46,5 +48,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    });
   });
 } 
