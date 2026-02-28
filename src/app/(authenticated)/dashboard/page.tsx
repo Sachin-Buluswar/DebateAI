@@ -80,12 +80,12 @@ export default function Dashboard() {
       }, 5000);
 
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
         clearTimeout(timeoutId);
 
-        if (sessionError) {
+        if (userError) {
           // Don't block guest access on error
           setLoading(false);
           return;
@@ -99,11 +99,11 @@ export default function Dashboard() {
 
         try {
           // Only fetch debates if user is authenticated
-          if (data?.session?.user?.id) {
+          if (user?.id) {
             const { data: debatesData, error: debatesError } = await supabase
               .from('debate_history')
               .select('*')
-              .eq('user_id', data.session.user.id)
+              .eq('user_id', user.id)
               .order('created_at', { ascending: false })
               .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
@@ -113,23 +113,19 @@ export default function Dashboard() {
               setDebateHistory(fetchedDebates);
             } else if (debatesError.code !== '42P01') {
               // Error that's not "table doesn't exist" - show error
-              // PRODUCTION: Console disabled
-              // console.error('Error fetching debates:', debatesError);
               setError('Failed to load debates. Please try refreshing the page.');
             }
           }
         } catch {
-          // PRODUCTION: Console disabled
-          // console.error('Exception fetching debates:', debateError);
         }
 
         try {
           // Only fetch speech recordings if user is authenticated
-          if (data?.session?.user?.id) {
+          if (user?.id) {
             const { data: speechData, error: speechError } = await supabase
               .from('speech_feedback')
               .select('id, user_id, created_at, topic, duration_seconds, feedback, audio_url')
-              .eq('user_id', data.session.user.id)
+              .eq('user_id', user.id)
               .order('created_at', { ascending: false })
               .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
@@ -139,8 +135,6 @@ export default function Dashboard() {
               setSpeechHistory(fetchedSpeeches);
             } else if (speechError.code !== '42P01') {
               // Error that's not "table doesn't exist" - show error
-              // PRODUCTION: Console disabled
-              // console.error('Error fetching speech feedback:', speechError);
               setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
             }
           }
@@ -270,12 +264,8 @@ export default function Dashboard() {
               setScoreTrendData([]);
             }
         } catch {
-          // PRODUCTION: Console disabled
-          // console.error('Exception fetching speech feedback:', speechError);
         }
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Error fetching user data:', error);
         setError('An unexpected error occurred. Please try again later.');
       } finally {
         setLoading(false);
@@ -287,8 +277,6 @@ export default function Dashboard() {
     // Add a safeguard against infinite loading
     const loadingTimeout = setTimeout(() => {
       if (loading) {
-        // PRODUCTION: Console disabled
-        // console.error('Dashboard loading timed out');
         setLoading(false);
         setError(
           'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.'
@@ -505,7 +493,6 @@ export default function Dashboard() {
             loading={loading}
           />
         </div>
-
 
         {/* Quick Actions Widget */}
         <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-3">

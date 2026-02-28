@@ -73,8 +73,6 @@ export async function GET(request: NextRequest) {
         
         status.database.indexedDocuments = indexedCount || 0;
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-// console.error('Database check failed:', _error);
       }
 
       // Check storage bucket
@@ -94,8 +92,6 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-// console.error('Storage check failed:', _error);
       }
 
       // Check search capabilities
@@ -106,8 +102,6 @@ export async function GET(request: NextRequest) {
           const result = await supabase.rpc('get_installed_extensions' as string);
           extensions = (result.data as Array<{ extname?: string }>) || [];
         } catch (_error) {
-          // PRODUCTION: Logging disabled
-// console.error('Failed to get extensions:', _error);
         }
         
         if (Array.isArray(extensions)) {
@@ -123,8 +117,6 @@ export async function GET(request: NextRequest) {
             .eq('tablename', 'document_chunks');
           indexes = (result.data as Array<{ indexname?: string }>) || [];
         } catch (_error) {
-          // PRODUCTION: Logging disabled
-// console.error('Failed to get indexes:', _error);
         }
         
         if (indexes && indexes.length > 0) {
@@ -145,8 +137,6 @@ export async function GET(request: NextRequest) {
           !!status.configuration.vectorStoreId;
 
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-// console.error('Search capability check failed:', _error);
       }
 
       // Calculate health score
@@ -161,8 +151,6 @@ export async function GET(request: NextRequest) {
         })
       );
     } catch (_error) {
-      // PRODUCTION: Logging disabled
-// console.error('Search status check failed:', _error);
       return addSecurityHeaders(
         NextResponse.json(
           {

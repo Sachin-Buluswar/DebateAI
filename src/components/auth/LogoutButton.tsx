@@ -16,8 +16,6 @@ export default function LogoutButton({ className = '' }) {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error signing out:', error);
         return;
       }
       
@@ -25,8 +23,6 @@ export default function LogoutButton({ className = '' }) {
       router.push('/');
       router.refresh();
     } catch (_error) {
-      // PRODUCTION: Logging disabled
-      // console.error('Exception during logout:', _error);
     } finally {
       setIsLoggingOut(false);
     }

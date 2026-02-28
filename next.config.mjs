@@ -9,9 +9,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Enable standalone output for Docker deployments
-  output: 'standalone',
-  
   // Add webpack configuration to handle Node.js modules
   webpack: (config, { isServer }) => {
     // If client-side (browser)
@@ -44,9 +41,6 @@ const nextConfig = {
   // Ensure strict mode is enabled for React
   reactStrictMode: true,
   
-  // Enable SWC minification for better performance
-  swcMinify: true,
-  
   // Optimize production builds
   productionBrowserSourceMaps: false,
   
@@ -54,7 +48,6 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['recharts', 'react-markdown', '@heroicons/react'],
-    instrumentationHook: true, // Enable instrumentation for monitoring
   },
   
   // Adding a custom path for the API server
@@ -62,11 +55,13 @@ const nextConfig = {
     apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
   
-  // Configure allowed image domains if needed
+  // Configure allowed image domains
   images: {
-    domains: [
-      // Extract domain from Supabase URL
-      process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') || 'localhost'
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') || 'localhost',
+      },
     ],
   },
   

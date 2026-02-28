@@ -22,10 +22,14 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(_error: Error, _errorInfo: ErrorInfo): void {
-    // You can log the error to an error reporting service here
-    // PRODUCTION: Console disabled
-    // console.error('ErrorBoundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    import('@sentry/nextjs')
+      .then((Sentry) => {
+        Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+      })
+      .catch(() => {
+        // Sentry not available
+      });
   }
 
   render(): ReactNode {

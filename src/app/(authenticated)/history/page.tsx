@@ -15,7 +15,6 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-
 import { MicrophoneIcon, ChatBubbleLeftRightIcon, PlayIcon, PauseIcon, TrashIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
 import { useToast } from '@/components/ui/Toast';
 import { FixedSizeList as List } from 'react-window';
@@ -39,8 +38,6 @@ const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
     } else {
       setError(null);
       audioRef.current.play().catch(_err => {
-        // PRODUCTION: Console disabled
-        // console.error('Playback error in history player:', err);
         setError('Unable to play audio');
         setIsPlaying(false);
       });
@@ -82,8 +79,6 @@ const HistoryAudioPlayer = memo(({ audioUrl }: { audioUrl: string }) => {
   }, []);
 
   const handleError = useCallback(() => {
-    // PRODUCTION: Console disabled
-    // console.error('Audio loading error in history item');
     setError('Failed to load audio');
     setLoading(false);
   }, []);
@@ -293,16 +288,16 @@ export default function History() {
         setIsLoadingMore(true);
       }
       
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError) {
         setError('Authentication error. Please try signing in again.');
         setLoading(false);
         setIsLoadingMore(false);
         return;
       }
-      
-      if (!data.session) {
+
+      if (!user) {
         router.push('/auth');
         return;
       }
@@ -316,7 +311,7 @@ export default function History() {
         const { data: debatesData, error: debatesError } = await supabase
           .from('debate_history')
           .select('*')
-          .eq('user_id', data.session.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
@@ -334,13 +329,9 @@ export default function History() {
           }
         } else if (debatesError.code !== '42P01') {
           // Error that's not "table doesn't exist"
-          // PRODUCTION: Console disabled
-          // console.error('Error fetching debates:', debatesError);
           hasDebateError = true;
         }
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Exception fetching debates:', debateError);
         hasDebateError = true;
       }
 
@@ -350,7 +341,7 @@ export default function History() {
         const { data: speechData, error: speechError } = await supabase
           .from('speech_feedback')
           .select('*')
-          .eq('user_id', data.session.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
         
@@ -363,13 +354,9 @@ export default function History() {
           }
         } else if (speechError.code !== '42P01') {
           // Error that's not "table doesn't exist"
-          // PRODUCTION: Console disabled
-          // console.error('Error fetching speech feedback:', speechError);
           hasSpeechError = true;
         }
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Exception fetching speech feedback:', speechError);
         hasSpeechError = true;
       }
       
@@ -378,20 +365,14 @@ export default function History() {
         setError('Failed to load history. Please try refreshing the page.');
       } else if (hasDebateError) {
         // Only debates failed, but we have speech data
-        // PRODUCTION: Console disabled
-        // console.warn('Debates failed to load, but speech history loaded successfully');
       } else if (hasSpeechError) {
         // Only speeches failed, but we have debate data
-        // PRODUCTION: Console disabled
-        // console.warn('Speech history failed to load, but debates loaded successfully');
       } else {
         // Both succeeded - clear any errors
         setError(null);
       }
       
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Error fetching user data:', error);
       setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
@@ -447,22 +428,16 @@ export default function History() {
               const storagePath = pathParts.slice(storageIndex + 5).join('/');
               
               if (bucketName && storagePath) {
-                // PRODUCTION: Console disabled
-                // console.log(`Attempting to delete from bucket: ${bucketName}, path: ${storagePath}`);
                 const { error: storageError } = await supabase
                   .storage
                   .from(bucketName)
                   .remove([storagePath]);
                 if (storageError) {
-                   // PRODUCTION: Console disabled
-                   // console.error('Error deleting storage file:', storageError);
                    throw new Error(`Failed to delete associated audio file: ${storageError.message}`);
                 }
               }
             }
           } catch {
-            // PRODUCTION: Console disabled
-            // console.error('Error parsing audio URL for deletion:', urlParseError);
           }
         }
         
@@ -498,8 +473,6 @@ export default function History() {
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      // PRODUCTION: Console disabled
-      // console.error('Error deleting item:', error);
       const fullErrorMessage = `Failed to delete the item: ${errorMessage}`;
       setError(fullErrorMessage);
       addToast({ message: fullErrorMessage, type: 'error' });

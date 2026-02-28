@@ -1,32 +1,19 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
 import { speechFeedbackRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders, validateAudioFile } from '@/middleware/inputValidation';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   // Apply rate limiting for speech uploads
   const rateLimitResult = await withRateLimit(request, speechFeedbackRateLimiter, async () => {
+    return requireAuth(request, async (authenticatedRequest: AuthenticatedRequest) => {
     try {
-      // Get authenticated user's session first
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Unauthorized - Please log in to submit speech feedback' },
-            { status: 401 }
-          )
-        );
-      }
-      
-      // PRODUCTION: Logging disabled
-// console.log('[speech-feedback] Processing incoming request');
-      
+      const user = authenticatedRequest.user;
+
       // Parse FormData from the request
       const formData = await request.formData();
-      
+
       // Extract and validate audio file
       const audioFile = formData.get('audio') as File;
       if (!audioFile || !(audioFile instanceof File)) {
@@ -71,8 +58,6 @@ export async function POST(request: Request) {
       );
 
       if (!validation.success) {
-        // PRODUCTION: Logging disabled
-// console.warn('[speech-feedback] Invalid request:', validation.error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Invalid request data', details: validation.details },
@@ -82,10 +67,10 @@ export async function POST(request: Request) {
       }
 
       const { topic, customInstructions } = validation.data;
-      
+
       // Use authenticated user's ID instead of form data
       const userId = user.id;
-      
+
       // Verify the userId from form matches authenticated user (if provided)
       if (validation.data.userId && validation.data.userId !== user.id) {
         return addSecurityHeaders(
@@ -95,10 +80,10 @@ export async function POST(request: Request) {
           )
         );
       }
-      
+
       // Convert audio to buffer
       const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
-      
+
       // Additional security checks
       if (audioBuffer.length === 0) {
         return addSecurityHeaders(
@@ -113,9 +98,6 @@ export async function POST(request: Request) {
       const speechType = requestData.speechType || 'debate';
       const userSide = requestData.userSide || 'None';
       const skillLevel = (requestData.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate';
-      
-      // PRODUCTION: Logging disabled
-// console.log(`[speech-feedback] Processing audio file: ${audioFile.name} (${audioBuffer.length} bytes) for user ${userId}`);
 
       // Process the speech feedback (service will handle storage with service role)
       const result = await processSpeechFeedback({
@@ -129,10 +111,7 @@ export async function POST(request: Request) {
         skillLevel,
         customInstructions
       });
-      
-      // PRODUCTION: Logging disabled
-// console.log('[speech-feedback] Processing complete, returning feedback');
-      
+
       // Return response with id for frontend redirect
       return addSecurityHeaders(
         NextResponse.json({
@@ -140,11 +119,8 @@ export async function POST(request: Request) {
           success: true
         }, { status: 200 })
       );
-      
+
     } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('[speech-feedback] Error processing request:', error);
-      
       // Enhanced error handling
       if (error instanceof Error) {
         if (error.message.includes('Storage limit exceeded')) {
@@ -155,7 +131,7 @@ export async function POST(request: Request) {
             )
           );
         }
-        
+
         if (error.message.includes('File exceeds maximum size')) {
           return addSecurityHeaders(
             NextResponse.json(
@@ -183,6 +159,7 @@ export async function POST(request: Request) {
         )
       );
     }
+    });
   });
 
   // Return rate limit response if blocked
@@ -215,4 +192,4 @@ export async function OPTIONS() {
       },
     })
   );
-} 
+}

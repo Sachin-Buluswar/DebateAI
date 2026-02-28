@@ -53,8 +53,6 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error fetching resources:', error);
       
       // Check if error is due to missing table
       if (error.message && error.message.includes('relation') && error.message.includes('does not exist')) {
@@ -84,8 +82,6 @@ export async function GET(request: NextRequest) {
       }
     });
     } catch (_error) {
-      // PRODUCTION: Console disabled
-      // console.error('API Error [/api/resources]:', _error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

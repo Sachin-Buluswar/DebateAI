@@ -31,11 +31,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (comprehensive)
 .env.local
+.env.production
 .env.production.local
 .env.development.local
 .env.test.local
+.env.vercel
+.env.vercel.production
 *.env
 
 # vercel
@@ -54,3 +57,25 @@ supabase/.branches/
 
 # playwright
 .playwright-mcp/
+
+# Data files (stored externally)
+data/
+
+# Logs
+logs/
+
+# Coverage reports
+config/coverage/
+
+# Generated reports
+api-audit-report.json
+security-audit-report.json
+
+# Root-level ad-hoc SQL scripts
+/*.sql
+
+# One-off test/debug scripts
+TEST_IN_BROWSER.js
+
+# Well-known directory
+public/.well-known/

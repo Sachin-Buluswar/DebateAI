@@ -60,8 +60,6 @@ export class ErrorRecoveryManager {
         
         // Log recovery if this was a retry
         if (attempt > 0) {
-          // PRODUCTION: Console disabled
-          // console.log(`✅ Recovery successful for ${operationType} after ${attempt} retries`);
           socket?.emit('errorRecovered', { 
             type: operationType, 
             attempt,
@@ -90,9 +88,7 @@ export class ErrorRecoveryManager {
           this.retryConfig.maxDelayMs
         );
         
-        // PRODUCTION: Console disabled
         
-        // console.warn(`⚠️ ${operationType} failed (attempt ${attempt + 1}/${this.retryConfig.maxRetries + 1}): ${lastError.message}. Retrying in ${delay}ms...`);
         
         // Emit error event to client
         socket?.emit('errorRetrying', {
@@ -109,8 +105,6 @@ export class ErrorRecoveryManager {
     }
     
     // All retries failed
-    // PRODUCTION: Console disabled
-    // console.error(`❌ ${operationType} failed permanently after ${this.retryConfig.maxRetries + 1} attempts:`, lastError?.message);
     
     socket?.emit('errorPermanent', {
       type: operationType,
@@ -132,8 +126,6 @@ export class ErrorRecoveryManager {
     socket: Socket,
     originalError: Error
   ): Promise<void> {
-    // PRODUCTION: Console disabled
-    // console.warn(`TTS failed for ${speaker}, falling back to text display:`, originalError.message);
     
     // Emit text-only speech as fallback
     socket.emit('aiSpeech', { 
@@ -154,8 +146,6 @@ export class ErrorRecoveryManager {
     socket: Socket,
     originalError: Error
   ): Promise<void> {
-    // PRODUCTION: Console disabled
-    // console.warn(`STT failed, providing manual input option:`, originalError.message);
     
     socket.emit('sttFallback', {
       message: 'Speech recognition unavailable. Please use text input.',
@@ -174,8 +164,6 @@ export class ErrorRecoveryManager {
     socket: Socket,
     originalError: Error
   ): Promise<void> {
-    // PRODUCTION: Console disabled
-    // console.warn(`Debate state error:`, originalError.message);
     
     socket.emit('stateError', {
       message: 'Debate synchronization issue. Attempting to recover...',
@@ -194,8 +182,6 @@ export class ErrorRecoveryManager {
     socket: Socket,
     originalError: Error
   ): Promise<void> {
-    // PRODUCTION: Console disabled
-    // console.warn(`Crossfire session error:`, originalError.message);
     
     socket.emit('crossfireError', {
       message: 'Real-time crossfire unavailable. Switching to turn-based mode.',
@@ -310,8 +296,6 @@ export class ErrorRecoveryManager {
     // Open circuit breaker after 5 consecutive failures
     if (state.failures >= 5) {
       state.isOpen = true;
-      // PRODUCTION: Console disabled
-      // console.warn(`🚫 Circuit breaker opened for ${operationType} due to repeated failures`);
     }
 
     this.circuitBreakerStates.set(operationType, state);

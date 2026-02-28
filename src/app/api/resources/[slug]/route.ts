@@ -55,8 +55,6 @@ export async function GET(
 
     return NextResponse.json({ resource });
     } catch (_error) {
-      // PRODUCTION: Console disabled
-      // console.error('API Error [/api/resources/[slug]]:', _error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

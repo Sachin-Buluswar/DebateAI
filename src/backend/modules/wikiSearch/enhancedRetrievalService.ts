@@ -24,12 +24,8 @@ const withRetry = async <T>(fn: () => Promise<T>, label: string, maxAttempts = 3
     } catch (err) {
       attempt += 1;
       if (attempt >= maxAttempts) {
-        // PRODUCTION: Console disabled
-        // console.error(`[enhancedSearchVectorStore] ${label} failed after ${attempt} attempts.`);
         throw err;
       }
-      // PRODUCTION: Console disabled
-      // console.warn(`[enhancedSearchVectorStore] ${label} failed (attempt ${attempt}). Retrying in ${delay}ms ...`, err);
       await new Promise((r) => setTimeout(r, delay));
       delay *= 2; // exponential backoff
     }
@@ -45,8 +41,6 @@ export const enhancedSearchVectorStore = async (
   query: string,
   maxResults: number = 5
 ): Promise<EnhancedSearchResult[]> => {
-  // PRODUCTION: Console disabled
-  // console.log(`[enhancedSearchVectorStore] Querying vector store ${vectorStoreId} with: "${query}" (top_k=${maxResults})`);
 
   const documentStorage = new DocumentStorageService();
 
@@ -166,8 +160,6 @@ export const enhancedSearchVectorStore = async (
                   }
                 }
               } catch (_error) {
-                // PRODUCTION: Console disabled
-                // console.warn(`[enhancedSearchVectorStore] Could not retrieve metadata for file ${openaiFileId}:`, _error);
               }
             }
           }
@@ -180,8 +172,6 @@ export const enhancedSearchVectorStore = async (
     }
 
     const limited = aggregated.slice(0, maxResults);
-    // PRODUCTION: Console disabled
-    // console.log(`[enhancedSearchVectorStore] Enhanced search produced ${limited.length} results.`);
 
     // Cleanup temp resources
     await openai.beta.threads.delete(thread.id).catch(() => {});
@@ -190,8 +180,6 @@ export const enhancedSearchVectorStore = async (
     return limited;
     
   } catch (_assistErr) {
-    // PRODUCTION: Console disabled
-    // console.error('[enhancedSearchVectorStore] Enhanced search failed:', _assistErr);
     
     // Fallback to error results
     const fallbackResults: EnhancedSearchResult[] = [

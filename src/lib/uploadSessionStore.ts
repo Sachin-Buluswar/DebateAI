@@ -35,8 +35,6 @@ export class UploadSessionStore {
     for (const [sessionId, session] of this.sessions.entries()) {
       if (session.createdAt < oneHourAgo) {
         this.sessions.delete(sessionId);
-        // PRODUCTION: Console disabled
-        // console.log(`[UploadSessionStore] Cleaned up expired session: ${sessionId}`);
       }
     }
   }, 5 * 60 * 1000);
@@ -47,15 +45,11 @@ export class UploadSessionStore {
       chunks: new Map(),
       createdAt: Date.now()
     });
-    // PRODUCTION: Console disabled
-    // console.log(`[UploadSessionStore] Created session: ${sessionId}`);
   }
 
   static async getSession(sessionId: string): Promise<SessionMetadata | null> {
     const session = this.sessions.get(sessionId);
     if (!session) {
-      // PRODUCTION: Console disabled
-      // console.log(`[UploadSessionStore] Session not found: ${sessionId}`);
       return null;
     }
     return session.metadata;
@@ -70,9 +64,7 @@ export class UploadSessionStore {
     session.chunks.set(chunkIndex, data);
     session.metadata.uploadedChunks = session.chunks.size;
     
-    // PRODUCTION: Console disabled
     
-    // console.log(`[UploadSessionStore] Saved chunk ${chunkIndex} for session ${sessionId}`);
   }
 
   static async updateSession(sessionId: string, updates: Partial<SessionMetadata>): Promise<void> {
@@ -112,8 +104,6 @@ export class UploadSessionStore {
 
   static async deleteSession(sessionId: string): Promise<void> {
     this.sessions.delete(sessionId);
-    // PRODUCTION: Console disabled
-    // console.log(`[UploadSessionStore] Deleted session: ${sessionId}`);
   }
 
   static sessionExists(sessionId: string): boolean {

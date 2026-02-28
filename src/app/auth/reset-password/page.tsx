@@ -21,16 +21,16 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if we have a valid session from the reset link
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+    // Check if we have a valid user from the reset link
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         const message = 'Invalid or expired reset link. Please request a new password reset.';
         setError(message);
         addToast({ message, type: 'error' });
       }
     };
-    checkSession();
+    checkUser();
   }, [supabase]);
 
   const handleResetPassword = async (e: React.FormEvent) => {

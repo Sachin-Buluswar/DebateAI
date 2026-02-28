@@ -14,7 +14,6 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-
 const ReactMarkdown = dynamic(() => import('react-markdown'), {
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-full rounded" />,
   ssr: false,
@@ -49,8 +48,6 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
       // Reset error state when attempting to play
       setError(null);
       audioRef.current.play().catch(_err => {
-        // PRODUCTION: Console disabled
-        // console.error('Playback error:', err);
         setError('Unable to play audio. The file may be corrupted or inaccessible.');
         setIsPlaying(false);
       });
@@ -92,8 +89,6 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
   };
 
   const handleError = () => {
-    // PRODUCTION: Console disabled
-    // console.error('Audio loading error');
     setError('Failed to load audio file. The file may be missing or inaccessible.');
     setLoading(false);
   };
@@ -198,30 +193,28 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError) {
           setError('Authentication error. Please try signing in again.');
           setLoading(false);
           return;
         }
-        
-        if (!data.session) {
+
+        if (!user) {
           router.push('/auth');
           return;
         }
-        
+
         // Fetch speech feedback
         const { data: feedbackData, error: feedbackError } = await supabase
           .from('speech_feedback')
           .select('*')
           .eq('id', params.id)
-          .eq('user_id', data.session.user.id)
+          .eq('user_id', user.id)
           .single();
         
         if (feedbackError) {
-          // PRODUCTION: Console disabled
-          // console.error('Error fetching speech feedback:', feedbackError);
           if (feedbackError.code === 'PGRST116') { // Not found
              setError('Speech feedback not found. It may have been deleted or you may not have permission to view it.');
           } else {
@@ -233,8 +226,6 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         
         setFeedback(feedbackData as SpeechFeedback);
       } catch (_error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error loading feedback details:', error);
         setError('An unexpected error occurred. Please try again later.');
       } finally {
         setLoading(false);
@@ -390,8 +381,6 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         });
       } else {
         // Fallback to markdown if PDF export is not supported
-        // PRODUCTION: Console disabled
-        // console.warn('PDF export not supported, falling back to markdown');
         const blob = new Blob([exportContent], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -403,8 +392,6 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         URL.revokeObjectURL(url);
       }
     } catch (_error) {
-      // PRODUCTION: Console disabled
-      // console.error('Export failed:', error);
       // Fallback to markdown export on error
       const title = `## Speech Feedback: ${feedback.topic}\n`;
       const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;

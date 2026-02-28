@@ -122,7 +122,6 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
-
           <div className="divider"></div>
 
           <footer className="text-center">

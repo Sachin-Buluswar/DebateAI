@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { withRateLimit, debateRateLimiter } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
 import { openAIService } from '@/backend/services/openaiService';
@@ -29,16 +29,9 @@ const requestSchema = validationSchemas.debateAdvice.extend({
 export async function POST(request: NextRequest) {
   // Apply rate limiting with handler function
   const result = await withRateLimit(request, debateRateLimiter, async () => {
+    return requireAuth(request, async (authenticatedRequest: AuthenticatedRequest) => {
     try {
-      // Authentication check
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return addSecurityHeaders(
-          NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        );
-      }
+      const user = authenticatedRequest.user;
 
       // Parse and validate request body
       const validation = await validateRequest(request, requestSchema, { sanitize: true });
@@ -159,13 +152,14 @@ export async function POST(request: NextRequest) {
       });
       
       return addSecurityHeaders(
-        NextResponse.json({ 
+        NextResponse.json({
           error: 'Failed to get advice',
           message: 'Our AI coach is temporarily unavailable. Please try again in a moment.'
         }, { status: 500 })
       );
     }
+    });
   });
-  
+
   return result;
 }

@@ -224,8 +224,6 @@ async function performEnhancedRagSearch(
                   },
                 });
               } catch (_e) {
-                // PRODUCTION: Logging disabled
-// console.warn(`Could not retrieve file info for ${openaiFileId}`);
               }
             }
           }
@@ -241,8 +239,6 @@ async function performEnhancedRagSearch(
       try {
         await documentStorage.setSearchResultsCache(query, enhancedResults);
       } catch (_cacheError) {
-        // PRODUCTION: Logging disabled
-// console.warn('[enhanced-rag-search] Failed to cache results:', _cacheError);
         // Continue - caching is not critical
       }
     }
@@ -267,26 +263,18 @@ async function performEnhancedRagSearch(
     }
     
     if (cleanupErrors.length > 0) {
-      // PRODUCTION: Logging disabled
-// console.warn('[enhanced-rag-search] Cleanup errors:', cleanupErrors);
     }
 
     return enhancedResults;
   } catch (_error) {
-    // PRODUCTION: Logging disabled
-// console.error('[enhanced-rag-search] Search error:', _error);
 
     // Attempt cleanup on error
     if (tempAssistant?.id) {
       await openai.beta.assistants.delete(tempAssistant.id).catch(_err => {
-        // PRODUCTION: Logging disabled
-        // console.warn('[enhanced-rag-search] Failed to cleanup assistant on error:', _err)
       });
     }
     if (thread?.id) {
       await openai.beta.threads.delete(thread.id).catch(_err => {
-        // PRODUCTION: Logging disabled
-        // console.warn('[enhanced-rag-search] Failed to cleanup thread on error:', _err)
       });
     }
 
@@ -324,8 +312,6 @@ export async function POST(request: NextRequest) {
     return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
-      // PRODUCTION: Logging disabled
-// console.error('[enhanced-rag-search] Missing environment variables');
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -395,8 +381,6 @@ export async function POST(request: NextRequest) {
         )
       );
     } catch (_error) {
-      // PRODUCTION: Logging disabled
-// console.error('[enhanced-rag-search] Error:', _error);
 
       return addSecurityHeaders(
         NextResponse.json(

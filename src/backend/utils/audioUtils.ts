@@ -15,15 +15,11 @@ export async function getAudioDuration(filePath: string): Promise<number> {
   try {
     // Validate file path
     if (!filePath || typeof filePath !== 'string') {
-      // PRODUCTION: Console disabled
-      // console.error('[audioUtils] Invalid file path provided');
       return 60; // Return default duration
     }
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
-      // PRODUCTION: Console disabled
-      // console.error(`[audioUtils] File not found: ${filePath}`);
       return 60; // Return default duration
     }
 
@@ -37,27 +33,19 @@ export async function getAudioDuration(filePath: string): Promise<number> {
     const duration = metadata.format.duration;
     
     if (duration && !isNaN(duration) && duration > 0) {
-      // PRODUCTION: Console disabled
-      // console.log(`[audioUtils] Successfully extracted duration: ${duration} seconds for ${path.basename(filePath)}`);
       return Math.round(duration); // Return rounded duration in seconds
     } else {
-      // PRODUCTION: Console disabled
-      // console.warn(`[audioUtils] Could not extract valid duration from metadata for ${filePath}`);
       // Try to estimate based on file size and bitrate if available
       if (metadata.format.bitrate) {
         const stats = fs.statSync(filePath);
         const estimatedDuration = (stats.size * 8) / metadata.format.bitrate;
         if (estimatedDuration > 0 && !isNaN(estimatedDuration)) {
-          // PRODUCTION: Console disabled
-          // console.log(`[audioUtils] Estimated duration from bitrate: ${estimatedDuration} seconds`);
           return Math.round(estimatedDuration);
         }
       }
       return 60; // Fallback to default
     }
   } catch (_error) {
-    // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error getting audio duration:', _error);
 
     // Try fallback method using file stats for rough estimation
     try {
@@ -65,13 +53,9 @@ export async function getAudioDuration(filePath: string): Promise<number> {
       // Rough estimation: assume 128kbps for mp3
       const estimatedDuration = (stats.size * 8) / (128 * 1000); // Convert to seconds
       if (estimatedDuration > 0 && estimatedDuration < 7200) { // Cap at 2 hours
-        // PRODUCTION: Console disabled
-        // console.log(`[audioUtils] Fallback estimation based on file size: ${estimatedDuration} seconds`);
         return Math.round(estimatedDuration);
       }
     } catch (_fallbackError) {
-      // PRODUCTION: Console disabled
-      // console.error('[audioUtils] Fallback estimation also failed:', _fallbackError);
     }
 
     return 60; // Return default duration on all errors
@@ -91,14 +75,10 @@ export async function getAudioDurationFromBuffer(
   try {
     // Validate inputs
     if (!audioBuffer || !Buffer.isBuffer(audioBuffer) || audioBuffer.length === 0) {
-      // PRODUCTION: Console disabled
-      // console.error('[audioUtils] Invalid audio buffer provided');
       return 60;
     }
 
     if (!tempFilePath || typeof tempFilePath !== 'string') {
-      // PRODUCTION: Console disabled
-      // console.error('[audioUtils] Invalid temp file path provided');
       return 60;
     }
 
@@ -110,22 +90,16 @@ export async function getAudioDurationFromBuffer(
     
     // Clean up temp file
     await fs.promises.unlink(tempFilePath).catch((_error) => {
-      // PRODUCTION: Console disabled
-      // console.warn(`[audioUtils] Could not delete temp file ${tempFilePath}:`, _error);
     });
 
     return duration;
   } catch (_error) {
-    // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error processing audio buffer:', _error);
     
     // Try to estimate from buffer size as last resort
     if (audioBuffer && audioBuffer.length > 0) {
       // Rough estimation assuming 128kbps mp3
       const estimatedDuration = (audioBuffer.length * 8) / (128 * 1000);
       if (estimatedDuration > 0 && estimatedDuration < 7200) {
-        // PRODUCTION: Console disabled
-        // console.log(`[audioUtils] Buffer size estimation: ${estimatedDuration} seconds`);
         return Math.round(estimatedDuration);
       }
     }
@@ -152,8 +126,6 @@ export async function isValidAudioFile(filePath: string): Promise<boolean> {
     
     return container ? validFormats.includes(container) : false;
   } catch (_error) {
-    // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error validating audio file:', _error);
     return false;
   }
 }
@@ -186,8 +158,6 @@ export async function getAudioMetadata(filePath: string): Promise<{
       container: metadata.format.container
     };
   } catch (_error) {
-    // PRODUCTION: Console disabled
-    // console.error('[audioUtils] Error getting audio metadata:', _error);
     return { duration: 60 };
   }
 }

@@ -60,8 +60,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         if (!token) {
           // In development, allow anonymous connections for testing
           if (process.env.NODE_ENV === 'development') {
-            // PRODUCTION: Logging disabled
-            // console.warn('Socket connection without auth token - allowing for development');
             socket.data.user = null;
             socket.data.userId = 'anonymous-' + socket.id;
             return next();
@@ -88,8 +86,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         if (error || !user) {
           // In development, allow connection but mark as unauthenticated
           if (process.env.NODE_ENV === 'development') {
-            // PRODUCTION: Logging disabled
-            // console.warn('Invalid auth token - allowing for development:', error?.message);
             socket.data.user = null;
             socket.data.userId = 'anonymous-' + socket.id;
             return next();
@@ -101,11 +97,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         // Authentication successful
         socket.data.user = { id: user.id, email: user.email };
         socket.data.userId = user.id;
-        // PRODUCTION: Logging disabled
-        // console.log('Socket authenticated for user:', user.id);
         next();
       } catch (_error) {
-        // PRODUCTION: Logging disabled
 
         // In development, allow connection on error
         if (process.env.NODE_ENV === 'development') {
@@ -125,7 +118,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     initializeSocketIO(io);
     // Socket.IO server initialized with authentication
   } catch (_error) {
-    // PRODUCTION: Logging disabled
   }
   
   res.end();

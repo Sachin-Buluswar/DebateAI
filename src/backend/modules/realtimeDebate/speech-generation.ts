@@ -23,12 +23,8 @@ export async function generateSpeech(
   const difficultyConfig = debateConfig.difficultyLevels[difficulty];
   
   if (!personality) {
-    // PRODUCTION: Console disabled
-    // console.warn(`Unknown speaker name: ${speaker.name}, using default personality`);
   }
   if (!phasePromptTemplate) {
-      // PRODUCTION: Console disabled
-      // console.error(`Invalid debate phase key: ${phaseKey}`);
       return "I'm sorry, I'm not sure how to proceed in this phase of the debate.";
   }
 

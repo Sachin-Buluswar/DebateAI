@@ -66,8 +66,6 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
       .list(userId);
     
     if (error) {
-      // PRODUCTION: Console disabled
-      // console.error('[speechFeedbackService] Error fetching storage:', error);
       return 0;
     }
     
@@ -78,8 +76,6 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
     
     return totalBytes;
   } catch (_error) {
-    // PRODUCTION: Console disabled
-    // console.error('[speechFeedbackService] Storage calculation error:', _error);
     return 0;
   }
 }
@@ -244,7 +240,6 @@ IMPORTANT SCORING GUIDELINES:
 - Consider ALL aspects: content, delivery, strategy, and execution
 - Be honest and fair - inflated scores don't help students improve
 
-
 Analyze the transcription and provide feedback in JSON format with these exact fields:
 {
   "speakerScore": 0,  // NSDA speaker points (25-30, ONLY half-points: 25, 25.5, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, or 30) - BASE ON ACTUAL PERFORMANCE
@@ -318,8 +313,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Sanitize filename for logging (prevent log injection)
   const _sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
-  // PRODUCTION: Console disabled
-  // console.log(`[speechFeedbackService] Processing ${_sanitizedFilename} for user ${userId}`);
   
   // Validate file size
   if (audioBuffer.length > MAX_UPLOAD_SIZE_BYTES) {
@@ -344,8 +337,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Get actual audio duration using improved detection
   const durationSeconds = await getAudioDuration(tempFilePath);
-  // PRODUCTION: Console disabled
-  // console.log(`[speechFeedbackService] Detected audio duration: ${durationSeconds} seconds`);
   
   // Validate duration
   const durationMinutes = durationSeconds / 60;
@@ -390,8 +381,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Handle large files without transcription
   if (processedFileSize > WHISPER_MAX_BYTES) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[speechFeedbackService] File too large for transcription (${processedFileSize} bytes)`);
     
     const { data: insertedRecord, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
@@ -601,8 +590,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         };
     }
   } catch (_error) {
-      // PRODUCTION: Console disabled
-      // console.error('[speechFeedbackService] AI feedback generation failed:', _error);
       feedback = {
         speakerScore: 25, // Minimum NSDA score
         standardizedScore: 0, // 0% standardized
@@ -645,9 +632,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     const standardizedScore = extractScoreFromFeedback(feedback) || 0;
     const overallScore = Math.round(standardizedScore); // Round for integer column
     
-    // PRODUCTION: Console disabled
     
-    // console.log(`[speechFeedbackService] Storing feedback with standardized score: ${overallScore}%`);
     
     const { data, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
@@ -671,18 +656,12 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       .single();
     
     if (dbError) {
-      // PRODUCTION: Console disabled
-      // console.error('[speechFeedbackService] Database save failed:', dbError);
       // Continue with execution but use a mock ID
       insertedRecord = { id: `temp-feedback-${Date.now()}` };
     } else {
       insertedRecord = data;
-      // PRODUCTION: Console disabled
-      // console.log('[speechFeedbackService] Feedback saved to database successfully');
     }
   } catch (_error) {
-    // PRODUCTION: Console disabled
-    // console.error('[speechFeedbackService] Database operation failed:', _error);
     insertedRecord = { id: `temp-feedback-${Date.now()}` };
   }
   

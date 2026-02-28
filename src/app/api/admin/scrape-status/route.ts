@@ -13,8 +13,6 @@ export async function GET(request: NextRequest): Promise<NextResponse | Response
 
         return addSecurityHeaders(NextResponse.json(status));
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error getting scrape status:', _error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Failed to get scraping status' },

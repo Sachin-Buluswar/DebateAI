@@ -26,14 +26,14 @@ export default function DebateDetail() {
   useEffect(() => {
     // Check if user is logged in and fetch debate data
     const fetchData = async () => {
-      // Check authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      // GUEST MODE: Allow viewing debates without session
-      // if (!session) {
+      // Check authentication (server-verified)
+      const { data: { user } } = await supabase.auth.getUser();
+      // GUEST MODE: Allow viewing debates without authentication
+      // if (!user) {
       //   router.push('/auth');
       //   return;
       // }
-      
+
       // Fetch the debate by ID
       try {
         const { data, error } = await supabase
@@ -41,23 +41,21 @@ export default function DebateDetail() {
           .select('*')
           .eq('id', debateId)
           .single();
-        
+
         if (error) {
-          // PRODUCTION: Console disabled
-          // console.error('Error fetching debate:', error);
           setError('Could not load debate details. The debate may have been deleted or you may not have permission to view it.');
           setLoading(false);
           return;
         }
-        
+
         if (!data) {
           setError('Debate not found.');
           setLoading(false);
           return;
         }
-        
+
         // Check if user owns this debate (only if authenticated)
-        if (session?.user?.id && data.user_id !== session.user.id) {
+        if (user?.id && data.user_id !== user.id) {
           setError('You do not have permission to view this debate.');
           setLoading(false);
           return;
@@ -71,14 +69,10 @@ export default function DebateDetail() {
             const parsedTranscript = JSON.parse(data.transcript);
             setTranscript(Array.isArray(parsedTranscript) ? parsedTranscript : []);
           } catch {
-            // PRODUCTION: Console disabled
-            // console.error('Error parsing transcript:', _e);
             setTranscript(['Transcript data could not be displayed.']);
           }
         }
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Error in data fetching:', error);
         setError('An unexpected error occurred while loading the debate details.');
       } finally {
         setLoading(false);

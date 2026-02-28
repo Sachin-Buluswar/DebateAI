@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { apiLogger } from './logger';
-import { apiErrorTracker } from './errorTracker';
 import { apiPerformance } from './performance';
 
 interface MonitoringContext {
@@ -97,14 +96,18 @@ export function withMonitoring(
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
-      // Log and track error
-      return apiErrorTracker.track(error as Error, {
+      // Log error
+      apiLogger.error(`Request failed: ${method} ${pathname}`, error as Error, {
         requestId: monitoringContext.requestId,
         userId: monitoringContext.userId,
         sessionId: monitoringContext.sessionId,
-        path: pathname,
-        method
+        metadata: { path: pathname, method }
       });
+
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
     }
   };
 }

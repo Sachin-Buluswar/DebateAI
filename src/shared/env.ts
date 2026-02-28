@@ -44,20 +44,10 @@ if (typeof window === 'undefined') {
   const parsed = mergedSchema.safeParse(serverEnv);
 
   if (!parsed.success) {
-    // PRODUCTION: Logging disabled in production
     if (!isDevMode) {
       // In production, throw an error with minimal information
       throw new Error('Missing required environment variables. Please check server configuration.');
     } else {
-      // Development mode: Log details for debugging
-      // PRODUCTION: Console disabled
-      // console.error(
-      //   '❌ Invalid environment variables on server:',
-      //   parsed.error.flatten().fieldErrors
-      // );
-      // PRODUCTION: Console disabled
-      // console.warn('⚠️ Development mode: Some features may not work without proper environment variables');
-      
       // In development, throw error to force proper setup
       throw new Error(
         'Missing environment variables in development. Please copy .env.example to .env.local and fill in your values.'
@@ -76,11 +66,6 @@ if (typeof window === 'undefined') {
   const parsed = clientSchema.safeParse(clientEnv);
 
   if (!parsed.success) {
-    // PRODUCTION: Logging disabled
-    // console.error(
-    //   '❌ Invalid environment variables on client:',
-    //   parsed.error.flatten().fieldErrors
-    // );
     throw new Error('Invalid client-side environment variables.');
   }
 

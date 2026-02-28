@@ -19,10 +19,7 @@ export async function GET(): Promise<NextResponse> {
       // There was an error (other than table not existing)
       return NextResponse.json({
         status: 'error',
-        message: 'Failed to connect to Supabase',
-        error: error.message,
-        code: error.code,
-        details: error.details
+        message: 'Failed to connect to Supabase'
       }, { status: 500 });
     }
 
@@ -35,10 +32,7 @@ export async function GET(): Promise<NextResponse> {
     if (userError && userError.code !== 'PGRST116') {
       return NextResponse.json({
         status: 'partial',
-        message: 'Connected to Supabase but user_profiles table check failed',
-        error: userError.message,
-        code: userError.code,
-        details: userError.details
+        message: 'Connected to Supabase but user_profiles table check failed'
       }, { status: 207 });
     }
 
@@ -48,14 +42,10 @@ export async function GET(): Promise<NextResponse> {
       health_check: data ? 'table exists' : 'table does not exist',
       user_profiles: userData ? `found ${userData.length} records` : 'table does not exist or is empty'
     });
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-    // PRODUCTION: Logging disabled
-    // console.error('Health check error:', err);
+  } catch (_err: unknown) {
     return NextResponse.json({
       status: 'error',
-      message: 'Error performing health check',
-      error: errorMessage
+      message: 'Error performing health check'
     }, { status: 500 });
   }
 } 

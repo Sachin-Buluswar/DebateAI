@@ -23,10 +23,10 @@ export async function GET() {
     }
 
     return NextResponse.json(healthCheck);
-  } catch (error) {
+  } catch (_error) {
     healthCheck.message = 'ERROR';
     return NextResponse.json(
-      { ...healthCheck, error: error instanceof Error ? error.message : String(error) },
+      { ...healthCheck, error: 'Health check failed' },
       { status: 500 },
     );
   }

@@ -40,13 +40,13 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchPreferences = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
           const { data, error } = await supabase
             .from('user_preferences')
             .select('preferences')
-            .eq('user_id', session.user.id)
+            .eq('user_id', user.id)
             .single();
 
           if (!error && data) {
@@ -70,11 +70,11 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
 
     // Save to database if user is logged in
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
         await supabase.from('user_preferences').upsert({
-          user_id: session.user.id,
+          user_id: user.id,
           preferences: newPreferences,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' });

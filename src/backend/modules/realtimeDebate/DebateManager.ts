@@ -134,8 +134,6 @@ export class DebateManager {
    * This method should be called after all participants are ready.
    */
   public startDebate(): void {
-    // PRODUCTION: Console disabled - Critical file
-    // console.log('Debate started!');
     this.executeCurrentPhase();
   }
 
@@ -152,8 +150,6 @@ export class DebateManager {
     this.state.remainingTime = 0;
     this.state.isEnded = true;
     this.onStateChange(this.state, 'speech');
-    // PRODUCTION: Console disabled - Critical file
-    // console.log('Debate has ended.');
   }
 
   /**
@@ -210,9 +206,6 @@ export class DebateManager {
       this.participants,
     ) || '';
 
-    // PRODUCTION: Console disabled - Critical file
-
-    // console.log(`Starting speech phase: ${this.state.phase}`);
     
     // Notify listeners that a new speech phase has begun
     this.onStateChange(this.state, 'speech');
@@ -253,9 +246,6 @@ export class DebateManager {
     // Special speaker ID indicates crossfire mode
     this.state.currentSpeakerId = 'CROSSFIRE';
 
-    // PRODUCTION: Console disabled - Critical file
-
-    // console.log(`Starting crossfire phase: ${this.state.phase}`);
     
     // Notify with 'crossfire' mode to trigger special handling
     this.onStateChange(this.state, 'crossfire');
@@ -300,9 +290,6 @@ export class DebateManager {
     const currentPhaseIndex = PHASE_ORDER.indexOf(this.state.phase);
     const nextPhase = PHASE_ORDER[currentPhaseIndex + 1] || DebatePhase.ENDED;
 
-    // PRODUCTION: Console disabled - Critical file
-
-    // console.log(`Transitioning from ${this.state.phase} to ${nextPhase}`);
     this.state.phase = nextPhase;
     
     // Recursively execute the new phase
@@ -369,9 +356,7 @@ export class DebateManager {
       // Stop all timers
       this.clearTimers();
       
-      // PRODUCTION: Console disabled - Critical file
       
-      // console.log('Debate paused at', this.state.phase, 'with', this.pausedRemainingTime, 'seconds remaining');
       this.onStateChange(this.state, 'pause');
     }
   }
@@ -390,8 +375,6 @@ export class DebateManager {
    */
   resume(): void {
     if (this.isPaused && this.pausedRemainingTime !== null) {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Resuming debate at', this.state.phase, 'with', this.pausedRemainingTime, 'seconds remaining');
       
       // Clear pause flags
       this.isPaused = false;
@@ -449,14 +432,9 @@ export class DebateManager {
    */
   public skipCurrentTurn(): void {
     if (this.state.isPaused || this.state.isEnded) {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Cannot skip turn while paused or ended');
       return;
     }
 
-    // PRODUCTION: Console disabled - Critical file
-
-    // console.log(`Skipping current turn for speaker: ${this.state.currentSpeakerId}`);
     
     // Clear existing timers
     this.clearTimers();

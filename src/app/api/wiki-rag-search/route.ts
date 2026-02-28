@@ -217,8 +217,6 @@ Return up to ${maxResults} results ordered by relevance.`,
                 const file = await openai.files.retrieve(fileId);
                 fileName = file.filename || fileName;
               } catch (_e) {
-                // PRODUCTION: Logging disabled
-// console.warn(`Could not retrieve file info for ${fileId}`);
               }
 
               // Extract the relevant text around the citation
@@ -269,8 +267,6 @@ Return up to ${maxResults} results ordered by relevance.`,
     // Return results
     return results.slice(0, maxResults);
   } catch (_error) {
-    // PRODUCTION: Logging disabled
-// console.error('[rag-search] RAG search error:', _error);
 
     // Return error result
     return [
@@ -315,8 +311,6 @@ export async function POST(request: NextRequest) {
     return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
-      // PRODUCTION: Logging disabled
-// console.error('[rag-search] Missing environment variables');
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -388,8 +382,6 @@ export async function POST(request: NextRequest) {
         )
       );
     } catch (_error) {
-      // PRODUCTION: Logging disabled
-// console.error('[rag-search] Error:', _error);
 
       return addSecurityHeaders(
         NextResponse.json(

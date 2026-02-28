@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
 import { withMonitoring } from '@/lib/monitoring/middleware';
 import { traceAsync } from '@/lib/monitoring/opentelemetry';
@@ -25,23 +25,16 @@ interface HealthStatus {
       total: number;
       percentage: number;
     };
-    cpu?: {
-      usage: number;
-    };
   };
 }
 
-// Dependency health checks
 async function checkSupabase(): Promise<HealthCheckResult> {
   const start = Date.now();
-  
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
-    // Simple query to check database connectivity
+  try {
+    // Use the authenticated server client instead of service role key
+    const supabase = createClient();
+
     const { error } = await supabase
       .from('health_check')
       .select('id')
@@ -75,14 +68,14 @@ async function checkSupabase(): Promise<HealthCheckResult> {
 
 async function checkOpenAI(): Promise<HealthCheckResult> {
   const start = Date.now();
-  
+
   try {
     const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      signal: AbortSignal.timeout(5000), // 5 second timeout
+      signal: AbortSignal.timeout(5000),
     });
 
     const responseTime = Date.now() - start;
@@ -113,7 +106,7 @@ async function checkOpenAI(): Promise<HealthCheckResult> {
 
 async function checkElevenLabs(): Promise<HealthCheckResult> {
   const start = Date.now();
-  
+
   try {
     const response = await fetch('https://api.elevenlabs.io/v1/models', {
       method: 'GET',
@@ -149,17 +142,15 @@ async function checkElevenLabs(): Promise<HealthCheckResult> {
   }
 }
 
-// Main health check handler
+// Health check - publicly accessible for load balancers/monitoring
 export const GET = withMonitoring(async (_request: NextRequest) => {
   return traceAsync('health-check', async () => {
-    // Run all health checks in parallel
     const [supabaseCheck, openaiCheck, elevenlabsCheck] = await Promise.allSettled([
       checkSupabase(),
       checkOpenAI(),
       checkElevenLabs(),
     ]);
 
-    // Process results
     const checks: HealthCheckResult[] = [
       supabaseCheck.status === 'fulfilled' ? supabaseCheck.value : {
         service: 'supabase',
@@ -178,10 +169,9 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
       },
     ];
 
-    // Calculate overall status
     const unhealthyCount = checks.filter(c => c.status === 'unhealthy').length;
     const degradedCount = checks.filter(c => c.status === 'degraded').length;
-    
+
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy';
     if (unhealthyCount > 0) {
       overallStatus = 'unhealthy';
@@ -191,10 +181,9 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
       overallStatus = 'healthy';
     }
 
-    // Get resource usage
     const memUsage = process.memoryUsage();
-    const totalMem = process.env.NODE_ENV === 'production' ? 512 * 1024 * 1024 : 2048 * 1024 * 1024; // Assume 512MB in prod, 2GB in dev
-    
+    const totalMem = process.env.NODE_ENV === 'production' ? 512 * 1024 * 1024 : 2048 * 1024 * 1024;
+
     const healthStatus: HealthStatus = {
       status: overallStatus,
       timestamp: new Date().toISOString(),
@@ -211,7 +200,6 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
       },
     };
 
-    // Log health check result
     if (overallStatus !== 'healthy') {
       apiLogger.warn('Health check detected issues', {
         metadata: {
@@ -221,7 +209,6 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
       });
     }
 
-    // Set appropriate status code
     const statusCode = overallStatus === 'healthy' ? 200 : overallStatus === 'degraded' ? 200 : 503;
 
     return NextResponse.json(healthStatus, {
@@ -234,16 +221,15 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
   });
 });
 
-// Liveness probe - simple check to see if the service is alive
+// Liveness probe
 export async function HEAD(_request: NextRequest) {
   return new NextResponse(null, { status: 200 });
 }
 
-// Readiness probe - checks if the service is ready to accept traffic
+// Readiness probe
 export const POST = withMonitoring(async (_request: NextRequest) => {
-  // Quick check of critical dependencies only
   const supabaseCheck = await checkSupabase();
-  
+
   if (supabaseCheck.status === 'unhealthy') {
     return NextResponse.json(
       {

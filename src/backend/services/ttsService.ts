@@ -105,8 +105,6 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
 
                 if (!res.ok) {
                     const errorData = await res.json();
-                    // PRODUCTION: Console disabled
-                    // console.error('ElevenLabs API Error:', errorData);
                     
                     // Create error with status for retry logic
                     const ttsError = new Error(`ElevenLabs TTS failed: ${errorData.detail?.message || 'Unknown error'}`);
@@ -120,8 +118,6 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                 retryOptions: {
                     maxRetries: 3,
                     onRetry: (_error, _attempt) => {
-                        // PRODUCTION: Console disabled
-                        // console.warn(`ElevenLabs TTS retry attempt ${_attempt}:`, _error.message);
                     },
                     shouldRetry: (error) => {
                         // Retry Strategy:
@@ -141,8 +137,6 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                     // we fall back to the narrator voice which should always be available.
                     // This ensures the debate can continue even if specific voices fail.
                     async () => {
-                        // PRODUCTION: Console disabled
-                        // console.warn(`Falling back to narrator voice for TTS`);
                         const fallbackResponse = await fetch(
                             `${servicesConfig.elevenLabs.apiBaseUrl}/text-to-speech/${servicesConfig.elevenLabs.narratorVoiceId}/stream?optimize_streaming_latency=${servicesConfig.elevenLabs.latencyOptimization}`,
                             {
@@ -172,8 +166,6 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
 
         return response;
     } catch (_error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error generating audio stream after all recovery attempts:', _error);
         return null;
     }
 }
@@ -262,8 +254,6 @@ export async function generateAudioStreamWebSocket(
         // Set up error handler
         let streamError: Error | null = null;
         wsService.onErrorEvent((error) => {
-            // PRODUCTION: Console disabled
-            // console.error('WebSocket streaming error:', error);
             streamError = error;
         });
         
@@ -331,8 +321,6 @@ export async function generateAudioStreamWebSocket(
             }, 100);
         });
     } catch (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error in WebSocket audio generation:', error);
         throw error;
     } finally {
         // Clean up WebSocket connection

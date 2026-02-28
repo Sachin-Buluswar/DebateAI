@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { withRateLimit, wikiSearchRateLimiter } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
 import { openAIManager } from '@/backend/services/openaiClientManager';
@@ -30,18 +30,10 @@ const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini';
 export async function POST(request: NextRequest) {
   // Apply rate limiting with handler function
   const result = await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    return requireAuth(request, async (authenticatedRequest: AuthenticatedRequest) => {
     try {
-      // Authentication check
-      const supabase = createClient();
-      
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        return addSecurityHeaders(
-          NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-        );
-      }
-      
+      const user = authenticatedRequest.user;
+
       // Environment variable check
       if (!vectorStoreId) {
         logger.error('OPENAI_VECTOR_STORE_ID environment variable is not set');
@@ -156,13 +148,14 @@ export async function POST(request: NextRequest) {
       
       // Generic server error
       return addSecurityHeaders(
-        NextResponse.json({ 
+        NextResponse.json({
           error: 'Internal server error',
           message: 'An unexpected error occurred. Please try again later.'
         }, { status: 500 })
       );
     }
+    });
   });
-  
+
   return result;
 } 

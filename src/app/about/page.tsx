@@ -147,7 +147,6 @@ export default function AboutPage() {
             </p>
           </section>
 
-
           <div className="divider"></div>
 
           <footer className="text-center">

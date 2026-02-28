@@ -12,8 +12,6 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
 
         // Start scraping in background
         scraper.scrapeWikiFiles().catch(_error => {
-          // PRODUCTION: Logging disabled
-          // console.error('Scraping error:', _error);
         });
 
         return addSecurityHeaders(
@@ -23,8 +21,6 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
           })
         );
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error starting scrape:', _error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Failed to start scraping' },

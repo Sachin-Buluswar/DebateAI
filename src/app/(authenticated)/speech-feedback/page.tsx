@@ -170,8 +170,6 @@ export default function SpeechFeedback() {
       for (const mimeType of mimeTypes) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
           options = { mimeType };
-          // PRODUCTION: Console disabled
-          // console.log(`Using supported MIME type: ${mimeType}`);
           break;
         }
       }
@@ -225,8 +223,6 @@ export default function SpeechFeedback() {
       
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Console disabled
-      // console.error('Error starting recording:', err);
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
           const message = 'Microphone access denied. Please grant permission in your browser settings.';
           setError(message);
@@ -250,8 +246,6 @@ export default function SpeechFeedback() {
         .eq('user_id', userId);
       
       if (fetchError) {
-        // PRODUCTION: Console disabled
-        // console.error('Error fetching storage usage:', fetchError);
         return;
       }
       
@@ -259,8 +253,6 @@ export default function SpeechFeedback() {
       const totalBytes = data?.reduce((sum, item) => sum + (item.file_size_bytes || 0), 0) || 0;
       setStorageUsed(totalBytes);
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Error calculating storage usage:', err);
     } finally {
       setStorageUsageLoading(false);
     }
@@ -277,38 +269,32 @@ export default function SpeechFeedback() {
       }, 3000); // 3 second timeout
 
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
         clearTimeout(timeoutId);
 
-        if (sessionError) {
-          // PRODUCTION: Console disabled
-          // console.error('Session error:', sessionError);
+        if (userError) {
           // Don't block guest access on error
           setLoading(false);
           return;
         }
-        
+
         // GUEST MODE: Allow access without session
-        // if (!data.session) {
+        // if (!user) {
         //   router.push('/auth');
         //   return;
         // }
-        
-        // PRODUCTION: Console disabled
-        // console.log('User authenticated:', data.session.user);
 
-        // Set user if session exists, otherwise guest mode
-        if (data?.session?.user) {
-          setUser(data.session.user as User);
+
+        // Set user if authenticated, otherwise guest mode
+        if (user) {
+          setUser(user as User);
           // Fetch user's storage usage
-          fetchStorageUsage(data.session.user.id);
+          fetchStorageUsage(user.id);
         }
         setLoading(false);
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Error checking user session:', err);
         // GUEST MODE: Don't redirect on error - allow guest access
         setLoading(false);
       }
@@ -451,8 +437,6 @@ export default function SpeechFeedback() {
         
       if (tableCheckError && tableCheckError.code === '42P01') {
         // Table doesn't exist - this is now handled by the backend
-        // PRODUCTION: Console disabled
-        // console.warn('Speech feedback table does not exist yet, will be created by backend');
       }
       
       // Validate selections again
@@ -487,8 +471,6 @@ export default function SpeechFeedback() {
         }
       } catch (uploadError: unknown) {
         const error = uploadError instanceof Error ? uploadError : new Error('An unknown error occurred');
-        // PRODUCTION: Console disabled
-        // console.error('Upload error:', uploadError);
         // Provide specific error message based on the error type
         if (error.message?.includes('network') || error.message?.includes('connection')) {
           throw new Error('Network error during upload. Please check your internet connection and try again.');
@@ -537,14 +519,10 @@ export default function SpeechFeedback() {
         router.push(`/speech-feedback/${result.id}`);
       } else {
         // Handle unexpected result format
-        // PRODUCTION: Console disabled
-        // console.error('Unexpected response format:', result);
         throw new Error('Received invalid response from server. Please try again.');
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Console disabled
-      // console.error('Error submitting speech:', error);
       const message = error?.message || 'An unexpected error occurred. Please try again.';
       setError(message);
       addToast({ message, type: 'error' });
@@ -658,16 +636,12 @@ export default function SpeechFeedback() {
       throw new Error('Unexpected error: Failed to complete all chunks');
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Console disabled
-      // console.error('Error in chunked upload:', error);
       // Clean up any partial upload
       try {
         await fetch(`/api/speech-feedback/cancel?sessionId=${sessionId}`, {
           method: 'DELETE',
         });
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Failed to clean up partial upload:', cleanupError);
       }
       throw error;
     }

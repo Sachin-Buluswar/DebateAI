@@ -26,9 +26,9 @@ export default function FeedbackForm() {
     setSuccess(false);
     
     try {
-      // Get user session if available
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id || null;
+      // Get authenticated user if available
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || null;
       
       const { error: submitError } = await supabase
         .from('user_feedback')
@@ -42,8 +42,6 @@ export default function FeedbackForm() {
         ]);
       
       if (submitError) {
-        // PRODUCTION: Console disabled
-        // console.error('Error submitting feedback:', submitError);
         setError('Failed to submit feedback. Please try again.');
       } else {
         setSuccess(true);
@@ -53,8 +51,6 @@ export default function FeedbackForm() {
         setTimeout(() => setSuccess(false), 5000);
       }
     } catch (_err) {
-      // PRODUCTION: Console disabled
-      // console.error('Exception submitting feedback:', _err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

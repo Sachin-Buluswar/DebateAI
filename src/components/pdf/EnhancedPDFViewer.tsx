@@ -70,8 +70,6 @@ export function EnhancedPDFViewer({
   };
 
   const onDocumentLoadError = (_error: Error) => {
-    // PRODUCTION: Console disabled
-    // console.error('PDF loading error:', error);
     setError('Failed to load PDF. Please try downloading the file instead.');
     setLoading(false);
   };

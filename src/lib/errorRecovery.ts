@@ -143,13 +143,11 @@ export class FallbackHandler<T> {
     try {
       return await primaryFn();
     } catch (_primaryError) {
-      // PRODUCTION: Console disabled
       
       for (let i = 0; i < this.fallbacks.length; i++) {
         try {
           return await this.fallbacks[i]();
         } catch {
-          // PRODUCTION: Console disabled
         }
       }
       

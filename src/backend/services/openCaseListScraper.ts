@@ -30,8 +30,6 @@ export class OpenCaseListScraper {
     let browser;
     
     try {
-      // PRODUCTION: Console disabled
-      // console.log('Starting OpenCaseList scraping...');
       
       browser = await puppeteer.launch({
         headless: true,
@@ -51,8 +49,6 @@ export class OpenCaseListScraper {
       
       // Get all wiki file links
       const wikiLinks = await this.extractWikiLinks(page);
-      // PRODUCTION: Console disabled
-      // console.log(`Found ${wikiLinks.length} wiki files to scrape`);
       
       // Process each wiki file
       for (const link of wikiLinks) {
@@ -60,8 +56,6 @@ export class OpenCaseListScraper {
       }
       
     } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Scraping error:', error);
       throw error;
     } finally {
       if (browser) {
@@ -71,8 +65,6 @@ export class OpenCaseListScraper {
   }
 
   private async login(page: Page): Promise<void> {
-    // PRODUCTION: Console disabled
-    // console.log('Logging in to OpenCaseList...');
     
     // Go to login page
     await page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle2' });
@@ -87,9 +79,7 @@ export class OpenCaseListScraper {
       page.click('button[type="submit"]')
     ]);
     
-    // PRODUCTION: Console disabled
     
-    // console.log('Login successful');
   }
 
   private async extractWikiLinks(page: Page): Promise<string[]> {
@@ -113,9 +103,7 @@ export class OpenCaseListScraper {
       const fullUrl = fileLink.startsWith('http') ? fileLink : `${this.baseUrl}${fileLink}`;
       const fileName = path.basename(fileLink);
       
-      // PRODUCTION: Console disabled
       
-      // console.log(`Processing: ${fileName}`);
       
       // Check if already processed
       const { data: existingLog } = await supabase
@@ -126,8 +114,6 @@ export class OpenCaseListScraper {
         .single();
       
       if (existingLog) {
-        // PRODUCTION: Console disabled
-        // console.log(`Skipping ${fileName} - already processed`);
         return;
       }
       
@@ -178,13 +164,9 @@ export class OpenCaseListScraper {
         })
         .eq('id', scrapeLog.id);
       
-      // PRODUCTION: Console disabled
       
-      // console.log(`Successfully processed: ${fileName}`);
       
     } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error(`Error processing ${fileLink}:`, error);
       
       // Log failure
       await supabase

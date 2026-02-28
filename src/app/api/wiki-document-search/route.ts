@@ -69,8 +69,6 @@ async function performDirectDocumentSearch(
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
   try {
-    // PRODUCTION: Logging disabled
-// console.log(`[document-search] Searching for: "${query}"`);
     
     // First, try to find exact or partial matches in document chunks
     // Using PostgreSQL full-text search with ts_vector
@@ -107,14 +105,10 @@ async function performDirectDocumentSearch(
       .limit(maxResults * 2); // Get more results to filter
     
     if (error) {
-      // PRODUCTION: Logging disabled
-// console.error('[document-search] Database search error:', error);
       throw error;
     }
     
     if (!chunks || chunks.length === 0) {
-      // PRODUCTION: Logging disabled
-// console.log('[document-search] No results found, falling back to ILIKE search');
       
       // Fallback to ILIKE search for broader matching
       // This catches cases where full-text search misses:
@@ -154,8 +148,6 @@ async function performDirectDocumentSearch(
       const { data: fallbackChunks, error: fallbackError } = await fallbackQuery.limit(maxResults * 2);
       
       if (fallbackError) {
-        // PRODUCTION: Logging disabled
-// console.error('[document-search] Fallback search error:', fallbackError);
         throw fallbackError;
       }
       
@@ -245,13 +237,9 @@ async function performDirectDocumentSearch(
       })
     );
     
-    // PRODUCTION: Logging disabled
-// console.log(`[document-search] Returning ${enhancedResults.length} results`);
     return enhancedResults;
     
   } catch (_error) {
-    // PRODUCTION: Logging disabled
-// console.error('[document-search] Search error:', _error);
     throw _error;
   }
 }
@@ -339,8 +327,6 @@ export async function POST(request: NextRequest) {
           )
         );
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-// console.error('[document-search] Error:', _error);
 
         // Return empty results instead of error to prevent UI issues
         return addSecurityHeaders(

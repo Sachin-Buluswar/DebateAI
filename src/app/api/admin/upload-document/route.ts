@@ -83,8 +83,6 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
           })
         );
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error uploading document:', _error);
         return addSecurityHeaders(
           NextResponse.json(
             { error: 'Failed to upload document' },

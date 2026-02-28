@@ -60,8 +60,6 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (insertError) {
-        // PRODUCTION: Logging disabled
-        // console.error('[resources-setup] Error inserting resource:', insertError);
         return NextResponse.json(
           { 
             error: 'Failed to insert initial resource',
@@ -77,8 +75,6 @@ export async function GET(request: NextRequest) {
         adminUser: req.user.email
       });
     } catch (_error) {
-      // PRODUCTION: Logging disabled
-      // console.error('[resources-setup] Setup error:', _error);
       return NextResponse.json(
         { 
           error: 'Failed to setup resources',

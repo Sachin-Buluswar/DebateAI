@@ -30,8 +30,6 @@ export interface StandardizedScore {
  */
 export function nsdaToPercentage(score: number): number {
   if (score < 25 || score > 30) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] NSDA score ${score} out of valid range (25-30)`);
     score = Math.max(25, Math.min(30, score)); // Clamp to valid range
   }
   return Math.round(((score - 25) / 5) * 100);
@@ -43,8 +41,6 @@ export function nsdaToPercentage(score: number): number {
  */
 export function percentageToNSDA(percentage: number): number {
   if (percentage < 0 || percentage > 100) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] Percentage ${percentage} out of valid range (0-100)`);
     percentage = Math.max(0, Math.min(100, percentage)); // Clamp to valid range
   }
   const nsdaScore = 25 + (percentage / 100) * 5;
@@ -56,8 +52,6 @@ export function percentageToNSDA(percentage: number): number {
  */
 export function tenPointToPercentage(score: number): number {
   if (score < 0 || score > 10) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] Ten-point score ${score} out of valid range (0-10)`);
     score = Math.max(0, Math.min(10, score)); // Clamp to valid range
   }
   return Math.round((score / 10) * 100);
@@ -68,8 +62,6 @@ export function tenPointToPercentage(score: number): number {
  */
 export function percentageToTenPoint(percentage: number): number {
   if (percentage < 0 || percentage > 100) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] Percentage ${percentage} out of valid range (0-100)`);
     percentage = Math.max(0, Math.min(100, percentage)); // Clamp to valid range
   }
   return Math.round((percentage / 100) * 10 * 10) / 10; // Round to 1 decimal
@@ -103,9 +95,7 @@ export function detectScoreFormat(score: unknown): ScoreFormat {
     }
   }
   
-  // PRODUCTION: Console disabled
   
-  // console.warn(`[scoreStandardization] Unable to detect format for score:`, score);
   return ScoreFormat.PERCENTAGE; // Default fallback
 }
 
@@ -174,7 +164,6 @@ export function standardizeToPercentage(score: unknown): number | null {
     }
 
     default: {
-      // PRODUCTION: Console disabled
       const parsed = parseFloat(String(score));
       return isNaN(parsed) ? null : Math.round(parsed);
     }
@@ -269,7 +258,6 @@ export function extractScoreFromFeedback(feedback: Record<string, unknown> | nul
         const percentage = standardizeToPercentage(parsed);
         return percentage !== null ? percentageToNSDA(percentage) : null;
       } catch {
-        // PRODUCTION: Console disabled
       }
     }
     const percentage = standardizeToPercentage(feedback.score);

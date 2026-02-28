@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { UserRole, hasRolePermission } from '@/types/auth';
-import type { Session } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 interface UseUserRoleReturn {
   role: UserRole | null;
@@ -20,7 +20,7 @@ export function useUserRole(): UseUserRoleReturn {
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const fetchUserRole = async (userId?: string) => {
     if (!userId) {
@@ -43,8 +43,6 @@ export function useUserRole(): UseUserRoleReturn {
 
       setRole(data || 'user');
     } catch (err) {
-      // PRODUCTION: Console disabled
-      // console.error('Error fetching user role:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch user role'));
       setRole('user'); // Default to user role on error
     } finally {
@@ -53,17 +51,17 @@ export function useUserRole(): UseUserRoleReturn {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      fetchUserRole(session?.user?.id);
+    // Get initial user (server-verified)
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+      fetchUserRole(user?.id);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      setCurrentUser(session?.user ?? null);
       fetchUserRole(session?.user?.id);
     });
 
@@ -80,7 +78,7 @@ export function useUserRole(): UseUserRoleReturn {
     loading,
     error,
     hasRole,
-    refetch: () => fetchUserRole(session?.user?.id),
+    refetch: () => fetchUserRole(currentUser?.id),
   };
 }
 

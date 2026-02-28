@@ -88,8 +88,6 @@ export default function ResourceViewerPage() {
         setResource(prev => prev ? { ...prev, download_count: prev.download_count + 1 } : prev);
       }
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Failed to track event:', err);
     }
   }, [resource, sessionId]);
 
@@ -113,8 +111,6 @@ export default function ResourceViewerPage() {
         setResource(data.resource);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load resource');
-        // PRODUCTION: Console disabled
-        // console.error('Error fetching resource:', err);
       } finally {
         setLoading(false);
       }
@@ -159,8 +155,6 @@ export default function ResourceViewerPage() {
         toast.success('Link copied to clipboard!', { duration: 3000 });
       }
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Error sharing:', err);
       toast.error('Failed to share. Please try again.', { duration: 5000 });
     }
   };

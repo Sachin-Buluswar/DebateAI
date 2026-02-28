@@ -12,7 +12,6 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
   loading: () => <LoadingSpinner />,
 });
 
-
 const UnifiedSearchCard = dynamic(() => import('@/components/search/UnifiedSearchCard'), {
   loading: () => <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded-lg" />,
   ssr: false,
@@ -36,6 +35,7 @@ export default function SearchPage() {
   const [generatedAnswer, setGeneratedAnswer] = useState<GeneratedAnswer | null>(null);
   const [searchMode, setSearchMode] = useState<'assistant' | 'rag'>('rag');
   const [showRecentSearches, setShowRecentSearches] = useState(true);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -48,36 +48,29 @@ export default function SearchPage() {
       }, 3000); // 3 second timeout
 
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
         clearTimeout(timeoutId);
 
-        if (sessionError) {
-          // PRODUCTION: Console disabled
-          // console.error('Session error:', sessionError);
+        if (userError) {
           // Don't block guest access on error
           setLoading(false);
           return;
         }
 
         // GUEST MODE: Allow access without session
-        // if (!data.session) {
+        // if (!authUser) {
         //   router.push('/auth');
         //   return;
         // }
 
-        // PRODUCTION: Console disabled
-        // console.log('User authenticated:', data.session.user);
-
-        // Set user if session exists, otherwise guest mode
-        if (data?.session?.user) {
-          setUser(data.session.user as User);
+        // Set user if authenticated, otherwise guest mode
+        if (authUser) {
+          setUser(authUser as User);
         }
         setLoading(false);
       } catch {
-        // PRODUCTION: Console disabled
-        // console.error('Error checking user session:', error);
         // GUEST MODE: Don't redirect on error - allow guest access
         setLoading(false);
       }
@@ -99,15 +92,11 @@ export default function SearchPage() {
         .limit(10);
 
       if (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error fetching search history:', error);
         return;
       }
 
       setSearchHistory(data || []);
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Failed to fetch search history:', error);
     }
   };
 
@@ -123,16 +112,12 @@ export default function SearchPage() {
         .eq('user_id', user.id);
 
       if (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error deleting search:', error);
         return;
       }
 
       // Refresh search history
       fetchSearchHistory();
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Failed to delete search:', error);
     }
   };
 
@@ -156,8 +141,6 @@ export default function SearchPage() {
         .single();
 
       if (selectError && selectError.code !== 'PGRST116') {
-        // PRODUCTION: Console disabled
-        // console.error('Error checking existing search:', selectError);
         return;
       }
 
@@ -172,8 +155,6 @@ export default function SearchPage() {
           .eq('id', existingSearch.id);
 
         if (updateError) {
-          // PRODUCTION: Console disabled
-          // console.error('Error updating search:', updateError);
         }
       } else {
         // Insert new entry
@@ -186,13 +167,9 @@ export default function SearchPage() {
           });
 
         if (insertError) {
-          // PRODUCTION: Console disabled
-          // console.error('Error inserting search:', insertError);
         }
       }
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Failed to upsert search history:', error);
     }
   };
 
@@ -257,8 +234,6 @@ export default function SearchPage() {
       // Refresh search history after successful search
       fetchSearchHistory();
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Error performing search:', error);
       setError('An unexpected error occurred. Please try again later.');
     } finally {
       setSearching(false);
@@ -294,8 +269,6 @@ export default function SearchPage() {
       const generatedData = await generateResponse.json();
       setGeneratedAnswer(generatedData);
     } catch {
-      // PRODUCTION: Console disabled
-      // console.error('Error generating answer:', error);
       setError('Failed to generate an answer. Please try again later.');
     } finally {
       setGenerating(false);
@@ -453,18 +426,35 @@ export default function SearchPage() {
                   </svg>
                   Recent Searches ({searchHistory.length})
                 </button>
-                <button
-                  onClick={() => {
-                    if (confirm('Are you sure you want to clear all recent searches?')) {
-                      Promise.all(searchHistory.map(item => deleteSearchHistory(item.id))).then(() => {
-                        setSearchHistory([]);
-                      });
-                    }
-                  }}
-                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
-                >
-                  Clear All
-                </button>
+                {showClearConfirm ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600 dark:text-gray-300">Clear all?</span>
+                    <button
+                      onClick={() => {
+                        Promise.all(searchHistory.map(item => deleteSearchHistory(item.id))).then(() => {
+                          setSearchHistory([]);
+                          setShowClearConfirm(false);
+                        });
+                      }}
+                      className="text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowClearConfirm(true)}
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                  >
+                    Clear All
+                  </button>
+                )}
               </div>
               {showRecentSearches && (
                 <div className="overflow-x-auto">

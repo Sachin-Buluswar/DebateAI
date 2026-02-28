@@ -19,10 +19,10 @@ export default function ProfileMenu() {
     // Fetch user info when component mounts
     const fetchUserInfo = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
           // Use email as username or first part of email before @
-          const email = session.user.email || '';
+          const email = user.email || '';
           const name = email.split('@')[0] || 'user';
           setUserName(name.toLowerCase());
           setIsAuthenticated(true);
@@ -30,8 +30,6 @@ export default function ProfileMenu() {
           setIsAuthenticated(false);
         }
       } catch (_error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error fetching user info:', _error);
         setIsAuthenticated(false);
       }
     };
@@ -57,8 +55,6 @@ export default function ProfileMenu() {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error signing out:', error);
         return;
       }
       
@@ -66,8 +62,6 @@ export default function ProfileMenu() {
       router.push('/');
       router.refresh();
     } catch (_error) {
-      // PRODUCTION: Logging disabled
-      // console.error('Exception during logout:', _error);
     } finally {
       setIsLoggingOut(false);
     }

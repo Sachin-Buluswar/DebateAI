@@ -34,8 +34,6 @@ export const getSocketConfig = (token?: string) => {
   const isVercelDeployment = isVercel();
   
   if (isVercelDeployment) {
-    // PRODUCTION: Console disabled
-    // console.log('Vercel deployment detected - forcing polling-only transport');
     return {
       ...baseConfig,
       transports: ['polling'], // ONLY use polling on Vercel
@@ -46,8 +44,6 @@ export const getSocketConfig = (token?: string) => {
   }
 
   // Use WebSocket with polling fallback in development/other environments
-  // PRODUCTION: Console disabled
-  // console.log('Non-Vercel environment - using WebSocket with polling fallback');
   return {
     ...baseConfig,
     transports: ['websocket', 'polling'],
@@ -67,32 +63,19 @@ export const createSocket = async (token?: string): Promise<Socket> => {
     });
     
     if (!initResponse.ok) {
-      // PRODUCTION: Console disabled
-      // console.warn('Socket.IO initialization returned non-OK status:', initResponse.status);
     }
   } catch (_error) {
-    // PRODUCTION: Console disabled
     // Continue anyway - the server might already be initialized
   }
   
   const config = getSocketConfig(token);
-  // PRODUCTION: Console disabled
-  // console.log('Creating socket with config:', {
-  //   transports: config.transports,
-  //   upgrade: config.upgrade,
-  //   path: config.path
-  // });
-  
   const socket = io(config);
   
   // Add connection logging
   socket.on('connect', () => {
-    // PRODUCTION: Console disabled
-    // console.log('Socket connected successfully via:', socket.io.engine.transport.name);
   });
   
   socket.on('connect_error', (_error) => {
-    // PRODUCTION: Console disabled
   });
   
   return socket;
@@ -109,7 +92,6 @@ export const checkSocketIOAvailability = async (): Promise<boolean> => {
     });
     return response.ok;
   } catch (_error) {
-    // PRODUCTION: Console disabled
     return false;
   }
 };

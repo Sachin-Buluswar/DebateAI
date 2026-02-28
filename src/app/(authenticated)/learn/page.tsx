@@ -160,8 +160,6 @@ export default function LearnPage() {
       }
     } catch {
       setError('Failed to load resources. Please try again later.');
-      // PRODUCTION: Console disabled
-      // console.error('Error fetching resources:', err);
     } finally {
       setLoading(false);
     }

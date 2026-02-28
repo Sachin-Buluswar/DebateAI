@@ -31,14 +31,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Always default to light mode unless user has a saved preference
     const fetchUserPreference = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
           // User is logged in, try to get their preference
           const { data } = await supabase
             .from('user_preferences')
             .select('preferences')
-            .eq('user_id', session.user.id)
+            .eq('user_id', user.id)
             .single();
           
           if (data && data.preferences && typeof data.preferences.darkMode === 'boolean') {
@@ -56,8 +56,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           }
         }
       } catch (_error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error fetching theme preference:', _error);
         // Default to light mode
         setIsDarkMode(false);
       } finally {
@@ -88,20 +86,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     
     try {
       // Try to update user preference if logged in
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
         await supabase
           .from('user_preferences')
           .upsert({
-            user_id: session.user.id,
+            user_id: user.id,
             preferences: { darkMode: newValue },
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
       }
     } catch (_error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error saving theme preference:', _error);
     }
   };
   

@@ -14,16 +14,6 @@ export {
   socketLogger
 } from './logger';
 
-// Error tracking exports
-export {
-  AppError,
-  ErrorTypes,
-  ErrorTracker,
-  apiErrorTracker,
-  dbErrorTracker,
-  aiErrorTracker
-} from './errorTracker';
-
 // Performance monitoring exports
 export {
   PerformanceMonitor,
@@ -59,15 +49,6 @@ export {
   recordAIResponse,
   recordError
 } from './opentelemetry';
-
-// Socket monitoring exports
-export {
-  SocketMonitor,
-  createMonitoredSocketServer
-} from './socketMonitor';
-
-// Type exports
-export type { ErrorDetails } from './errorTracker';
 
 /**
  * Initialize monitoring for the application
