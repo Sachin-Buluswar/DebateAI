@@ -158,10 +158,8 @@ export default function LearnPage() {
       } else {
         setResources([]);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load resources. Please try again later.');
-      // PRODUCTION: Console disabled
-      // console.error('Error fetching resources:', err);
     } finally {
       setLoading(false);
     }
@@ -171,7 +169,7 @@ export default function LearnPage() {
   const regularResources = resources.filter(r => !r.is_featured);
 
   return (
-    <main className="breathing-room max-w-6xl mx-auto">
+    <div className="breathing-room max-w-6xl mx-auto">
       {/* Header */}
       <div className="space-y-6 mb-12 animate-fade-in">
         <h1 className="text-gray-900 dark:text-gray-100">
@@ -345,6 +343,6 @@ export default function LearnPage() {
             </button>
           </div>
         )}
-    </main>
+    </div>
   );
 }

@@ -15,21 +15,15 @@ export async function register() {
     initializeMonitoring();
     
     // Log server startup
-    // PRODUCTION: Console disabled
-    // console.log('Eris Debate server instrumentation initialized');
     
     // Register shutdown handlers
     process.on('SIGTERM', async () => {
-      // PRODUCTION: Console disabled
-      // console.log('SIGTERM received, shutting down gracefully...');
       const { shutdownMonitoring } = await import('./lib/monitoring');
       await shutdownMonitoring();
       process.exit(0);
     });
     
     process.on('SIGINT', async () => {
-      // PRODUCTION: Console disabled
-      // console.log('SIGINT received, shutting down gracefully...');
       const { shutdownMonitoring } = await import('./lib/monitoring');
       await shutdownMonitoring();
       process.exit(0);

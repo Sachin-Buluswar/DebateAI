@@ -32,14 +32,14 @@ export default function PreferencesSection() {
       try {
         setLoading(true);
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
+          data: { user },
+        } = await supabase.auth.getUser();
 
-        if (session) {
+        if (user) {
           const { data, error } = await supabase
             .from('user_preferences')
             .select('preferences')
-            .eq('user_id', session.user.id)
+            .eq('user_id', user.id)
             .single();
 
           if (!error) {
@@ -55,19 +55,13 @@ export default function PreferencesSection() {
             }
           } else if (error.code === 'PGRST116') {
             // Table not found (first time user) - just use defaults
-            // PRODUCTION: Console disabled
-            // console.log('No preferences found for user, using defaults');
             setPreferences(defaultPreferences);
           } else {
             // Actual error - show error message
-            // PRODUCTION: Console disabled
-            // console.error('Error fetching preferences:', error);
             setError('Failed to fetch preferences. Please try refreshing the page.');
           }
         }
-      } catch (err) {
-        // PRODUCTION: Console disabled
-        // console.error('Exception fetching preferences:', err);
+      } catch (_err) {
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -84,10 +78,10 @@ export default function PreferencesSection() {
       setSuccess(false);
 
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!session) {
+      if (!user) {
         setError('You must be logged in to save preferences');
         addToast({ message: 'Login required to save preferences', type: 'error' });
         return;
@@ -96,7 +90,7 @@ export default function PreferencesSection() {
       const prefsToSave = { ...preferences, darkMode: isDarkMode };
       const { error } = await supabase.from('user_preferences').upsert(
         {
-          user_id: session.user.id,
+          user_id: user.id,
           preferences: prefsToSave,
           updated_at: new Date().toISOString(),
         },
@@ -110,14 +104,10 @@ export default function PreferencesSection() {
         setTimeout(() => setSuccess(false), 3000);
       } else {
         // Error saving preferences
-        // PRODUCTION: Console disabled
-        // console.error('Error saving preferences:', error);
         setError('Failed to save preferences. Please try again.');
         addToast({ message: 'Failed to save preferences. Please try again.', type: 'error' });
       }
-    } catch (err) {
-      // PRODUCTION: Console disabled
-      // console.error('Exception saving preferences:', err);
+    } catch (_err) {
       setError('An unexpected error occurred');
       addToast({ message: 'Unexpected error saving preferences', type: 'error' });
     } finally {
@@ -129,7 +119,7 @@ export default function PreferencesSection() {
     setPreferences({ ...preferences, [key]: !preferences[key as keyof Preferences] });
   };
 
-  const handleSelect = (key: keyof Preferences, value: string) => {
+  const _handleSelect = (key: keyof Preferences, value: string) => {
     setPreferences({ ...preferences, [key]: value });
   };
 
@@ -172,7 +162,6 @@ export default function PreferencesSection() {
                 </button>
               </div>
 
-
               <div className="flex items-center justify-between">
                 <span className="flex-grow flex flex-col">
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
@@ -197,7 +186,6 @@ export default function PreferencesSection() {
                   ></span>
                 </button>
               </div>
-
 
             </div>
 

@@ -5,7 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { apiLogger } from './logger';
-import { apiErrorTracker, AppError } from './errorTracker';
 import { apiPerformance } from './performance';
 
 interface MonitoringContext {
@@ -35,9 +34,9 @@ function createContext(request: NextRequest): MonitoringContext {
  * Monitoring middleware wrapper for API routes
  */
 export function withMonitoring(
-  handler: (request: NextRequest, context?: any) => Promise<NextResponse>
+  handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+  return async (request: NextRequest, context?: Record<string, unknown>): Promise<NextResponse> => {
     const monitoringContext = createContext(request);
     const { pathname } = new URL(request.url);
     const method = request.method;
@@ -97,14 +96,18 @@ export function withMonitoring(
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
-      // Log and track error
-      return apiErrorTracker.track(error as Error, {
+      // Log error
+      apiLogger.error(`Request failed: ${method} ${pathname}`, error as Error, {
         requestId: monitoringContext.requestId,
         userId: monitoringContext.userId,
         sessionId: monitoringContext.sessionId,
-        path: pathname,
-        method
+        metadata: { path: pathname, method }
       });
+
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
     }
   };
 }
@@ -181,9 +184,9 @@ export function withRateLimit(
   setInterval(() => tracker.cleanup(), 60000); // Every minute
   
   return function(
-    handler: (request: NextRequest, context?: any) => Promise<NextResponse>
+    handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>
   ) {
-    return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+    return async (request: NextRequest, context?: Record<string, unknown>): Promise<NextResponse> => {
       // Get identifier (default to IP address)
       const identifier = options.identifier
         ? options.identifier(request)
@@ -220,10 +223,12 @@ export function withRateLimit(
 /**
  * Combine multiple middleware functions
  */
+type MiddlewareFn = (handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>) => (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>;
+
 export function composeMiddleware(
-  ...middlewares: Array<(handler: any) => any>
+  ...middlewares: Array<MiddlewareFn>
 ) {
-  return function(handler: any) {
+  return function(handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>) {
     return middlewares.reduceRight((acc, middleware) => middleware(acc), handler);
   };
 }

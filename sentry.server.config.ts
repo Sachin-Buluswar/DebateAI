@@ -85,7 +85,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
     ],
     
     // Before sending event to Sentry
-    beforeSend(event, hint) {
+    beforeSend(event, _hint) {
       // Sanitize sensitive data
       if (event.request) {
         // Remove auth headers
@@ -134,45 +134,45 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
 
 // Export utilities for manual error tracking
 export const sentryServer = {
-  captureException: (error: Error, context?: Record<string, any>) => {
+  captureException: (error: Error, context?: Record<string, unknown>) => {
     if (SENTRY_DSN) {
       Sentry.captureException(error, context);
     }
   },
-  
+
   captureMessage: (message: string, level: Sentry.SeverityLevel = 'info') => {
     if (SENTRY_DSN) {
       Sentry.captureMessage(message, level);
     }
   },
-  
+
   addBreadcrumb: (breadcrumb: Sentry.Breadcrumb) => {
     if (SENTRY_DSN) {
       Sentry.addBreadcrumb(breadcrumb);
     }
   },
-  
-  setContext: (key: string, context: any) => {
+
+  setContext: (key: string, context: Record<string, unknown> | null) => {
     if (SENTRY_DSN) {
       Sentry.setContext(key, context);
     }
   },
-  
+
   withScope: (callback: (scope: Sentry.Scope) => void) => {
     if (SENTRY_DSN) {
       Sentry.withScope(callback);
     }
   },
-  
-  startTransaction: (context: any) => {
+
+  startTransaction: (context: Parameters<typeof Sentry.startInactiveSpan>[0]) => {
     if (SENTRY_DSN) {
       return Sentry.startInactiveSpan(context);
     }
     return null;
   },
-  
+
   // Utility for wrapping async handlers
-  wrapHandler: <T extends (...args: any[]) => Promise<any>>(
+  wrapHandler: <T extends (...args: unknown[]) => Promise<unknown>>(
     handler: T,
     options?: { name?: string; op?: string }
   ): T => {

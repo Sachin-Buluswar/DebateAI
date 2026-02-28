@@ -26,6 +26,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
 
 /**
@@ -64,6 +65,7 @@ function sanitizeSessionId(sessionId: string): string {
  */
 export async function DELETE(req: NextRequest) {
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
+    return requireAuth(req, async (_authenticatedReq: AuthenticatedRequest) => {
     try {
       // Get the session ID from the URL query parameters
       // Using query params for DELETE requests is RESTful
@@ -78,8 +80,6 @@ export async function DELETE(req: NextRequest) {
     // Sanitize session ID to prevent directory traversal
     const sanitizedSessionId = sanitizeSessionId(sessionId);
     if (sanitizedSessionId !== sessionId) {
-      // PRODUCTION: Logging disabled
-// console.warn(`Potentially malicious session ID detected during cancel: ${sessionId}`);
       return NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 });
     }
 
@@ -107,17 +107,13 @@ export async function DELETE(req: NextRequest) {
       success: true,
       message: 'Upload session cancelled'
     });
-  } catch (error) {
-    // Log error for debugging
-    // PRODUCTION: Logging disabled
-// console.error('Error cancelling upload session:', error);
-    
+  } catch (_error) {
     // Return error response
     // Cancellation errors are rare but could indicate memory issues
-    return NextResponse.json({ 
-      error: 'Failed to cancel upload session',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({
+      error: 'Failed to cancel upload session'
     }, { status: 500 });
   }
+    });
   });
 } 

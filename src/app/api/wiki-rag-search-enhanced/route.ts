@@ -25,9 +25,10 @@
  * @returns {EnhancedSearchResult[]} Rich search results with PDF links and context
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 import {
   validateRequest,
   validationSchemas,
@@ -92,8 +93,8 @@ async function performEnhancedRagSearch(
   query: string,
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
-  let tempAssistant: any;
-  let thread: any;
+  let tempAssistant: { id: string } | undefined;
+  let thread: { id: string } | undefined;
   
   try {
     // Check cache first for performance optimization
@@ -101,7 +102,7 @@ async function performEnhancedRagSearch(
     // This dramatically improves response time for common queries
     // Cache TTL is managed by DocumentStorageService (default: 15 min)
     const cacheKey = crypto.createHash('md5').update(query).digest('hex');
-    const cachedResults = await documentStorage.getSearchResultsCache(cacheKey);
+    const cachedResults = await documentStorage.getSearchResultsCache(cacheKey) as EnhancedSearchResult[] | null;
     if (cachedResults) {
       return cachedResults;
     }
@@ -156,7 +157,7 @@ async function performEnhancedRagSearch(
           const citations = annotations.filter((a) => 'file_citation' in a);
 
           for (let i = 0; i < citations.length && enhancedResults.length < maxResults; i++) {
-            const citation = citations[i] as any;
+            const citation = citations[i] as { file_citation?: { file_id: string }; text?: string };
             const openaiFileId = citation.file_citation?.file_id;
 
             if (!openaiFileId) continue;
@@ -223,8 +224,6 @@ async function performEnhancedRagSearch(
                   },
                 });
               } catch (_e) {
-                // PRODUCTION: Logging disabled
-// console.warn(`Could not retrieve file info for ${openaiFileId}`);
               }
             }
           }
@@ -239,9 +238,7 @@ async function performEnhancedRagSearch(
     if (enhancedResults.length > 0) {
       try {
         await documentStorage.setSearchResultsCache(query, enhancedResults);
-      } catch (cacheError) {
-        // PRODUCTION: Logging disabled
-// console.warn('[enhanced-rag-search] Failed to cache results:', cacheError);
+      } catch (_cacheError) {
         // Continue - caching is not critical
       }
     }
@@ -254,42 +251,34 @@ async function performEnhancedRagSearch(
     const cleanupErrors = [];
     
     try {
-      await openai.beta.threads.delete(thread.id);
-    } catch (error) {
-      cleanupErrors.push(`Failed to delete thread ${thread.id}: ${error}`);
+      await openai.beta.threads.delete(thread!.id);
+    } catch (_error) {
+      cleanupErrors.push(`Failed to delete thread ${thread!.id}: ${_error}`);
     }
-    
+
     try {
-      await openai.beta.assistants.delete(tempAssistant.id);
-    } catch (error) {
-      cleanupErrors.push(`Failed to delete assistant ${tempAssistant.id}: ${error}`);
+      await openai.beta.assistants.delete(tempAssistant!.id);
+    } catch (_error) {
+      cleanupErrors.push(`Failed to delete assistant ${tempAssistant!.id}: ${_error}`);
     }
     
     if (cleanupErrors.length > 0) {
-      // PRODUCTION: Logging disabled
-// console.warn('[enhanced-rag-search] Cleanup errors:', cleanupErrors);
     }
 
     return enhancedResults;
-  } catch (error) {
-    // PRODUCTION: Logging disabled
-// console.error('[enhanced-rag-search] Search error:', error);
-    
+  } catch (_error) {
+
     // Attempt cleanup on error
     if (tempAssistant?.id) {
-      await openai.beta.assistants.delete(tempAssistant.id).catch(err => {
-        // PRODUCTION: Logging disabled
-        // console.warn('[enhanced-rag-search] Failed to cleanup assistant on error:', err)
+      await openai.beta.assistants.delete(tempAssistant.id).catch(_err => {
       });
     }
     if (thread?.id) {
-      await openai.beta.threads.delete(thread.id).catch(err => {
-        // PRODUCTION: Logging disabled
-        // console.warn('[enhanced-rag-search] Failed to cleanup thread on error:', err)
+      await openai.beta.threads.delete(thread.id).catch(_err => {
       });
     }
-    
-    throw error;
+
+    throw _error;
   }
 }
 
@@ -318,12 +307,11 @@ async function performEnhancedRagSearch(
  * @param {Request} request - HTTP request with {query, maxResults}
  * @returns {Response} Enhanced search results with full metadata
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
+    return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
-      // PRODUCTION: Logging disabled
-// console.error('[enhanced-rag-search] Missing environment variables');
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -392,9 +380,7 @@ export async function POST(request: Request) {
           { status: 200 }
         )
       );
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('[enhanced-rag-search] Error:', error);
+    } catch (_error) {
 
       return addSecurityHeaders(
         NextResponse.json(
@@ -405,6 +391,7 @@ export async function POST(request: Request) {
         )
       );
     }
+    });
   });
 }
 

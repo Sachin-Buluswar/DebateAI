@@ -121,7 +121,7 @@ export default function DebatePage() {
   } | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [, setFormErrors] = useState<Record<string, string>>({});
 
   // Form validator
   const validator = useMemo(() => new FormValidator({
@@ -206,15 +206,11 @@ export default function DebatePage() {
       });
       return;
     }
-    // PRODUCTION: Console disabled - Critical file
-    // console.log('Starting debate with participants:', participants);
     socketRef.current?.emit('startDebate', { topic: setup.topic, participants });
     toast.success('Debate started! Get ready for your opening statement.');
   }, [setup, isConnected, participants, toast]);
   
   const handleUserSpeech = useCallback((text: string) => {
-    // PRODUCTION: Console disabled - Critical file
-    // console.log('User speech transcribed:', text);
     setCurrentSpeaker('You');
     
     const userSpeakerId = setup?.side === 'PRO' ? 'human-pro-1' : 'human-con-1';
@@ -261,34 +257,33 @@ export default function DebatePage() {
 
   // Initialize socket with optional authentication (guest mode allowed)
   const initializeSocket = useCallback(async () => {
-      // Get the current session - but allow guest mode
+      // Verify user identity with getUser() (server-verified)
+      // Use getSession() only for the access token needed by the socket
+      const { data: { user } } = await supabase.auth.getUser();
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Guest mode: Continue even without session
+      // Guest mode: Continue even without authenticated user
       // In guest mode, debates are stored locally
-      
+
       // Initialize real-time connection (Socket.IO or Supabase)
       let socket: RealtimeSocket;
       try {
         setIsConnecting(true);
         setConnectionError(null);
-        
+
         // Show info about real-time mode
         if (isVercel()) {
-          // PRODUCTION: Console disabled - Critical file
-          // console.log('Running on Vercel - using Supabase Realtime for WebSocket features');
         }
 
         // Create real-time connection (will use Supabase on Vercel)
         // In guest mode, pass undefined token
+        // Only pass token if user is verified
         socket = await createRealtimeConnection({
-          token: session?.access_token,
+          token: user ? session?.access_token : undefined,
           useSupabase: isVercel() // Force Supabase on Vercel
         });
         
-      } catch (_error) {
-        // PRODUCTION: Console disabled - Critical file
-        // console.error('Failed to initialize real-time connection:', error);
+      } catch {
         setConnectionError('Failed to connect to debate server. Please try again.');
         setIsConnecting(false);
         return;
@@ -297,8 +292,6 @@ export default function DebatePage() {
       socketRef.current = socket;
 
     socket.on('connect', () => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Socket connected successfully');
       setIsConnected(true);
       setIsConnecting(false);
       setConnectionError(null);
@@ -306,8 +299,6 @@ export default function DebatePage() {
     });
     
     socket.on('disconnect', (reason) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Socket disconnected:', reason);
       setIsConnected(false);
       
       // Handle different disconnect reasons
@@ -322,8 +313,6 @@ export default function DebatePage() {
     });
     
     socket.on('connect_error', (error) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.error('Socket connection error:', error.message);
       setIsConnected(false);
       setIsConnecting(false);
       
@@ -334,17 +323,13 @@ export default function DebatePage() {
         setConnectionError('Connection timeout. Please check your internet connection.');
       } else if (error.message.includes('websocket error') && isVercel()) {
         // This is expected on Vercel - Socket.IO should fall back to polling
-        // PRODUCTION: Console disabled - Critical file
-        // console.log('WebSocket error on Vercel - falling back to polling');
         setConnectionError(null); // Don't show error if it's just WebSocket failing on Vercel
       } else {
         setConnectionError(`Connection failed: ${error.message}`);
       }
     });
     
-    socket.on('reconnect', (_attemptNumber) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Socket reconnected after', attemptNumber, 'attempts');
+    socket.on('reconnect', () => {
       setIsConnected(true);
       setConnectionError(null);
       setReconnectAttempt(0);
@@ -357,15 +342,11 @@ export default function DebatePage() {
     });
     
     socket.on('reconnect_attempt', (attemptNumber) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Socket reconnection attempt', attemptNumber);
       setReconnectAttempt(attemptNumber);
       setConnectionError(`Reconnecting... (Attempt ${attemptNumber}/5)`);
     });
     
     socket.on('reconnect_failed', () => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.error('Socket reconnection failed');
       setIsConnected(false);
       setConnectionError('Failed to reconnect. Please refresh the page to try again.');
       
@@ -409,8 +390,6 @@ export default function DebatePage() {
       keyMoments: Array<{ timestamp: string; moment: string }>;
       recommendedNextSteps: string[];
     }) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Debate analysis received:', analysis);
       setDebateAnalysis(analysis);
       setShowAnalysis(true);
     });
@@ -461,8 +440,6 @@ export default function DebatePage() {
     });
 
     socket.on('debateError', (error: { message: string; error: string }) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.error('Debate error:', error);
       // User-friendly error messages
       const userMessage = error.message.toLowerCase().includes('connection') 
         ? 'Connection lost. Please check your internet and try again.'

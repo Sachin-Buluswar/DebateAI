@@ -18,18 +18,16 @@ export default function PreferencesPage() {
     // Check if user is logged in
     const checkUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
           router.push('/auth');
           return;
         }
-        
-        setUser(session.user as User);
+
+        setUser(user as User);
         setLoading(false);
-      } catch (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error checking authentication:', error);
+      } catch {
         setLoading(false);
       }
     };

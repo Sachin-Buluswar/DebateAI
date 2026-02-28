@@ -105,13 +105,11 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
 
                 if (!res.ok) {
                     const errorData = await res.json();
-                    // PRODUCTION: Console disabled
-                    // console.error('ElevenLabs API Error:', errorData);
                     
                     // Create error with status for retry logic
-                    const error = new Error(`ElevenLabs TTS failed: ${errorData.detail?.message || 'Unknown error'}`);
-                    (error as any).status = res.status;
-                    throw error;
+                    const ttsError = new Error(`ElevenLabs TTS failed: ${errorData.detail?.message || 'Unknown error'}`);
+                    (ttsError as unknown as Record<string, unknown>).status = res.status;
+                    throw ttsError;
                 }
 
                 return res;
@@ -119,9 +117,7 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
             {
                 retryOptions: {
                     maxRetries: 3,
-                    onRetry: (error, attempt) => {
-                        // PRODUCTION: Console disabled
-                        // console.warn(`ElevenLabs TTS retry attempt ${attempt}:`, error.message);
+                    onRetry: (_error, _attempt) => {
                     },
                     shouldRetry: (error) => {
                         // Retry Strategy:
@@ -130,8 +126,8 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                         // - 429: Rate limit - retry with backoff
                         // - 5xx: Server errors - transient, retry
                         // - Network errors - retry
-                        if ((error as any).status === 401) return false;
-                        if ((error as any).status === 400) return false;
+                        if ((error as unknown as Record<string, unknown>).status === 401) return false;
+                        if ((error as unknown as Record<string, unknown>).status === 400) return false;
                         return true;
                     }
                 },
@@ -141,8 +137,6 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
                     // we fall back to the narrator voice which should always be available.
                     // This ensures the debate can continue even if specific voices fail.
                     async () => {
-                        // PRODUCTION: Console disabled
-                        // console.warn(`Falling back to narrator voice for TTS`);
                         const fallbackResponse = await fetch(
                             `${servicesConfig.elevenLabs.apiBaseUrl}/text-to-speech/${servicesConfig.elevenLabs.narratorVoiceId}/stream?optimize_streaming_latency=${servicesConfig.elevenLabs.latencyOptimization}`,
                             {
@@ -171,9 +165,7 @@ export async function generateAudioStreamResponse(text: string, speakerName?: st
         );
 
         return response;
-    } catch (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error generating audio stream after all recovery attempts:', error);
+    } catch (_error) {
         return null;
     }
 }
@@ -262,8 +254,6 @@ export async function generateAudioStreamWebSocket(
         // Set up error handler
         let streamError: Error | null = null;
         wsService.onErrorEvent((error) => {
-            // PRODUCTION: Console disabled
-            // console.error('WebSocket streaming error:', error);
             streamError = error;
         });
         
@@ -331,8 +321,6 @@ export async function generateAudioStreamWebSocket(
             }, 100);
         });
     } catch (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error in WebSocket audio generation:', error);
         throw error;
     } finally {
         // Clean up WebSocket connection

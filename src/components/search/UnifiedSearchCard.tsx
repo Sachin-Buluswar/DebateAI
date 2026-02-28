@@ -54,8 +54,8 @@ export default function UnifiedSearchCard({
   // Support both naming conventions
   const pdfUrl = result.pdfUrl || result.pdf_url;
   const pageNumber = result.pageNumber || result.page_number;
-  const documentId = result.documentId || result.document_id;
-  const chunkId = result.chunkId || result.chunk_id;
+  const _documentId = result.documentId || result.document_id;
+  const _chunkId = result.chunkId || result.chunk_id;
 
   const hasContext = result.context && (result.context.before || result.context.after);
   const hasPdfLink = pdfUrl && pdfUrl.length > 0;

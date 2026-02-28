@@ -16,17 +16,13 @@ export default function LogoutButton({ className = '' }) {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Error signing out:', error);
         return;
       }
       
       // Redirect to home page after successful logout
       router.push('/');
       router.refresh();
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-      // console.error('Exception during logout:', error);
+    } catch (_error) {
     } finally {
       setIsLoggingOut(false);
     }

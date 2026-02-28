@@ -1,210 +1,201 @@
 /**
  * RAG System Status Check Endpoint
  * Returns information about the current state of the RAG system
+ * Requires admin authentication.
  */
 
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function GET() {
-  try {
-    const status = {
-      timestamp: new Date().toISOString(),
-      database: {
-        connected: false,
-        documents: 0,
-        chunks: 0,
-        indexedDocuments: 0,
-      },
-      storage: {
-        bucketExists: false,
-        fileCount: 0,
-      },
-      search: {
-        fullTextEnabled: false,
-        trigramEnabled: false,
-        indexesCreated: false,
-      },
-      configuration: {
-        supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        supabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        openaiKey: !!process.env.OPENAI_API_KEY,
-        vectorStoreId: !!process.env.OPENAI_VECTOR_STORE_ID,
-      },
-    };
-
-    // Check database connection and counts
+export async function GET(request: NextRequest) {
+  return requireAdmin(request, async (_authenticatedRequest: AuthenticatedRequest) => {
     try {
-      const { count: docCount } = await supabase
-        .from('documents')
-        .select('*', { count: 'exact', head: true });
-      
-      const { count: chunkCount } = await supabase
-        .from('document_chunks')
-        .select('*', { count: 'exact', head: true });
-      
-      const { count: indexedCount } = await supabase
-        .from('documents')
-        .select('*', { count: 'exact', head: true })
-        .not('indexed_at', 'is', null);
+      const supabase = createClient();
 
-      status.database.connected = true;
-      status.database.documents = docCount || 0;
-      status.database.chunks = chunkCount || 0;
-      status.database.indexedDocuments = indexedCount || 0;
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('Database check failed:', error);
-    }
-
-    // Check storage bucket
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const debateBucket = buckets?.find(b => b.name === 'debate-documents');
-      
-      if (debateBucket) {
-        status.storage.bucketExists = true;
-        
-        const { data: files } = await supabase.storage
-          .from('debate-documents')
-          .list('', { limit: 1000 });
-        
-        status.storage.fileCount = files?.length || 0;
-      }
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('Storage check failed:', error);
-    }
-
-    // Check search capabilities
-    try {
-      // Check if pg_trgm extension exists
-      let extensions: any[] = [];
-      try {
-        const result = await supabase.rpc('get_installed_extensions' as any);
-        extensions = result.data || [];
-      } catch (error) {
-        // PRODUCTION: Logging disabled
-// console.error('Failed to get extensions:', error);
-      }
-      
-      if (Array.isArray(extensions)) {
-        status.search.trigramEnabled = extensions.some(ext => ext.extname === 'pg_trgm');
-      }
-
-      // Check if search indexes exist
-      let indexes: any[] = [];
-      try {
-        const result = await supabase
-          .from('pg_indexes' as any)
-          .select('indexname')
-          .eq('tablename', 'document_chunks');
-        indexes = result.data || [];
-      } catch (error) {
-        // PRODUCTION: Logging disabled
-// console.error('Failed to get indexes:', error);
-      }
-      
-      if (indexes && indexes.length > 0) {
-        status.search.fullTextEnabled = indexes.some(idx => 
-          idx.indexname?.includes('search_vector')
-        );
-        status.search.indexesCreated = indexes.length > 2;
-      }
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('Search capability check failed:', error);
-    }
-
-    // Calculate health score
-    const healthScore = calculateHealthScore(status);
-
-    return addSecurityHeaders(
-      NextResponse.json({
-        healthy: healthScore >= 70,
-        healthScore,
-        status,
-        recommendations: getRecommendations(status),
-      })
-    );
-  } catch (error) {
-    // PRODUCTION: Logging disabled
-// console.error('RAG status check failed:', error);
-    return addSecurityHeaders(
-      NextResponse.json(
-        {
-          healthy: false,
-          error: 'Failed to check RAG system status',
+      const status = {
+        timestamp: new Date().toISOString(),
+        database: {
+          connected: false,
+          documents: 0,
+          chunks: 0,
+          indexedDocuments: 0,
         },
-        { status: 500 }
-      )
-    );
-  }
+        storage: {
+          bucketExists: false,
+          fileCount: 0,
+        },
+        search: {
+          fullTextEnabled: false,
+          trigramEnabled: false,
+          indexesCreated: false,
+        },
+        configuration: {
+          supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+          supabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+          openaiKey: !!process.env.OPENAI_API_KEY,
+          vectorStoreId: !!process.env.OPENAI_VECTOR_STORE_ID,
+        },
+      };
+
+      try {
+        const { count: docCount } = await supabase
+          .from('documents')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: chunkCount } = await supabase
+          .from('document_chunks')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: indexedCount } = await supabase
+          .from('documents')
+          .select('*', { count: 'exact', head: true })
+          .not('indexed_at', 'is', null);
+
+        status.database.connected = true;
+        status.database.documents = docCount || 0;
+        status.database.chunks = chunkCount || 0;
+        status.database.indexedDocuments = indexedCount || 0;
+      } catch (_error) {
+        // Database check failed
+      }
+
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const debateBucket = buckets?.find(b => b.name === 'debate-documents');
+
+        if (debateBucket) {
+          status.storage.bucketExists = true;
+
+          const { data: files } = await supabase.storage
+            .from('debate-documents')
+            .list('', { limit: 1000 });
+
+          status.storage.fileCount = files?.length || 0;
+        }
+      } catch (_error) {
+        // Storage check failed
+      }
+
+      try {
+        let extensions: Array<{ extname?: string }> = [];
+        try {
+          const result = await supabase.rpc('get_installed_extensions' as string);
+          extensions = (result.data as Array<{ extname?: string }>) || [];
+        } catch (_error) {
+          // Failed to get extensions
+        }
+
+        if (Array.isArray(extensions)) {
+          status.search.trigramEnabled = extensions.some(ext => ext.extname === 'pg_trgm');
+        }
+
+        let indexes: Array<{ indexname?: string }> = [];
+        try {
+          const result = await supabase
+            .from('pg_indexes' as string)
+            .select('indexname')
+            .eq('tablename', 'document_chunks');
+          indexes = (result.data as Array<{ indexname?: string }>) || [];
+        } catch (_error) {
+          // Failed to get indexes
+        }
+
+        if (indexes && indexes.length > 0) {
+          status.search.fullTextEnabled = indexes.some(idx =>
+            idx.indexname?.includes('search_vector')
+          );
+          status.search.indexesCreated = indexes.length > 2;
+        }
+      } catch (_error) {
+        // Search capability check failed
+      }
+
+      const healthScore = calculateHealthScore(status);
+
+      return addSecurityHeaders(
+        NextResponse.json({
+          healthy: healthScore >= 70,
+          healthScore,
+          status,
+          recommendations: getRecommendations(status),
+        })
+      );
+    } catch (_error) {
+      return addSecurityHeaders(
+        NextResponse.json(
+          {
+            healthy: false,
+            error: 'Failed to check RAG system status',
+          },
+          { status: 500 }
+        )
+      );
+    }
+  });
 }
 
-function calculateHealthScore(status: any): number {
+interface RagStatusInfo {
+  database: { connected: boolean; documents: number; chunks: number; indexedDocuments: number };
+  storage: { bucketExists: boolean; fileCount: number };
+  search: { fullTextEnabled: boolean; trigramEnabled: boolean; indexesCreated: boolean };
+  configuration: { supabaseUrl: boolean; supabaseKey: boolean; openaiKey: boolean; vectorStoreId: boolean };
+}
+
+function calculateHealthScore(status: RagStatusInfo): number {
   let score = 0;
-  
-  // Database health (40 points)
+
   if (status.database.connected) score += 10;
   if (status.database.documents > 0) score += 10;
   if (status.database.chunks > 0) score += 10;
   if (status.database.indexedDocuments > 0) score += 10;
-  
-  // Storage health (20 points)
+
   if (status.storage.bucketExists) score += 10;
   if (status.storage.fileCount > 0) score += 10;
-  
-  // Search health (20 points)
+
   if (status.search.fullTextEnabled) score += 10;
   if (status.search.trigramEnabled) score += 5;
   if (status.search.indexesCreated) score += 5;
-  
-  // Configuration health (20 points)
+
   if (status.configuration.supabaseUrl) score += 5;
   if (status.configuration.supabaseKey) score += 5;
   if (status.configuration.openaiKey) score += 5;
   if (status.configuration.vectorStoreId) score += 5;
-  
+
   return score;
 }
 
-function getRecommendations(status: any): string[] {
+function getRecommendations(status: RagStatusInfo): string[] {
   const recommendations: string[] = [];
-  
+
   if (!status.database.connected) {
     recommendations.push('Check database connection and credentials');
   }
-  
+
   if (status.database.documents === 0) {
     recommendations.push('Upload documents to enable search functionality');
   }
-  
+
   if (status.database.documents > 0 && status.database.chunks === 0) {
     recommendations.push('Index existing documents to create searchable chunks');
   }
-  
+
   if (!status.storage.bucketExists) {
     recommendations.push('Create "debate-documents" storage bucket in Supabase');
   }
-  
+
   if (!status.search.fullTextEnabled) {
     recommendations.push('Run migration to enable full-text search');
   }
-  
+
   if (!status.search.trigramEnabled) {
     recommendations.push('Enable pg_trgm extension for fuzzy search');
   }
-  
+
   if (!status.configuration.openaiKey && !status.configuration.vectorStoreId) {
     recommendations.push('Configure OpenAI credentials for enhanced search (optional)');
   }
-  
+
   return recommendations;
 }

@@ -99,16 +99,16 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
               id: user.id,
               email: user.email,
             };
-          } catch (_e) {
+          } catch {
             // Ignore parse errors
           }
         }
       }
-      
+
       return event;
     },
   });
-  
+
   // Set initial user context if available
   if (typeof window !== 'undefined') {
     const userString = window.localStorage.getItem('user');
@@ -119,7 +119,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
           id: user.id,
           email: user.email,
         });
-      } catch (_e) {
+      } catch {
         // Ignore parse errors
       }
     }
@@ -131,37 +131,37 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 // Export utilities for manual error tracking
 export const sentryClient = {
-  captureException: (error: Error, context?: Record<string, any>) => {
+  captureException: (error: Error, context?: Record<string, unknown>) => {
     if (SENTRY_DSN) {
-      Sentry.captureException(error, context as any);
+      Sentry.captureException(error, context);
     }
   },
-  
+
   captureMessage: (message: string, level: Sentry.SeverityLevel = 'info') => {
     if (SENTRY_DSN) {
       Sentry.captureMessage(message, level);
     }
   },
-  
+
   addBreadcrumb: (breadcrumb: Sentry.Breadcrumb) => {
     if (SENTRY_DSN) {
       Sentry.addBreadcrumb(breadcrumb);
     }
   },
-  
-  setContext: (key: string, context: any) => {
+
+  setContext: (key: string, context: Record<string, unknown> | null) => {
     if (SENTRY_DSN) {
       Sentry.setContext(key, context);
     }
   },
-  
+
   setUser: (user: Sentry.User | null) => {
     if (SENTRY_DSN) {
       Sentry.setUser(user);
     }
   },
-  
-  startTransaction: (context: any) => {
+
+  startTransaction: (context: Parameters<typeof Sentry.startInactiveSpan>[0]) => {
     if (SENTRY_DSN) {
       return Sentry.startInactiveSpan(context);
     }

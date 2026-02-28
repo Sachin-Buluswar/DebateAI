@@ -10,6 +10,13 @@ import { createClient } from '@/utils/supabase/server';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
 import { optionalAuth } from '@/lib/auth-middleware';
 
+interface SearchStatusInfo {
+  database: { connected: boolean; documents: number; chunks: number; indexedDocuments: number };
+  storage: { bucketExists: boolean; fileCount: number };
+  search: { documentSearchEnabled: boolean; fullTextEnabled: boolean; trigramEnabled: boolean; indexesCreated: boolean; aiAssistantEnabled: boolean };
+  configuration: { supabaseUrl: boolean; supabaseKey: boolean; openaiKey: boolean; vectorStoreId: boolean };
+}
+
 export async function GET(request: NextRequest) {
   // This is a health check endpoint - allow public access but use authenticated client if available
   return optionalAuth(request, async (req) => {
@@ -65,9 +72,7 @@ export async function GET(request: NextRequest) {
           .not('indexed_at', 'is', null);
         
         status.database.indexedDocuments = indexedCount || 0;
-      } catch (error) {
-        // PRODUCTION: Logging disabled
-// console.error('Database check failed:', error);
+      } catch (_error) {
       }
 
       // Check storage bucket
@@ -86,21 +91,17 @@ export async function GET(request: NextRequest) {
             status.storage.fileCount = files?.length || 0;
           }
         }
-      } catch (error) {
-        // PRODUCTION: Logging disabled
-// console.error('Storage check failed:', error);
+      } catch (_error) {
       }
 
       // Check search capabilities
       try {
         // Check if pg_trgm extension is installed
-        let extensions: any[] = [];
+        let extensions: Array<{ extname?: string }> = [];
         try {
-          const result = await supabase.rpc('get_installed_extensions' as any);
-          extensions = result.data || [];
-        } catch (error) {
-          // PRODUCTION: Logging disabled
-// console.error('Failed to get extensions:', error);
+          const result = await supabase.rpc('get_installed_extensions' as string);
+          extensions = (result.data as Array<{ extname?: string }>) || [];
+        } catch (_error) {
         }
         
         if (Array.isArray(extensions)) {
@@ -108,16 +109,14 @@ export async function GET(request: NextRequest) {
         }
 
         // Check if search indexes exist
-        let indexes: any[] = [];
+        let indexes: Array<{ indexname?: string }> = [];
         try {
           const result = await supabase
-            .from('pg_indexes' as any)
+            .from('pg_indexes' as string)
             .select('indexname')
             .eq('tablename', 'document_chunks');
-          indexes = result.data || [];
-        } catch (error) {
-          // PRODUCTION: Logging disabled
-// console.error('Failed to get indexes:', error);
+          indexes = (result.data as Array<{ indexname?: string }>) || [];
+        } catch (_error) {
         }
         
         if (indexes && indexes.length > 0) {
@@ -137,9 +136,7 @@ export async function GET(request: NextRequest) {
           !!status.configuration.openaiKey && 
           !!status.configuration.vectorStoreId;
 
-      } catch (error) {
-        // PRODUCTION: Logging disabled
-// console.error('Search capability check failed:', error);
+      } catch (_error) {
       }
 
       // Calculate health score
@@ -153,9 +150,7 @@ export async function GET(request: NextRequest) {
           recommendations: getRecommendations(status),
         })
       );
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-// console.error('Search status check failed:', error);
+    } catch (_error) {
       return addSecurityHeaders(
         NextResponse.json(
           {
@@ -169,7 +164,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
-function calculateHealthScore(status: any): number {
+function calculateHealthScore(status: SearchStatusInfo): number {
   let score = 0;
   
   // Database health (30 points)
@@ -194,7 +189,7 @@ function calculateHealthScore(status: any): number {
   return score;
 }
 
-function getRecommendations(status: any): string[] {
+function getRecommendations(status: SearchStatusInfo): string[] {
   const recommendations: string[] = [];
   
   if (!status.database.connected) {

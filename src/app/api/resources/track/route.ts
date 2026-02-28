@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
+import { optionalAuth } from '@/lib/auth-middleware';
 import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
 import { z } from 'zod';
 import { headers } from 'next/headers';
+import { User } from '@supabase/supabase-js';
 
 const trackingSchema = z.object({
   resourceId: z.string().uuid(),
@@ -13,31 +15,21 @@ const trackingSchema = z.object({
 
 export async function POST(request: NextRequest) {
   return withRateLimit(request, apiRateLimiter, async () => {
+    return optionalAuth(request, async (req: NextRequest & { user?: User }) => {
     try {
     const body = await request.json();
     const validated = trackingSchema.parse(body);
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createClient();
     const headersList = headers();
     const userAgent = headersList.get('user-agent') || undefined;
     const referrer = headersList.get('referer') || undefined;
-    
-    // Get user if authenticated
-    // Note: This requires auth header to be passed
-    const authHeader = request.headers.get('authorization');
-    let user = null;
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: authData } = await supabase.auth.getUser(token);
-      user = authData?.user;
-    }
+
+    const user = req.user || null;
 
     // Get IP address (in production, this would come from X-Forwarded-For)
-    const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0] || 
-                     headersList.get('x-real-ip') || 
+    const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0] ||
+                     headersList.get('x-real-ip') ||
                      undefined;
 
     // Insert analytics record
@@ -55,8 +47,6 @@ export async function POST(request: NextRequest) {
       });
 
     if (analyticsError) {
-      // PRODUCTION: Console disabled
-      // console.error('Error tracking resource analytics:', analyticsError);
       return NextResponse.json(
         { error: 'Failed to track analytics' },
         { status: 500 }
@@ -82,13 +72,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // PRODUCTION: Console disabled
-
-      // console.error('API Error [/api/resources/track]:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
       );
     }
+    });
   });
 }

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMonitoring } from '@/lib/monitoring/middleware';
-import { debateMetrics } from '@/lib/monitoring/opentelemetry';
 import { apiPerformance, dbPerformance, openaiPerformance, elevenLabsPerformance } from '@/lib/monitoring/performance';
 import { createClient } from '@/utils/supabase/server';
-import { optionalAuth } from '@/lib/auth-middleware';
 
 interface MetricsResponse {
   timestamp: string;
@@ -17,10 +15,10 @@ interface MetricsResponse {
     uptime: number;
   };
   performance: {
-    api: any;
-    database: any;
-    openai: any;
-    elevenlabs: any;
+    api: Record<string, unknown>;
+    database: Record<string, unknown>;
+    openai: Record<string, unknown>;
+    elevenlabs: Record<string, unknown>;
   };
   usage: {
     debates: {
@@ -121,9 +119,7 @@ async function getUsageMetrics() {
         },
       },
     };
-  } catch (error) {
-    // PRODUCTION: Logging disabled
-// console.error('Error fetching usage metrics:', error);
+  } catch (_error) {
     return {
       debates: { total: 0, active: 0 },
       users: { total: 0, active24h: 0, new24h: 0 },

@@ -95,8 +95,6 @@ async function createDebateSession(topic: string, userSide: 'PRO' | 'CON', hasAi
     .single();
   
   if (error) {
-    // PRODUCTION: Console disabled - Critical file
-    // console.error('Error creating debate session:', error);
     throw error;
   }
   
@@ -130,8 +128,6 @@ async function saveSpeech(sessionId: string, speakerName: string, speakerId: str
     });
   
   if (error) {
-    // PRODUCTION: Console disabled - Critical file
-    // console.error('Error saving speech:', error);
   }
 }
 
@@ -145,8 +141,6 @@ async function saveSpeech(sessionId: string, speakerName: string, speakerId: str
  * @param io - Socket.IO server instance
  */
 export function initializeSocketIO(io: SocketIOServer) {
-  // PRODUCTION: Console disabled - Critical file
-  // console.log('Socket.IO server initialized');
 
   /**
    * Handle new client connections.
@@ -155,21 +149,18 @@ export function initializeSocketIO(io: SocketIOServer) {
    * The socket ID serves as the primary key for all session data.
    */
   io.on('connection', (socket: Socket) => {
-    // PRODUCTION: Console disabled - Critical file
-    // console.log(`New client connected: ${socket.id}`);
     
     /**
      * Initialize debate adapter for backward compatibility.
      * The adapter translates between different event naming conventions
      * used by various client versions.
      */
-    let adapter: any;
+    let adapter: { cleanup?: () => void } | undefined;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { initializeDebateAdapter } = require('@/lib/socket/debateSocketAdapter');
       adapter = initializeDebateAdapter(socket);
-    } catch (error) {
-      // PRODUCTION: Console disabled - Critical file
-      // console.error('Failed to initialize debate adapter:', error);
+    } catch (_error) {
     }
 
     /**
@@ -185,10 +176,6 @@ export function initializeSocketIO(io: SocketIOServer) {
      */
     socket.on('startDebate', async (payload: { topic: string; participants: Participant[] }) => {
       const { topic, participants } = payload;
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Starting debate on topic:', topic);
-      // PRODUCTION: Console disabled - Critical file
-      // console.log('Participants:', participants);
       
       try {
         // Create persistent session in database
@@ -199,8 +186,6 @@ export function initializeSocketIO(io: SocketIOServer) {
           participants.filter(p => !p.isAI && p.team === userParticipant?.team).length > 1
         );
         debateSessions.set(socket.id, sessionId);
-        // PRODUCTION: Console disabled - Critical file
-        // console.log('Created debate session:', sessionId);
         
         // Initialize empty transcript for accumulating speeches
         debateTranscripts.set(socket.id, '');
@@ -220,8 +205,6 @@ export function initializeSocketIO(io: SocketIOServer) {
          */
         const onStateChange = async (newState: DebateState, mode: string) => {
           try {
-            // PRODUCTION: Console disabled - Critical file
-            // console.log(`State change: ${newState.phase} (${mode}) - Speaker: ${newState.currentSpeakerId}`);
             
             // Always emit state updates to keep client synchronized
             socket.emit('debateStateUpdate', newState, mode);
@@ -239,8 +222,6 @@ export function initializeSocketIO(io: SocketIOServer) {
               const sessionId = debateSessions.get(socket.id);
               const transcript = debateTranscripts.get(socket.id) || '';
               if (sessionId && transcript.trim()) {
-                // PRODUCTION: Console disabled - Critical file
-                // console.log('Debate ended, generating analysis...');
                 try {
                   const analysis = await generatePostDebateAnalysis(topic, transcript, userParticipant?.team || 'PRO');
                   socket.emit('debateAnalysis', analysis);
@@ -254,9 +235,7 @@ export function initializeSocketIO(io: SocketIOServer) {
                       status: 'completed'
                     })
                     .eq('id', sessionId);
-                } catch (error) {
-                  // PRODUCTION: Console disabled - Critical file
-                  // console.error('Error generating post-debate analysis:', error);
+                } catch (_error) {
                 }
               }
             }
@@ -280,8 +259,6 @@ export function initializeSocketIO(io: SocketIOServer) {
               const currentSpeaker = participants.find(p => p.id === newState.currentSpeakerId);
               
               if (currentSpeaker && currentSpeaker.isAI) {
-                // PRODUCTION: Console disabled - Critical file
-                // console.log(`Generating speech for AI: ${currentSpeaker.name}`);
                 
                 // Get transcript for context
                 const currentTranscript = debateTranscripts.get(socket.id) || '';
@@ -289,8 +266,6 @@ export function initializeSocketIO(io: SocketIOServer) {
                 // Generate speech using AI personality system
                 const rawSpeech = await generateSpeech(topic, currentSpeaker, newState.phase, currentTranscript);
                 const speechText = sanitizeForTTS(rawSpeech);
-                // PRODUCTION: Console disabled - Critical file
-                // console.log(`Generated speech (${speechText.length} chars): ${speechText.substring(0, 100)}...`);
                 
                 // Send text immediately for responsive UI
                 socket.emit('aiSpeech', { speaker: currentSpeaker.name, text: speechText });
@@ -325,8 +300,6 @@ export function initializeSocketIO(io: SocketIOServer) {
                  * - User notified of audio issues
                  */
                 if (process.env.ELEVENLABS_API_KEY && !process.env.ELEVENLABS_API_KEY.includes('placeholder')) {
-                  // PRODUCTION: Console disabled - Critical file
-                  // console.log(`Generating TTS audio for ${currentSpeaker.name}...`);
                   
                   // Choose streaming strategy based on environment
                   if (shouldUseWebSocket()) {
@@ -354,18 +327,12 @@ export function initializeSocketIO(io: SocketIOServer) {
                     if (audioSent) {
                       // Signal stream completion
                       socket.emit('aiSpeechAudioEnd');
-                      // PRODUCTION: Console disabled - Critical file
-                      // console.log(`TTS audio streamed to client for ${currentSpeaker.name}`);
                     } else {
                       // Fallback to HTTP if WebSocket fails
-                      // PRODUCTION: Console disabled - Critical file
-                      // console.warn('WebSocket streaming failed, falling back to HTTP');
                       const audioBuffer = await generateAudioArrayBuffer(speechText, currentSpeaker.name);
                       if (audioBuffer) {
                         const buffer = Buffer.from(audioBuffer);
                         socket.emit('aiSpeechAudio', buffer);
-                        // PRODUCTION: Console disabled - Critical file
-                        // console.log(`TTS audio sent via HTTP for ${currentSpeaker.name}`);
                       }
                     }
                   } else {
@@ -381,8 +348,6 @@ export function initializeSocketIO(io: SocketIOServer) {
                       // Convert to Buffer for Socket.IO transmission
                       const buffer = Buffer.from(audioBuffer);
                       socket.emit('aiSpeechAudio', buffer);
-                      // PRODUCTION: Console disabled - Critical file
-                      // console.log(`TTS audio sent to client for ${currentSpeaker.name}`);
                     } else {
                       // TTS failed completely, use error recovery
                       const currentSessionId = debateSessions.get(socket.id);
@@ -398,8 +363,6 @@ export function initializeSocketIO(io: SocketIOServer) {
                     }
                   }
                 } else {
-                  // PRODUCTION: Console disabled - Critical file
-                  // console.log('Skipping TTS - placeholder API key detected');
                 }
               }
             }
@@ -424,8 +387,6 @@ export function initializeSocketIO(io: SocketIOServer) {
              * 3. GRAND_CROSSFIRE: All participants
              */
             if (mode === 'crossfire') {
-              // PRODUCTION: Console disabled - Critical file
-              // console.log('Entering crossfire phase');
               
               // Initialize ElevenLabs session with retry logic
               const sessionId = debateSessions.get(socket.id);
@@ -473,8 +434,6 @@ export function initializeSocketIO(io: SocketIOServer) {
               }
             }
           } catch (error) {
-            // PRODUCTION: Console disabled - Critical file
-            // console.error('Error in onStateChange:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             socket.emit('debateError', { message: 'An error occurred during debate state change', error: errorMessage });
           }
@@ -486,8 +445,6 @@ export function initializeSocketIO(io: SocketIOServer) {
         // Start the debate
         debateManager.startDebate();
       } catch (error) {
-        // PRODUCTION: Console disabled - Critical file
-        // console.error('Error starting debate:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         socket.emit('debateError', { message: 'Failed to start debate', error: errorMessage });
       }
@@ -497,8 +454,6 @@ export function initializeSocketIO(io: SocketIOServer) {
       const debateManager = activeDebates.get(socket.id);
       if (debateManager) {
         debateManager.pause();
-        // PRODUCTION: Console disabled - Critical file
-        // console.log('Debate paused');
       }
     });
 
@@ -506,8 +461,6 @@ export function initializeSocketIO(io: SocketIOServer) {
       const debateManager = activeDebates.get(socket.id);
       if (debateManager) {
         debateManager.resume();
-        // PRODUCTION: Console disabled - Critical file
-        // console.log('Debate resumed');
       }
     });
 
@@ -515,8 +468,6 @@ export function initializeSocketIO(io: SocketIOServer) {
       const debateManager = activeDebates.get(socket.id);
       if (debateManager) {
         debateManager.skipCurrentTurn();
-        // PRODUCTION: Console disabled - Critical file
-        // console.log('Turn skipped');
       }
     });
 
@@ -540,11 +491,7 @@ export function initializeSocketIO(io: SocketIOServer) {
             .eq('id', sessionId);
             
           socket.emit('debateSaved', { success: true, sessionId });
-          // PRODUCTION: Console disabled - Critical file
-          // console.log('Debate saved successfully');
-        } catch (error) {
-          // PRODUCTION: Console disabled - Critical file
-          // console.error('Error saving debate:', error);
+        } catch (_error) {
           socket.emit('debateSaved', { success: false, error: 'Failed to save debate' });
         }
       }
@@ -572,8 +519,6 @@ export function initializeSocketIO(io: SocketIOServer) {
           const createOnStateChange = (socket: Socket, topic: string, participants: Participant[], userParticipant: Participant | undefined) => {
             return async (newState: DebateState, mode: string) => {
               try {
-                // PRODUCTION: Console disabled - Critical file
-                // console.log(`State change: ${newState.phase} (${mode}) - Speaker: ${newState.currentSpeakerId}`);
                 socket.emit('debateStateUpdate', newState, mode);
 
                 // If debate has ended, generate post-debate analysis
@@ -581,8 +526,6 @@ export function initializeSocketIO(io: SocketIOServer) {
                   const sessionId = debateSessions.get(socket.id);
                   const transcript = debateTranscripts.get(socket.id) || '';
                   if (sessionId && transcript.trim()) {
-                    // PRODUCTION: Console disabled - Critical file
-                    // console.log('Debate ended, generating analysis...');
                     try {
                       const analysis = await generatePostDebateAnalysis(topic, transcript, userParticipant?.team || 'PRO');
                       socket.emit('debateAnalysis', analysis);
@@ -596,9 +539,7 @@ export function initializeSocketIO(io: SocketIOServer) {
                           status: 'completed'
                         })
                         .eq('id', sessionId);
-                    } catch (error) {
-                      // PRODUCTION: Console disabled - Critical file
-                      // console.error('Error generating post-debate analysis:', error);
+                    } catch (_error) {
                     }
                   }
                 }
@@ -608,13 +549,9 @@ export function initializeSocketIO(io: SocketIOServer) {
                   const currentSpeaker = participants.find(p => p.id === newState.currentSpeakerId);
                   
                   if (currentSpeaker && currentSpeaker.isAI) {
-                    // PRODUCTION: Console disabled - Critical file
-                    // console.log(`Generating speech for AI: ${currentSpeaker.name}`);
                     const currentTranscript = debateTranscripts.get(socket.id) || '';
                     const rawSpeech = await generateSpeech(topic, currentSpeaker, newState.phase, currentTranscript);
                     const speechText = sanitizeForTTS(rawSpeech);
-                    // PRODUCTION: Console disabled - Critical file
-                    // console.log(`Generated speech (${speechText.length} chars): ${speechText.substring(0, 100)}...`);
                     
                     // Emit AI speech event with speaker and text
                     socket.emit('aiSpeech', { speaker: currentSpeaker.name, text: speechText });
@@ -628,8 +565,6 @@ export function initializeSocketIO(io: SocketIOServer) {
 
                     // Only attempt TTS if we have a real API key
                     if (process.env.ELEVENLABS_API_KEY && !process.env.ELEVENLABS_API_KEY.includes('placeholder')) {
-                      // PRODUCTION: Console disabled - Critical file
-                      // console.log(`Generating TTS audio for ${currentSpeaker.name}...`);
                       
                       // Check if WebSocket streaming should be used
                       if (shouldUseWebSocket()) {
@@ -651,18 +586,12 @@ export function initializeSocketIO(io: SocketIOServer) {
                           if (audioSent) {
                             // Signal end of audio stream
                             socket.emit('aiSpeechAudioEnd');
-                            // PRODUCTION: Console disabled - Critical file
-                            // console.log(`TTS audio streamed to client for ${currentSpeaker.name}`);
                           }
-                        } catch (error) {
-                          // PRODUCTION: Console disabled - Critical file
-                          // console.warn('WebSocket streaming failed, falling back to HTTP:', error);
+                        } catch (_error) {
                           const audioBuffer = await generateAudioArrayBuffer(speechText, currentSpeaker.name);
                           if (audioBuffer) {
                             const buffer = Buffer.from(audioBuffer);
                             socket.emit('aiSpeechAudio', buffer);
-                            // PRODUCTION: Console disabled - Critical file
-                            // console.log(`TTS audio sent via HTTP for ${currentSpeaker.name}`);
                           }
                         }
                       } else {
@@ -673,19 +602,13 @@ export function initializeSocketIO(io: SocketIOServer) {
                           // Convert ArrayBuffer to Buffer for proper socket transmission
                           const buffer = Buffer.from(audioBuffer);
                           socket.emit('aiSpeechAudio', buffer);
-                          // PRODUCTION: Console disabled - Critical file
-                          // console.log(`TTS audio sent to client for ${currentSpeaker.name}`);
                         }
                       }
                     } else {
-                      // PRODUCTION: Console disabled - Critical file
-                      // console.log('Skipping TTS - placeholder API key detected');
                     }
                   }
                 }
               } catch (error) {
-                // PRODUCTION: Console disabled - Critical file
-                // console.error('Error in onStateChange:', error);
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                 socket.emit('debateError', { message: 'An error occurred during debate state change', error: errorMessage });
               }
@@ -705,12 +628,8 @@ export function initializeSocketIO(io: SocketIOServer) {
             participants,
             transcript: session.transcript 
           });
-          // PRODUCTION: Console disabled - Critical file
-          // console.log('Debate loaded successfully');
         }
-      } catch (error) {
-        // PRODUCTION: Console disabled - Critical file
-        // console.error('Error loading debate:', error);
+      } catch (_error) {
         socket.emit('debateLoaded', { success: false, error: 'Failed to load debate' });
       }
     });
@@ -755,8 +674,6 @@ export function initializeSocketIO(io: SocketIOServer) {
      * @param data.audioBlob - Optional audio recording (WebM format)
      */
     socket.on('userSpeech', (data: { text: string; speakerId: string; phase: string; audioBlob?: ArrayBuffer }) => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log(`User speech received from ${data.speakerId}:`, data.text.substring(0, 100));
       
       // Get session context
       const sessionId = debateSessions.get(socket.id);
@@ -767,8 +684,6 @@ export function initializeSocketIO(io: SocketIOServer) {
         
         // Persist speech with full metadata
         saveSpeech(sessionId, speakerName, data.speakerId, data.phase, data.text).then(async () => {
-          // PRODUCTION: Console disabled - Critical file
-          // console.log(`User speech saved for session ${sessionId}`);
           
           // Handle audio recording if provided
           if (data.audioBlob) {
@@ -786,8 +701,6 @@ export function initializeSocketIO(io: SocketIOServer) {
                 });
               
               if (uploadError) {
-                // PRODUCTION: Console disabled - Critical file
-                // console.error('Error uploading audio:', uploadError);
                 
                 // Fallback: Store small files as base64
                 if (audioBuffer.length < 1024 * 1024) { // 1MB limit
@@ -820,18 +733,14 @@ export function initializeSocketIO(io: SocketIOServer) {
                     duration_seconds: null
                   });
                 
-                // PRODUCTION: Console disabled - Critical file
                 
-                // console.log('Audio recording saved to storage:', fileName);
               }
-            } catch (error) {
-              // PRODUCTION: Console disabled - Critical file
-              // console.error('Error saving audio recording:', error);
+            } catch (_error) {
+              // Audio upload is best-effort; failure should not disrupt the debate session
             }
           }
-        }).catch(error => {
-          // PRODUCTION: Console disabled - Critical file
-          // console.error('Error saving user speech:', error);
+        }).catch(_error => {
+          // Speech persistence is best-effort during live debate
         });
         
         // Append to running transcript
@@ -847,8 +756,6 @@ export function initializeSocketIO(io: SocketIOServer) {
       if (debateManager) {
         // Brief delay for UI feedback before continuing
         setTimeout(() => {
-          // PRODUCTION: Console disabled - Critical file
-          // console.log('User speech processed, debate continues...');
         }, 2000);
       }
     });
@@ -865,8 +772,6 @@ export function initializeSocketIO(io: SocketIOServer) {
      * Note: Database records are preserved for historical access.
      */
     socket.on('disconnect', () => {
-      // PRODUCTION: Console disabled - Critical file
-      // console.log(`Client disconnected: ${socket.id}`);
       
       // Clean up adapter if initialized
       if (adapter && adapter.cleanup) {

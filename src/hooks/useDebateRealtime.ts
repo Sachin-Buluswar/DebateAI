@@ -1,25 +1,25 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
-import { DebateState, Participant } from '@/backend/modules/realtimeDebate/debate-types';
+import { DebateState } from '@/backend/modules/realtimeDebate/debate-types';
 
 interface UseDebateRealtimeOptions {
   debateId: string;
   userId: string;
   onStateUpdate?: (state: DebateState) => void;
-  onSpeechReceived?: (data: any) => void;
-  onCrossfireMessage?: (data: any) => void;
-  onParticipantJoined?: (participant: any) => void;
-  onParticipantLeft?: (participant: any) => void;
+  onSpeechReceived?: (data: Record<string, unknown>) => void;
+  onCrossfireMessage?: (data: Record<string, unknown>) => void;
+  onParticipantJoined?: (participant: Record<string, unknown>) => void;
+  onParticipantLeft?: (participant: Record<string, unknown>) => void;
   onError?: (error: Error) => void;
 }
 
 interface UseDebateRealtimeReturn {
   connected: boolean;
   channel: RealtimeChannel | null;
-  presence: Record<string, any>;
-  sendMessage: (event: string, payload: any) => Promise<void>;
-  sendCrossfireMessage: (message: any) => Promise<void>;
+  presence: Record<string, unknown>;
+  sendMessage: (event: string, payload: Record<string, unknown>) => Promise<void>;
+  sendCrossfireMessage: (message: Record<string, unknown>) => Promise<void>;
   updateDebateState: (state: Partial<DebateState>) => Promise<void>;
   disconnect: () => Promise<void>;
 }
@@ -35,11 +35,11 @@ export function useDebateRealtime({
   onError
 }: UseDebateRealtimeOptions): UseDebateRealtimeReturn {
   const [connected, setConnected] = useState(false);
-  const [presence, setPresence] = useState<Record<string, any>>({});
+  const [presence, setPresence] = useState<Record<string, unknown>>({});
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Send message to channel
-  const sendMessage = useCallback(async (event: string, payload: any) => {
+  const sendMessage = useCallback(async (event: string, payload: Record<string, unknown>) => {
     if (!channelRef.current) {
       throw new Error('Not connected to debate channel');
     }
@@ -56,7 +56,7 @@ export function useDebateRealtime({
   }, [userId]);
 
   // Send crossfire message with priority
-  const sendCrossfireMessage = useCallback(async (message: any) => {
+  const sendCrossfireMessage = useCallback(async (message: Record<string, unknown>) => {
     await sendMessage('crossfire_message', {
       ...message,
       priority: 'high'
@@ -130,9 +130,7 @@ export function useDebateRealtime({
           user_agent: navigator.userAgent
         });
         
-        // PRODUCTION: Console disabled
         
-        // console.log('Connected to debate channel:', debateId);
       } else if (status === 'CHANNEL_ERROR') {
         onError?.(new Error('Failed to connect to debate channel'));
       }
@@ -157,8 +155,8 @@ export function useDebateRealtime({
 
 // Hook for crossfire-specific functionality
 export function useCrossfireRealtime(debateId: string, userId: string) {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [participants, setParticipants] = useState<string[]>([]);
+  const [messages, setMessages] = useState<{ userId?: string; text?: string; timestamp?: number; speakerId?: string;[key: string]: unknown }[]>([]);
+  const [_participants, setParticipants] = useState<string[]>([]);
   
   const { connected, sendCrossfireMessage, presence } = useDebateRealtime({
     debateId,
@@ -166,11 +164,17 @@ export function useCrossfireRealtime(debateId: string, userId: string) {
     onCrossfireMessage: (data) => {
       setMessages(prev => [...prev, data]);
     },
-    onParticipantJoined: ({ userId }) => {
-      setParticipants(prev => [...prev, userId]);
+    onParticipantJoined: (data) => {
+      const id = data.userId;
+      if (typeof id === 'string') {
+        setParticipants(prev => [...prev, id]);
+      }
     },
-    onParticipantLeft: ({ userId }) => {
-      setParticipants(prev => prev.filter(p => p !== userId));
+    onParticipantLeft: (data) => {
+      const id = data.userId;
+      if (typeof id === 'string') {
+        setParticipants(prev => prev.filter(p => p !== id));
+      }
     }
   });
 

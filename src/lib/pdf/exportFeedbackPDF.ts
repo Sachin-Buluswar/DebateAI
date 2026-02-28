@@ -208,11 +208,11 @@ export async function exportFeedbackAsPDF(
     
     // Configure PDF generation options
     const pdfOptions = {
-      margin: [15, 15, 15, 15], // top, left, bottom, right in mm
+      margin: [15, 15, 15, 15] as [number, number, number, number], // top, left, bottom, right in mm
       filename: filename,
-      image: { 
-        type: 'jpeg', 
-        quality: 0.98 
+      image: {
+        type: 'jpeg' as const,
+        quality: 0.98
       },
       html2canvas: { 
         scale: 2, // Higher scale for better quality
@@ -241,8 +241,6 @@ export async function exportFeedbackAsPDF(
       .save();
       
   } catch (error) {
-    // PRODUCTION: Console disabled
-    // console.error('PDF generation failed:', error);
     throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

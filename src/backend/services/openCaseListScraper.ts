@@ -1,10 +1,7 @@
 import puppeteer, { type Page } from 'puppeteer';
 import { DocumentStorageService } from './documentStorageService';
 import { createClient } from '@supabase/supabase-js';
-import fetch from 'node-fetch';
-import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,8 +30,6 @@ export class OpenCaseListScraper {
     let browser;
     
     try {
-      // PRODUCTION: Console disabled
-      // console.log('Starting OpenCaseList scraping...');
       
       browser = await puppeteer.launch({
         headless: true,
@@ -54,8 +49,6 @@ export class OpenCaseListScraper {
       
       // Get all wiki file links
       const wikiLinks = await this.extractWikiLinks(page);
-      // PRODUCTION: Console disabled
-      // console.log(`Found ${wikiLinks.length} wiki files to scrape`);
       
       // Process each wiki file
       for (const link of wikiLinks) {
@@ -63,8 +56,6 @@ export class OpenCaseListScraper {
       }
       
     } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Scraping error:', error);
       throw error;
     } finally {
       if (browser) {
@@ -74,8 +65,6 @@ export class OpenCaseListScraper {
   }
 
   private async login(page: Page): Promise<void> {
-    // PRODUCTION: Console disabled
-    // console.log('Logging in to OpenCaseList...');
     
     // Go to login page
     await page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle2' });
@@ -90,9 +79,7 @@ export class OpenCaseListScraper {
       page.click('button[type="submit"]')
     ]);
     
-    // PRODUCTION: Console disabled
     
-    // console.log('Login successful');
   }
 
   private async extractWikiLinks(page: Page): Promise<string[]> {
@@ -116,9 +103,7 @@ export class OpenCaseListScraper {
       const fullUrl = fileLink.startsWith('http') ? fileLink : `${this.baseUrl}${fileLink}`;
       const fileName = path.basename(fileLink);
       
-      // PRODUCTION: Console disabled
       
-      // console.log(`Processing: ${fileName}`);
       
       // Check if already processed
       const { data: existingLog } = await supabase
@@ -129,8 +114,6 @@ export class OpenCaseListScraper {
         .single();
       
       if (existingLog) {
-        // PRODUCTION: Console disabled
-        // console.log(`Skipping ${fileName} - already processed`);
         return;
       }
       
@@ -151,7 +134,7 @@ export class OpenCaseListScraper {
       const fileBuffer = await this.downloadFile(page, fullUrl);
       
       // Upload to Supabase Storage
-      const { url: storageUrl, path: storagePath } = await this.documentStorage.uploadPDF(
+      const { url: storageUrl } = await this.documentStorage.uploadPDF(
         fileBuffer,
         fileName
       );
@@ -161,7 +144,7 @@ export class OpenCaseListScraper {
       
       // Create document record
       const document = await this.documentStorage.createDocument(
-        metadata.title || fileName,
+        (metadata.title as string) || fileName,
         fileName,
         storageUrl,
         fileBuffer.length,
@@ -181,13 +164,9 @@ export class OpenCaseListScraper {
         })
         .eq('id', scrapeLog.id);
       
-      // PRODUCTION: Console disabled
       
-      // console.log(`Successfully processed: ${fileName}`);
       
     } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error(`Error processing ${fileLink}:`, error);
       
       // Log failure
       await supabase
@@ -204,7 +183,7 @@ export class OpenCaseListScraper {
   private async downloadFile(page: Page, url: string): Promise<Buffer> {
     // Get cookies from puppeteer
     const cookies = await page.cookies();
-    const cookieString = cookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
+    const cookieString = cookies.map((c: { name: string; value: string }) => `${c.name}=${c.value}`).join('; ');
     
     // Download file using fetch with cookies
     const response = await fetch(url, {
@@ -218,12 +197,12 @@ export class OpenCaseListScraper {
       throw new Error(`Failed to download file: ${response.statusText}`);
     }
     
-    const buffer = await response.buffer();
-    return buffer;
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
 
-  private extractMetadata(fileName: string, filePath: string): Record<string, any> {
-    const metadata: Record<string, any> = {};
+  private extractMetadata(fileName: string, filePath: string): Record<string, unknown> {
+    const metadata: Record<string, unknown> = {};
     
     // Extract year from path if present
     const yearMatch = filePath.match(/20\d{2}/);

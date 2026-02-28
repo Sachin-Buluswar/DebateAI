@@ -24,8 +24,6 @@ async function performDirectRagSearch(
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
   try {
-    // PRODUCTION: Logging disabled
-// console.log(`[direct-rag-search] Searching for: "${query}"`);
     
     // First, try to find exact or partial matches in document chunks
     // Using PostgreSQL full-text search
@@ -54,14 +52,10 @@ async function performDirectRagSearch(
       .limit(maxResults * 2); // Get more results to filter
     
     if (error) {
-      // PRODUCTION: Logging disabled
-// console.error('[direct-rag-search] Database search error:', error);
       throw error;
     }
     
     if (!chunks || chunks.length === 0) {
-      // PRODUCTION: Logging disabled
-// console.log('[direct-rag-search] No results found, falling back to ILIKE search');
       
       // Fallback to ILIKE search for broader matching
       const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
@@ -93,8 +87,6 @@ async function performDirectRagSearch(
       const { data: fallbackChunks, error: fallbackError } = await fallbackQuery.limit(maxResults * 2);
       
       if (fallbackError) {
-        // PRODUCTION: Logging disabled
-// console.error('[direct-rag-search] Fallback search error:', fallbackError);
         throw fallbackError;
       }
       
@@ -133,7 +125,7 @@ async function performDirectRagSearch(
     
     // Transform to EnhancedSearchResult format
     const enhancedResults: EnhancedSearchResult[] = await Promise.all(
-      topResults.map(async ({ chunk, score }, index) => {
+      topResults.map(async ({ chunk, score }) => {
         // Get surrounding context
         const { data: contextChunks } = await supabase
           .from('document_chunks')
@@ -172,14 +164,10 @@ async function performDirectRagSearch(
       })
     );
     
-    // PRODUCTION: Logging disabled
-// console.log(`[direct-rag-search] Returning ${enhancedResults.length} results`);
     return enhancedResults;
     
-  } catch (error) {
-    // PRODUCTION: Logging disabled
-// console.error('[direct-rag-search] Search error:', error);
-    throw error;
+  } catch (_error) {
+    throw _error;
   }
 }
 
@@ -246,9 +234,7 @@ export async function POST(request: NextRequest) {
             { status: 200 }
           )
         );
-      } catch (error) {
-        // PRODUCTION: Logging disabled
-// console.error('[direct-rag-search] Error:', error);
+      } catch (_error) {
 
         // Return empty results instead of error to prevent UI issues
         return addSecurityHeaders(

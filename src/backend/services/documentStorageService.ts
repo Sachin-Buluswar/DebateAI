@@ -10,7 +10,7 @@ const supabase = createClient(
 export class DocumentStorageService {
   private bucketName = 'debate-documents';
 
-  async uploadPDF(file: File | Buffer, fileName: string, metadata?: any): Promise<{ url: string; path: string }> {
+  async uploadPDF(file: File | Buffer, fileName: string, _metadata?: Record<string, unknown>): Promise<{ url: string; path: string }> {
     try {
       const fileBuffer = file instanceof File ? Buffer.from(await file.arrayBuffer()) : file;
       const fileHash = crypto.createHash('md5').update(fileBuffer).digest('hex');
@@ -18,7 +18,7 @@ export class DocumentStorageService {
       const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
       const path = `${timestamp}_${fileHash}_${safeName}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(this.bucketName)
         .upload(path, fileBuffer, {
           contentType: 'application/pdf',
@@ -34,8 +34,6 @@ export class DocumentStorageService {
 
       return { url: publicUrl, path };
     } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error uploading PDF:', error);
       throw error;
     }
   }
@@ -48,7 +46,7 @@ export class DocumentStorageService {
     pageCount?: number,
     sourceUrl?: string,
     sourceType: 'upload' | 'opencaselist' | 'other' = 'upload',
-    metadata?: any
+    metadata?: Record<string, unknown>
   ): Promise<Document> {
     const { data, error } = await supabase
       .from('documents')
@@ -206,7 +204,7 @@ export class DocumentStorageService {
       .eq('id', documentId);
   }
 
-  async getSearchResultsCache(queryHash: string): Promise<any | null> {
+  async getSearchResultsCache(queryHash: string): Promise<unknown | null> {
     const { data, error } = await supabase
       .from('search_results_cache')
       .select()
@@ -218,7 +216,7 @@ export class DocumentStorageService {
     return data.results;
   }
 
-  async setSearchResultsCache(queryText: string, results: any): Promise<void> {
+  async setSearchResultsCache(queryText: string, results: unknown): Promise<void> {
     const queryHash = crypto.createHash('md5').update(queryText).digest('hex');
     
     await supabase

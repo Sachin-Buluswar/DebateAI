@@ -130,8 +130,6 @@ export class ElevenLabsWebSocketService {
 
           this.ws.on('open', () => {
             clearTimeout(connectionTimeout);
-            // PRODUCTION: Console disabled - Critical file
-            // console.log('ElevenLabs WebSocket connected');
             this.isConnected = true;
             this.reconnectAttempts = 0;
             
@@ -153,8 +151,6 @@ export class ElevenLabsWebSocketService {
                 const message = JSON.parse(textData);
                 
                 if (message.error) {
-                  // PRODUCTION: Console disabled - Critical file
-                  // console.error('ElevenLabs WebSocket error:', message);
                   if (this.onError) {
                     this.onError(new Error(message.error));
                   }
@@ -166,8 +162,6 @@ export class ElevenLabsWebSocketService {
                 // - Synchronized subtitles
                 // - Progress tracking
                 // - Pronunciation timing
-                // PRODUCTION: Console disabled - Critical file
-                // console.log('ElevenLabs WebSocket message:', message);
               } else {
                 // Binary audio data (MP3 chunks)
                 // These arrive in small chunks for low latency
@@ -175,7 +169,7 @@ export class ElevenLabsWebSocketService {
                   this.onAudioChunk(data);
                 }
               }
-            } catch (error) {
+            } catch (_error) {
               // If parsing fails, assume it's audio data
               // This handles edge cases where JSON detection fails
               if (this.onAudioChunk) {
@@ -186,8 +180,6 @@ export class ElevenLabsWebSocketService {
 
           this.ws.on('error', (error) => {
             clearTimeout(connectionTimeout);
-            // PRODUCTION: Console disabled - Critical file
-            // console.error('ElevenLabs WebSocket error:', error);
             this.isConnected = false;
             
             if (this.onError) {
@@ -197,9 +189,7 @@ export class ElevenLabsWebSocketService {
             reject(error);
           });
 
-          this.ws.on('close', (code, reason) => {
-            // PRODUCTION: Console disabled - Critical file
-            // console.log(`ElevenLabs WebSocket closed: ${code} - ${reason}`);
+          this.ws.on('close', (code, _reason) => {
             this.isConnected = false;
             
             // WebSocket close codes:
@@ -220,9 +210,7 @@ export class ElevenLabsWebSocketService {
       {
         retryOptions: {
           maxRetries: 3,
-          onRetry: (error, attempt) => {
-            // PRODUCTION: Console disabled - Critical file
-            // console.warn(`ElevenLabs WebSocket connection retry ${attempt}:`, error.message);
+          onRetry: (_error, _attempt) => {
           }
         }
       }
@@ -276,7 +264,7 @@ export class ElevenLabsWebSocketService {
       {
         retryOptions: {
           maxRetries: 2,
-          shouldRetry: (error) => {
+          shouldRetry: (_error) => {
             // Don't retry if WebSocket is closing or closed
             if (this.ws?.readyState === WebSocket.CLOSING || 
                 this.ws?.readyState === WebSocket.CLOSED) {
@@ -373,16 +361,12 @@ export class ElevenLabsWebSocketService {
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
     
-    // PRODUCTION: Console disabled - Critical file
     
-    // console.log(`Attempting to reconnect ElevenLabs WebSocket in ${delay}ms...`);
     
     setTimeout(async () => {
       try {
         await this.connect();
-      } catch (error) {
-        // PRODUCTION: Console disabled - Critical file
-        // console.error('ElevenLabs WebSocket reconnection failed:', error);
+      } catch (_error) {
       }
     }, delay);
   }
@@ -407,9 +391,7 @@ export class ElevenLabsWebSocketService {
       if (message) {
         try {
           await this.sendText(message.text, message.flush);
-        } catch (error) {
-          // PRODUCTION: Console disabled - Critical file
-          // console.error('Failed to send queued message:', error);
+        } catch (_error) {
           // Put it back at the front of the queue
           this.messageQueue.unshift(message);
           break;

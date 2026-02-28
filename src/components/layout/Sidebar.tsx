@@ -77,17 +77,15 @@ export default function Sidebar() {
     // Get user info when the sidebar mounts
     const getUserInfo = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.email) {
-          const name = session.user.email.split('@')[0];
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const name = user.email.split('@')[0];
           setUserName(name.toLowerCase());
           setIsAuthenticated(true);
         } else {
           setIsAuthenticated(false);
         }
-      } catch (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error getting user info:', error);
+      } catch (_error) {
         setIsAuthenticated(false);
       }
     };
@@ -117,16 +115,12 @@ export default function Sidebar() {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        // PRODUCTION: Console disabled
-        // console.error('Error signing out:', error);
         return;
       }
       
       router.push('/');
       router.refresh();
-    } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Exception during logout:', error);
+    } catch (_error) {
     } finally {
       setIsLoggingOut(false);
     }
@@ -136,7 +130,7 @@ export default function Sidebar() {
     if (isAuthenticated) {
       setShowLogoutConfirm(true);
     } else {
-      // GUEST MODE: router.push('/auth') - disabled;
+      router.push('/auth');
     }
   };
 

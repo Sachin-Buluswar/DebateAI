@@ -9,11 +9,10 @@ import { promises as fs } from 'fs';
 import { getAudioDuration } from '@/backend/utils/audioUtils';
 import { openAIService } from '@/backend/services/openaiService';
 import { aiLogger as logger } from '@/lib/monitoring/logger';
-import { 
-  standardizeToPercentage, 
+import {
+  standardizeToPercentage,
   nsdaToPercentage,
-  getStandardizedScore,
-  extractScoreFromFeedback 
+  extractScoreFromFeedback
 } from '@/utils/scoreStandardization';
 
 // Storage constants
@@ -67,8 +66,6 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
       .list(userId);
     
     if (error) {
-      // PRODUCTION: Console disabled
-      // console.error('[speechFeedbackService] Error fetching storage:', error);
       return 0;
     }
     
@@ -78,9 +75,7 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
     }
     
     return totalBytes;
-  } catch (error) {
-    // PRODUCTION: Console disabled
-    // console.error('[speechFeedbackService] Storage calculation error:', error);
+  } catch (_error) {
     return 0;
   }
 }
@@ -245,7 +240,6 @@ IMPORTANT SCORING GUIDELINES:
 - Consider ALL aspects: content, delivery, strategy, and execution
 - Be honest and fair - inflated scores don't help students improve
 
-
 Analyze the transcription and provide feedback in JSON format with these exact fields:
 {
   "speakerScore": 0,  // NSDA speaker points (25-30, ONLY half-points: 25, 25.5, 26, 26.5, 27, 27.5, 28, 28.5, 29, 29.5, or 30) - BASE ON ACTUAL PERFORMANCE
@@ -318,9 +312,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   const { audioBuffer, filename, topic, userId, speechType = 'debate', userSide, skillLevel = 'intermediate' } = input;
   
   // Sanitize filename for logging (prevent log injection)
-  const sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
-  // PRODUCTION: Console disabled
-  // console.log(`[speechFeedbackService] Processing ${sanitizedFilename} for user ${userId}`);
+  const _sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
   
   // Validate file size
   if (audioBuffer.length > MAX_UPLOAD_SIZE_BYTES) {
@@ -345,8 +337,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Get actual audio duration using improved detection
   const durationSeconds = await getAudioDuration(tempFilePath);
-  // PRODUCTION: Console disabled
-  // console.log(`[speechFeedbackService] Detected audio duration: ${durationSeconds} seconds`);
   
   // Validate duration
   const durationMinutes = durationSeconds / 60;
@@ -391,8 +381,6 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   
   // Handle large files without transcription
   if (processedFileSize > WHISPER_MAX_BYTES) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[speechFeedbackService] File too large for transcription (${processedFileSize} bytes)`);
     
     const { data: insertedRecord, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
@@ -434,7 +422,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   }
   
   // Transcribe audio using OpenAI Whisper with error recovery
-  let transcription: any;
+  let transcription: { text?: string; segments?: Array<{ start: number; end: number; text: string }>; duration?: number };
   const fallbackTranscription = {
     text: `[Transcription temporarily unavailable] Speech about ${topic} by ${userSide || 'speaker'} - Duration: ${Math.round(processedAudio.durationSeconds)} seconds.`,
     segments: [],
@@ -462,7 +450,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     
     transcription = {
       ...whisperResponse,
-      duration: (whisperResponse as any).duration || processedAudio.durationSeconds
+      duration: (whisperResponse as unknown as Record<string, unknown>).duration as number || processedAudio.durationSeconds
     };
     
     logger.info('Transcription completed successfully', {
@@ -482,7 +470,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   }
   
   // Generate AI feedback using GPT-4o with structured output
-  let feedback: any;
+  let feedback: Record<string, unknown>;
   const fallbackFeedback = {
       speakerScore: 25.0,
       scoreJustification: "Unable to provide score - OpenAI API not configured",
@@ -548,9 +536,9 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       feedback = JSON.parse(feedbackContent || '{}');
       
       // Standardize the score immediately after parsing
-      const standardizedScore = feedback.speakerScore 
-        ? nsdaToPercentage(feedback.speakerScore)
-        : standardizeToPercentage(feedback.score) || 0;
+      const standardizedScore = feedback.speakerScore
+        ? nsdaToPercentage(feedback.speakerScore as number)
+        : standardizeToPercentage(feedback.score as number) || 0;
       
       // Add standardized score to feedback object
       feedback.standardizedScore = standardizedScore;
@@ -601,9 +589,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
           areasForImprovement: ["Unable to parse feedback"]
         };
     }
-  } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('[speechFeedbackService] AI feedback generation failed:', error);
+  } catch (_error) {
       feedback = {
         speakerScore: 25, // Minimum NSDA score
         standardizedScore: 0, // 0% standardized
@@ -646,9 +632,7 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     const standardizedScore = extractScoreFromFeedback(feedback) || 0;
     const overallScore = Math.round(standardizedScore); // Round for integer column
     
-    // PRODUCTION: Console disabled
     
-    // console.log(`[speechFeedbackService] Storing feedback with standardized score: ${overallScore}%`);
     
     const { data, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
@@ -672,18 +656,12 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
       .single();
     
     if (dbError) {
-      // PRODUCTION: Console disabled
-      // console.error('[speechFeedbackService] Database save failed:', dbError);
       // Continue with execution but use a mock ID
       insertedRecord = { id: `temp-feedback-${Date.now()}` };
     } else {
       insertedRecord = data;
-      // PRODUCTION: Console disabled
-      // console.log('[speechFeedbackService] Feedback saved to database successfully');
     }
-  } catch (error) {
-    // PRODUCTION: Console disabled
-    // console.error('[speechFeedbackService] Database operation failed:', error);
+  } catch (_error) {
     insertedRecord = { id: `temp-feedback-${Date.now()}` };
   }
   
@@ -695,9 +673,9 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
     audioUrl,
     feedbackId: insertedRecord?.id,
     transcription: transcription ? {
-      text: transcription.text,
+      text: transcription.text || '',
       duration: transcription.duration || 0,
-      segments: transcription.segments?.map((seg: any) => ({
+      segments: transcription.segments?.map((seg: { start: number; end: number; text: string }) => ({
         start: seg.start,
         end: seg.end,
         text: seg.text

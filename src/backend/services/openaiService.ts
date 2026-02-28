@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { openAIManager } from './openaiClientManager';
 import { aiLogger as logger } from '@/lib/monitoring/logger';
-import { env } from '@/shared/env';
 import type { OpenAI } from 'openai';
 
 /**
@@ -126,13 +125,14 @@ class OpenAIService {
         },
         {
           fallbackResponse: options?.fallbackResponse,
-          shouldRetry: (error: any) => {
+          shouldRetry: (error: unknown) => {
             // Custom retry logic for chat completions
             // This strategy balances reliability with cost efficiency
-            if (error?.status === 429) return true; // Rate limit - always retry with backoff
-            if (error?.status >= 500) return true; // Server errors - likely transient
-            if (error?.code === 'context_length_exceeded') return false; // Don't retry - input too long
-            if (error?.status === 401) return false; // Auth error - don't waste retries
+            const err = error as Record<string, unknown>;
+            if (err?.status === 429) return true; // Rate limit - always retry with backoff
+            if (typeof err?.status === 'number' && err.status >= 500) return true; // Server errors - likely transient
+            if (err?.code === 'context_length_exceeded') return false; // Don't retry - input too long
+            if (err?.status === 401) return false; // Auth error - don't waste retries
             return false;
           },
         }
@@ -194,7 +194,7 @@ class OpenAIService {
    * - Network errors are retried up to 3 times
    */
   async createTranscription(
-    params: TranscriptionParams & { file: File | Buffer | any },
+    params: TranscriptionParams & { file: File | Buffer | NodeJS.ReadableStream },
     options?: {
       fallbackResponse?: OpenAI.Audio.Transcription;
     }
@@ -220,10 +220,11 @@ class OpenAIService {
         },
         {
           fallbackResponse: options?.fallbackResponse,
-          shouldRetry: (error: any) => {
-            if (error?.status === 429) return true; // Rate limit
-            if (error?.status >= 500) return true; // Server errors
-            if (error?.status === 413) return false; // File too large
+          shouldRetry: (error: unknown) => {
+            const err = error as Record<string, unknown>;
+            if (err?.status === 429) return true; // Rate limit
+            if (typeof err?.status === 'number' && err.status >= 500) return true; // Server errors
+            if (err?.status === 413) return false; // File too large
             return false;
           },
         }

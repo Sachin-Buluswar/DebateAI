@@ -46,7 +46,6 @@ function AuthPageContent() {
 
       // Log error code for debugging (only in development)
       if (process.env.NODE_ENV === 'development' && errorCode) {
-        // console.log(`[auth] Error code: ${errorCode}, Error: ${urlError}`);
       }
     }
 
@@ -83,21 +82,20 @@ function AuthPageContent() {
               return;
             }
           }
-        } catch (healthErr) {
-          // PRODUCTION: Console disabled
-          // console.error('Supabase health check exception:', healthErr);
+        } catch {
         }
 
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          setError(`Authentication error: ${sessionError.message}`);
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          // User not authenticated is expected on auth page, only show real errors
+          if (userError.message !== 'Auth session missing!' && userError.status !== 401) {
+            setError(`Authentication error: ${userError.message}`);
+          }
           setLoading(false);
           return;
         }
 
-        if (session) {
-          // PRODUCTION: Console disabled
-          // console.log('[auth] User already logged in, redirecting to dashboard');
+        if (user) {
           router.push('/dashboard');
           return;
         } else {
@@ -114,16 +112,10 @@ function AuthPageContent() {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
-        // PRODUCTION: Console disabled
-        // console.log('[auth] Auth state changed:', event, session?.user?.email);
 
         if (event === 'SIGNED_IN' && session) {
-          // PRODUCTION: Console disabled
-          // console.log('[auth] User signed in, redirecting to dashboard');
           router.push('/dashboard');
         } else if (event === 'SIGNED_OUT') {
-          // PRODUCTION: Console disabled
-          // console.log('[auth] User signed out');
           setLoading(false);
         }
       }

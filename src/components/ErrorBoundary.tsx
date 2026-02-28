@@ -23,9 +23,13 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // You can log the error to an error reporting service here
-    // PRODUCTION: Console disabled
-    // console.error('ErrorBoundary caught an error:', error, errorInfo);
+    import('@sentry/nextjs')
+      .then((Sentry) => {
+        Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+      })
+      .catch(() => {
+        // Sentry not available
+      });
   }
 
   render(): ReactNode {

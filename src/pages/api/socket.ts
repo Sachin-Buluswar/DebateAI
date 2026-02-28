@@ -17,15 +17,10 @@ interface NextApiResponseWithSocket extends NextApiResponse {
 // the Socket.IO server once and attaching it to the main HTTP server.
 export default function handler(req: NextApiRequest, res: NextApiResponseWithSocket) {
   if (res.socket.server.io) {
-    // PRODUCTION: Console disabled
-    // console.log('Socket.IO server is already running.');
     res.end();
     return;
   }
 
-  // PRODUCTION: Console disabled
-
-  // console.log('Socket.IO server is initializing...');
   try {
     // The path option is crucial for the client to connect correctly.
     const io = new Server(res.socket.server, {
@@ -40,11 +35,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     
     // Delegate all connection logic to the SocketManager
     initializeSocketIO(io);
-    // PRODUCTION: Console disabled
-    // console.log('Socket.IO server initialized successfully');
   } catch (error) {
-    // PRODUCTION: Console disabled
-    // console.error('Failed to initialize Socket.IO server:', error);
+    // Log Socket.IO initialization failure - real-time features will not work
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[Socket.IO] Failed to initialize:', message);
+    }
   }
   
   res.end();

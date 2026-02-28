@@ -11,11 +11,11 @@ interface PDFViewerProps {
   onClose: () => void;
 }
 
-export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText, onClose }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText: _highlightText, onClose }: PDFViewerProps) {
   const [useGoogleViewer, setUseGoogleViewer] = useState(false);
 
   // If the native viewer fails, we can fall back to Google Docs viewer
-  const handleFallback = () => {
+  const _handleFallback = () => {
     setUseGoogleViewer(true);
   };
 

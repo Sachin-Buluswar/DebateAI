@@ -31,7 +31,8 @@ function isRetryableError(error: Error): boolean {
 
   // HTTP status codes that are retryable
   if ('status' in error) {
-    const status = (error as any).status;
+    const status = (error as Error & { status?: number }).status;
+    if (status === undefined) return false;
     return status === 429 || // Rate limited
            status === 503 || // Service unavailable
            status === 504 || // Gateway timeout
@@ -141,16 +142,12 @@ export class FallbackHandler<T> {
   async execute(primaryFn: () => Promise<T>): Promise<T> {
     try {
       return await primaryFn();
-    } catch (primaryError) {
-      // PRODUCTION: Console disabled
-      // console.error('Primary function failed:', primaryError);
+    } catch (_primaryError) {
       
       for (let i = 0; i < this.fallbacks.length; i++) {
         try {
           return await this.fallbacks[i]();
-        } catch (fallbackError) {
-          // PRODUCTION: Console disabled
-          // console.error(`Fallback ${i + 1} failed:`, fallbackError);
+        } catch {
         }
       }
       
@@ -230,6 +227,7 @@ export class RetryQueue<T> {
  */
 export class ErrorRecoveryManager {
   private circuitBreakers = new Map<string, CircuitBreaker>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private retryQueues = new Map<string, RetryQueue<any>>();
 
   getCircuitBreaker(key: string): CircuitBreaker {

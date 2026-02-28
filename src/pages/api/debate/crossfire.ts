@@ -15,17 +15,11 @@ interface NextApiResponseWithSocket extends NextApiResponse {
 
 export default function handler(req: NextApiRequest, res: NextApiResponseWithSocket) {
   if (res.socket.server.ws) {
-    // PRODUCTION: Console disabled
-    // console.log('Socket is already running.');
   } else {
-    // PRODUCTION: Console disabled
-    // console.log('Socket is initializing');
     const wss = new WebSocketServer({ noServer: true });
     res.socket.server.ws = wss;
 
     wss.on('connection', (clientWs) => {
-      // PRODUCTION: Console disabled
-      // console.log('Client connected to crossfire proxy');
 
       const conversationalAI = new ConversationalAIService({
         onMessage: (aiAudioChunk: unknown) => {
@@ -55,8 +49,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
       });
 
       clientWs.on('close', () => {
-        // PRODUCTION: Console disabled
-        // console.log('Client disconnected from crossfire proxy');
         conversationalAI.close();
       });
     });

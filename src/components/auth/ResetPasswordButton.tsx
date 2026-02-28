@@ -34,9 +34,7 @@ export default function ResetPasswordButton({ userEmail }: ResetPasswordButtonPr
         type: 'success' 
       });
       setShowConfirm(false);
-    } catch (error) {
-      // PRODUCTION: Logging disabled
-      // console.error('Error sending reset email:', error);
+    } catch (_error) {
       addToast({ 
         message: 'Failed to send reset email. Please try again.', 
         type: 'error' 

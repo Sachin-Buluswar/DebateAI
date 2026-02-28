@@ -5,7 +5,7 @@ import type { Socket as NetSocket } from 'net';
 import { initializeSocketIO } from '@/backend/modules/realtimeDebate/SocketManager';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '@/shared/env';
-import { initializeDebateAdapter } from '@/lib/socket/debateSocketAdapter';
+// initializeDebateAdapter imported dynamically when needed
 
 // This is a type assertion to add the custom 'io' property to the server object.
 interface NextApiResponseWithSocket extends NextApiResponse {
@@ -60,8 +60,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         if (!token) {
           // In development, allow anonymous connections for testing
           if (process.env.NODE_ENV === 'development') {
-            // PRODUCTION: Logging disabled
-            // console.warn('Socket connection without auth token - allowing for development');
             socket.data.user = null;
             socket.data.userId = 'anonymous-' + socket.id;
             return next();
@@ -88,8 +86,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         if (error || !user) {
           // In development, allow connection but mark as unauthenticated
           if (process.env.NODE_ENV === 'development') {
-            // PRODUCTION: Logging disabled
-            // console.warn('Invalid auth token - allowing for development:', error?.message);
             socket.data.user = null;
             socket.data.userId = 'anonymous-' + socket.id;
             return next();
@@ -101,13 +97,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         // Authentication successful
         socket.data.user = { id: user.id, email: user.email };
         socket.data.userId = user.id;
-        // PRODUCTION: Logging disabled
-        // console.log('Socket authenticated for user:', user.id);
         next();
       } catch (error) {
-        // PRODUCTION: Logging disabled
-        // console.error('Socket authentication error:', error);
-        
+        const authErrMsg = error instanceof Error ? error.message : 'Unknown error';
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[Socket.IO] Auth middleware error:', authErrMsg);
+        }
         // In development, allow connection on error
         if (process.env.NODE_ENV === 'development') {
           socket.data.user = null;
@@ -126,8 +122,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     initializeSocketIO(io);
     // Socket.IO server initialized with authentication
   } catch (error) {
-    // PRODUCTION: Logging disabled
-    // console.error('Failed to initialize Socket.IO server:', error);
+    // Log Socket.IO initialization failure - real-time features will not work
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[Socket.IO] Failed to initialize:', message);
+    }
   }
   
   res.end();

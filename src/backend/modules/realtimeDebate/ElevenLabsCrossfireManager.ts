@@ -111,8 +111,6 @@ export class ElevenLabsCrossfireManager {
     onTranscriptReceived: (speaker: string, text: string) => void
   ): Promise<void> {
     if (this.sessions.has(sessionId)) {
-      // PRODUCTION: Console disabled
-      // console.warn(`Crossfire session ${sessionId} already exists`);
       return;
     }
 
@@ -139,8 +137,6 @@ export class ElevenLabsCrossfireManager {
      * 3. Dynamic variables for context injection
      */
     ws.onopen = () => {
-      // PRODUCTION: Console disabled
-      // console.log(`Crossfire WebSocket connected for session ${sessionId}`);
       session.isActive = true;
       
       // Configure AI agent with debate context
@@ -259,21 +255,15 @@ export class ElevenLabsCrossfireManager {
          */
         case 'interruption':
           if (data.interruption_event && typeof data.interruption_event === 'object' && 'reason' in data.interruption_event) {
-            // PRODUCTION: Console disabled
-            // console.log('Interruption detected:', (data.interruption_event as { reason: string }).reason);
           }
           break;
       }
     };
 
-    ws.onerror = (error) => {
-      // PRODUCTION: Console disabled
-      // console.error(`Crossfire WebSocket error for session ${sessionId}:`, error);
+    ws.onerror = (_error) => {
     };
 
     ws.onclose = () => {
-      // PRODUCTION: Console disabled
-      // console.log(`Crossfire WebSocket closed for session ${sessionId}`);
       session.isActive = false;
       this.sessions.delete(sessionId);
     };
@@ -299,8 +289,6 @@ export class ElevenLabsCrossfireManager {
   sendUserAudio(sessionId: string, audioData: ArrayBuffer): void {
     const session = this.sessions.get(sessionId);
     if (!session || !session.websocket || session.websocket.readyState !== WebSocket.OPEN) {
-      // PRODUCTION: Console disabled
-      // console.warn(`Cannot send audio - session ${sessionId} not active`);
       return;
     }
 
@@ -337,8 +325,6 @@ export class ElevenLabsCrossfireManager {
     }
     
     this.sessions.delete(sessionId);
-    // PRODUCTION: Console disabled
-    // console.log(`Crossfire session ${sessionId} ended`);
   }
 
   /**

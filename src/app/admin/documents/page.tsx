@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
 import EnhancedButton from '@/components/ui/EnhancedButton';
@@ -16,6 +15,7 @@ function AdminDocumentsContent() {
   const [indexing, setIndexing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -32,15 +32,12 @@ function AdminDocumentsContent() {
 
       if (error) throw error;
       setDocuments(data || []);
-    } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error loading documents:', error);
+    } catch (_error) {
       addToast({ message: 'Failed to load documents', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
@@ -61,9 +58,7 @@ function AdminDocumentsContent() {
       addToast({ message: `Document uploaded: ${result.fileName}`, type: 'success' });
       setSelectedFile(null);
       await loadDocuments();
-    } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error uploading file:', error);
+    } catch (_error) {
       addToast({ message: 'Failed to upload document', type: 'error' });
     } finally {
       setUploadingFile(false);
@@ -83,9 +78,7 @@ function AdminDocumentsContent() {
 
       addToast({ message: 'Document reindexed successfully', type: 'success' });
       await loadDocuments();
-    } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error reindexing document:', error);
+    } catch (_error) {
       addToast({ message: 'Failed to reindex document', type: 'error' });
     } finally {
       setIndexing(false);
@@ -93,8 +86,6 @@ function AdminDocumentsContent() {
   };
 
   const handleDelete = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
-
     try {
       const response = await fetch('/api/admin/delete-document', {
         method: 'DELETE',
@@ -105,10 +96,9 @@ function AdminDocumentsContent() {
       if (!response.ok) throw new Error('Delete failed');
 
       addToast({ message: 'Document deleted successfully', type: 'success' });
+      setDeleteConfirmId(null);
       await loadDocuments();
-    } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error deleting document:', error);
+    } catch (_error) {
       addToast({ message: 'Failed to delete document', type: 'error' });
     }
   };
@@ -136,9 +126,7 @@ function AdminDocumentsContent() {
           await loadDocuments();
         }
       }, 5000);
-    } catch (error) {
-      // PRODUCTION: Console disabled
-      // console.error('Error starting scrape:', error);
+    } catch (_error) {
       addToast({ message: 'Failed to start scraping', type: 'error' });
       setScraping(false);
     }
@@ -286,12 +274,29 @@ function AdminDocumentsContent() {
                         >
                           <DocumentTextIcon className="h-5 w-5" />
                         </a>
-                        <button
-                          onClick={() => handleDelete(doc.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                        {deleteConfirmId === doc.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDelete(doc.id)}
+                              className="text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirmId(null)}
+                              className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeleteConfirmId(doc.id)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

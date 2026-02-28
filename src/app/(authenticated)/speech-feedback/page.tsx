@@ -170,8 +170,6 @@ export default function SpeechFeedback() {
       for (const mimeType of mimeTypes) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
           options = { mimeType };
-          // PRODUCTION: Console disabled
-          // console.log(`Using supported MIME type: ${mimeType}`);
           break;
         }
       }
@@ -225,8 +223,6 @@ export default function SpeechFeedback() {
       
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Console disabled
-      // console.error('Error starting recording:', err);
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
           const message = 'Microphone access denied. Please grant permission in your browser settings.';
           setError(message);
@@ -250,17 +246,13 @@ export default function SpeechFeedback() {
         .eq('user_id', userId);
       
       if (fetchError) {
-        // PRODUCTION: Console disabled
-        // console.error('Error fetching storage usage:', fetchError);
         return;
       }
       
       // Sum up file sizes
       const totalBytes = data?.reduce((sum, item) => sum + (item.file_size_bytes || 0), 0) || 0;
       setStorageUsed(totalBytes);
-    } catch (err) {
-      // PRODUCTION: Console disabled
-      // console.error('Error calculating storage usage:', err);
+    } catch {
     } finally {
       setStorageUsageLoading(false);
     }
@@ -277,38 +269,32 @@ export default function SpeechFeedback() {
       }, 3000); // 3 second timeout
 
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
         clearTimeout(timeoutId);
 
-        if (sessionError) {
-          // PRODUCTION: Console disabled
-          // console.error('Session error:', sessionError);
+        if (userError) {
           // Don't block guest access on error
           setLoading(false);
           return;
         }
-        
+
         // GUEST MODE: Allow access without session
-        // if (!data.session) {
+        // if (!user) {
         //   router.push('/auth');
         //   return;
         // }
-        
-        // PRODUCTION: Console disabled
-        // console.log('User authenticated:', data.session.user);
 
-        // Set user if session exists, otherwise guest mode
-        if (data?.session?.user) {
-          setUser(data.session.user as User);
+
+        // Set user if authenticated, otherwise guest mode
+        if (user) {
+          setUser(user as User);
           // Fetch user's storage usage
-          fetchStorageUsage(data.session.user.id);
+          fetchStorageUsage(user.id);
         }
         setLoading(false);
-      } catch (err) {
-        // PRODUCTION: Console disabled
-        // console.error('Error checking user session:', err);
+      } catch {
         // GUEST MODE: Don't redirect on error - allow guest access
         setLoading(false);
       }
@@ -451,8 +437,6 @@ export default function SpeechFeedback() {
         
       if (tableCheckError && tableCheckError.code === '42P01') {
         // Table doesn't exist - this is now handled by the backend
-        // PRODUCTION: Console disabled
-        // console.warn('Speech feedback table does not exist yet, will be created by backend');
       }
       
       // Validate selections again
@@ -487,8 +471,6 @@ export default function SpeechFeedback() {
         }
       } catch (uploadError: unknown) {
         const error = uploadError instanceof Error ? uploadError : new Error('An unknown error occurred');
-        // PRODUCTION: Console disabled
-        // console.error('Upload error:', uploadError);
         // Provide specific error message based on the error type
         if (error.message?.includes('network') || error.message?.includes('connection')) {
           throw new Error('Network error during upload. Please check your internet connection and try again.');
@@ -537,14 +519,10 @@ export default function SpeechFeedback() {
         router.push(`/speech-feedback/${result.id}`);
       } else {
         // Handle unexpected result format
-        // PRODUCTION: Console disabled
-        // console.error('Unexpected response format:', result);
         throw new Error('Received invalid response from server. Please try again.');
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Console disabled
-      // console.error('Error submitting speech:', error);
       const message = error?.message || 'An unexpected error occurred. Please try again.';
       setError(message);
       addToast({ message, type: 'error' });
@@ -658,16 +636,12 @@ export default function SpeechFeedback() {
       throw new Error('Unexpected error: Failed to complete all chunks');
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Console disabled
-      // console.error('Error in chunked upload:', error);
       // Clean up any partial upload
       try {
         await fetch(`/api/speech-feedback/cancel?sessionId=${sessionId}`, {
           method: 'DELETE',
         });
-      } catch (cleanupError) {
-        // PRODUCTION: Console disabled
-        // console.error('Failed to clean up partial upload:', cleanupError);
+      } catch {
       }
       throw error;
     }
@@ -1095,9 +1069,26 @@ export default function SpeechFeedback() {
              {renderUploadForm()} 
             </> 
           ) : (
-             <div className="text-center py-10">
-              <p className="text-lg text-red-600">Please sign in to use the Speech Feedback tool.</p>
-              {/* Optionally add a sign-in button here */}
+             <div className="flex flex-col items-center justify-center py-16 space-y-6">
+              <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full">
+                <MicrophoneIcon className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+              </div>
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-light text-gray-900 dark:text-gray-100">
+                  sign in to get started
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                  create an account or sign in to record speeches and receive ai-powered feedback on your delivery and arguments.
+                </p>
+              </div>
+              <EnhancedButton
+                variant="primary"
+                size="lg"
+                onClick={() => router.push('/auth')}
+                icon={<MicrophoneIcon className="w-5 h-5" />}
+              >
+                sign in to practice
+              </EnhancedButton>
              </div>
           )}
         </div>

@@ -14,7 +14,7 @@ export const isVercel = () => {
     hostname === 'erisdebate.com' ||
     hostname === 'www.erisdebate.com' ||
     // Check for Vercel environment variable in window
-    (window as any).NEXT_PUBLIC_VERCEL === '1'
+    (window as Window & { NEXT_PUBLIC_VERCEL?: string }).NEXT_PUBLIC_VERCEL === '1'
   );
 };
 
@@ -34,8 +34,6 @@ export const getSocketConfig = (token?: string) => {
   const isVercelDeployment = isVercel();
   
   if (isVercelDeployment) {
-    // PRODUCTION: Console disabled
-    // console.log('Vercel deployment detected - forcing polling-only transport');
     return {
       ...baseConfig,
       transports: ['polling'], // ONLY use polling on Vercel
@@ -46,8 +44,6 @@ export const getSocketConfig = (token?: string) => {
   }
 
   // Use WebSocket with polling fallback in development/other environments
-  // PRODUCTION: Console disabled
-  // console.log('Non-Vercel environment - using WebSocket with polling fallback');
   return {
     ...baseConfig,
     transports: ['websocket', 'polling'],
@@ -67,34 +63,19 @@ export const createSocket = async (token?: string): Promise<Socket> => {
     });
     
     if (!initResponse.ok) {
-      // PRODUCTION: Console disabled
-      // console.warn('Socket.IO initialization returned non-OK status:', initResponse.status);
     }
-  } catch (error) {
-    // PRODUCTION: Console disabled
-    // console.error('Failed to initialize Socket.IO server:', error);
+  } catch (_error) {
     // Continue anyway - the server might already be initialized
   }
   
   const config = getSocketConfig(token);
-  // PRODUCTION: Console disabled
-  // console.log('Creating socket with config:', {
-  //   transports: config.transports,
-  //   upgrade: config.upgrade,
-  //   path: config.path
-  // });
-  
   const socket = io(config);
   
   // Add connection logging
   socket.on('connect', () => {
-    // PRODUCTION: Console disabled
-    // console.log('Socket connected successfully via:', socket.io.engine.transport.name);
   });
   
-  socket.on('connect_error', (error) => {
-    // PRODUCTION: Console disabled
-    // console.error('Socket connection error:', error.message);
+  socket.on('connect_error', (_error) => {
   });
   
   return socket;
@@ -110,9 +91,7 @@ export const checkSocketIOAvailability = async (): Promise<boolean> => {
       },
     });
     return response.ok;
-  } catch (error) {
-    // PRODUCTION: Console disabled
-    // console.error('Socket.IO availability check failed:', error);
+  } catch (_error) {
     return false;
   }
 };

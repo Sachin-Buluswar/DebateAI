@@ -182,7 +182,7 @@ export class DebateSocketAdapter {
 
     // Handle errors with debate prefix
     const originalEmit = this.socket.emit.bind(this.socket);
-    this.socket.emit = (event: string, ...args: any[]) => {
+    this.socket.emit = (event: string, ...args: unknown[]) => {
       // Intercept error events and add debate prefix
       if (event === 'error' && this.debateId) {
         return originalEmit('debate:error', ...args);

@@ -22,7 +22,7 @@ export interface StandardizedScore {
   nsda: number;           // Always 25-30
   displayValue: string;    // Human-readable format
   originalFormat: ScoreFormat;
-  originalValue: any;
+  originalValue: unknown;
 }
 
 /**
@@ -30,8 +30,6 @@ export interface StandardizedScore {
  */
 export function nsdaToPercentage(score: number): number {
   if (score < 25 || score > 30) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] NSDA score ${score} out of valid range (25-30)`);
     score = Math.max(25, Math.min(30, score)); // Clamp to valid range
   }
   return Math.round(((score - 25) / 5) * 100);
@@ -43,8 +41,6 @@ export function nsdaToPercentage(score: number): number {
  */
 export function percentageToNSDA(percentage: number): number {
   if (percentage < 0 || percentage > 100) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] Percentage ${percentage} out of valid range (0-100)`);
     percentage = Math.max(0, Math.min(100, percentage)); // Clamp to valid range
   }
   const nsdaScore = 25 + (percentage / 100) * 5;
@@ -56,8 +52,6 @@ export function percentageToNSDA(percentage: number): number {
  */
 export function tenPointToPercentage(score: number): number {
   if (score < 0 || score > 10) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] Ten-point score ${score} out of valid range (0-10)`);
     score = Math.max(0, Math.min(10, score)); // Clamp to valid range
   }
   return Math.round((score / 10) * 100);
@@ -68,8 +62,6 @@ export function tenPointToPercentage(score: number): number {
  */
 export function percentageToTenPoint(percentage: number): number {
   if (percentage < 0 || percentage > 100) {
-    // PRODUCTION: Console disabled
-    // console.warn(`[scoreStandardization] Percentage ${percentage} out of valid range (0-100)`);
     percentage = Math.max(0, Math.min(100, percentage)); // Clamp to valid range
   }
   return Math.round((percentage / 100) * 10 * 10) / 10; // Round to 1 decimal
@@ -78,7 +70,7 @@ export function percentageToTenPoint(percentage: number): number {
 /**
  * Detect score format based on value and context
  */
-export function detectScoreFormat(score: any): ScoreFormat {
+export function detectScoreFormat(score: unknown): ScoreFormat {
   // Check if it's a JSON object (legacy format)
   if (typeof score === 'object' && score !== null && !Array.isArray(score)) {
     return ScoreFormat.JSON_OBJECT;
@@ -103,36 +95,36 @@ export function detectScoreFormat(score: any): ScoreFormat {
     }
   }
   
-  // PRODUCTION: Console disabled
   
-  // console.warn(`[scoreStandardization] Unable to detect format for score:`, score);
   return ScoreFormat.PERCENTAGE; // Default fallback
 }
 
 /**
  * Extract score from legacy JSON object format
  */
-export function extractFromJsonObject(scoreObj: any): number | null {
+export function extractFromJsonObject(scoreObj: unknown): number | null {
   if (!scoreObj || typeof scoreObj !== 'object') {
     return null;
   }
-  
+
+  const obj = scoreObj as Record<string, unknown>;
+
   // Try different possible keys in order of preference
   const possibleKeys = ['overall', 'total', 'average', 'score', 'content'];
-  
+
   for (const key of possibleKeys) {
-    if (scoreObj[key] !== undefined && scoreObj[key] !== null) {
-      const value = parseFloat(scoreObj[key]);
+    if (obj[key] !== undefined && obj[key] !== null) {
+      const value = parseFloat(String(obj[key]));
       if (!isNaN(value)) {
         return value;
       }
     }
   }
-  
+
   // If no direct score found, try to calculate average from components
   const components = ['content', 'delivery', 'argumentation'];
   const validScores = components
-    .map(key => parseFloat(scoreObj[key]))
+    .map(key => parseFloat(String(obj[key])))
     .filter(val => !isNaN(val));
   
   if (validScores.length > 0) {
@@ -145,7 +137,7 @@ export function extractFromJsonObject(scoreObj: any): number | null {
 /**
  * Standardize any score format to percentage
  */
-export function standardizeToPercentage(score: any): number | null {
+export function standardizeToPercentage(score: unknown): number | null {
   if (score === null || score === undefined) {
     return null;
   }
@@ -154,34 +146,34 @@ export function standardizeToPercentage(score: any): number | null {
   
   switch (format) {
     case ScoreFormat.NSDA:
-      return nsdaToPercentage(parseFloat(score));
-      
+      return nsdaToPercentage(parseFloat(String(score)));
+
     case ScoreFormat.PERCENTAGE:
-      return Math.round(parseFloat(score));
-      
+      return Math.round(parseFloat(String(score)));
+
     case ScoreFormat.TEN_POINT:
-      return tenPointToPercentage(parseFloat(score));
-      
-    case ScoreFormat.JSON_OBJECT:
+      return tenPointToPercentage(parseFloat(String(score)));
+
+    case ScoreFormat.JSON_OBJECT: {
       const extracted = extractFromJsonObject(score);
       if (extracted !== null) {
         // Recursively standardize the extracted value
         return standardizeToPercentage(extracted);
       }
       return null;
-      
-    default:
-      // PRODUCTION: Console disabled
-      // console.warn(`[scoreStandardization] Unknown format, treating as percentage:`, score);
-      const parsed = parseFloat(score);
+    }
+
+    default: {
+      const parsed = parseFloat(String(score));
       return isNaN(parsed) ? null : Math.round(parsed);
+    }
   }
 }
 
 /**
  * Get comprehensive standardized score object
  */
-export function getStandardizedScore(score: any): StandardizedScore | null {
+export function getStandardizedScore(score: unknown): StandardizedScore | null {
   const percentage = standardizeToPercentage(score);
   
   if (percentage === null) {
@@ -229,7 +221,7 @@ export function formatScoreDisplay(percentage: number, originalFormat?: ScoreFor
  * Extract score from feedback object (handles all legacy formats)
  * Returns the score in NSDA format (25-30) for consistency
  */
-export function extractScoreFromFeedback(feedback: any): number | null {
+export function extractScoreFromFeedback(feedback: Record<string, unknown> | null | undefined): number | null {
   if (!feedback) return null;
   
   // Priority 1: New format - speakerScore (NSDA scale 25-30)
@@ -248,11 +240,15 @@ export function extractScoreFromFeedback(feedback: any): number | null {
   }
   
   // Priority 4: Legacy format - scores.overall (percentage)
-  if (feedback.scores?.overall !== undefined && feedback.scores?.overall !== null) {
-    const percentage = standardizeToPercentage(feedback.scores.overall);
-    return percentage !== null ? percentageToNSDA(percentage) : null;
+  const scores = feedback.scores;
+  if (scores && typeof scores === 'object' && !Array.isArray(scores)) {
+    const scoresObj = scores as Record<string, unknown>;
+    if (scoresObj.overall !== undefined && scoresObj.overall !== null) {
+      const percentage = standardizeToPercentage(scoresObj.overall);
+      return percentage !== null ? percentageToNSDA(percentage) : null;
+    }
   }
-  
+
   // Priority 5: Old format - score field (could be various formats)
   if (feedback.score !== undefined && feedback.score !== null) {
     // Check if it's a JSON string that needs parsing
@@ -261,9 +257,7 @@ export function extractScoreFromFeedback(feedback: any): number | null {
         const parsed = JSON.parse(feedback.score);
         const percentage = standardizeToPercentage(parsed);
         return percentage !== null ? percentageToNSDA(percentage) : null;
-      } catch (e) {
-        // PRODUCTION: Console disabled
-        // console.error('[scoreStandardization] Failed to parse JSON score:', e);
+      } catch {
       }
     }
     const percentage = standardizeToPercentage(feedback.score);
@@ -343,9 +337,9 @@ export function calculateAverageScore(scores: (number | null)[]): number | null 
 /**
  * Batch standardize multiple feedback records
  */
-export function batchStandardizeScores(feedbackRecords: any[]): {
+export function batchStandardizeScores(feedbackRecords: { id: string; feedback: Record<string, unknown> }[]): {
   id: string;
-  originalScore: any;
+  originalScore: Record<string, unknown>;
   standardizedScore: number | null;
 }[] {
   return feedbackRecords.map(record => ({

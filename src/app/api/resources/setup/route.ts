@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       const supabase = createClient();
       
       // Check if table exists by trying to query it
-      const { data: existingResources, error: checkError } = await supabase
+      const { error: checkError } = await supabase
         .from('educational_resources')
         .select('id')
         .limit(1);
@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (insertError) {
-        console.error('[resources-setup] Error inserting resource:', insertError);
         return NextResponse.json(
           { 
             error: 'Failed to insert initial resource',
@@ -75,12 +74,11 @@ export async function GET(request: NextRequest) {
         resource: newResource,
         adminUser: req.user.email
       });
-    } catch (error) {
-      console.error('[resources-setup] Setup error:', error);
+    } catch (_error) {
       return NextResponse.json(
         { 
           error: 'Failed to setup resources',
-          details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+          details: process.env.NODE_ENV === 'development' ? String(_error) : undefined
         },
         { status: 500 }
       );

@@ -152,7 +152,7 @@ export async function optionalAuth(
     
     // Attach user if authenticated, but don't fail if not
     if (user) {
-      (request as any).user = user;
+      (request as NextRequest & { user?: User }).user = user;
     }
     
     return handler(request as NextRequest & { user?: User });
@@ -231,12 +231,12 @@ export async function hasRole(
  */
 export async function requireAuthWithRateLimit(
   request: NextRequest,
-  rateLimiter: any,
+  rateLimiter: typeof import('@/middleware/rateLimiter').apiRateLimiter,
   handler: (request: AuthenticatedRequest) => Promise<NextResponse | Response>
 ): Promise<NextResponse | Response> {
   // First check rate limit
   const { withRateLimit } = await import('@/middleware/rateLimiter');
-  
+
   return withRateLimit(request, rateLimiter, async () => {
     // Then check auth
     return requireAuth(request, handler);

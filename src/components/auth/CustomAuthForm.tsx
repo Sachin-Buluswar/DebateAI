@@ -75,28 +75,20 @@ export default function CustomAuthForm() {
           setMessage('Please check your email to confirm your account before signing in!');
         } else if (data.session) {
           // Auto-signed in (email confirmation disabled)
-          // PRODUCTION: Logging disabled
-          // console.log('[auth] Sign up successful, redirecting to dashboard');
           router.push('/dashboard');
           router.refresh();
         }
       } else {
-        // PRODUCTION: Logging disabled
-        // console.log('[auth] Attempting sign in for:', email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
         if (error) {
-          // PRODUCTION: Logging disabled
-          // console.error('[auth] Sign in error:', error);
           throw error;
         }
         
         if (data.session) {
-          // PRODUCTION: Logging disabled
-          // console.log('[auth] Sign in successful, redirecting to dashboard');
           router.push('/dashboard');
           router.refresh();
         } else {
@@ -105,8 +97,6 @@ export default function CustomAuthForm() {
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An unknown error occurred');
-      // PRODUCTION: Logging disabled
-      // console.error('[auth] Authentication error:', error);
       
       // Provide more user-friendly error messages
       let friendlyMessage = error.message;
@@ -123,7 +113,6 @@ export default function CustomAuthForm() {
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="w-full max-w-md mx-auto">
