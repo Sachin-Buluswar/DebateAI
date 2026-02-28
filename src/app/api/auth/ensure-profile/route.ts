@@ -69,7 +69,7 @@ export async function POST(_request: NextRequest) {
         
         if (fallbackError) {
           return NextResponse.json(
-            { error: 'Failed to create profile', details: fallbackError.message },
+            { error: 'Failed to create profile' },
             { status: 500 }
           );
         }
@@ -97,7 +97,7 @@ export async function POST(_request: NextRequest) {
       
       if (insertError) {
         return NextResponse.json(
-          { error: 'Failed to create profile', details: insertError.message },
+          { error: 'Failed to create profile' },
           { status: 500 }
         );
       }

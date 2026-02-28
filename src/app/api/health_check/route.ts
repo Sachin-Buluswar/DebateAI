@@ -18,8 +18,7 @@ export async function GET(): Promise<NextResponse> {
     if (error && error.code !== 'PGRST116') { // PGRST116 is "relation does not exist" which is fine
       // There was an error (other than table not existing)
       return NextResponse.json({
-        status: 'error',
-        message: 'Failed to connect to Supabase'
+        error: 'Failed to connect to Supabase',
       }, { status: 500 });
     }
 
@@ -32,7 +31,7 @@ export async function GET(): Promise<NextResponse> {
     if (userError && userError.code !== 'PGRST116') {
       return NextResponse.json({
         status: 'partial',
-        message: 'Connected to Supabase but user_profiles table check failed'
+        health_check: data ? 'table exists' : 'table does not exist',
       }, { status: 207 });
     }
 
@@ -44,8 +43,7 @@ export async function GET(): Promise<NextResponse> {
     });
   } catch (_err: unknown) {
     return NextResponse.json({
-      status: 'error',
-      message: 'Error performing health check'
+      error: 'Health check failed',
     }, { status: 500 });
   }
 } 

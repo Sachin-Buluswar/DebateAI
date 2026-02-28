@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
         // If userId is provided, ensure it matches the authenticated user
         if (userId && userId !== user.id) {
           return NextResponse.json({
-            message: 'Unauthorized',
-            preferences: {}
+            error: 'Unauthorized: can only access your own preferences',
           }, { status: 403 });
         }
 
@@ -52,8 +51,7 @@ export async function GET(request: NextRequest) {
         });
       } catch (_error) {
         return NextResponse.json({
-          message: 'Error fetching preferences',
-          preferences: {}
+          error: 'Failed to fetch preferences',
         }, { status: 500 });
       }
     });
@@ -72,7 +70,7 @@ export async function PUT(request: NextRequest) {
 
         if (!preferences || typeof preferences !== 'object') {
           return NextResponse.json({
-            message: 'Invalid preferences data'
+            error: 'Invalid preferences data',
           }, { status: 400 });
         }
 
@@ -90,19 +88,18 @@ export async function PUT(request: NextRequest) {
 
         if (updateError) {
           return NextResponse.json({
-            message: 'Failed to update preferences'
+            error: 'Failed to update preferences',
           }, { status: 500 });
         }
 
         return NextResponse.json({
-          message: 'Preferences updated successfully',
           user_id: user.id,
           preferences,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } catch (_error) {
         return NextResponse.json({
-          message: 'Error updating preferences'
+          error: 'Failed to update preferences',
         }, { status: 500 });
       }
     });

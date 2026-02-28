@@ -736,9 +736,11 @@ export function initializeSocketIO(io: SocketIOServer) {
                 
               }
             } catch (_error) {
+              // Audio upload is best-effort; failure should not disrupt the debate session
             }
           }
         }).catch(_error => {
+          // Speech persistence is best-effort during live debate
         });
         
         // Append to running transcript

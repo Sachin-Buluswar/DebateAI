@@ -98,8 +98,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
         socket.data.user = { id: user.id, email: user.email };
         socket.data.userId = user.id;
         next();
-      } catch (_error) {
-
+      } catch (error) {
+        const authErrMsg = error instanceof Error ? error.message : 'Unknown error';
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[Socket.IO] Auth middleware error:', authErrMsg);
+        }
         // In development, allow connection on error
         if (process.env.NODE_ENV === 'development') {
           socket.data.user = null;
@@ -117,7 +121,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     // Delegate all connection logic to the SocketManager
     initializeSocketIO(io);
     // Socket.IO server initialized with authentication
-  } catch (_error) {
+  } catch (error) {
+    // Log Socket.IO initialization failure - real-time features will not work
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[Socket.IO] Failed to initialize:', message);
+    }
   }
   
   res.end();

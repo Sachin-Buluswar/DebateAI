@@ -35,7 +35,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponseWithSoc
     
     // Delegate all connection logic to the SocketManager
     initializeSocketIO(io);
-  } catch (_error) {
+  } catch (error) {
+    // Log Socket.IO initialization failure - real-time features will not work
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[Socket.IO] Failed to initialize:', message);
+    }
   }
   
   res.end();

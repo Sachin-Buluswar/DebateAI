@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
 
             if (!hasAdminRole) {
               return NextResponse.json({
-                status: 'error',
-                message: 'Unauthorized: Can only access your own profile'
+                error: 'Unauthorized: can only access your own profile',
               }, { status: 403 });
             }
           }
@@ -37,20 +36,17 @@ export async function GET(request: NextRequest) {
 
         if (error) {
           return NextResponse.json({
-            status: 'error',
-            message: 'Failed to fetch user profiles',
+            error: 'Failed to fetch user profiles',
           }, { status: 500 });
         }
 
         return NextResponse.json({
-          status: 'success',
           count: data?.length || 0,
-          data
+          data,
         });
       } catch (_err: unknown) {
         return NextResponse.json({
-          status: 'error',
-          message: 'Error processing request',
+          error: 'Failed to process request',
         }, { status: 500 });
       }
     });
@@ -69,8 +65,7 @@ export async function POST(request: NextRequest) {
         const profileId = body.id || user.id;
         if (profileId !== user.id) {
           return NextResponse.json({
-            status: 'error',
-            message: 'Forbidden: Can only modify your own profile'
+            error: 'Forbidden: can only modify your own profile',
           }, { status: 403 });
         }
 
@@ -82,8 +77,7 @@ export async function POST(request: NextRequest) {
 
         if (queryError) {
           return NextResponse.json({
-            status: 'error',
-            message: 'Error checking existing profile',
+            error: 'Failed to check existing profile',
           }, { status: 500 });
         }
 
@@ -103,8 +97,7 @@ export async function POST(request: NextRequest) {
 
           if (error) {
             return NextResponse.json({
-              status: 'error',
-              message: 'Failed to update user profile',
+              error: 'Failed to update user profile',
             }, { status: 500 });
           }
 
@@ -124,22 +117,17 @@ export async function POST(request: NextRequest) {
 
           if (error) {
             return NextResponse.json({
-              status: 'error',
-              message: 'Failed to create user profile',
+              error: 'Failed to create user profile',
             }, { status: 500 });
           }
 
           result = { data, isNew: true };
         }
 
-        return NextResponse.json({
-          status: 'success',
-          ...result
-        });
+        return NextResponse.json(result);
       } catch (_err: unknown) {
         return NextResponse.json({
-          status: 'error',
-          message: 'Error processing request',
+          error: 'Failed to process request',
         }, { status: 500 });
       }
     });
