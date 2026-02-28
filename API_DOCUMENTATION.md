@@ -31,8 +31,7 @@ All endpoints implement rate limiting with different tiers:
 ```json
 {
   "error": "Human-readable error message",
-  "details": "Additional error details (optional)",
-  "code": "ERROR_CODE (optional)"
+  "details": ["Validation field errors (optional, 400 responses only)"]
 }
 ```
 
@@ -569,13 +568,23 @@ Get AI-generated debate advice and strategies.
 }
 ```
 
-### Prototype Endpoints
+#### DELETE `/api/admin/delete-document`
+Delete a document and all associated data (chunks, storage file).
 
-Located in `/api/prototype/`, these endpoints are experimental:
-- `/elevenlabs-tts`: Text-to-speech conversion
-- `/elevenlabs-stt`: Speech-to-text conversion
-- `/openai-argument`: AI argument generation
-- `/deepgram-stt`: Alternative STT service
+**Request Body:**
+```json
+{
+  "documentId": "uuid"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Document filename.pdf deleted successfully"
+}
+```
 
 ## WebSocket Support
 
