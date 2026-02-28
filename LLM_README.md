@@ -34,7 +34,7 @@ Business_Logic: src/backend/modules/
 Services: src/backend/services/
 Auth_Middleware: src/lib/auth-middleware.ts
 Types: src/types/
-Database_Types: src/lib/supabase/types.ts
+Types: src/types/
 ```
 
 ## Required Imports by Context
@@ -53,7 +53,7 @@ import { z } from 'zod';
 'use client';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/lib/toast';
-import { Button } from '@/components/ui/Button';
+import EnhancedButton from '@/components/ui/EnhancedButton';
 import { FormField } from '@/components/ui/FormField';
 ```
 
@@ -204,8 +204,7 @@ npm run build         # Builds successfully
 // API Routes
 try {
   // code
-} catch (error) {
-  console.error(`[${request.url}] Error:`, error);
+} catch (_error) {
   return NextResponse.json(
     { error: 'User-friendly message' },
     { status: 500 }
