@@ -19,8 +19,8 @@ src/backend/
 │   ├── speechFeedback/       # Speech analysis
 │   │   └── speechFeedbackService.ts
 │   └── wikiSearch/           # Evidence search
-│       ├── indexingService.ts
 │       ├── retrievalService.ts
+│       ├── enhancedRetrievalService.ts
 │       └── generationService.ts
 └── config/                   # Service configurations
     └── services.config.ts

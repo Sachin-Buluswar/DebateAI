@@ -94,8 +94,8 @@ npm run lint
 # Run TypeScript checks
 npm run typecheck
 
-# Run manual tests
-npm run test:manual
+# Build to verify no errors
+npm run build
 
 # Start dev server and manually test your changes
 npm run dev
@@ -229,7 +229,7 @@ git checkout -b hotfix/critical-auth-fix
 # ... fix code ...
 
 # Fast-track testing
-npm run test:critical
+npm run lint && npm run typecheck && npm run build
 
 # Push for immediate review
 git push origin hotfix/critical-auth-fix
@@ -329,7 +329,7 @@ All branches automatically:
 - Build Docker images
 - Deploy previews for PRs
 
-See [CI/CD Setup](../CI_CD_SETUP.md) for details.
+See [CI/CD Setup](../deployment/ci-cd.md) for details.
 
 ## Summary
 
