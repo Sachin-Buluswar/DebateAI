@@ -28,9 +28,7 @@ export {
 // Middleware exports
 export {
   withMonitoring,
-  withRateLimit,
-  composeMiddleware,
-  RateLimitTracker
+  withRateLimit
 } from './middleware';
 
 // OpenTelemetry exports
@@ -119,44 +117,6 @@ export async function initializeMonitoring() {
       sentryEnabled: !!process.env.SENTRY_DSN
     }
   });
-}
-
-/**
- * Utility function to measure async operation performance
- */
-export async function measure<T>(
-  name: string,
-  operation: () => Promise<T>,
-  logger?: { info: (msg: string, ctx?: Record<string, unknown>) => void; error: (msg: string, err?: Error, ctx?: Record<string, unknown>) => void }
-): Promise<T> {
-  const { apiLogger: defaultLogger } = await import('./logger');
-  const { traceAsync: traceAsyncFn } = await import('./opentelemetry');
-  const log = logger || defaultLogger;
-  const start = Date.now();
-
-  // Use OpenTelemetry tracing if available
-  if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
-    return traceAsyncFn(name, operation);
-  }
-
-  try {
-    const result = await operation();
-    const duration = Date.now() - start;
-
-    log.info(`Operation completed: ${name}`, {
-      metadata: { duration: `${duration}ms` }
-    });
-
-    return result;
-  } catch (error) {
-    const duration = Date.now() - start;
-
-    log.error(`Operation failed: ${name}`, error as Error, {
-      metadata: { duration: `${duration}ms` }
-    });
-
-    throw error;
-  }
 }
 
 /**

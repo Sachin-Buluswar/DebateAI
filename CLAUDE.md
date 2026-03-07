@@ -181,7 +181,6 @@ src/
 │   │   ├── server.ts      # Server-side Supabase
 │   │   └── middleware.ts  # Supabase middleware
 │   └── cn.ts              # Classname utility
-└── speechFeedback/        # Speech feedback module
 ```
 
 ## 🌳 Decision Trees
@@ -732,7 +731,7 @@ git checkout -b feature/description
 # 2. Make changes and test
 npm run lint
 npm run typecheck
-npm test
+npm run build
 
 # 3. Commit with conventional format
 git add .
@@ -1018,7 +1017,7 @@ Investigation steps:
 ## 🚀 Pre-Deployment Checklist
 
 ### Code Quality
-- [ ] All tests passing: `npm test`
+- [ ] Build succeeds: `npm run build`
 - [ ] No TypeScript errors: `npm run typecheck`
 - [ ] No lint errors: `npm run lint`
 - [ ] Code formatted: `npm run format:check`

@@ -19,7 +19,8 @@ export function getRedirectUrl(path: string = ''): string {
     
     // Production fallback
     if (process.env.NODE_ENV === 'production') {
-      return `https://erisdebate.com${path}`;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com';
+      return `${appUrl}${path}`;
     }
     
     // Development fallback

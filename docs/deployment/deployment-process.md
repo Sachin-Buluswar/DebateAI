@@ -4,10 +4,6 @@
 
 This document outlines the deployment process for Eris Debate. The primary deployment target is Vercel (serverless), with Docker support for self-hosting. 
 
-**IMPORTANT**: Before deploying, ensure the 2 critical blockers are fixed:
-1. CORS origin in `/src/pages/api/socketio.ts`
-2. Viewport meta tag in `src/app/layout.tsx`
-
 ## Table of Contents
 
 1. [Vercel Deployment (Primary)](#vercel-deployment-primary)
@@ -24,20 +20,7 @@ This document outlines the deployment process for Eris Debate. The primary deplo
 
 ### Prerequisites
 
-1. **Fix Critical Blockers**:
-   ```bash
-   # Fix CORS origin
-   # In /src/pages/api/socketio.ts, change:
-   # origin: "http://localhost:3001"
-   # to:
-   # origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"
-   
-   # Fix viewport meta
-   # In src/app/layout.tsx, add:
-   # <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   ```
-
-2. **Vercel Account Setup**:
+1. **Vercel Account Setup**:
    - Create account at https://vercel.com
    - Install Vercel CLI: `npm i -g vercel`
 

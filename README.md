@@ -122,8 +122,8 @@ npm run build        # Production build
 npm run start        # Production server
 npm run lint         # ESLint check
 npm run typecheck    # TypeScript validation
-npm run test         # Run tests
-npm run format       # Code formatting
+npm run format:check # Check formatting
+npm run format:write # Fix formatting
 ```
 
 ### Production Build
@@ -146,11 +146,7 @@ docker run -p 3001:3001 eris-debate:latest
 
 The application is optimized for Vercel deployment with serverless adaptations:
 
-1. **Fix Critical Blockers First**:
-   - Update CORS origin in `/src/pages/api/socketio.ts`
-   - Add viewport meta tag to `src/app/layout.tsx`
-
-2. **Deploy to Vercel**:
+1. **Deploy to Vercel**:
    ```bash
    # Install Vercel CLI
    npm i -g vercel
@@ -159,12 +155,12 @@ The application is optimized for Vercel deployment with serverless adaptations:
    vercel
    ```
 
-3. **Configure Environment Variables** in Vercel Dashboard:
+2. **Configure Environment Variables** in Vercel Dashboard:
    - All `NEXT_PUBLIC_*` variables
    - Server-side API keys
    - Set `NEXT_PUBLIC_APP_URL` to your production domain
 
-4. **Features on Vercel**:
+3. **Features on Vercel**:
    - Supabase Realtime for WebSocket functionality
    - In-memory session storage for speech uploads
    - Automatic scaling and edge deployment
@@ -203,7 +199,7 @@ npm run start
 - JWT authentication for API endpoints
 - Rate limiting on all API endpoints
 - Input validation and sanitization
-- CORS properly configured (needs fix for production)
+- CORS properly configured with environment-based origins
 - Security headers implemented
 
 ## 🎯 Features
@@ -232,17 +228,6 @@ npm run start
 - GitHub Actions CI/CD pipeline
 - Comprehensive monitoring (Sentry + OpenTelemetry)
 - Automated testing and type checking
-
-## 🐛 Known Issues
-
-### Critical (Must Fix Before Deploy)
-1. **Hardcoded CORS Origin** - `/src/pages/api/socketio.ts` hardcoded to localhost
-2. **Missing Viewport Meta** - Breaks all mobile rendering
-
-### Non-Critical
-1. **Mobile Responsiveness** - 60% complete, needs optimization for smaller screens
-2. **Security Hardening** - 3 high-priority items (debug endpoint, path traversal, auth errors)
-3. **TypeScript 'any' Types** - Some remain but don't block functionality
 
 ## 🤝 Contributing
 

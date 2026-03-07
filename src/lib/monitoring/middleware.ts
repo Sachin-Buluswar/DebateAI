@@ -115,7 +115,7 @@ export function withMonitoring(
 /**
  * Rate limiting tracker
  */
-export class RateLimitTracker {
+class RateLimitTracker {
   private attempts: Map<string, number[]> = new Map();
   private windowMs: number;
   private maxAttempts: number;
@@ -220,27 +220,3 @@ export function withRateLimit(
   };
 }
 
-/**
- * Combine multiple middleware functions
- */
-type MiddlewareFn = (handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>) => (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>;
-
-export function composeMiddleware(
-  ...middlewares: Array<MiddlewareFn>
-) {
-  return function(handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse>) {
-    return middlewares.reduceRight((acc, middleware) => middleware(acc), handler);
-  };
-}
-
-/**
- * Example usage:
- * 
- * export const GET = composeMiddleware(
- *   withMonitoring,
- *   withRateLimit({ maxAttempts: 5, windowMs: 60000 })
- * )(async (request: NextRequest) => {
- *   // Your API logic here
- *   return NextResponse.json({ success: true });
- * });
- */
