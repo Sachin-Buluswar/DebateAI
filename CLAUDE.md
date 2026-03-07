@@ -96,16 +96,14 @@ src/
 │   │   ├── judge-feedback/ # AI judge responses
 │   │   ├── monitoring/    # Metrics and health checks
 │   │   ├── openai/        # GPT integration
-│   │   ├── search-status/ # Search system health
 │   │   ├── speech-to-text/ # Speech recognition
-│   │   ├── test-*         # Test endpoints (dev only)
-│   │   ├── user_preferences/ # User settings (current)
-│   │   ├── wiki-*         # Wikipedia/document search variants
+│   │   ├── user_preferences/ # User settings
+│   │   ├── wiki-document-search/ # Database document search
+│   │   ├── wiki-search/   # Quick prefix search
+│   │   ├── wiki-generate/ # AI content generation
+│   │   ├── wiki-rag-search-enhanced/ # Enhanced RAG search
 │   │   ├── debug/         # Debug endpoint (protected)
-│   │   ├── rag-status/    # RAG system health
-│   │   ├── resources/     # Resource management
-│   │   ├── migrations/    # DISABLED - security risk
-│   │   └── sql/           # DISABLED - security risk
+│   │   └── resources/     # Educational resources
 │   ├── (authenticated)/   # Protected pages with navigation
 │   │   ├── layout.tsx     # Shared authenticated layout
 │   │   ├── dashboard/     # User dashboard
@@ -125,8 +123,6 @@ src/
 │   ├── privacy/           # Privacy policy
 │   ├── terms/             # Terms of service
 │   ├── about/             # About page
-│   ├── test-pdf/          # PDF viewer testing
-│   ├── ui-demo/           # UI component showcase
 │   └── page.tsx           # Landing page (public)
 ├── backend/
 │   ├── modules/           # Business logic modules
@@ -155,8 +151,7 @@ src/
 │   │   └── EnhancedPDFViewer.tsx # Native PDF.js viewer
 │   ├── preferences/       # Settings components
 │   ├── providers/         # Context providers
-│   ├── search/            # Search and document components
-│   └── monitoring/        # Monitoring UI components
+│   └── search/            # Search and document components
 ├── lib/
 │   ├── auth-middleware.ts # Centralized authentication (NEW)
 │   ├── auth-helpers.ts    # Auth utility functions
@@ -712,8 +707,6 @@ npm run format:check    # Prettier formatting check
 npm run format:write    # Auto-fix formatting
 
 # Testing
-npm test                # Run Jest tests
-npm run test:coverage   # Generate coverage report
 npm run test:endpoints  # Test API endpoints
 npm run demo           # Run demo test
 
@@ -727,12 +720,7 @@ npm run validate-rag    # Validate RAG configuration
 npm run status          # Project status report
 npm run analyze:bundle  # Bundle size analysis
 npm run check:env       # Validate environment variables
-scripts/check-deployment.js  # Verify deployment health
-
-# Development Utilities
-npm run check:backend   # Test backend connectivity
 npm run check:port      # Check port availability
-npm run copy-pdf-worker # Setup PDF.js worker
 ```
 
 ## Git Workflow

@@ -112,16 +112,6 @@ Advanced health monitoring with dependency checks.
 
 ### Authentication & User Management
 
-#### GET `/api/auth-email-templates`
-Returns email templates for Supabase authentication configuration.
-
-**Response:** JSON object with email templates for:
-- Email confirmation
-- User invitation
-- Magic link login
-- Password reset
-- Email change confirmation
-
 #### GET/POST `/api/user_profiles`
 Manage user profile data.
 
@@ -331,9 +321,6 @@ Search within specific documents.
 #### POST `/api/wiki-generate`
 Generate debate content based on wiki knowledge.
 
-#### POST `/api/wiki-rag-search`
-Enhanced RAG (Retrieval-Augmented Generation) search.
-
 ### Admin Endpoints
 
 All admin endpoints require authentication and admin role via RBAC.
@@ -448,42 +435,6 @@ Track user interaction with educational resources.
 }
 ```
 
-### System Status Endpoints
-
-#### GET `/api/rag-status`
-Check the status of the RAG (Retrieval-Augmented Generation) system.
-
-**Response:**
-```json
-{
-  "status": "operational|degraded|offline",
-  "vectorStore": {
-    "connected": true,
-    "documentCount": 1000
-  },
-  "lastIndexed": "2025-08-19T12:00:00Z"
-}
-```
-
-#### GET `/api/search-status`
-Check the status of the search system.
-
-**Response:**
-```json
-{
-  "status": "operational|degraded|offline",
-  "searchEngines": {
-    "semantic": "active",
-    "keyword": "active",
-    "hybrid": "active"
-  },
-  "performance": {
-    "avgResponseTime": 245,
-    "successRate": 0.99
-  }
-}
-```
-
 #### GET `/api/debug` (Development Only)
 **Status**: ⛔ **Returns 404 in production**
 
@@ -502,51 +453,6 @@ Generate wiki-style content based on a prompt.
   "maxTokens": 500
 }
 ```
-
-#### POST `/api/wiki-rag-search-enhanced`
-Enhanced RAG search with additional context and filtering.
-
-**Request Body:**
-```json
-{
-  "query": "string",
-  "filters": {
-    "category": "string",
-    "dateRange": "string"
-  },
-  "enhancedContext": true
-}
-```
-
-#### POST `/api/wiki-rag-search-direct`
-Direct RAG search without preprocessing.
-
-**Request Body:**
-```json
-{
-  "query": "string",
-  "vectorOnly": true
-}
-```
-
-#### POST `/api/wiki-index`
-Index new content into the wiki search system.
-
-**Request Body:**
-```json
-{
-  "documents": [
-    {
-      "title": "string",
-      "content": "string",
-      "metadata": {}
-    }
-  ]
-}
-```
-
-**Security:**
-- Requires admin authentication
 
 #### GET `/api/debate-advice`
 Get AI-generated debate advice and strategies.
