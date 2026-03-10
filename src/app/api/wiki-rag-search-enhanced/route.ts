@@ -28,7 +28,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
-import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
+import { optionalAuth } from '@/lib/auth-middleware';
 import {
   validateRequest,
   validationSchemas,
@@ -309,7 +309,7 @@ async function performEnhancedRagSearch(
  */
 export async function POST(request: NextRequest) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
-    return requireAuth(request, async (_authenticatedReq: AuthenticatedRequest) => {
+    return optionalAuth(request, async () => {
     // Environment validation
     if (!openaiApiKey || !vectorStoreId) {
       return addSecurityHeaders(

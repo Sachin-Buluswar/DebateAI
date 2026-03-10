@@ -14,7 +14,7 @@ import {
 } from '@/backend/modules/wikiSearch/enhancedRetrievalService';
 import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
-import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
+import { optionalAuth } from '@/lib/auth-middleware';
 
 // Get environment variables
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -26,7 +26,7 @@ let openai: OpenAI | null = null;
 export async function POST(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResult = await withRateLimit(request, wikiSearchRateLimiter, async () => {
-    return requireAuth(request, async (_authenticatedRequest: AuthenticatedRequest) => {
+    return optionalAuth(request, async () => {
     // Environment Variable Check
     if (!openaiApiKey) {
       return addSecurityHeaders(

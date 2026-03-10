@@ -47,8 +47,9 @@ export const validationSchemas = {
     topic: commonSchemas.debateTopic,
     speechType: commonSchemas.speechType.optional(),
     userSide: z.enum(['Proposition', 'Opposition', 'None']).optional(),
+    skillLevel: z.enum(['novice', 'intermediate', 'advanced']).optional(),
     customInstructions: commonSchemas.safeString.optional(),
-    userId: commonSchemas.uuid,
+    userId: commonSchemas.uuid.optional(),
   }),
 
   debateSetup: z.object({
