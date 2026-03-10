@@ -58,7 +58,7 @@ SENTRY_DSN=your_sentry_dsn
 Run the environment validation script:
 
 ```bash
-npm run check-env
+npm run check:env
 ```
 
 This will verify that all required environment variables are set correctly.
@@ -70,7 +70,7 @@ This will verify that all required environment variables are set correctly.
 Run the migration scripts to set up your database schema:
 
 ```bash
-npm run migrate
+npm run db:migrate
 ```
 
 ### 2. Verify Database
@@ -78,7 +78,7 @@ npm run migrate
 Check that all tables and policies are correctly set up:
 
 ```bash
-node scripts/validate-database.js
+npm run db:check
 ```
 
 ### 3. Set Up Storage Buckets
@@ -86,7 +86,7 @@ node scripts/validate-database.js
 Initialize Supabase storage buckets for audio and documents:
 
 ```bash
-node scripts/fix-supabase-buckets.js
+npm run setup-storage
 ```
 
 ## Development Server
@@ -103,21 +103,22 @@ The application will be available at `http://localhost:3001`
 
 ```bash
 # Code Quality
-npm run lint         # Run ESLint
-npm run typecheck    # TypeScript validation
-npm run format       # Format code with Prettier
-
-# Testing
-npm run test:manual  # Run manual test scripts
-npm run test:socket  # Test Socket.IO connections
+npm run lint           # Run ESLint
+npm run typecheck      # TypeScript validation
+npm run format:check   # Check code formatting
+npm run format:write   # Auto-fix formatting
 
 # Database
-npm run migrate      # Apply database migrations
-npm run check-db     # Validate database setup
+npm run db:migrate     # Apply database migrations
+npm run db:check       # Validate database setup
 
-# Build
-npm run build        # Production build
-npm run analyze      # Bundle size analysis
+# Build & Analysis
+npm run build          # Production build
+npm run analyze:bundle # Bundle size analysis
+
+# Testing
+npm run test:endpoints # Test API endpoints
+npm run demo           # Run demo test
 ```
 
 ## Service Configuration
@@ -146,7 +147,7 @@ npm run analyze      # Bundle size analysis
 ### Build Docker Image
 
 ```bash
-npm run docker:build
+docker build -t eris-debate:dev .
 ```
 
 ### Run with Docker Compose
@@ -163,19 +164,20 @@ If port 3001 is in use:
 
 ```bash
 # Check what's using the port
-lsof -i :3001
+npm run check:port
 
-# Kill the process or change the port in package.json
+# Or manually check
+lsof -i :3001
 ```
 
 ### Database Connection Issues
 
 1. Verify Supabase URL and keys are correct
 2. Check if RLS policies are preventing access
-3. Use the debug endpoint to test connectivity:
+3. Run the database check script:
 
 ```bash
-curl http://localhost:3001/api/debug -H "x-api-key: $DEBUG_API_KEY"
+npm run db:check
 ```
 
 ### Missing Dependencies
@@ -198,7 +200,6 @@ Recommended extensions for the best development experience:
 - Prettier
 - TypeScript and JavaScript Language Features
 - Tailwind CSS IntelliSense
-- Prisma (for database schema)
 
 ### Settings
 
@@ -209,7 +210,7 @@ Create `.vscode/settings.json`:
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   "typescript.tsdk": "node_modules/typescript/lib"
 }
@@ -230,11 +231,11 @@ After setup, verify everything is working:
 # API health
 curl http://localhost:3001/api/health
 
-# Socket.IO test
-npm run test:socket
-
 # Database validation
-node scripts/validate-database-simple.js
+npm run db:check
+
+# Run API endpoint tests
+npm run test:endpoints
 ```
 
 If all checks pass, you're ready to start developing!

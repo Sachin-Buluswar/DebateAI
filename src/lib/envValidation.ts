@@ -56,17 +56,3 @@ export function validateEnvironment(): EnvValidationResult {
   };
 }
 
-// Log environment status (safe for client-side)
-export function logEnvironmentStatus(): void {
-  const result = validateEnvironment();
-  
-  if (!result.isValid) {
-  }
-  
-  if (result.warnings.length > 0) {
-    // result.warnings.forEach(warning => console.warn(`  - ${warning}`));
-  }
-  
-  if (result.isValid && result.warnings.length === 0) {
-  }
-}

@@ -31,7 +31,7 @@ import {
 } from '@/middleware/inputValidation';
 import { createClient } from '@/utils/supabase/server';
 import { EnhancedSearchResult } from '@/types/documents';
-import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
+import { optionalAuth } from '@/lib/auth-middleware';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -268,7 +268,7 @@ async function performDirectDocumentSearch(
  */
 export async function POST(request: NextRequest) {
   return await withRateLimit(request, wikiSearchRateLimiter, async () => {
-    return requireAuth(request, async (req: AuthenticatedRequest) => {
+    return optionalAuth(request, async (req) => {
       try {
         // Create authenticated Supabase client that respects RLS
         const supabase = createClient();
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
               query: query.substring(0, 200),
               maxResults,
               timestamp: new Date().toISOString(),
-              userId: req.user.id, // Include user ID for audit trail
+              userId: req.user?.id || 'guest', // Include user ID for audit trail
             },
             { status: 200 }
           )
@@ -354,7 +354,7 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
+          process.env.NODE_ENV === 'development' ? '*' : (process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com'),
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

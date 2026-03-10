@@ -8,6 +8,20 @@ function fillPromptTemplate(template: string, data: Record<string, string>): str
     return template.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || `{{${key}}}`);
 }
 
+/**
+ * Map specific debate phases to their generic prompt template key.
+ * e.g. PRO_CONSTRUCTIVE → constructive, CON_REBUTTAL → rebuttal
+ */
+function getPromptKey(phase: string): keyof typeof debateConfig.phasePrompts | null {
+  const normalized = phase.toUpperCase();
+  if (normalized.includes('CONSTRUCTIVE')) return 'constructive';
+  if (normalized.includes('REBUTTAL')) return 'rebuttal';
+  if (normalized.includes('SUMMARY') || normalized.includes('FINAL_FOCUS')) return 'summary';
+  if (normalized.includes('CROSSFIRE')) return 'crossfire';
+  if (normalized.includes('ANALYSIS')) return 'analysis';
+  return null;
+}
+
 export async function generateSpeech(
   topic: string,
   speaker: Participant,
@@ -18,8 +32,8 @@ export async function generateSpeech(
   timeLimit: number = 4
 ): Promise<string> {
   const personality = debateConfig.personalities[speaker.name];
-  const phaseKey = phase.toLowerCase() as keyof typeof debateConfig.phasePrompts;
-  const phasePromptTemplate = debateConfig.phasePrompts[phaseKey];
+  const phaseKey = getPromptKey(phase);
+  const phasePromptTemplate = phaseKey ? debateConfig.phasePrompts[phaseKey] : undefined;
   const difficultyConfig = debateConfig.difficultyLevels[difficulty];
   
   if (!personality) {

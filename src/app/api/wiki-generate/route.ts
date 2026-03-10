@@ -5,7 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
+import { optionalAuth } from '@/lib/auth-middleware';
+import { User } from '@supabase/supabase-js';
 import { withRateLimit, wikiSearchRateLimiter } from '@/middleware/rateLimiter';
 import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
 import { openAIManager } from '@/backend/services/openaiClientManager';
@@ -30,9 +31,9 @@ const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini';
 export async function POST(request: NextRequest) {
   // Apply rate limiting with handler function
   const result = await withRateLimit(request, wikiSearchRateLimiter, async () => {
-    return requireAuth(request, async (authenticatedRequest: AuthenticatedRequest) => {
+    return optionalAuth(request, async (req) => {
     try {
-      const user = authenticatedRequest.user;
+      const user = (req as unknown as { user?: User }).user;
 
       // Environment variable check
       if (!vectorStoreId) {
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       const { query, maxResults, context } = validation.data;
       
       logger.info('Processing wiki generation request', {
-        userId: user.id,
+        userId: user?.id || 'guest',
         metadata: {
           query: query.substring(0, 50) + '...',
           maxResults
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
       );
       
       logger.info('Wiki generation completed', {
-        userId: user.id,
+        userId: user?.id || 'guest',
         metadata: {
           answerLength: generatedResult.answer.length,
           sourcesCount: generatedResult.sources.length

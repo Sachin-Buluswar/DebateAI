@@ -26,9 +26,7 @@
  * - Supports multiple voice IDs for different speakers
  */
 
-import fetch from 'node-fetch';
 import { env } from '@/shared/env';
-import type { Response } from 'node-fetch';
 import { debateConfig } from '@/backend/modules/realtimeDebate/debate.config';
 import { servicesConfig } from '@/backend/config/services.config';
 import { DifficultyLevel } from '@/backend/modules/realtimeDebate/types';

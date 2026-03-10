@@ -134,7 +134,7 @@ export class CircuitBreaker {
 /**
  * Fallback handler for graceful degradation
  */
-export class FallbackHandler<T> {
+class FallbackHandler<T> {
   constructor(
     private readonly fallbacks: Array<() => Promise<T> | T>
   ) {}
@@ -159,7 +159,7 @@ export class FallbackHandler<T> {
 /**
  * Queue for managing failed operations that should be retried later
  */
-export class RetryQueue<T> {
+class RetryQueue<T> {
   private queue: Array<{
     fn: () => Promise<T>;
     resolve: (value: T) => void;

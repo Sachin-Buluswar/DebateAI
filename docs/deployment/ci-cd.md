@@ -286,16 +286,16 @@ docker build -t eris-debate:test .
 docker build --build-arg NEXT_PUBLIC_SUPABASE_URL=test .
 ```
 
-#### 2. Test Failures
+#### 2. Build or Lint Failures
 
 ```bash
-# Run specific test suite locally
-npm run test:unit
-npm run test:integration
-npm run test:e2e
+# Run checks locally
+npm run lint
+npm run typecheck
+npm run build
 
-# Debug with verbose output
-npm test -- --verbose --detectOpenHandles
+# Test API endpoints
+npm run test:endpoints
 ```
 
 #### 3. Deployment Failures

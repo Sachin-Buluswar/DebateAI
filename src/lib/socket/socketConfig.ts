@@ -11,8 +11,8 @@ export const isVercel = () => {
   return (
     hostname.includes('vercel.app') || 
     hostname.includes('vercel.sh') ||
-    hostname === 'erisdebate.com' ||
-    hostname === 'www.erisdebate.com' ||
+    hostname === (process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com') ||
+    hostname === `www.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}` ||
     // Check for Vercel environment variable in window
     (window as Window & { NEXT_PUBLIC_VERCEL?: string }).NEXT_PUBLIC_VERCEL === '1'
   );
@@ -54,20 +54,18 @@ export const getSocketConfig = (token?: string) => {
 // Create socket connection with proper configuration
 export const createSocket = async (token?: string): Promise<Socket> => {
   try {
-    // Initialize the socket server first
-    const initResponse = await fetch('/api/socketio', {
+    // Trigger server-side Socket.IO initialization via the simple init endpoint
+    // (avoids 400 from engine.io intercepting /api/socketio without EIO params)
+    await fetch('/api/socket-init', {
       method: 'GET',
       headers: {
-        'Accept': 'text/plain',
+        'Accept': 'application/json',
       }
     });
-    
-    if (!initResponse.ok) {
-    }
   } catch (_error) {
     // Continue anyway - the server might already be initialized
   }
-  
+
   const config = getSocketConfig(token);
   const socket = io(config);
   
@@ -84,10 +82,10 @@ export const createSocket = async (token?: string): Promise<Socket> => {
 // Helper to check if Socket.IO is available
 export const checkSocketIOAvailability = async (): Promise<boolean> => {
   try {
-    const response = await fetch('/api/socketio', {
+    const response = await fetch('/api/socket-init', {
       method: 'GET',
       headers: {
-        'Accept': 'text/plain',
+        'Accept': 'application/json',
       },
     });
     return response.ok;

@@ -47,8 +47,9 @@ export const validationSchemas = {
     topic: commonSchemas.debateTopic,
     speechType: commonSchemas.speechType.optional(),
     userSide: z.enum(['Proposition', 'Opposition', 'None']).optional(),
+    skillLevel: z.enum(['novice', 'intermediate', 'advanced']).optional(),
     customInstructions: commonSchemas.safeString.optional(),
-    userId: commonSchemas.uuid,
+    userId: commonSchemas.uuid.optional(),
   }),
 
   debateSetup: z.object({
@@ -322,9 +323,11 @@ export function addSecurityHeaders(response: Response): Response {
 // CORS configuration for production
 export const corsConfig = {
   allowedOrigins: [
-    'https://erisdebate.com',
-    'https://www.erisdebate.com',
-    'https://app.erisdebate.com',
+    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [
+      `https://${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
+      `https://www.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
+      `https://app.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
+    ]),
     ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3001'] : []),
   ],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

@@ -101,8 +101,8 @@ Post-debate displays:
 
 ## Development Commands
 ```bash
-# Check setup
-npm run check-env
+# Check environment setup
+npm run check:env
 
 # Lint code
 npm run lint
@@ -113,14 +113,11 @@ npm run typecheck
 # Production build
 npm run build
 
-# Test emails
+# Test API endpoints
+npm run test:endpoints
+
+# Preview email templates
 npm run preview-email confirm-signup
-
-# Test WebSocket
-npm run test:socket
-
-# Manual tests
-npm run test:manual
 ```
 
 ## Troubleshooting

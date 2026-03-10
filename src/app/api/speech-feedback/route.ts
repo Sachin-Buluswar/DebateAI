@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { topic, customInstructions } = validation.data;
+      const { topic, customInstructions, speechType: validatedSpeechType, userSide: validatedUserSide, skillLevel: validatedSkillLevel } = validation.data;
 
       // Use authenticated user's ID instead of form data
       const userId = user.id;
@@ -94,10 +94,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Get speech type, user side, and skill level from request
-      const speechType = requestData.speechType || 'debate';
-      const userSide = requestData.userSide || 'None';
-      const skillLevel = (requestData.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate';
+      // Use validated fields with fallbacks
+      const speechType = validatedSpeechType || requestData.speechType || 'debate';
+      const userSide = validatedUserSide || requestData.userSide || 'None';
+      const skillLevel = (validatedSkillLevel || requestData.skillLevel as 'novice' | 'intermediate' | 'advanced') || 'intermediate';
 
       // Process the speech feedback (service will handle storage with service role)
       const result = await processSpeechFeedback({
@@ -185,7 +185,7 @@ export async function OPTIONS() {
     new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : 'https://erisdebate.com',
+        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : (process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com'),
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

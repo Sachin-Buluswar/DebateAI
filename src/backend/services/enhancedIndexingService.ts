@@ -2,7 +2,7 @@ import { OpenAI } from 'openai';
 import { DocumentStorageService } from './documentStorageService';
 import { DocumentChunk } from '@/types/documents';
 import * as stream from 'stream';
-import fetch from 'node-fetch';
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,

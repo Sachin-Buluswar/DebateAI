@@ -1,53 +1,5 @@
 # Deployment Checklist
 
-## Critical Fixes (Must Complete)
-
-### 1. Fix CORS Origin
-File: `src/pages/api/socketio.ts:30`
-```typescript
-cors: {
-  origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
-  methods: ["GET", "POST"]
-}
-```
-
-### 2. Add Viewport Meta Tag
-File: `src/app/layout.tsx`
-Add in `<head>`:
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-```
-
-### 3. Disable Debug Endpoint
-File: `src/app/api/debug/route.ts`
-```typescript
-export async function GET(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-  // existing code
-}
-```
-
-### 4. Sanitize File Paths
-File: `src/backend/modules/speechFeedback/speechFeedbackService.ts`
-```typescript
-import path from 'path';
-const sanitizedFileName = path.basename(fileName);
-const audioPath = path.join(tmpDir, sanitizedFileName);
-```
-
-### 5. Fix Auth Error Messages
-File: `src/app/auth/callback/route.ts`
-Replace:
-```typescript
-return NextResponse.redirect(`${origin}/auth/error?message=${error.message}`);
-```
-With:
-```typescript
-return NextResponse.redirect(`${origin}/auth/error?code=auth_failed`);
-```
-
 ## GitHub Secrets Configuration
 
 Add to repository settings:
@@ -73,8 +25,8 @@ npm run lint
 npm run typecheck
 npm run build
 
-# Test critical features
-npm run test:manual
+# Test API endpoints
+npm run test:endpoints
 ```
 
 ## Environment Variables

@@ -181,10 +181,11 @@ DEBUG_API_KEY=your_debug_key
 - `npm run dev` - Start development server on port 3001
 - `npm run build` - Production build
 - `npm run lint` - ESLint with zero-warning policy
-- `npm run test` - Jest unit tests
 - `npm run typecheck` - TypeScript validation
-- `npm run format` - Prettier formatting
-- `npm run check-env` - Validate environment setup
+- `npm run format:check` - Check Prettier formatting
+- `npm run format:write` - Auto-fix formatting
+- `npm run check:env` - Validate environment setup
+- `npm run test:endpoints` - Test API endpoints
 
 ## 9. Remaining Development Items (5%)
 

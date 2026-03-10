@@ -63,6 +63,10 @@ data/
 
 # Logs
 logs/
+*.log
+
+# Audio test files
+*.aiff
 
 # Coverage reports
 config/coverage/
@@ -76,6 +80,7 @@ security-audit-report.json
 
 # One-off test/debug scripts
 TEST_IN_BROWSER.js
+test-rag-system.js
 
 # Well-known directory
 public/.well-known/

@@ -24,11 +24,11 @@ export async function middleware(request: NextRequest) {
     response.headers.set(
       'Content-Security-Policy',
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.sentry-cdn.com; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.sentry.io https://*.sentry-cdn.com https://va.vercel-scripts.com; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com data:; " +
       "img-src 'self' data: https: blob:; " +
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openai.com https://api.elevenlabs.io ws://localhost:* wss://localhost:*; " +
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openai.com https://api.elevenlabs.io https://va.vercel-scripts.com ws://localhost:* wss://localhost:*; " +
       "media-src 'self' blob: data:; " +
       "worker-src 'self' blob:; " +
       "child-src 'self' blob:; " +
@@ -39,11 +39,11 @@ export async function middleware(request: NextRequest) {
     response.headers.set(
       'Content-Security-Policy',
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' https://*.sentry.io https://*.sentry-cdn.com; " +
+      "script-src 'self' 'unsafe-inline' https://*.sentry.io https://*.sentry-cdn.com https://va.vercel-scripts.com; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com data:; " +
       "img-src 'self' data: https: blob:; " +
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openai.com https://api.elevenlabs.io; " +
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openai.com https://api.elevenlabs.io https://va.vercel-scripts.com; " +
       "media-src 'self' blob: data:; " +
       "worker-src 'self' blob:; " +
       "child-src 'self' blob:; " +

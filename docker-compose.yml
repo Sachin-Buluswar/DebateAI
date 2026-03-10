@@ -43,7 +43,7 @@ services:
       # Development volumes for hot reload
       - ./src:/app/src:ro
       - ./public:/app/public:ro
-      - ./next.config.cjs:/app/next.config.cjs:ro
+      - ./next.config.mjs:/app/next.config.mjs:ro
       # Named volumes for persistent data
       - uploads:/app/uploads
       - temp:/app/temp

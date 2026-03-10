@@ -255,7 +255,7 @@ export default function DebatePage() {
     }
   }, []);
 
-  // Initialize socket with optional authentication (guest mode allowed)
+  // Initialize socket once on mount (no dependencies on setup/participants to avoid reconnections)
   const initializeSocket = useCallback(async () => {
       // Verify user identity with getUser() (server-verified)
       // Use getSession() only for the access token needed by the socket
@@ -271,10 +271,6 @@ export default function DebatePage() {
         setIsConnecting(true);
         setConnectionError(null);
 
-        // Show info about real-time mode
-        if (isVercel()) {
-        }
-
         // Create real-time connection (will use Supabase on Vercel)
         // In guest mode, pass undefined token
         // Only pass token if user is verified
@@ -282,13 +278,13 @@ export default function DebatePage() {
           token: user ? session?.access_token : undefined,
           useSupabase: isVercel() // Force Supabase on Vercel
         });
-        
+
       } catch {
         setConnectionError('Failed to connect to debate server. Please try again.');
         setIsConnecting(false);
         return;
       }
-      
+
       socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -297,25 +293,24 @@ export default function DebatePage() {
       setConnectionError(null);
       setReconnectAttempt(0);
     });
-    
+
     socket.on('disconnect', (reason) => {
       setIsConnected(false);
-      
+
       // Handle different disconnect reasons
       if (reason === 'io server disconnect') {
         setConnectionError('Disconnected by server. Attempting to reconnect...');
-        // Socket.IO will auto-reconnect if configured
       } else if (reason === 'transport close' || reason === 'transport error') {
         setConnectionError('Connection lost. Attempting to reconnect...');
       } else if (reason === 'ping timeout') {
         setConnectionError('Connection timeout. Check your internet connection.');
       }
     });
-    
+
     socket.on('connect_error', (error) => {
       setIsConnected(false);
       setIsConnecting(false);
-      
+
       // Provide user-friendly error messages
       if (error.message.includes('Authentication')) {
         setConnectionError('Authentication failed. Please log in again.');
@@ -323,33 +318,27 @@ export default function DebatePage() {
         setConnectionError('Connection timeout. Please check your internet connection.');
       } else if (error.message.includes('websocket error') && isVercel()) {
         // This is expected on Vercel - Socket.IO should fall back to polling
-        setConnectionError(null); // Don't show error if it's just WebSocket failing on Vercel
+        setConnectionError(null);
       } else {
         setConnectionError(`Connection failed: ${error.message}`);
       }
     });
-    
+
     socket.on('reconnect', () => {
       setIsConnected(true);
       setConnectionError(null);
       setReconnectAttempt(0);
-      
-      // Re-join debate if one was in progress
-      if (debateState && debateState.phase !== 'ENDED') {
-        // Optionally emit a rejoin event if the server supports it
-        // socket.emit('rejoinDebate', { debateId: debateState.id });
-      }
     });
-    
+
     socket.on('reconnect_attempt', (attemptNumber) => {
       setReconnectAttempt(attemptNumber);
       setConnectionError(`Reconnecting... (Attempt ${attemptNumber}/5)`);
     });
-    
+
     socket.on('reconnect_failed', () => {
       setIsConnected(false);
       setConnectionError('Failed to reconnect. Please refresh the page to try again.');
-      
+
       // Offer manual reconnection after a delay
       reconnectTimeoutRef.current = setTimeout(() => {
         setConnectionError('Connection lost. Click "Reconnect" to try again.');
@@ -365,12 +354,9 @@ export default function DebatePage() {
       // Do not reset isCrossfireActive flag on timer updates to avoid flicker
       if (mode === 'speech') {
         setIsCrossfireActive(false);
-        // Find and set current speaker name
-        if (setup && newState.currentSpeakerId && newState.currentSpeakerId !== 'CROSSFIRE') {
-          const speaker = participants.find(p => p.id === newState.currentSpeakerId);
-          if (speaker) {
-            setCurrentSpeaker(speaker.name);
-          }
+        // Find and set current speaker name using newState participants
+        if (newState.currentSpeakerId && newState.currentSpeakerId !== 'CROSSFIRE') {
+          setCurrentSpeaker(newState.currentSpeakerId);
         }
       }
     });
@@ -403,37 +389,37 @@ export default function DebatePage() {
         setSpeechText('');
       }, 3000);
     });
-    
+
     socket.on('aiSpeechAudio', (audioBuffer: ArrayBuffer) => {
-      const buffer = audioBuffer instanceof ArrayBuffer ? audioBuffer : 
+      const buffer = audioBuffer instanceof ArrayBuffer ? audioBuffer :
                      new Uint8Array(audioBuffer).buffer;
       setAudioQueue(prev => [...prev, new Blob([buffer], { type: 'audio/mpeg' })]);
     });
 
     // WebSocket streaming audio handlers
     let audioChunks: Uint8Array[] = [];
-    
+
     socket.on('aiSpeechAudioChunk', (chunk: Buffer) => {
       // Collect audio chunks as they arrive
       const uint8Array = new Uint8Array(chunk);
       audioChunks.push(uint8Array);
     });
-    
+
     socket.on('aiSpeechAudioEnd', () => {
       // Combine all chunks and add to audio queue
       if (audioChunks.length > 0) {
         const totalLength = audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
         const combinedChunks = new Uint8Array(totalLength);
         let offset = 0;
-        
+
         for (const chunk of audioChunks) {
           combinedChunks.set(chunk, offset);
           offset += chunk.length;
         }
-        
+
         const audioBlob = new Blob([combinedChunks.buffer], { type: 'audio/mpeg' });
         setAudioQueue(prev => [...prev, audioBlob]);
-        
+
         // Clear chunks for next stream
         audioChunks = [];
       }
@@ -441,14 +427,14 @@ export default function DebatePage() {
 
     socket.on('debateError', (error: { message: string; error: string }) => {
       // User-friendly error messages
-      const userMessage = error.message.toLowerCase().includes('connection') 
+      const userMessage = error.message.toLowerCase().includes('connection')
         ? 'Connection lost. Please check your internet and try again.'
         : error.message.toLowerCase().includes('timeout')
         ? 'The operation timed out. Please try again.'
         : error.message.toLowerCase().includes('auth')
         ? 'Authentication error. Please sign in again.'
         : `An error occurred: ${error.message}`;
-      
+
       toast.error(userMessage, {
         duration: 8000,
         action: error.message.toLowerCase().includes('connection') ? {
@@ -501,15 +487,16 @@ export default function DebatePage() {
         });
       }
     });
-  }, [setup, participants]);
+  }, []); // Empty deps: socket connects once on mount, not on every config change
 
   useEffect(() => {
     // Call the async initialization function
     initializeSocket();
 
-    // Cleanup function
+    // Cleanup function: remove all listeners and disconnect
     return () => {
       if (socketRef.current) {
+        socketRef.current.removeAllListeners();
         socketRef.current.disconnect();
       }
     };
@@ -721,7 +708,6 @@ export default function DebatePage() {
                       variant="primary" 
                       size="lg" 
                       className="w-full"
-                      disabled={!isConnected}
                       aria-label="Create debate with selected settings"
                       icon={
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
