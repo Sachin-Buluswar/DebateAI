@@ -214,10 +214,8 @@ class Logger {
 
 // Create singleton instances for common services
 export const apiLogger = new Logger('api');
-export const dbLogger = new Logger('database');
 export const authLogger = new Logger('auth');
 export const aiLogger = new Logger('ai');
-export const socketLogger = new Logger('socket');
 
 // Export the Logger class for custom instances
 export default Logger;

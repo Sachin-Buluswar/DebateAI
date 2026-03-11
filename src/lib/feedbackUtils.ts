@@ -93,17 +93,6 @@ export const parseFeedbackMarkdown = (markdown: string | undefined | null): { [k
   return sections;
 };
 
-export const feedbackSectionTitles: { [key: string]: string } = {
-  'Overall Summary': 'Overall Summary',
-  'Structure & Organization': 'Structure & Organization',
-  'Argumentation & Evidence': 'Argument Structure',
-  'Clarity & Conciseness': 'Clarity & Conciseness',
-  'Persuasiveness & Impact': 'Persuasiveness',
-  'Delivery Style': 'Delivery Mechanics',
-  'Strategic success Speech Type(s)': 'Strategic success Speech Type(s)',
-  'Actionable Suggestions': 'Actionable Suggestions'
-};
-
 // Convert structured feedback to markdown sections
 export function convertStructuredFeedbackToMarkdown(feedback: StructuredFeedback): { [key: string]: string } {
   const sections: { [key: string]: string } = {};

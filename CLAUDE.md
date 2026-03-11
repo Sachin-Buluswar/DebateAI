@@ -87,21 +87,12 @@ src/
 │   │   │   ├── scrape-status/
 │   │   │   ├── upload-document/
 │   │   │   └── reindex-document/
-│   │   ├── analysis/      # Debate analysis endpoints
-│   │   ├── auth/          # Authentication endpoints
 │   │   ├── debate/        # Debate session management
-│   │   ├── documents/     # Document upload/retrieval
-│   │   ├── elevenlabs/    # Voice services integration
-│   │   ├── feedback/      # User feedback system
-│   │   ├── judge-feedback/ # AI judge responses
 │   │   ├── monitoring/    # Metrics and health checks
-│   │   ├── openai/        # GPT integration
-│   │   ├── speech-to-text/ # Speech recognition
-│   │   ├── user-preferences/ # User settings
+│   │   ├── speech-feedback/ # Speech analysis (direct + chunked upload)
 │   │   ├── wiki-document-search/ # Database document search
-│   │   ├── wiki-search/   # Quick prefix search
+│   │   ├── wiki-search/   # Vector similarity search
 │   │   ├── wiki-generate/ # AI content generation
-│   │   ├── wiki-rag-search-enhanced/ # Enhanced RAG search
 │   │   ├── debug/         # Debug endpoint (protected)
 │   │   └── resources/     # Educational resources
 │   ├── (authenticated)/   # Protected pages with navigation
@@ -140,9 +131,7 @@ src/
 │       └── openCaseListScraper.ts  # Debate case scraper
 ├── components/
 │   ├── ui/                # Reusable UI components
-│   │   ├── FormField.tsx  # Form validation component
 │   │   ├── Button.tsx     # Button variants
-│   │   ├── Modal.tsx      # Modal dialogs
 │   │   ├── Toast.tsx      # Toast notifications
 │   │   └── ...            # Other UI primitives
 │   ├── auth/              # Authentication components
@@ -200,12 +189,11 @@ Is the endpoint public?
 ```
 What type of search do you need?
 ├─ Exact phrase/term? → `/api/wiki-document-search`
-│  └─ Database full-text search, no AI
-├─ Semantic similarity? → `/api/wiki-rag-search-enhanced`
-│  └─ Vector embeddings, AI-powered
-├─ Quick autocomplete? → `/api/wiki-search`
-│  └─ Fast prefix matching
-└─ Complex analysis? → Combine multiple endpoints
+│  └─ Database full-text search (tsvector), no AI
+├─ Semantic similarity? → `/api/wiki-search`
+│  └─ Vector embeddings (pgvector), AI-powered
+└─ AI-generated answer? → `/api/wiki-generate`
+   └─ RAG: retrieves context, then generates answer
 ```
 
 ### Error Handling Strategy
@@ -364,7 +352,6 @@ export function Component({ props }: ComponentProps) {
 import { useState, useMemo } from 'react';
 import { useToast } from '@/lib/toast';
 import { FormValidator } from '@/lib/validation';
-import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
 
 export function FormComponent() {
@@ -422,39 +409,40 @@ export function FormComponent() {
   
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <FormField
-        label="Email"
-        name="email"
-        type="email"
-        value={formData.email}
-        onChange={(value) => {
-          setFormData(prev => ({ ...prev, email: value }));
-          if (formErrors.email) {
-            setFormErrors(prev => ({ ...prev, email: '' }));
-          }
-        }}
-        error={formErrors.email}
-        required
-        disabled={submitting}
-      />
-      
-      <FormField
-        label="Message"
-        name="message"
-        type="textarea"
-        value={formData.message}
-        onChange={(value) => {
-          setFormData(prev => ({ ...prev, message: value }));
-          if (formErrors.message) {
-            setFormErrors(prev => ({ ...prev, message: '' }));
-          }
-        }}
-        error={formErrors.message}
-        required
-        disabled={submitting}
-        rows={4}
-      />
-      
+      <div>
+        <label htmlFor="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, email: e.target.value }));
+            if (formErrors.email) {
+              setFormErrors(prev => ({ ...prev, email: '' }));
+            }
+          }}
+          disabled={submitting}
+        />
+        {formErrors.email && <p className="text-red-600">{formErrors.email}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="message">Message</label>
+        <textarea
+          id="message"
+          value={formData.message}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, message: e.target.value }));
+            if (formErrors.message) {
+              setFormErrors(prev => ({ ...prev, message: '' }));
+            }
+          }}
+          disabled={submitting}
+          rows={4}
+        />
+        {formErrors.message && <p className="text-red-600">{formErrors.message}</p>}
+      </div>
+
       <Button type="submit" disabled={submitting}>
         {submitting ? 'Submitting...' : 'Submit'}
       </Button>
@@ -591,7 +579,7 @@ class ServiceName {
    
    import { useState } from 'react';
    import { useToast } from '@/lib/toast';
-   import { FormField } from '@/components/ui/FormField';
+   import { FormValidator } from '@/lib/validation';
    ```
    
 2. **Set up validation**:
@@ -707,7 +695,6 @@ npm run test:endpoints  # Test API endpoints
 npm run demo           # Run demo test
 
 # Database Management
-npm run db:migrate      # Apply migrations
 npm run db:check        # Verify database setup
 npm run setup-storage   # Setup storage buckets
 npm run validate-rag    # Validate RAG configuration
@@ -775,7 +762,7 @@ Before marking ANY task as complete:
 
 - `users` - User accounts (managed by Supabase Auth)
 - `user_roles` - Role assignments (user/admin)
-- `user_preferences` - User settings and preferences (API route: `/api/user-preferences`)
+- `user_preferences` - User settings and preferences (accessed via Supabase client directly)
 - `debates` - Debate sessions
 - `rounds` - Debate rounds
 - `speeches` - Individual speeches

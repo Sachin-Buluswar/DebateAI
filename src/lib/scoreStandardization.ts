@@ -7,22 +7,11 @@
 /**
  * Score format types that exist in the system
  */
-export enum ScoreFormat {
+enum ScoreFormat {
   NSDA = 'nsda',           // 25-30 point scale
   PERCENTAGE = 'percentage', // 0-100 scale
   TEN_POINT = 'ten_point',  // 1-10 scale
   JSON_OBJECT = 'json_object', // Legacy format with nested scores
-}
-
-/**
- * Interface for standardized score data
- */
-export interface StandardizedScore {
-  percentage: number;       // Always 0-100
-  nsda: number;           // Always 25-30
-  displayValue: string;    // Human-readable format
-  originalFormat: ScoreFormat;
-  originalValue: unknown;
 }
 
 /**
@@ -58,19 +47,9 @@ export function tenPointToPercentage(score: number): number {
 }
 
 /**
- * Convert percentage to 10-point scale
- */
-export function percentageToTenPoint(percentage: number): number {
-  if (percentage < 0 || percentage > 100) {
-    percentage = Math.max(0, Math.min(100, percentage)); // Clamp to valid range
-  }
-  return Math.round((percentage / 100) * 10 * 10) / 10; // Round to 1 decimal
-}
-
-/**
  * Detect score format based on value and context
  */
-export function detectScoreFormat(score: unknown): ScoreFormat {
+function detectScoreFormat(score: unknown): ScoreFormat {
   // Check if it's a JSON object (legacy format)
   if (typeof score === 'object' && score !== null && !Array.isArray(score)) {
     return ScoreFormat.JSON_OBJECT;
@@ -102,7 +81,7 @@ export function detectScoreFormat(score: unknown): ScoreFormat {
 /**
  * Extract score from legacy JSON object format
  */
-export function extractFromJsonObject(scoreObj: unknown): number | null {
+function extractFromJsonObject(scoreObj: unknown): number | null {
   if (!scoreObj || typeof scoreObj !== 'object') {
     return null;
   }
@@ -171,53 +150,6 @@ export function standardizeToPercentage(score: unknown): number | null {
 }
 
 /**
- * Get comprehensive standardized score object
- */
-export function getStandardizedScore(score: unknown): StandardizedScore | null {
-  const percentage = standardizeToPercentage(score);
-  
-  if (percentage === null) {
-    return null;
-  }
-  
-  const format = detectScoreFormat(score);
-  const nsda = percentageToNSDA(percentage);
-  
-  return {
-    percentage,
-    nsda,
-    displayValue: formatScoreDisplay(percentage, format),
-    originalFormat: format,
-    originalValue: score
-  };
-}
-
-/**
- * Format score for display based on original format
- */
-export function formatScoreDisplay(percentage: number, originalFormat?: ScoreFormat): string {
-  if (!originalFormat) {
-    return `${Math.round(percentage)}%`;
-  }
-  
-  switch (originalFormat) {
-    case ScoreFormat.NSDA:
-      const nsda = percentageToNSDA(percentage);
-      // Show .0 decimals only when needed (e.g., 27 instead of 27.0, but 27.5 stays 27.5)
-      return `${nsda % 1 === 0 ? nsda.toFixed(0) : nsda.toFixed(1)}/30`;
-      
-    case ScoreFormat.TEN_POINT:
-      const tenPoint = percentageToTenPoint(percentage);
-      return `${tenPoint.toFixed(1)}/10`;
-      
-    case ScoreFormat.PERCENTAGE:
-    case ScoreFormat.JSON_OBJECT:
-    default:
-      return `${Math.round(percentage)}%`;
-  }
-}
-
-/**
  * Extract score from feedback object (handles all legacy formats)
  * Returns the score in NSDA format (25-30) for consistency
  */
@@ -267,93 +199,11 @@ export function extractScoreFromFeedback(feedback: Record<string, unknown> | nul
   return null;
 }
 
-/**
- * Validate score is within expected range
- */
-export function validateScore(score: number, format: ScoreFormat): boolean {
-  switch (format) {
-    case ScoreFormat.NSDA:
-      return score >= 25 && score <= 30;
-    case ScoreFormat.PERCENTAGE:
-      return score >= 0 && score <= 100;
-    case ScoreFormat.TEN_POINT:
-      return score >= 0 && score <= 10;
-    default:
-      return false;
-  }
-}
-
-/**
- * Get score quality level for UI display
- */
-export function getScoreQuality(percentage: number): {
-  level: 'excellent' | 'good' | 'fair' | 'needs-improvement';
-  color: string;
-  label: string;
-} {
-  if (percentage >= 90) {
-    return {
-      level: 'excellent',
-      color: 'text-green-600 dark:text-green-400',
-      label: 'Excellent'
-    };
-  } else if (percentage >= 75) {
-    return {
-      level: 'good',
-      color: 'text-blue-600 dark:text-blue-400',
-      label: 'Good'
-    };
-  } else if (percentage >= 60) {
-    return {
-      level: 'fair',
-      color: 'text-yellow-600 dark:text-yellow-400',
-      label: 'Fair'
-    };
-  } else {
-    return {
-      level: 'needs-improvement',
-      color: 'text-red-600 dark:text-red-400',
-      label: 'Needs Improvement'
-    };
-  }
-}
-
-/**
- * Calculate average score from multiple scores
- * Rounds to nearest 0.5 for NSDA-compatible scoring
- */
-export function calculateAverageScore(scores: (number | null)[]): number | null {
-  const validScores = scores.filter((s): s is number => s !== null && !isNaN(s));
-  
-  if (validScores.length === 0) {
-    return null;
-  }
-  
-  const sum = validScores.reduce((acc, score) => acc + score, 0);
-  const average = sum / validScores.length;
-  return Math.round(average * 2) / 2; // Round to nearest 0.5 (half-point scoring)
-}
-
-/**
- * Batch standardize multiple feedback records
- */
-export function batchStandardizeScores(feedbackRecords: { id: string; feedback: Record<string, unknown> }[]): {
-  id: string;
-  originalScore: Record<string, unknown>;
-  standardizedScore: number | null;
-}[] {
-  return feedbackRecords.map(record => ({
-    id: record.id,
-    originalScore: record.feedback,
-    standardizedScore: extractScoreFromFeedback(record.feedback)
-  }));
-}
-
 // ---------------------------------------------------------------------------
 // Legacy-compatible helpers (formerly in utils/scoring.ts)
 // ---------------------------------------------------------------------------
 
-export type ScoreType = 'nsda' | 'percentage' | 'ten-point';
+type ScoreType = 'nsda' | 'percentage' | 'ten-point';
 
 export interface ScoreInfo {
   value: number;
@@ -365,7 +215,7 @@ export interface ScoreInfo {
 /**
  * Detect score type based on numeric value
  */
-export function detectScoreType(score: number): ScoreType {
+function detectScoreType(score: number): ScoreType {
   if (score >= 25 && score <= 30) return 'nsda';
   if (score >= 1 && score <= 10) return 'ten-point';
   return 'percentage';

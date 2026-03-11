@@ -12,8 +12,6 @@ const API_ENDPOINTS = [
   { method: 'GET', path: '/api/health', expected: 200, name: 'Health Check' },
   { method: 'GET', path: '/api/monitoring/health', expected: 200, name: 'Monitoring Health' },
   { method: 'POST', path: '/api/wiki-search', expected: 401, name: 'Wiki Search (Auth Required)', body: { query: 'test' } },
-  { method: 'GET', path: '/api/user-preferences', expected: 401, name: 'User Preferences (Auth Required)' },
-  { method: 'GET', path: '/api/user-profiles', expected: 401, name: 'User Profiles (Auth Required)' },
   { method: 'GET', path: '/api/resources', expected: 200, name: 'Learning Resources' },
 ];
 

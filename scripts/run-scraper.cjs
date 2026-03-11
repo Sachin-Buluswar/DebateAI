@@ -43,7 +43,7 @@ const ZIP_BASE_URL = 'https://caselist-files.s3.us-east-005.backblazeb2.com/open
 const CHUNK_SIZE = 3200;
 const CHUNK_OVERLAP = 800;
 const EMBEDDING_BATCH_SIZE = 50;
-const DB_INSERT_BATCH_SIZE = 10;
+const DB_INSERT_BATCH_SIZE = 5;
 
 // ---- Chunking ----
 function chunkText(text, fileName) {
@@ -120,8 +120,15 @@ async function indexDocument(docId, text, fileName) {
       embedding: JSON.stringify(batchEmb[j]),
       metadata: {},
     }));
-    const { error } = await supabase.from('document_chunks').insert(rows);
-    if (error) throw new Error(`DB insert failed: ${error.message}`);
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await supabase.from('document_chunks').insert(rows);
+      if (!error) { lastError = null; break; }
+      lastError = error;
+      console.log(`    Chunk insert retry ${attempt + 1}/3: ${error.message}`);
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+    if (lastError) throw new Error(`DB insert failed after 3 retries: ${lastError.message}`);
   }
 
   await supabase.from('documents').update({ indexed_at: new Date().toISOString() }).eq('id', docId);

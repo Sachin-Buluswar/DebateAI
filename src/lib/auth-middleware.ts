@@ -226,19 +226,3 @@ export async function hasRole(
   }
 }
 
-/**
- * Rate limit with authentication context
- */
-export async function requireAuthWithRateLimit(
-  request: NextRequest,
-  rateLimiter: typeof import('@/api-middleware/rateLimiter').apiRateLimiter,
-  handler: (request: AuthenticatedRequest) => Promise<NextResponse | Response>
-): Promise<NextResponse | Response> {
-  // First check rate limit
-  const { withRateLimit } = await import('@/api-middleware/rateLimiter');
-
-  return withRateLimit(request, rateLimiter, async () => {
-    // Then check auth
-    return requireAuth(request, handler);
-  });
-}

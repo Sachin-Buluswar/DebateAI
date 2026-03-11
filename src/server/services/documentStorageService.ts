@@ -63,16 +63,6 @@ export class DocumentStorageService {
     return data;
   }
 
-  async createDocumentChunks(chunks: Omit<DocumentChunk, 'id' | 'created_at'>[]): Promise<DocumentChunk[]> {
-    const { data, error } = await supabase
-      .from('document_chunks')
-      .insert(chunks)
-      .select();
-
-    if (error) throw error;
-    return data;
-  }
-
   async getDocument(documentId: string): Promise<Document | null> {
     const { data, error } = await supabase
       .from('documents')
@@ -84,22 +74,6 @@ export class DocumentStorageService {
     return data;
   }
 
-  async getDocumentChunks(documentId: string, pageNumber?: number): Promise<DocumentChunk[]> {
-    let query = supabase
-      .from('document_chunks')
-      .select()
-      .eq('document_id', documentId)
-      .order('chunk_index', { ascending: true });
-
-    if (pageNumber !== undefined) {
-      query = query.eq('page_number', pageNumber);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  }
-
   async getChunkByOpenAIFileId(openaiFileId: string): Promise<DocumentChunk | null> {
     const { data, error } = await supabase
       .from('document_chunks')
@@ -109,94 +83,6 @@ export class DocumentStorageService {
 
     if (error) return null;
     return data;
-  }
-
-  async getChunkWithContext(chunkId: string, contextSize: number = 2): Promise<{
-    chunk: DocumentChunk;
-    before: DocumentChunk[];
-    after: DocumentChunk[];
-    document: Document;
-  } | null> {
-    const { data: chunk, error: chunkError } = await supabase
-      .from('document_chunks')
-      .select()
-      .eq('id', chunkId)
-      .single();
-
-    if (chunkError || !chunk) return null;
-
-    const { data: document, error: docError } = await supabase
-      .from('documents')
-      .select()
-      .eq('id', chunk.document_id)
-      .single();
-
-    if (docError || !document) return null;
-
-    const { data: beforeChunks } = await supabase
-      .from('document_chunks')
-      .select()
-      .eq('document_id', chunk.document_id)
-      .lt('chunk_index', chunk.chunk_index)
-      .order('chunk_index', { ascending: false })
-      .limit(contextSize);
-
-    const { data: afterChunks } = await supabase
-      .from('document_chunks')
-      .select()
-      .eq('document_id', chunk.document_id)
-      .gt('chunk_index', chunk.chunk_index)
-      .order('chunk_index', { ascending: true })
-      .limit(contextSize);
-
-    return {
-      chunk,
-      before: beforeChunks?.reverse() || [],
-      after: afterChunks || [],
-      document
-    };
-  }
-
-  async updateDocumentIndexStatus(documentId: string): Promise<void> {
-    await supabase
-      .from('documents')
-      .update({ indexed_at: new Date().toISOString() })
-      .eq('id', documentId);
-  }
-
-  async searchDocuments(query: string): Promise<Document[]> {
-    // Sanitize the query to prevent SQL injection
-    const sanitizedQuery = query.replace(/[%_]/g, '\\$&');
-    
-    const { data, error } = await supabase
-      .from('documents')
-      .select()
-      .or(`title.ilike.%${sanitizedQuery}%,file_name.ilike.%${sanitizedQuery}%`)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  async deleteDocument(documentId: string): Promise<void> {
-    const document = await this.getDocument(documentId);
-    if (!document) return;
-
-    // Delete from storage
-    if (document.file_url) {
-      const path = document.file_url.split('/').pop();
-      if (path) {
-        await supabase.storage
-          .from(this.bucketName)
-          .remove([path]);
-      }
-    }
-
-    // Delete from database (chunks will cascade delete)
-    await supabase
-      .from('documents')
-      .delete()
-      .eq('id', documentId);
   }
 
   async getSearchResultsCache(queryHash: string): Promise<unknown | null> {

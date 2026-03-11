@@ -55,17 +55,10 @@ export const openAISchemas = {
     temperature: z.number().min(0).max(1).optional(),
   }),
 
-  embedding: z.object({
-    input: z.union([z.string(), z.array(z.string())]),
-    model: z.string().default('text-embedding-3-small'),
-    dimensions: z.number().optional(), // For new embedding models
-  }),
 };
 
 export type ChatCompletionParams = z.infer<typeof openAISchemas.chatCompletion>;
 export type TranscriptionParams = z.infer<typeof openAISchemas.transcription>;
-export type EmbeddingParams = z.infer<typeof openAISchemas.embedding>;
-
 class OpenAIService {
   /**
    * Default models for different operations
@@ -76,7 +69,6 @@ class OpenAIService {
    */
   private readonly defaultModels = {
     chat: process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini',
-    embedding: 'text-embedding-3-small',
     transcription: 'whisper-1',
   };
 
@@ -107,12 +99,10 @@ class OpenAIService {
     // Validate input
     const validated = openAISchemas.chatCompletion.parse(params);
     
-    // Log token estimation for cost tracking
-    const estimatedTokens = this.estimateTokens(validated.messages);
     logger.info('Creating chat completion', {
       metadata: {
         model: validated.model,
-        estimatedTokens,
+        messageCount: validated.messages.length,
         temperature: validated.temperature,
       }
     });
@@ -241,217 +231,6 @@ class OpenAIService {
     }
   }
 
-  /**
-   * Create embeddings for semantic search and similarity matching
-   * 
-   * Generates vector representations of text for:
-   * - Document search in the debate evidence system
-   * - Semantic similarity matching for finding related arguments
-   * - Future RAG (Retrieval Augmented Generation) implementation
-   * 
-   * The embedding vectors can be stored in vector databases like:
-   * - Supabase pgvector extension
-   * - OpenAI's vector store (specified by OPENAI_VECTOR_STORE_ID)
-   * - Other vector databases for scaling
-   * 
-   * Model selection:
-   * - text-embedding-3-small: Default, cost-effective, 1536 dimensions
-   * - text-embedding-3-large: Higher quality, 3072 dimensions
-   * - Both support dimension reduction for optimization
-   */
-  async createEmbedding(params: EmbeddingParams): Promise<OpenAI.CreateEmbeddingResponse> {
-    const validated = openAISchemas.embedding.parse(params);
-    const client = await openAIManager.getRawClient();
-
-    logger.info('Creating embeddings', {
-      metadata: {
-        model: validated.model,
-        inputCount: Array.isArray(validated.input) ? validated.input.length : 1,
-        dimensions: validated.dimensions,
-      }
-    });
-
-    try {
-      const response = await client.embeddings.create({
-        ...validated,
-        model: validated.model || this.defaultModels.embedding,
-      });
-
-      // Log usage for cost tracking
-      logger.info('Embedding usage', {
-        metadata: {
-          model: validated.model,
-          totalTokens: response.usage.total_tokens,
-        }
-      });
-
-      return response;
-    } catch (error) {
-      logger.error('Embedding creation failed', error as Error, {
-        metadata: {
-          model: validated.model
-        }
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Structured output helper for JSON responses
-   * 
-   * Ensures reliable JSON output from the model by:
-   * 1. Setting response_format to 'json_object'
-   * 2. Adding explicit JSON instruction to the system message
-   * 3. Parsing and validating the response
-   * 4. Optional schema validation with Zod
-   * 
-   * This is critical for:
-   * - Debate scoring and analysis results
-   * - Structured feedback generation
-   * - API responses that need consistent formatting
-   * 
-   * The model is instructed to follow the schema strictly,
-   * reducing the need for complex parsing or error handling
-   */
-  async createStructuredOutput<T>(
-    params: Omit<ChatCompletionParams, 'response_format'> & {
-      schema?: z.ZodSchema<T>;
-      schemaName?: string;
-    }
-  ): Promise<T> {
-    const response = await this.createChatCompletion({
-      ...params,
-      response_format: { type: 'json_object' },
-      messages: [
-        ...params.messages,
-        {
-          role: 'system',
-          content: params.schema 
-            ? `You must respond with valid JSON that matches this schema: ${JSON.stringify(params.schema)}`
-            : 'You must respond with valid JSON.',
-        },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No content in response');
-    }
-
-    try {
-      const parsed = JSON.parse(content);
-      
-      // Validate against schema if provided
-      if (params.schema) {
-        return params.schema.parse(parsed);
-      }
-      
-      return parsed as T;
-    } catch (error) {
-      logger.error('Failed to parse structured output', error as Error, {
-        metadata: {
-          content: content.substring(0, 200),
-        }
-      });
-      throw new Error('Invalid JSON response from OpenAI');
-    }
-  }
-
-  /**
-   * Stream chat completion for real-time responses
-   * 
-   * Enables token-by-token streaming for immediate user feedback.
-   * Critical for the debate system's real-time interactions where
-   * users expect immediate AI responses.
-   * 
-   * Streaming benefits:
-   * - Lower perceived latency (first token arrives quickly)
-   * - Enables progressive rendering in the UI
-   * - Allows early termination if needed
-   * - Better UX for long responses
-   * 
-   * The onChunk callback is invoked for each token,
-   * allowing the UI to update in real-time.
-   * 
-   * Note: Streaming responses don't include usage statistics,
-   * so token counting must be done client-side if needed.
-   */
-  async streamChatCompletion(
-    params: ChatCompletionParams,
-    onChunk: (chunk: string) => void
-  ): Promise<void> {
-    const validated = openAISchemas.chatCompletion.parse(params);
-    const client = await openAIManager.getRawClient();
-
-    const stream = await client.chat.completions.create({
-      ...validated,
-      model: validated.model || this.defaultModels.chat,
-      stream: true,
-    });
-
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content;
-      if (content) {
-        onChunk(content);
-      }
-    }
-  }
-
-  /**
-   * Helper to estimate tokens (rough approximation)
-   * 
-   * Provides a quick token count estimate for cost prediction.
-   * This is a simplified heuristic - actual token counts vary based on:
-   * - Language (non-English text uses more tokens)
-   * - Special characters and formatting
-   * - Model-specific tokenization rules
-   * 
-   * For precise counts, use OpenAI's tiktoken library.
-   * This estimation is sufficient for:
-   * - Cost approximation before API calls
-   * - Checking if content might exceed limits
-   * - Logging and monitoring purposes
-   */
-  private estimateTokens(messages: Array<{ role: string; content: string }>): number {
-    // Rough estimation: ~4 characters per token
-    // This is conservative - actual average is closer to 3.5-4.5
-    const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
-    return Math.ceil(totalChars / 4);
-  }
-
-  /**
-   * Get cost estimation for an operation
-   * 
-   * Calculates estimated costs based on OpenAI's pricing model.
-   * This helps with:
-   * - Budget monitoring and alerts
-   * - Cost optimization decisions
-   * - Choosing between model quality and cost
-   * 
-   * Pricing notes:
-   * - gpt-4o-mini is the primary model for cost efficiency
-   * - Prices are per 1K tokens for text models
-   * - Whisper pricing is per minute of audio
-   * - Actual prices may vary - check OpenAI pricing page
-   * 
-   * The estimation helps decide:
-   * - When to use more expensive models (gpt-4o)
-   * - Whether to implement caching for repeated queries
-   * - If response length limits should be enforced
-   */
-  estimateCost(model: string, tokens: number): number {
-    // Rough cost estimates (update with actual pricing)
-    const pricing: Record<string, number> = {
-      'gpt-4o': 0.01, // per 1K tokens - higher quality
-      'gpt-4o-mini': 0.0002, // per 1K tokens - primary model for efficiency
-      'text-embedding-3-small': 0.00002, // very cost-effective for embeddings
-      'text-embedding-3-large': 0.00013, // higher quality embeddings
-      'whisper-1': 0.006, // per minute of audio
-    };
-
-    const rate = pricing[model] || 0.01;
-    return (tokens / 1000) * rate;
-  }
 }
 
 // Export singleton instance

@@ -63,42 +63,7 @@ async function runDemo() {
   
   // Test basic connectivity
   await testEndpoint('Health Check', 'GET', '/api/health');
-  await testEndpoint('Basic API Test', 'GET', '/api/test');
-  
-  section('🤖 AI INTEGRATION TESTS');
-  
-  // Test OpenAI integration
-  await testEndpoint(
-    'OpenAI Argument Generation', 
-    'POST', 
-    '/api/prototype/openai-argument',
-    {
-      topic: 'Autonomous vehicles should be implemented on a large scale',
-      position: 'PRO',
-      phase: 'constructive',
-      context: 'This is a test debate about autonomous vehicles and their benefits for society.'
-    }
-  );
-  
-  // Test TTS integration
-  await testEndpoint(
-    'ElevenLabs TTS Generation', 
-    'POST', 
-    '/api/prototype/elevenlabs-tts',
-    {
-      text: 'Hello, this is a test of the text-to-speech system for Eris Debate.',
-      voiceId: 'pNInz6obpgDQGcFmaJgB' // Adam voice
-    }
-  );
-  
-  section('🗃️ DATABASE INTEGRATION');
-  
-  // Test user preferences (dynamic route)
-  await testEndpoint('User Preferences Endpoint', 'GET', '/api/user-preferences');
 
-  // Test user profiles
-  await testEndpoint('User Profiles Endpoint', 'GET', '/api/user-profiles');
-  
   section('🔍 SEARCH FUNCTIONALITY');
   
   // Test wiki search (expect it to fail gracefully)

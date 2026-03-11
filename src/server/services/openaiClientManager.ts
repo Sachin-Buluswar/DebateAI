@@ -254,7 +254,3 @@ class OpenAIClientManager {
 // Export singleton instance
 export const openAIManager = OpenAIClientManager.getInstance();
 
-// Export convenience functions for common operations
-export const createChatCompletion = openAIManager.createChatCompletion.bind(openAIManager);
-export const createTranscription = openAIManager.createTranscription.bind(openAIManager);
-export const getOpenAIClient = openAIManager.getRawClient.bind(openAIManager);

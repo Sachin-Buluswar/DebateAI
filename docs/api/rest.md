@@ -540,33 +540,6 @@ Direct RAG search from database without OpenAI Assistant.
 }
 ```
 
-#### POST /api/wiki-rag-search-enhanced
-Enhanced RAG search with AI-powered synthesis.
-
-**Request Body:**
-```json
-{
-  "query": "What are the main arguments in climate debates?",
-  "maxResults": 5,
-  "synthesize": true
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "searchType": "rag-enhanced",
-  "synthesis": "Based on the documents, the main arguments include...",
-  "sources": [
-    {
-      "content": "Source content...",
-      "metadata": { ... }
-    }
-  ]
-}
-```
-
 #### POST /api/wiki-generate
 Generate Wikipedia-style content on a topic.
 

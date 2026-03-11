@@ -13,8 +13,6 @@
     "test:endpoints": "node scripts/test-endpoints.js",
     "check:env": "node scripts/check-env.js",
     "demo": "node scripts/demo-test.js",
-    "apply-migrations": "node scripts/apply-migrations.js",
-    "db:migrate": "node scripts/apply-migrations.js",
     "db:check": "node scripts/check-database.js",
     "status": "node scripts/project-status.js",
     "format:check": "prettier --check .",

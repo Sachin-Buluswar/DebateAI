@@ -58,14 +58,6 @@ export class EnhancedIndexingService {
       .eq('id', documentId);
   }
 
-  async generateQueryEmbedding(query: string): Promise<number[]> {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: query,
-    });
-    return response.data[0].embedding;
-  }
-
   private chunkText(text: string, fileName: string): ChunkData[] {
     const chunks: ChunkData[] = [];
     const lines = text.split('\n');

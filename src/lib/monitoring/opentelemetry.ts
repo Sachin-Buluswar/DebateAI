@@ -142,52 +142,6 @@ export async function traceAsync<T>(
   }
 }
 
-/**
- * Trace a sync operation
- */
-export function traceSync<T>(
-  name: string,
-  operation: () => T,
-  attributes?: Record<string, string | number | boolean>
-): T {
-  const span = createSpan(name, attributes);
-  
-  try {
-    const result = context.with(trace.setSpan(context.active(), span), operation);
-    span.setStatus({ code: SpanStatusCode.OK });
-    return result;
-  } catch (error) {
-    span.recordException(error as Error);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error;
-  } finally {
-    span.end();
-  }
-}
-
-/**
- * Add event to current span
- */
-export function addSpanEvent(name: string, attributes?: Record<string, string | number | boolean>) {
-  const span = trace.getActiveSpan();
-  if (span) {
-    span.addEvent(name, attributes);
-  }
-}
-
-/**
- * Set attributes on current span
- */
-export function setSpanAttributes(attributes: Record<string, string | number | boolean>) {
-  const span = trace.getActiveSpan();
-  if (span) {
-    span.setAttributes(attributes);
-  }
-}
-
 // Export metrics helpers
 import { metrics } from '@opentelemetry/api';
 
@@ -238,32 +192,3 @@ export const debateMetrics = {
   }),
 };
 
-// Record custom metrics
-export function recordDebateStart(userId: string, topic: string) {
-  debateMetrics.debateSessions.add(1, {
-    'user.id': userId,
-    'debate.topic': topic,
-  });
-}
-
-export function recordDebateEnd(userId: string, durationSeconds: number) {
-  debateMetrics.debateDuration.record(durationSeconds, {
-    'user.id': userId,
-  });
-}
-
-export function recordAIResponse(service: string, responseTimeMs: number) {
-  debateMetrics.aiResponses.add(1, {
-    'ai.service': service,
-  });
-  debateMetrics.aiResponseTime.record(responseTimeMs, {
-    'ai.service': service,
-  });
-}
-
-export function recordError(errorType: string, service: string) {
-  debateMetrics.errors.add(1, {
-    'error.type': errorType,
-    'service.name': service,
-  });
-}

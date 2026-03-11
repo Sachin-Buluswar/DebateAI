@@ -2,7 +2,7 @@
  * Get the correct redirect URL based on environment
  * Handles multiple environment variable patterns for maximum compatibility
  */
-export function getRedirectUrl(path: string = ''): string {
+function getRedirectUrl(path: string = ''): string {
   // For server-side rendering or when window is not available
   if (typeof window === 'undefined') {
     // Try multiple environment variables in order of preference
