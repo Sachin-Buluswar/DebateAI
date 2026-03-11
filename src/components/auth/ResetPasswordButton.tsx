@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 
@@ -46,14 +46,14 @@ export default function ResetPasswordButton({ userEmail }: ResetPasswordButtonPr
 
   return (
     <>
-      <EnhancedButton
+      <Button
         onClick={() => setShowConfirm(true)}
         variant="outline"
         size="sm"
         className="lowercase"
       >
         reset password
-      </EnhancedButton>
+      </Button>
       
       <ConfirmDialog
         isOpen={showConfirm}

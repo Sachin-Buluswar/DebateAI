@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DocumentStorageService } from '@/backend/services/documentStorageService';
-import { EnhancedIndexingService } from '@/backend/services/enhancedIndexingService';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
-import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { DocumentStorageService } from '@/server/services/documentStorageService';
+import { EnhancedIndexingService } from '@/server/services/enhancedIndexingService';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
+import { addSecurityHeaders } from '@/api-middleware/inputValidation';
 import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 export async function POST(request: NextRequest): Promise<NextResponse | Response> {

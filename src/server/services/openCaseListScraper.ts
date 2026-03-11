@@ -1,5 +1,5 @@
 import mammoth from 'mammoth';
-import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
+import { supabaseAdmin as supabase } from '@/server/lib/supabaseAdmin';
 import { EnhancedIndexingService } from './enhancedIndexingService';
 import * as path from 'path';
 import * as fs from 'fs';

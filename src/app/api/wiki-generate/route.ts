@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { optionalAuth } from '@/lib/auth-middleware';
 import { User } from '@supabase/supabase-js';
-import { withRateLimit, wikiSearchRateLimiter } from '@/middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
+import { withRateLimit, wikiSearchRateLimiter } from '@/api-middleware/rateLimiter';
+import { validateRequest, validationSchemas, addSecurityHeaders } from '@/api-middleware/inputValidation';
 import { apiLogger as logger } from '@/lib/monitoring/logger';
 import {
   generateAnswerFromContext,
   GeneratedAnswer,
-} from '@/backend/modules/wikiSearch/generationService';
-import { SearchResult } from '@/backend/modules/wikiSearch/retrievalService';
+} from '@/server/modules/wikiSearch/generationService';
+import { SearchResult } from '@/server/modules/wikiSearch/retrievalService';
 import { OpenAI } from 'openai';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const generationModel = process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini';

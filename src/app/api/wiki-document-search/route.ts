@@ -23,13 +23,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
+import { wikiSearchRateLimiter, withRateLimit } from '@/api-middleware/rateLimiter';
 import {
   validateRequest,
   validationSchemas,
   addSecurityHeaders,
-} from '@/middleware/inputValidation';
-import { createClient } from '@/utils/supabase/server';
+} from '@/api-middleware/inputValidation';
+import { createClient } from '@/lib/supabase/server';
 import { EnhancedSearchResult } from '@/types/documents';
 import { optionalAuth } from '@/lib/auth-middleware';
 import { SupabaseClient } from '@supabase/supabase-js';

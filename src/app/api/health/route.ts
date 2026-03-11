@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { env } from '@/shared/env';
+import { env } from '@/config/env';
 
 export async function GET() {
   const healthCheck = {

@@ -7,10 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
-import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
+import { withRateLimit, speechFeedbackRateLimiter } from '@/api-middleware/rateLimiter';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
-import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
-import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { processSpeechFeedback } from '@/server/modules/speechFeedback/speechFeedbackService';
+import { addSecurityHeaders } from '@/api-middleware/inputValidation';
 
 interface Metadata {
   contentType: string;

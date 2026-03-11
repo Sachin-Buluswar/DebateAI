@@ -124,7 +124,10 @@ src/
 │   ├── terms/             # Terms of service
 │   ├── about/             # About page
 │   └── page.tsx           # Landing page (public)
-├── backend/
+├── config/                # Environment & constants
+│   ├── env.ts             # Zod-validated environment variables
+│   └── constants.ts       # File size limits, recording limits
+├── server/                # Server-only business logic
 │   ├── lib/
 │   │   └── supabaseAdmin.ts       # Centralized service role client
 │   ├── modules/           # Business logic modules
@@ -153,16 +156,22 @@ src/
 │   ├── providers/         # Context providers
 │   └── search/            # Search and document components
 ├── lib/
+│   ├── supabase/          # Supabase client factories
+│   │   ├── client.ts      # Client-side Supabase
+│   │   └── server.ts      # Server-side Supabase
+│   ├── monitoring/        # Telemetry and logging
+│   ├── pdf/               # PDF processing utilities
 │   ├── auth-middleware.ts # Centralized authentication
 │   ├── auth-helpers.ts    # Auth redirect utilities
+│   ├── cn.ts              # Classname utility (clsx + tailwind-merge)
 │   ├── errorRecovery.ts   # Retry logic and error handling
+│   ├── feedbackUtils.ts   # Feedback data transformation
+│   ├── scoreStandardization.ts # Score conversion utilities
+│   ├── supabaseClient.ts  # Supabase browser client singleton
 │   ├── toast.ts           # Toast notification system
-│   ├── validation.ts      # Form validation utilities
 │   ├── uploadSessionStore.ts # File upload session management
-│   ├── supabaseClient.ts  # Supabase client factory
-│   ├── monitoring/        # Telemetry and logging
-│   └── pdf/               # PDF processing utilities
-├── middleware/
+│   └── validation.ts      # Form validation utilities
+├── api-middleware/         # API route middleware (not Next.js Edge middleware)
 │   ├── auth.ts            # Edge runtime authentication
 │   ├── cors.ts            # CORS configuration
 │   ├── inputValidation.ts # Request validation schemas
@@ -171,12 +180,6 @@ src/
 │   ├── auth.ts            # Authentication types
 │   ├── documents.ts       # Document/search types
 │   └── index.ts           # Shared type definitions
-├── utils/
-│   ├── supabase/          # Supabase utilities
-│   │   ├── client.ts      # Client-side Supabase
-│   │   ├── server.ts      # Server-side Supabase
-│   │   └── middleware.ts  # Supabase middleware
-│   └── cn.ts              # Classname utility
 ```
 
 ## 🌳 Decision Trees
@@ -237,8 +240,8 @@ What type of data?
 // File: src/app/api/[endpoint]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requireAdmin, optionalAuth } from '@/lib/auth-middleware';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
-import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // For authenticated endpoints (rate limit wraps auth)

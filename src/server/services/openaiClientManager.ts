@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai';
-import { env } from '@/shared/env';
+import { env } from '@/config/env';
 import { globalErrorRecovery } from '@/lib/errorRecovery';
 import { aiLogger as logger } from '@/lib/monitoring/logger';
 import { openaiPerformance } from '@/lib/monitoring/performance';

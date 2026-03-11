@@ -5,16 +5,16 @@
 
 import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
-import { supabaseAdmin } from '@/backend/lib/supabaseAdmin';
-import { getAudioDuration } from '@/backend/utils/audioUtils';
-import { openAIService } from '@/backend/services/openaiService';
+import { supabaseAdmin } from '@/server/lib/supabaseAdmin';
+import { getAudioDuration } from '@/server/utils/audioUtils';
+import { openAIService } from '@/server/services/openaiService';
 import { aiLogger as logger } from '@/lib/monitoring/logger';
 import {
   standardizeToPercentage,
   nsdaToPercentage,
   extractScoreFromFeedback
-} from '@/utils/scoreStandardization';
-import { MAX_USER_STORAGE_BYTES, MAX_UPLOAD_SIZE_BYTES } from '@/shared/constants';
+} from '@/lib/scoreStandardization';
+import { MAX_USER_STORAGE_BYTES, MAX_UPLOAD_SIZE_BYTES } from '@/config/constants';
 
 // Storage constants
 export const SPEECH_BUCKET = 'speech_audio';

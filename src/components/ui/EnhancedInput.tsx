@@ -1,7 +1,7 @@
 'use client';
 
 import { InputHTMLAttributes, TextareaHTMLAttributes, forwardRef, useState, useId } from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 interface EnhancedInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label: string;

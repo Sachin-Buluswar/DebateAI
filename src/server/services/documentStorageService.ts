@@ -1,5 +1,5 @@
 import { Document, DocumentChunk } from '@/types/documents';
-import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
+import { supabaseAdmin as supabase } from '@/server/lib/supabaseAdmin';
 import crypto from 'crypto';
 
 export class DocumentStorageService {

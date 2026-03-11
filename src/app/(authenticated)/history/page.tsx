@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { Debate, SpeechFeedback } from '@/types';
-import { formatScore, getScoreColor, extractScoreFromFeedback } from '@/utils/scoreStandardization';
+import { formatScore, getScoreColor, extractScoreFromFeedback } from '@/lib/scoreStandardization';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {

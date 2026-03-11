@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { wikiSearchConfig } from './wikiSearch.config';
 import { Annotation } from 'openai/resources/beta/threads/messages';
-import { DocumentStorageService } from '@/backend/services/documentStorageService';
+import { DocumentStorageService } from '@/server/services/documentStorageService';
 
 // Enhanced search result with PDF links
 export interface EnhancedSearchResult {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 interface Resource {
   id: string;

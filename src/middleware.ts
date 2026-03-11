@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { corsMiddleware } from './middleware/cors';
-import { authMiddleware } from './middleware/auth';
+import { corsMiddleware } from './api-middleware/cors';
+import { authMiddleware } from './api-middleware/auth';
 
 export async function middleware(request: NextRequest) {
   // Handle CORS first

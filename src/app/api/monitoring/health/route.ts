@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { apiLogger } from '@/lib/monitoring/logger';
 import { withMonitoring } from '@/lib/monitoring/middleware';
 import { traceAsync } from '@/lib/monitoring/opentelemetry';

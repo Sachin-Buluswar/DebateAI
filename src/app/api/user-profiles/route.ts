@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
+import { createClient } from '@/lib/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
 import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { env } from '@/shared/env';
+import { env } from '@/config/env';
 
 // This client is safe to use on the server-side only.
 // It uses the service role key and has admin privileges.

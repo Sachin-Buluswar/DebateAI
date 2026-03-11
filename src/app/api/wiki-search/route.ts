@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
+import { wikiSearchRateLimiter, withRateLimit } from '@/api-middleware/rateLimiter';
+import { validateRequest, validationSchemas, addSecurityHeaders } from '@/api-middleware/inputValidation';
 import { optionalAuth } from '@/lib/auth-middleware';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 

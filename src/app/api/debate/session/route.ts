@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, type AuthenticatedRequest } from '@/lib/auth-middleware';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
 import { aiLogger } from '@/lib/monitoring/logger';
 import { z } from 'zod';
 import OpenAI from 'openai';

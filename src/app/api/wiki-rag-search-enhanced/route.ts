@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
-import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
+import { wikiSearchRateLimiter, withRateLimit } from '@/api-middleware/rateLimiter';
 import { optionalAuth } from '@/lib/auth-middleware';
 import {
   validateRequest,
   validationSchemas,
   addSecurityHeaders,
-} from '@/middleware/inputValidation';
+} from '@/api-middleware/inputValidation';
 import { EnhancedSearchResult } from '@/types/documents';
-import { DocumentStorageService } from '@/backend/services/documentStorageService';
-import { createClient } from '@/utils/supabase/server';
+import { DocumentStorageService } from '@/server/services/documentStorageService';
+import { createClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
 
 const openaiApiKey = process.env.OPENAI_API_KEY;

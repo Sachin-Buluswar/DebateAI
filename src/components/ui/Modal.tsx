@@ -1,6 +1,6 @@
 import React, { Fragment, ReactNode } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { cn } from '../../utils/cn';
+import { cn } from '@/lib/cn';
 
 interface ModalProps {
   isOpen: boolean;

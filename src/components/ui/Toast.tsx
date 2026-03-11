@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 

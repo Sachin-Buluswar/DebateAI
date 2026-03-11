@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { DocumentTextIcon, ArrowPathIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { Document } from '@/types/documents';
@@ -210,13 +210,13 @@ function AdminDocumentsContent() {
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                 className="flex-1"
               />
-              <EnhancedButton
+              <Button
                 onClick={handleFileUpload}
                 disabled={!selectedFile || uploadingFile}
                 loading={uploadingFile}
               >
                 Upload & Index
-              </EnhancedButton>
+              </Button>
             </div>
           </div>
 
@@ -245,14 +245,14 @@ function AdminDocumentsContent() {
 
           {/* Scraping */}
           <div className="flex items-center gap-4">
-            <EnhancedButton
+            <Button
               onClick={handleScrapeOpenCaseList}
               variant="secondary"
               loading={scraping}
               disabled={scraping || scrapeYears.length === 0}
             >
               {scraping ? 'Scraping OpenCaseList...' : `Scrape OpenCaseList (${scrapeYears.length} years)`}
-            </EnhancedButton>
+            </Button>
             <span className="text-sm text-gray-500">
               Download and index debate files from opencaselist.com via ZIP archives
             </span>
@@ -392,12 +392,12 @@ export default function AdminDocumentsPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 You don't have permission to access this page.
               </p>
-              <EnhancedButton
+              <Button
                 onClick={() => window.location.href = '/'}
                 variant="primary"
               >
                 Return to Home
-              </EnhancedButton>
+              </Button>
             </div>
           </div>
       }

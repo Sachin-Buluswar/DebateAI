@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { openAIService } from '@/backend/services/openaiService';
+import { openAIService } from '@/server/services/openaiService';
 import { SearchResult } from './retrievalService'; // Import the SearchResult type
 import { aiLogger as logger } from '@/lib/monitoring/logger';
 

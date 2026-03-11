@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import type { SpeechFeedback } from '@/types';
-import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/utils/feedbackUtils';
+import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/lib/feedbackUtils';
 import { exportFeedbackAsPDF, formatMarkdownForPDF, isPDFExportSupported } from '@/lib/pdf/exportFeedbackPDF';
 
 // Lazy load heavy components

@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { MAX_UPLOAD_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
+import { MAX_UPLOAD_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/config/constants';
 
 // Common validation schemas
 export const commonSchemas = {

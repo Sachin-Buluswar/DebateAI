@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
-import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
+import { supabaseAdmin as supabase } from '@/server/lib/supabaseAdmin';
 import { z } from 'zod';
 
 const deleteSchema = z.object({

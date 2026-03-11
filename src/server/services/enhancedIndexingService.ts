@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai';
-import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
+import { supabaseAdmin as supabase } from '@/server/lib/supabaseAdmin';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,

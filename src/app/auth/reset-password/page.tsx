@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import EnhancedInput from '@/components/ui/EnhancedInput';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import AlertMessage from '@/components/ui/AlertMessage';
 
@@ -162,7 +162,7 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
-          <EnhancedButton
+          <Button
             type="submit"
             loading={isLoading}
             variant="primary"
@@ -170,7 +170,7 @@ export default function ResetPasswordPage() {
             className="w-full"
           >
             Update Password
-          </EnhancedButton>
+          </Button>
         </form>
       </div>
     </main>

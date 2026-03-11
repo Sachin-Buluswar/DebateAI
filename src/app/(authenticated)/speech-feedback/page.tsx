@@ -13,16 +13,16 @@ const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
 
 import type { User, DebaterSkillLevel } from '@/types';
 import { PlayIcon, PauseIcon, StopIcon, CloudArrowUpIcon, MicrophoneIcon } from '@heroicons/react/24/solid';
-import { MAX_UPLOAD_SIZE_BYTES, MAX_USER_STORAGE_BYTES, UPLOAD_CHUNK_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/shared/constants';
+import { MAX_UPLOAD_SIZE_BYTES, MAX_USER_STORAGE_BYTES, UPLOAD_CHUNK_SIZE_BYTES, MAX_RECORDING_MINUTES } from '@/config/constants';
 import { useToast } from '@/components/ui/Toast';
 import { SkillLevelSelector } from '@/components/feedback/SkillLevelSelector';
 
 // Import our new UI components
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/Card';
 import EnhancedInput from '@/components/ui/EnhancedInput';
 import { Badge } from '@/components/ui/Badge';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 // Constants for storage limits and chunked uploads
 const MAX_UPLOAD_SIZE_MB = MAX_UPLOAD_SIZE_BYTES / (1024 * 1024);
@@ -865,7 +865,7 @@ export default function SpeechFeedback() {
               </CardContent>
 
               <CardFooter>
-                <EnhancedButton
+                <Button
                   type="submit"
                   variant="primary"
                   size="lg"
@@ -876,7 +876,7 @@ export default function SpeechFeedback() {
                   icon={submitting ? undefined : <CloudArrowUpIcon className="w-5 h-5" />}
                 >
                   Submit for Feedback
-                </EnhancedButton>
+                </Button>
               </CardFooter>
             </form>
           </Card>
@@ -904,7 +904,7 @@ export default function SpeechFeedback() {
                   disabled={isRecording || submitting}
                 />
                 
-                <EnhancedButton
+                <Button
                   variant="secondary"
                   fullWidth
                   onClick={() => fileInputRef.current?.click()}
@@ -912,7 +912,7 @@ export default function SpeechFeedback() {
                   icon={<CloudArrowUpIcon className="w-5 h-5" />}
                 >
                   Upload Audio File
-                </EnhancedButton>
+                </Button>
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -924,7 +924,7 @@ export default function SpeechFeedback() {
                 </div>
 
                 {!isRecording ? (
-                  <EnhancedButton
+                  <Button
                     variant="primary"
                     fullWidth
                     onClick={startRecording}
@@ -932,7 +932,7 @@ export default function SpeechFeedback() {
                     icon={<MicrophoneIcon className="w-5 h-5" />}
                   >
                     Start Recording
-                  </EnhancedButton>
+                  </Button>
                 ) : (
                   <div className="bg-error-50 dark:bg-error-900/20 border-2 border-error-300 dark:border-error-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -946,7 +946,7 @@ export default function SpeechFeedback() {
                         {formatTime(recordingTime)}
                       </span>
                     </div>
-                    <EnhancedButton
+                    <Button
                       variant="danger"
                       fullWidth
                       size="sm"
@@ -954,7 +954,7 @@ export default function SpeechFeedback() {
                       icon={<StopIcon className="w-4 h-4" />}
                     >
                       Stop Recording
-                    </EnhancedButton>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -980,14 +980,14 @@ export default function SpeechFeedback() {
                   />
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <EnhancedButton
+                      <Button
                         variant="primary"
                         size="sm"
                         onClick={handlePreviewPlayPause}
                         icon={previewPlaying ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}
                       >
                         {previewPlaying ? 'Pause' : 'Play'}
-                      </EnhancedButton>
+                      </Button>
                       <div className="flex-1">
                         <input 
                           type="range" 
@@ -1041,12 +1041,12 @@ export default function SpeechFeedback() {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               We encountered an error in the speech feedback page. Please try refreshing.
             </p>
-            <EnhancedButton
+            <Button
               onClick={() => window.location.reload()}
               variant="primary"
             >
               Try again
-            </EnhancedButton>
+            </Button>
           </div>
         </div>
       </div>
@@ -1082,14 +1082,14 @@ export default function SpeechFeedback() {
                   create an account or sign in to record speeches and receive ai-powered feedback on your delivery and arguments.
                 </p>
               </div>
-              <EnhancedButton
+              <Button
                 variant="primary"
                 size="lg"
                 onClick={() => router.push('/auth')}
                 icon={<MicrophoneIcon className="w-5 h-5" />}
               >
                 sign in to practice
-              </EnhancedButton>
+              </Button>
              </div>
           )}
         </div>

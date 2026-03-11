@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, ClockIcon, AcademicCapIcon, ChartBarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 interface Exercise {
   title: string;

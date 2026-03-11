@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useId, ReactNode } from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 interface FormFieldProps {
   label: string;

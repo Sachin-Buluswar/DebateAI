@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OpenCaseListScraper } from '@/backend/services/openCaseListScraper';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
-import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { OpenCaseListScraper } from '@/server/services/openCaseListScraper';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
+import { addSecurityHeaders } from '@/api-middleware/inputValidation';
 import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest): Promise<NextResponse | Response> {

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import type { Debate, SpeechFeedback } from '@/types';
-import { extractScoreFromFeedback } from '@/utils/scoreStandardization';
+import { extractScoreFromFeedback } from '@/lib/scoreStandardization';
 
 // Lazy load dashboard components for better performance
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
