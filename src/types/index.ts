@@ -24,12 +24,6 @@ export interface Debate {
   position?: 'affirmative' | 'negative';
 }
 
-export interface DebateMessage {
-  role: 'user' | 'ai' | 'system';
-  content: string;
-  timestamp: string;
-}
-
 export interface SpeechFeedback {
   id: string;
   user_id: string;
@@ -132,14 +126,6 @@ export interface SpeechFeedback {
   updated_at?: string;
 }
 
-export interface SavedSearch {
-  id: string;
-  user_id: string;
-  query: string;
-  results_count: number;
-  created_at: string;
-}
-
 export interface SearchResult {
   content: string;
   source: string;
@@ -149,15 +135,6 @@ export interface SearchResult {
 export interface GeneratedAnswer {
   answer: string;
   sources: { source: string }[];
-}
-
-export interface SavedEvidence {
-  id: string;
-  user_id: string;
-  content: string;
-  source: string;
-  relevance_score: number;
-  created_at: string;
 }
 
 export interface ApiError {

@@ -40,7 +40,7 @@ You are working on a **production-ready debate platform** with strict security r
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript (strict mode)
 - **Database**: Supabase (PostgreSQL with Row Level Security)
-- **Real-time**: Socket.IO (local) / Supabase Realtime (Vercel production)
+- **Real-time**: ElevenLabs Conversational AI (client-side WebSocket)
 - **AI Services**: OpenAI GPT-4o-mini, ElevenLabs TTS/STT
 - **Deployment**: Vercel serverless (optimized for edge runtime)
 - **Authentication**: Supabase Auth with RLS policies
@@ -97,7 +97,7 @@ src/
 │   │   ├── monitoring/    # Metrics and health checks
 │   │   ├── openai/        # GPT integration
 │   │   ├── speech-to-text/ # Speech recognition
-│   │   ├── user_preferences/ # User settings
+│   │   ├── user-preferences/ # User settings
 │   │   ├── wiki-document-search/ # Database document search
 │   │   ├── wiki-search/   # Quick prefix search
 │   │   ├── wiki-generate/ # AI content generation
@@ -125,15 +125,16 @@ src/
 │   ├── about/             # About page
 │   └── page.tsx           # Landing page (public)
 ├── backend/
+│   ├── lib/
+│   │   └── supabaseAdmin.ts       # Centralized service role client
 │   ├── modules/           # Business logic modules
-│   │   ├── realtimeDebate/     # Debate orchestration
 │   │   ├── speechFeedback/     # Speech analysis engine
 │   │   └── wikiSearch/         # Document retrieval system
 │   └── services/          # External service integrations
 │       ├── openaiService.ts        # OpenAI GPT client
-│       ├── elevenLabsWebSocket.ts  # Voice streaming
 │       ├── documentStorageService.ts # File storage
-│       └── enhancedIndexingService.ts # Document indexing
+│       ├── enhancedIndexingService.ts # Document indexing
+│       └── openCaseListScraper.ts  # Debate case scraper
 ├── components/
 │   ├── ui/                # Reusable UI components
 │   │   ├── FormField.tsx  # Form validation component
@@ -143,7 +144,6 @@ src/
 │   │   └── ...            # Other UI primitives
 │   ├── auth/              # Authentication components
 │   ├── dashboard/         # Dashboard widgets
-│   ├── debate/            # Debate-specific components
 │   ├── feedback/          # Feedback components
 │   │   └── TrainingSection.tsx # Training plan generator
 │   ├── layout/            # Layout components
@@ -153,18 +153,14 @@ src/
 │   ├── providers/         # Context providers
 │   └── search/            # Search and document components
 ├── lib/
-│   ├── auth-middleware.ts # Centralized authentication (NEW)
-│   ├── auth-helpers.ts    # Auth utility functions
+│   ├── auth-middleware.ts # Centralized authentication
+│   ├── auth-helpers.ts    # Auth redirect utilities
 │   ├── errorRecovery.ts   # Retry logic and error handling
 │   ├── toast.ts           # Toast notification system
 │   ├── validation.ts      # Form validation utilities
 │   ├── uploadSessionStore.ts # File upload session management
-│   ├── envValidation.ts   # Environment variable validation
 │   ├── supabaseClient.ts  # Supabase client factory
 │   ├── monitoring/        # Telemetry and logging
-│   ├── realtime/          # WebSocket management
-│   ├── socket/            # Socket.IO client
-│   ├── supabase/          # Database types and utilities
 │   └── pdf/               # PDF processing utilities
 ├── middleware/
 │   ├── auth.ts            # Edge runtime authentication
@@ -657,8 +653,6 @@ WIKIFILE_PASS=                         # Wiki file password
 # Feature Flags
 ENABLE_SQL_ENDPOINT=false              # NEVER enable in production
 ENABLE_DEBUG_ENDPOINT=false            # Debug endpoint toggle
-NEXT_PUBLIC_USE_SUPABASE_REALTIME=false # Use Supabase vs Socket.IO
-SOCKET_IO_FORCE_POLLING=false          # Force polling for Socket.IO
 
 # CORS Configuration (Production)
 ALLOWED_ORIGINS=                       # Comma-separated origins
@@ -695,7 +689,7 @@ NEXT_RUNTIME=
 
 ```bash
 # Development
-npm run dev              # Start dev server with Socket.IO backend
+npm run dev              # Start dev server
 npm run build           # Production build
 npm run start           # Start production server
 
@@ -778,7 +772,7 @@ Before marking ANY task as complete:
 
 - `users` - User accounts (managed by Supabase Auth)
 - `user_roles` - Role assignments (user/admin)
-- `user_preferences` - User settings and preferences
+- `user_preferences` - User settings and preferences (API route: `/api/user-preferences`)
 - `debates` - Debate sessions
 - `rounds` - Debate rounds
 - `speeches` - Individual speeches
@@ -974,10 +968,10 @@ Investigation steps:
    - Clear node_modules: `rm -rf node_modules && npm install`
    - Check TypeScript errors: `npm run typecheck`
 
-4. **WebSocket Issues**
-   - Check CORS configuration
-   - Verify Socket.IO server is running
-   - Check `NEXT_PUBLIC_USE_SUPABASE_REALTIME` flag
+4. **ElevenLabs Voice Issues**
+   - Check CSP allows `wss://api.elevenlabs.io`
+   - Verify `ELEVENLABS_CROSSFIRE_AGENT_ID` is set
+   - Check browser microphone permissions
 
 ## ⚡ Performance Guidelines
 

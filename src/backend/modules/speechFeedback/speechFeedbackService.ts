@@ -14,12 +14,11 @@ import {
   nsdaToPercentage,
   extractScoreFromFeedback
 } from '@/utils/scoreStandardization';
+import { MAX_USER_STORAGE_BYTES, MAX_UPLOAD_SIZE_BYTES } from '@/shared/constants';
 
 // Storage constants
 export const SPEECH_BUCKET = 'speech_audio';
 export const MAX_RECORDING_LENGTH_MINUTES = 70;
-export const MAX_USER_STORAGE_BYTES = 600 * 1024 * 1024;
-export const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
 export const WHISPER_MAX_BYTES = 25 * 1024 * 1024;
 
 export interface SpeechFeedbackInput {

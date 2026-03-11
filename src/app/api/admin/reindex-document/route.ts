@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DocumentStorageService } from '@/backend/services/documentStorageService';
 import { EnhancedIndexingService } from '@/backend/services/enhancedIndexingService';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/backend/lib/supabaseAdmin';
 import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
 import { addSecurityHeaders } from '@/middleware/inputValidation';
 import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
@@ -25,11 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         }
 
         // Delete existing chunks
-        const serviceClient = createServiceClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-        await serviceClient
+        await supabaseAdmin
           .from('document_chunks')
           .delete()
           .eq('document_id', documentId);
