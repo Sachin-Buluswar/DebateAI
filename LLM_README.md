@@ -30,8 +30,8 @@ ALWAYS:
 API_Routes: src/app/api/*/route.ts
 Pages: src/app/*/page.tsx
 Components: src/components/
-Business_Logic: src/backend/modules/
-Services: src/backend/services/
+Business_Logic: src/server/modules/
+Services: src/server/services/
 Auth_Middleware: src/lib/auth-middleware.ts
 Types: src/types/
 Types: src/types/
@@ -235,7 +235,7 @@ try {
 Auth_Issues:
   - Check: supabase.auth.getUser()
   - Verify: RLS policies in Supabase
-  - Check: /src/middleware/auth.ts
+  - Check: /src/lib/auth-middleware.ts
 
 Build_Errors:
   - Run: rm -rf .next && npm run build
@@ -248,10 +248,10 @@ API_Errors:
   - Verify: Environment variables
   - Test: Rate limiting
 
-WebSocket_Issues:
-  - Check: CORS configuration
-  - Verify: NEXT_PUBLIC_USE_SUPABASE_REALTIME flag
-  - Check: Supabase Realtime status
+ElevenLabs_Voice_Issues:
+  - Check: CSP allows wss://api.elevenlabs.io
+  - Verify: ELEVENLABS_CROSSFIRE_AGENT_ID is set
+  - Check: Browser microphone permissions
 ```
 
 ## Git Workflow
@@ -288,7 +288,7 @@ Avoid:
 
 - **Main Instructions**: `/CLAUDE.md`
 - **Project Status**: `/STATUS.md`
-- **API Docs**: `/API_DOCUMENTATION.md`
+- **API Docs**: `/docs/api/rest.md`
 - **Architecture**: `/docs/architecture/`
 
 ## Final Reminders

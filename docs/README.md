@@ -28,14 +28,11 @@
 - `docs/development/patterns.md` - Code patterns for APIs, components, services
 - `docs/development/testing.md` - Testing requirements, manual test procedures
 - `docs/development/troubleshooting.md` - Common errors and solutions
-- `docs/development/integration-testing.md` - Integration test procedures
 - `docs/development/performance-baseline.md` - Performance metrics and benchmarks
 
 ## API Reference
 
-- `/API_DOCUMENTATION.md` - Complete REST API reference
 - `docs/api/rest.md` - REST endpoint details
-- `docs/api/websocket.md` - Socket.IO events and message formats
 - `docs/api/integrations/openai.md` - OpenAI API integration
 - `docs/api/integrations/elevenlabs.md` - ElevenLabs TTS/STT integration
 - `docs/api/integrations/elevenlabs-websocket.md` - ElevenLabs WebSocket API
@@ -53,8 +50,6 @@
 - `docs/deployment/environment-secrets.md` - Secret management
 - `docs/deployment/email-setup.md` - Email template configuration
 - `docs/deployment/alert-response.md` - Alert handling procedures
-- `docs/deployment/vercel-socketio.md` - Vercel deployment with Socket.IO
-- `docs/deployment/supabase-realtime-implementation.md` - Supabase Realtime setup
 
 ## Project
 
@@ -66,5 +61,4 @@
 - `docs/RAG_SYSTEM_GUIDE.md` - RAG system setup and usage
 - `docs/RBAC_IMPLEMENTATION.md` - Role-based access control
 - `docs/search-setup-instructions.md` - Search system setup
-- `docs/research/realtime-solutions.md` - Research on real-time communication options
 - `docs/archive/` - Historical documents (resolved issues, pre-deployment summaries)

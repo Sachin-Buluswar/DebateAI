@@ -241,7 +241,7 @@ When working with this codebase:
 ## 📞 Support & Resources
 
 - **Primary Documentation**: `/CLAUDE.md` (AI agent instructions)
-- **API Documentation**: `/API_DOCUMENTATION.md`
+- **API Documentation**: `/docs/api/rest.md`
 - **Architecture**: `/docs/architecture/`
 - **Deployment**: `/docs/deployment/`
 - **Development**: `/docs/development/`
