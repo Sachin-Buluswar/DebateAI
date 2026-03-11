@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
         const topic = parsed.topic || (await generateDebateTopic());
 
-        const agentId = process.env.ELEVENLABS_DEBATE_AGENT_ID;
+        const agentId = process.env.ELEVENLABS_CROSSFIRE_AGENT_ID;
         if (!agentId) {
           return NextResponse.json(
             { error: 'Debate service is not configured. Missing agent ID.' },

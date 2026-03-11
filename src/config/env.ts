@@ -15,7 +15,7 @@ const serverSchema = z.object({
     : z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   ELEVENLABS_STT_MODEL_ID: z.string().optional(),
-  ELEVENLABS_DEBATE_AGENT_ID: z.string().optional(),
+  ELEVENLABS_CROSSFIRE_AGENT_ID: z.string().optional(),
   OPENAI_VECTOR_STORE_ID: z.string().optional(),
   PORT: z.string().optional().default('3000'),
 });
@@ -33,7 +33,7 @@ if (typeof window === 'undefined') {
     ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     ELEVENLABS_STT_MODEL_ID: process.env.ELEVENLABS_STT_MODEL_ID,
-    ELEVENLABS_DEBATE_AGENT_ID: process.env.ELEVENLABS_DEBATE_AGENT_ID,
+    ELEVENLABS_CROSSFIRE_AGENT_ID: process.env.ELEVENLABS_CROSSFIRE_AGENT_ID,
     OPENAI_VECTOR_STORE_ID: process.env.OPENAI_VECTOR_STORE_ID,
     PORT: process.env.PORT,
     // Client
