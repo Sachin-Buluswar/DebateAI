@@ -25,7 +25,7 @@ src/app/
 ```
 src/components/
 ├── ui/                    # Enhanced UI components
-│   ├── EnhancedButton.tsx
+│   ├── Button.tsx
 │   ├── EnhancedInput.tsx
 │   └── Toast.tsx
 ├── debate/               # Debate-specific components

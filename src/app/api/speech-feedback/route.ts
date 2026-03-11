@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
-import { processSpeechFeedback } from '@/backend/modules/speechFeedback/speechFeedbackService';
-import { speechFeedbackRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders, validateAudioFile } from '@/middleware/inputValidation';
+import { processSpeechFeedback } from '@/server/modules/speechFeedback/speechFeedbackService';
+import { speechFeedbackRateLimiter, withRateLimit } from '@/api-middleware/rateLimiter';
+import { validateRequest, validationSchemas, addSecurityHeaders, validateAudioFile } from '@/api-middleware/inputValidation';
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting for speech uploads

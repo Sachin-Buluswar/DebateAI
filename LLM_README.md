@@ -43,8 +43,8 @@ Types: src/types/
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requireAdmin, optionalAuth } from '@/lib/auth-middleware';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
-import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 ```
 
@@ -53,13 +53,13 @@ import { z } from 'zod';
 'use client';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/lib/toast';
-import EnhancedButton from '@/components/ui/EnhancedButton';
-import { FormField } from '@/components/ui/FormField';
+import Button from '@/components/ui/Button';
+import { FormValidator } from '@/lib/validation';
 ```
 
 ### Server Component
 ```typescript
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 ```
 

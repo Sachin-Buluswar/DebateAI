@@ -40,7 +40,7 @@ You are working on a **production-ready debate platform** with strict security r
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript (strict mode)
 - **Database**: Supabase (PostgreSQL with Row Level Security)
-- **Real-time**: Socket.IO (local) / Supabase Realtime (Vercel production)
+- **Real-time**: ElevenLabs Conversational AI (client-side WebSocket)
 - **AI Services**: OpenAI GPT-4o-mini, ElevenLabs TTS/STT
 - **Deployment**: Vercel serverless (optimized for edge runtime)
 - **Authentication**: Supabase Auth with RLS policies
@@ -87,21 +87,12 @@ src/
 │   │   │   ├── scrape-status/
 │   │   │   ├── upload-document/
 │   │   │   └── reindex-document/
-│   │   ├── analysis/      # Debate analysis endpoints
-│   │   ├── auth/          # Authentication endpoints
 │   │   ├── debate/        # Debate session management
-│   │   ├── documents/     # Document upload/retrieval
-│   │   ├── elevenlabs/    # Voice services integration
-│   │   ├── feedback/      # User feedback system
-│   │   ├── judge-feedback/ # AI judge responses
 │   │   ├── monitoring/    # Metrics and health checks
-│   │   ├── openai/        # GPT integration
-│   │   ├── speech-to-text/ # Speech recognition
-│   │   ├── user_preferences/ # User settings
+│   │   ├── speech-feedback/ # Speech analysis (direct + chunked upload)
 │   │   ├── wiki-document-search/ # Database document search
-│   │   ├── wiki-search/   # Quick prefix search
+│   │   ├── wiki-search/   # Vector similarity search
 │   │   ├── wiki-generate/ # AI content generation
-│   │   ├── wiki-rag-search-enhanced/ # Enhanced RAG search
 │   │   ├── debug/         # Debug endpoint (protected)
 │   │   └── resources/     # Educational resources
 │   ├── (authenticated)/   # Protected pages with navigation
@@ -124,26 +115,27 @@ src/
 │   ├── terms/             # Terms of service
 │   ├── about/             # About page
 │   └── page.tsx           # Landing page (public)
-├── backend/
+├── config/                # Environment & constants
+│   ├── env.ts             # Zod-validated environment variables
+│   └── constants.ts       # File size limits, recording limits
+├── server/                # Server-only business logic
+│   ├── lib/
+│   │   └── supabaseAdmin.ts       # Centralized service role client
 │   ├── modules/           # Business logic modules
-│   │   ├── realtimeDebate/     # Debate orchestration
 │   │   ├── speechFeedback/     # Speech analysis engine
 │   │   └── wikiSearch/         # Document retrieval system
 │   └── services/          # External service integrations
 │       ├── openaiService.ts        # OpenAI GPT client
-│       ├── elevenLabsWebSocket.ts  # Voice streaming
 │       ├── documentStorageService.ts # File storage
-│       └── enhancedIndexingService.ts # Document indexing
+│       ├── enhancedIndexingService.ts # Document indexing
+│       └── openCaseListScraper.ts  # Debate case scraper
 ├── components/
 │   ├── ui/                # Reusable UI components
-│   │   ├── FormField.tsx  # Form validation component
 │   │   ├── Button.tsx     # Button variants
-│   │   ├── Modal.tsx      # Modal dialogs
 │   │   ├── Toast.tsx      # Toast notifications
 │   │   └── ...            # Other UI primitives
 │   ├── auth/              # Authentication components
 │   ├── dashboard/         # Dashboard widgets
-│   ├── debate/            # Debate-specific components
 │   ├── feedback/          # Feedback components
 │   │   └── TrainingSection.tsx # Training plan generator
 │   ├── layout/            # Layout components
@@ -153,20 +145,22 @@ src/
 │   ├── providers/         # Context providers
 │   └── search/            # Search and document components
 ├── lib/
-│   ├── auth-middleware.ts # Centralized authentication (NEW)
-│   ├── auth-helpers.ts    # Auth utility functions
-│   ├── errorRecovery.ts   # Retry logic and error handling
-│   ├── toast.ts           # Toast notification system
-│   ├── validation.ts      # Form validation utilities
-│   ├── uploadSessionStore.ts # File upload session management
-│   ├── envValidation.ts   # Environment variable validation
-│   ├── supabaseClient.ts  # Supabase client factory
+│   ├── supabase/          # Supabase client factories
+│   │   ├── client.ts      # Client-side Supabase
+│   │   └── server.ts      # Server-side Supabase
 │   ├── monitoring/        # Telemetry and logging
-│   ├── realtime/          # WebSocket management
-│   ├── socket/            # Socket.IO client
-│   ├── supabase/          # Database types and utilities
-│   └── pdf/               # PDF processing utilities
-├── middleware/
+│   ├── pdf/               # PDF processing utilities
+│   ├── auth-middleware.ts # Centralized authentication
+│   ├── auth-helpers.ts    # Auth redirect utilities
+│   ├── cn.ts              # Classname utility (clsx + tailwind-merge)
+│   ├── errorRecovery.ts   # Retry logic and error handling
+│   ├── feedbackUtils.ts   # Feedback data transformation
+│   ├── scoreStandardization.ts # Score conversion utilities
+│   ├── supabaseClient.ts  # Supabase browser client singleton
+│   ├── toast.ts           # Toast notification system
+│   ├── uploadSessionStore.ts # File upload session management
+│   └── validation.ts      # Form validation utilities
+├── api-middleware/         # API route middleware (not Next.js Edge middleware)
 │   ├── auth.ts            # Edge runtime authentication
 │   ├── cors.ts            # CORS configuration
 │   ├── inputValidation.ts # Request validation schemas
@@ -175,12 +169,6 @@ src/
 │   ├── auth.ts            # Authentication types
 │   ├── documents.ts       # Document/search types
 │   └── index.ts           # Shared type definitions
-├── utils/
-│   ├── supabase/          # Supabase utilities
-│   │   ├── client.ts      # Client-side Supabase
-│   │   ├── server.ts      # Server-side Supabase
-│   │   └── middleware.ts  # Supabase middleware
-│   └── cn.ts              # Classname utility
 ```
 
 ## 🌳 Decision Trees
@@ -201,12 +189,11 @@ Is the endpoint public?
 ```
 What type of search do you need?
 ├─ Exact phrase/term? → `/api/wiki-document-search`
-│  └─ Database full-text search, no AI
-├─ Semantic similarity? → `/api/wiki-rag-search-enhanced`
-│  └─ Vector embeddings, AI-powered
-├─ Quick autocomplete? → `/api/wiki-search`
-│  └─ Fast prefix matching
-└─ Complex analysis? → Combine multiple endpoints
+│  └─ Database full-text search (tsvector), no AI
+├─ Semantic similarity? → `/api/wiki-search`
+│  └─ Vector embeddings (pgvector), AI-powered
+└─ AI-generated answer? → `/api/wiki-generate`
+   └─ RAG: retrieves context, then generates answer
 ```
 
 ### Error Handling Strategy
@@ -241,8 +228,8 @@ What type of data?
 // File: src/app/api/[endpoint]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, requireAdmin, optionalAuth } from '@/lib/auth-middleware';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
-import { createClient } from '@/utils/supabase/server';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // For authenticated endpoints (rate limit wraps auth)
@@ -365,7 +352,6 @@ export function Component({ props }: ComponentProps) {
 import { useState, useMemo } from 'react';
 import { useToast } from '@/lib/toast';
 import { FormValidator } from '@/lib/validation';
-import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
 
 export function FormComponent() {
@@ -423,39 +409,40 @@ export function FormComponent() {
   
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <FormField
-        label="Email"
-        name="email"
-        type="email"
-        value={formData.email}
-        onChange={(value) => {
-          setFormData(prev => ({ ...prev, email: value }));
-          if (formErrors.email) {
-            setFormErrors(prev => ({ ...prev, email: '' }));
-          }
-        }}
-        error={formErrors.email}
-        required
-        disabled={submitting}
-      />
-      
-      <FormField
-        label="Message"
-        name="message"
-        type="textarea"
-        value={formData.message}
-        onChange={(value) => {
-          setFormData(prev => ({ ...prev, message: value }));
-          if (formErrors.message) {
-            setFormErrors(prev => ({ ...prev, message: '' }));
-          }
-        }}
-        error={formErrors.message}
-        required
-        disabled={submitting}
-        rows={4}
-      />
-      
+      <div>
+        <label htmlFor="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, email: e.target.value }));
+            if (formErrors.email) {
+              setFormErrors(prev => ({ ...prev, email: '' }));
+            }
+          }}
+          disabled={submitting}
+        />
+        {formErrors.email && <p className="text-red-600">{formErrors.email}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="message">Message</label>
+        <textarea
+          id="message"
+          value={formData.message}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, message: e.target.value }));
+            if (formErrors.message) {
+              setFormErrors(prev => ({ ...prev, message: '' }));
+            }
+          }}
+          disabled={submitting}
+          rows={4}
+        />
+        {formErrors.message && <p className="text-red-600">{formErrors.message}</p>}
+      </div>
+
       <Button type="submit" disabled={submitting}>
         {submitting ? 'Submitting...' : 'Submit'}
       </Button>
@@ -592,7 +579,7 @@ class ServiceName {
    
    import { useState } from 'react';
    import { useToast } from '@/lib/toast';
-   import { FormField } from '@/components/ui/FormField';
+   import { FormValidator } from '@/lib/validation';
    ```
    
 2. **Set up validation**:
@@ -657,8 +644,6 @@ WIKIFILE_PASS=                         # Wiki file password
 # Feature Flags
 ENABLE_SQL_ENDPOINT=false              # NEVER enable in production
 ENABLE_DEBUG_ENDPOINT=false            # Debug endpoint toggle
-NEXT_PUBLIC_USE_SUPABASE_REALTIME=false # Use Supabase vs Socket.IO
-SOCKET_IO_FORCE_POLLING=false          # Force polling for Socket.IO
 
 # CORS Configuration (Production)
 ALLOWED_ORIGINS=                       # Comma-separated origins
@@ -695,7 +680,7 @@ NEXT_RUNTIME=
 
 ```bash
 # Development
-npm run dev              # Start dev server with Socket.IO backend
+npm run dev              # Start dev server
 npm run build           # Production build
 npm run start           # Start production server
 
@@ -710,7 +695,6 @@ npm run test:endpoints  # Test API endpoints
 npm run demo           # Run demo test
 
 # Database Management
-npm run db:migrate      # Apply migrations
 npm run db:check        # Verify database setup
 npm run setup-storage   # Setup storage buckets
 npm run validate-rag    # Validate RAG configuration
@@ -778,7 +762,7 @@ Before marking ANY task as complete:
 
 - `users` - User accounts (managed by Supabase Auth)
 - `user_roles` - Role assignments (user/admin)
-- `user_preferences` - User settings and preferences
+- `user_preferences` - User settings and preferences (accessed via Supabase client directly)
 - `debates` - Debate sessions
 - `rounds` - Debate rounds
 - `speeches` - Individual speeches
@@ -974,10 +958,10 @@ Investigation steps:
    - Clear node_modules: `rm -rf node_modules && npm install`
    - Check TypeScript errors: `npm run typecheck`
 
-4. **WebSocket Issues**
-   - Check CORS configuration
-   - Verify Socket.IO server is running
-   - Check `NEXT_PUBLIC_USE_SUPABASE_REALTIME` flag
+4. **ElevenLabs Voice Issues**
+   - Check CSP allows `wss://api.elevenlabs.io`
+   - Verify `ELEVENLABS_CROSSFIRE_AGENT_ID` is set
+   - Check browser microphone permissions
 
 ## ⚡ Performance Guidelines
 

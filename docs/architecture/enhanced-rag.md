@@ -74,10 +74,9 @@ document_chunks:
    - Shows raw document excerpts
    - Limited metadata
 
-3. **Enhanced RAG Search** (`/api/wiki-rag-search-enhanced`)
-   - Full PDF navigation support
-   - Surrounding context display
-   - Direct page links
+3. **AI-Generated Answers** (`/api/wiki-generate`)
+   - RAG: retrieves context, then generates answer
+   - Combines search results with AI synthesis
 
 #### Search Flow
 ```mermaid
@@ -243,7 +242,7 @@ npm run supabase db query "DELETE FROM search_results_cache WHERE expires_at < N
 
 ### Enhanced Search Request
 ```typescript
-POST /api/wiki-rag-search-enhanced
+POST /api/wiki-search
 {
   "query": "string",
   "maxResults": 10 // optional, default 10

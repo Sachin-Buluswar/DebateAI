@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 import { SimplePDFViewer } from './PDFViewer';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 

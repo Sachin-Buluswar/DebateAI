@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { DocumentTextIcon, ArrowPathIcon, TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { Document } from '@/types/documents';
+
+const AVAILABLE_YEARS = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013];
 
 function AdminDocumentsContent() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -16,10 +18,15 @@ function AdminDocumentsContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [scrapeYears, setScrapeYears] = useState<number[]>([2025, 2024, 2023, 2022, 2021, 2020]);
   const { addToast } = useToast();
+  const scrapeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     loadDocuments();
+    return () => {
+      if (scrapeIntervalRef.current) clearInterval(scrapeIntervalRef.current);
+    };
   }, []);
 
   const loadDocuments = async () => {
@@ -103,29 +110,65 @@ function AdminDocumentsContent() {
     }
   };
 
+  const toggleYear = (year: number) => {
+    setScrapeYears(prev =>
+      prev.includes(year)
+        ? prev.filter(y => y !== year)
+        : [...prev, year].sort((a, b) => b - a)
+    );
+  };
+
   const handleScrapeOpenCaseList = async () => {
+    if (scrapeYears.length === 0) {
+      addToast({ message: 'Select at least one year', type: 'error' });
+      return;
+    }
+
     setScraping(true);
     try {
       const response = await fetch('/api/admin/scrape-opencaselist', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ years: scrapeYears }),
       });
 
       if (!response.ok) throw new Error('Scraping failed');
 
-      addToast({ message: 'OpenCaseList scraping started', type: 'info' });
-      
-      // Poll for status
-      const checkStatus = setInterval(async () => {
-        const statusResponse = await fetch('/api/admin/scrape-status');
-        const status = await statusResponse.json();
-        
-        if (status.pending === 0) {
-          clearInterval(checkStatus);
-          setScraping(false);
-          addToast({ message: `Scraping complete: ${status.completed} files processed`, type: 'success' });
-          await loadDocuments();
+      addToast({ message: `Scraping started for years: ${scrapeYears.join(', ')}`, type: 'info' });
+
+      // Poll for status with cleanup and error handling
+      if (scrapeIntervalRef.current) clearInterval(scrapeIntervalRef.current);
+      let failCount = 0;
+      scrapeIntervalRef.current = setInterval(async () => {
+        try {
+          const statusResponse = await fetch('/api/admin/scrape-status');
+          if (!statusResponse.ok) {
+            failCount++;
+            if (failCount >= 5) {
+              if (scrapeIntervalRef.current) clearInterval(scrapeIntervalRef.current);
+              setScraping(false);
+              addToast({ message: 'Lost connection to scrape status. Check logs for details.', type: 'error' });
+            }
+            return;
+          }
+          failCount = 0;
+          const status = await statusResponse.json();
+
+          if (status.pending === 0) {
+            if (scrapeIntervalRef.current) clearInterval(scrapeIntervalRef.current);
+            setScraping(false);
+            addToast({ message: `Scraping complete: ${status.completed} files processed`, type: 'success' });
+            await loadDocuments();
+          }
+        } catch {
+          failCount++;
+          if (failCount >= 5) {
+            if (scrapeIntervalRef.current) clearInterval(scrapeIntervalRef.current);
+            setScraping(false);
+            addToast({ message: 'Lost connection to scrape status. Check logs for details.', type: 'error' });
+          }
         }
-      }, 5000);
+      }, 10000);
     } catch (_error) {
       addToast({ message: 'Failed to start scraping', type: 'error' });
       setScraping(false);
@@ -154,41 +197,64 @@ function AdminDocumentsContent() {
         {/* Actions Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4">Actions</h2>
-          
+
           {/* File Upload */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Upload PDF Document
+              Upload PDF or TXT Document
             </label>
             <div className="flex items-center gap-4">
               <input
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.txt"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                 className="flex-1"
               />
-              <EnhancedButton
+              <Button
                 onClick={handleFileUpload}
                 disabled={!selectedFile || uploadingFile}
                 loading={uploadingFile}
               >
                 Upload & Index
-              </EnhancedButton>
+              </Button>
+            </div>
+          </div>
+
+          {/* Year Selector */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Select Years to Scrape
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_YEARS.map(year => (
+                <button
+                  key={year}
+                  onClick={() => toggleYear(year)}
+                  disabled={scraping}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    scrapeYears.includes(year)
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  } ${scraping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {year}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Scraping */}
           <div className="flex items-center gap-4">
-            <EnhancedButton
+            <Button
               onClick={handleScrapeOpenCaseList}
               variant="secondary"
               loading={scraping}
-              disabled={scraping}
+              disabled={scraping || scrapeYears.length === 0}
             >
-              {scraping ? 'Scraping OpenCaseList...' : 'Scrape OpenCaseList'}
-            </EnhancedButton>
+              {scraping ? 'Scraping OpenCaseList...' : `Scrape OpenCaseList (${scrapeYears.length} years)`}
+            </Button>
             <span className="text-sm text-gray-500">
-              Download and index debate files from opencaselist.com
+              Download and index debate files from opencaselist.com via ZIP archives
             </span>
           </div>
         </div>
@@ -200,7 +266,7 @@ function AdminDocumentsContent() {
               Documents ({documents.length})
             </h2>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-900">
@@ -266,14 +332,16 @@ function AdminDocumentsContent() {
                         >
                           <ArrowPathIcon className="h-5 w-5" />
                         </button>
-                        <a
-                          href={doc.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          <DocumentTextIcon className="h-5 w-5" />
-                        </a>
+                        {doc.file_url && (
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            <DocumentTextIcon className="h-5 w-5" />
+                          </a>
+                        )}
                         {deleteConfirmId === doc.id ? (
                           <div className="flex items-center gap-1">
                             <button
@@ -312,7 +380,7 @@ function AdminDocumentsContent() {
 
 export default function AdminDocumentsPage() {
   return (
-    <RoleProtectedRoute 
+    <RoleProtectedRoute
       requiredRole="admin"
       unauthorizedComponent={
           <div className="flex items-center justify-center min-h-[60vh]">
@@ -324,12 +392,12 @@ export default function AdminDocumentsPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 You don't have permission to access this page.
               </p>
-              <EnhancedButton
+              <Button
                 onClick={() => window.location.href = '/'}
                 variant="primary"
               >
                 Return to Home
-              </EnhancedButton>
+              </Button>
             </div>
           </div>
       }

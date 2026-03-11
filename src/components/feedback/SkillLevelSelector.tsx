@@ -2,7 +2,7 @@
 
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { type DebaterSkillLevel } from '@/types';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 interface SkillLevelSelectorProps {
   value: DebaterSkillLevel;

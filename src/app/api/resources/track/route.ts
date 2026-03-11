@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { optionalAuth } from '@/lib/auth-middleware';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
 import { z } from 'zod';
 import { headers } from 'next/headers';
 import { User } from '@supabase/supabase-js';

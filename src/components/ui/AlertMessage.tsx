@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 
 interface AlertMessageProps {
   type: 'error' | 'success' | 'warning' | 'info';

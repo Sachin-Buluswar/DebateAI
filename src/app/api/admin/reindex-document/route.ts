@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DocumentStorageService } from '@/backend/services/documentStorageService';
-import { EnhancedIndexingService } from '@/backend/services/enhancedIndexingService';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
-import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
-import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { DocumentStorageService } from '@/server/services/documentStorageService';
+import { EnhancedIndexingService } from '@/server/services/enhancedIndexingService';
+import { supabaseAdmin } from '@/server/lib/supabaseAdmin';
+import { withRateLimit, apiRateLimiter } from '@/api-middleware/rateLimiter';
+import { addSecurityHeaders } from '@/api-middleware/inputValidation';
 import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
 
 export async function POST(request: NextRequest): Promise<NextResponse | Response> {
@@ -19,24 +19,52 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         const documentStorage = new DocumentStorageService();
         const indexingService = new EnhancedIndexingService();
 
-        // Get document
         const document = await documentStorage.getDocument(documentId);
         if (!document) {
           return NextResponse.json({ error: 'Document not found' }, { status: 404 });
         }
 
-        // Delete existing chunks (needs service role for bulk delete)
-        const serviceClient = createServiceClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
-        await serviceClient
+        // Delete existing chunks
+        await supabaseAdmin
           .from('document_chunks')
           .delete()
           .eq('document_id', documentId);
 
-        // Re-index document
-        await indexingService.indexPDFDocument(document.id, document.file_url, document.file_name);
+        // Re-extract text if we have a file URL, otherwise use stored content
+        let text = '';
+        if (document.file_url && document.file_url.length > 0) {
+          try {
+            const response = await fetch(document.file_url);
+            if (response.ok) {
+              const buffer = Buffer.from(await response.arrayBuffer());
+              if (document.file_name.endsWith('.pdf')) {
+                const pdfParse = await import('pdf-parse').then(m => m.default || m);
+                const pdfData = await pdfParse(buffer);
+                text = pdfData.text;
+              } else {
+                text = new TextDecoder().decode(buffer);
+              }
+            }
+          } catch {
+            // Fall back to stored content
+          }
+        }
+
+        // Fall back to stored content preview
+        if (!text && document.content) {
+          text = document.content;
+        }
+
+        if (!text || text.trim().length < 50) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              { error: 'No content available for reindexing' },
+              { status: 400 }
+            )
+          );
+        }
+
+        await indexingService.indexDocument(document.id, text, document.file_name);
 
         return addSecurityHeaders(
           NextResponse.json({

@@ -45,22 +45,3 @@ export function hasRolePermission(userRole: UserRole, requiredRole: UserRole): b
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 }
 
-/**
- * Role display names for UI
- */
-export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
-  'user': 'User',
-  'moderator': 'Moderator',
-  'admin': 'Administrator',
-  'super_admin': 'Super Administrator',
-};
-
-/**
- * Role descriptions for UI
- */
-export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  'user': 'Standard user with access to all basic features',
-  'moderator': 'Can moderate content and manage community features',
-  'admin': 'Can manage documents, users, and system settings',
-  'super_admin': 'Full system access including role management',
-};

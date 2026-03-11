@@ -4,21 +4,15 @@
  */
 
 // Logger exports
-import { apiLogger as _apiLogger } from './logger';
 export {
   default as Logger,
   apiLogger,
-  dbLogger,
   authLogger,
   aiLogger,
-  socketLogger
 } from './logger';
 
 // Performance monitoring exports
 export {
-  PerformanceMonitor,
-  DatabasePerformanceTracker,
-  ExternalAPIPerformanceTracker,
   apiPerformance,
   dbPerformance,
   openaiPerformance,
@@ -28,7 +22,6 @@ export {
 // Middleware exports
 export {
   withMonitoring,
-  withRateLimit
 } from './middleware';
 
 // OpenTelemetry exports
@@ -37,15 +30,7 @@ export {
   shutdownOpenTelemetry,
   createSpan,
   traceAsync,
-  traceSync,
-  addSpanEvent,
-  setSpanAttributes,
-  instrumentSocketIO,
   debateMetrics,
-  recordDebateStart,
-  recordDebateEnd,
-  recordAIResponse,
-  recordError
 } from './opentelemetry';
 
 /**
@@ -53,7 +38,6 @@ export {
  * Call this in your app initialization
  */
 export async function initializeMonitoring() {
-  // Import logger within function
   const { apiLogger: localApiLogger } = await import('./logger');
   const { initializeOpenTelemetry: initOtel } = await import('./opentelemetry');
 
@@ -68,7 +52,6 @@ export async function initializeMonitoring() {
         metadata: { promise: promise.toString() }
       });
 
-      // Also capture in Sentry
       import('../../../sentry.server.config').then(({ sentryServer }) => {
         sentryServer.captureException(reason as Error);
       });
@@ -79,7 +62,6 @@ export async function initializeMonitoring() {
         metadata: { fatal: true }
       });
 
-      // Also capture in Sentry
       import('../../../sentry.server.config').then(({ sentryServer }) => {
         sentryServer.captureException(error);
       });
@@ -92,7 +74,6 @@ export async function initializeMonitoring() {
     window.addEventListener('unhandledrejection', (event) => {
       console.error('Unhandled promise rejection:', event.reason);
 
-      // Also capture in Sentry
       import('../../../instrumentation-client').then(({ sentryClient }) => {
         sentryClient.captureException(new Error(event.reason));
       });
@@ -101,7 +82,6 @@ export async function initializeMonitoring() {
     window.addEventListener('error', (event) => {
       console.error('Global error:', event.error);
 
-      // Also capture in Sentry
       import('../../../instrumentation-client').then(({ sentryClient }) => {
         sentryClient.captureException(event.error);
       });
@@ -116,21 +96,6 @@ export async function initializeMonitoring() {
       openTelemetryEnabled: !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
       sentryEnabled: !!process.env.SENTRY_DSN
     }
-  });
-}
-
-/**
- * Create a context-aware logger for a specific request
- */
-export function createRequestLogger(
-  requestId: string,
-  userId?: string,
-  metadata?: Record<string, unknown>
-): import('./logger').default {
-  return _apiLogger.child({
-    requestId,
-    userId,
-    metadata
   });
 }
 

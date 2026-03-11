@@ -3,7 +3,7 @@
 ## Service Layer Architecture
 
 ```
-src/backend/
+src/server/
 ├── services/                  # External integrations
 │   ├── openaiService.ts      # Centralized OpenAI client
 │   ├── openaiClientManager.ts # Connection pooling

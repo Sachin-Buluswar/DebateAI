@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { User } from '@supabase/supabase-js';
 import { authLogger } from '@/lib/monitoring/logger';
 
@@ -226,19 +226,3 @@ export async function hasRole(
   }
 }
 
-/**
- * Rate limit with authentication context
- */
-export async function requireAuthWithRateLimit(
-  request: NextRequest,
-  rateLimiter: typeof import('@/middleware/rateLimiter').apiRateLimiter,
-  handler: (request: AuthenticatedRequest) => Promise<NextResponse | Response>
-): Promise<NextResponse | Response> {
-  // First check rate limit
-  const { withRateLimit } = await import('@/middleware/rateLimiter');
-
-  return withRateLimit(request, rateLimiter, async () => {
-    // Then check auth
-    return requireAuth(request, handler);
-  });
-}

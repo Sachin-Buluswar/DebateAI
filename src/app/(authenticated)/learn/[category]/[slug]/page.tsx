@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import BackButton from '@/components/ui/BackButton';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 import { useToast } from '@/lib/toast';
 
 // Dynamic import to prevent SSR issues

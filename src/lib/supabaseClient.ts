@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from '@/utils/supabase/client';
+import { createClient as createSupabaseClient } from '@/lib/supabase/client';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * the modern SSR pattern for Next.js 13+ app directory.
  * 
  * Note: This client is for use in client components only.
- * For server components and API routes, use createClient from '@/utils/supabase/server'
+ * For server components and API routes, use createClient from '@/lib/supabase/server'
  */
 
 let supabase: SupabaseClient;

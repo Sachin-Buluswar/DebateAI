@@ -76,7 +76,7 @@ Server-side modules create an **admin** client that bypasses RLS:
 
 ```ts
 import { createClient } from '@supabase/supabase-js'
-import { env } from '@/shared/env'
+import { env } from '@/config/env'
 
 export const supabaseAdmin = createClient(
   env.NEXT_PUBLIC_SUPABASE_URL,

@@ -5,6 +5,7 @@ export interface Document {
   file_url: string;
   file_size?: number;
   page_count?: number;
+  content?: string;
   source_url?: string;
   source_type: 'upload' | 'opencaselist' | 'other';
   metadata: Record<string, unknown>;

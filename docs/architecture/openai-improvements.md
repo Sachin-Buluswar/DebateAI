@@ -28,7 +28,7 @@ This document outlines the comprehensive improvements made to OpenAI API usage a
 
 ## 📁 New Files Created
 
-### 1. `/src/backend/services/openaiClientManager.ts`
+### 1. `/src/server/services/openaiClientManager.ts`
 **Purpose**: Centralized OpenAI client management with connection pooling
 
 **Key Features**:
@@ -40,7 +40,7 @@ This document outlines the comprehensive improvements made to OpenAI API usage a
 
 **Usage Example**:
 ```typescript
-import { openAIManager } from '@/backend/services/openaiClientManager';
+import { openAIManager } from '@/server/services/openaiClientManager';
 
 // For chat completions with automatic error recovery
 const response = await openAIManager.createChatCompletion(params, {
@@ -49,7 +49,7 @@ const response = await openAIManager.createChatCompletion(params, {
 });
 ```
 
-### 2. `/src/backend/services/openaiService.ts`
+### 2. `/src/server/services/openaiService.ts`
 **Purpose**: High-level service interface for all OpenAI operations
 
 **Key Features**:
@@ -69,7 +69,7 @@ const response = await openAIManager.createChatCompletion(params, {
 ## 🔄 Updated Services
 
 ### 1. **Speech Generation Service**
-**File**: `/src/backend/modules/realtimeDebate/speech-generation.ts`
+**File**: `/src/server/modules/realtimeDebate/speech-generation.ts`
 
 **Changes**:
 - Uses centralized OpenAI service
@@ -78,7 +78,7 @@ const response = await openAIManager.createChatCompletion(params, {
 - Response validation
 
 ### 2. **Debate Analysis Service**
-**File**: `/src/backend/modules/realtimeDebate/analysis.ts`
+**File**: `/src/server/modules/realtimeDebate/analysis.ts`
 
 **Changes**:
 - Structured output with Zod schema validation
@@ -87,7 +87,7 @@ const response = await openAIManager.createChatCompletion(params, {
 - Better error context
 
 ### 3. **Speech Feedback Service**
-**File**: `/src/backend/modules/speechFeedback/speechFeedbackService.ts`
+**File**: `/src/server/modules/speechFeedback/speechFeedbackService.ts`
 
 **Changes**:
 - Separate error recovery for transcription and feedback
@@ -96,7 +96,7 @@ const response = await openAIManager.createChatCompletion(params, {
 - Graceful degradation for large files
 
 ### 4. **Wiki Generation Service**
-**File**: `/src/backend/modules/wikiSearch/generationService.ts`
+**File**: `/src/server/modules/wikiSearch/generationService.ts`
 
 **Changes**:
 - Support for both provided OpenAI client and centralized service

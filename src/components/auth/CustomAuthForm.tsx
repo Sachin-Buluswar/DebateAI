@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import EnhancedInput from '@/components/ui/EnhancedInput';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import { getAuthCallbackUrl, getPasswordResetUrl } from '@/lib/auth-helpers';
 
 export default function CustomAuthForm() {
@@ -20,10 +20,10 @@ export default function CustomAuthForm() {
   const supabase = createClient();
   const router = useRouter();
 
-  // Clear error and message when switching forms
+  // Clear error and message when switching forms (but not when returning from forgot password with a success message)
   useEffect(() => {
     setError(null);
-    setMessage(null);
+    setMessage((prev) => showForgotPassword ? null : prev);
   }, [isSignUp, showForgotPassword]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -46,7 +46,7 @@ export default function CustomAuthForm() {
         });
         
         if (error) throw error;
-        
+
         setMessage('If an account exists with this email, you will receive a password reset link. Please check your inbox.');
         setShowForgotPassword(false);
         // Clear form
@@ -186,7 +186,7 @@ export default function CustomAuthForm() {
           </div>
         )}
 
-        <EnhancedButton
+        <Button
           type="submit"
           loading={isLoading}
           variant="primary"
@@ -194,12 +194,12 @@ export default function CustomAuthForm() {
           className="w-full"
         >
           {showForgotPassword ? 'Send Reset Email' : isSignUp ? 'Sign Up' : 'Sign In'}
-        </EnhancedButton>
+        </Button>
 
         <div className="text-center space-y-2">
           {!showForgotPassword && (
             <>
-              <EnhancedButton
+              <Button
                 type="button"
                 onClick={() => setIsSignUp(!isSignUp)}
                 disabled={isLoading}
@@ -208,9 +208,9 @@ export default function CustomAuthForm() {
                 className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
               >
                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-              </EnhancedButton>
+              </Button>
               <br />
-              <EnhancedButton
+              <Button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
                 disabled={isLoading}
@@ -219,11 +219,11 @@ export default function CustomAuthForm() {
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               >
                 Forgot your password?
-              </EnhancedButton>
+              </Button>
             </>
           )}
           {showForgotPassword && (
-            <EnhancedButton
+            <Button
               type="button"
               onClick={() => setShowForgotPassword(false)}
               disabled={isLoading}
@@ -232,7 +232,7 @@ export default function CustomAuthForm() {
               className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
             >
               Back to Sign In
-            </EnhancedButton>
+            </Button>
           )}
         </div>
       </form>

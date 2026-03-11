@@ -7,8 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { Debate, SpeechFeedback } from '@/types';
-import { formatScore, getScoreColor } from '@/utils/scoring';
-import { extractScoreFromFeedback } from '@/utils/scoreStandardization';
+import { formatScore, getScoreColor, extractScoreFromFeedback } from '@/lib/scoreStandardization';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
@@ -452,42 +451,33 @@ export default function History() {
         }
         
         setSpeechHistory(prev => prev.filter(item => item.id !== id));
-        const successMessage = 'Speech record deleted successfully';
-        setDeleteSuccess(successMessage);
-        addToast({ message: successMessage, type: 'success' });
+        setDeleteSuccess('Speech record deleted successfully');
+        addToast({ message: 'Speech record deleted successfully', type: 'success' });
       } else { // type === 'debate'
         // Delete the record from the table
         const { error: deleteError } = await supabase
           .from('debate_history')
           .delete()
           .eq('id', id);
-          
+
         if (deleteError) {
           throw new Error(`Failed to delete record: ${deleteError.message}`);
         }
-        
+
         setDebateHistory(prev => prev.filter(item => item.id !== id));
-        const successMessage = 'Debate record deleted successfully';
-        setDeleteSuccess(successMessage);
-        addToast({ message: successMessage, type: 'success' });
+        setDeleteSuccess('Debate record deleted successfully');
+        addToast({ message: 'Debate record deleted successfully', type: 'success' });
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       const fullErrorMessage = `Failed to delete the item: ${errorMessage}`;
       setError(fullErrorMessage);
       addToast({ message: fullErrorMessage, type: 'error' });
-      setIsDeleting(false); 
     } finally {
       setIsDeleting(false);
       setItemToDelete(null);
-      
-      if (deleteSuccess) {
-         setTimeout(() => {
-           setDeleteSuccess(null);
-         }, 3000);
-      }
     }
-  }, [itemToDelete, deleteSuccess, addToast]);
+  }, [itemToDelete, addToast]);
   
   // Format date for display
   const formatDate = useCallback((dateString: string) => {
@@ -521,6 +511,13 @@ export default function History() {
     }
   }, [isLoadingMore, hasMore]);
   
+  // Auto-dismiss delete success message after 3 seconds
+  useEffect(() => {
+    if (!deleteSuccess) return;
+    const timer = setTimeout(() => setDeleteSuccess(null), 3000);
+    return () => clearTimeout(timer);
+  }, [deleteSuccess]);
+
   // Trigger checkUser when page changes for pagination
   useEffect(() => {
     if (page > 1) {

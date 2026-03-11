@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import EnhancedInput from '@/components/ui/EnhancedInput';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 export default function ResetPasswordPage() {
   const { addToast } = useToast();
@@ -78,18 +80,28 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Reset your password
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Enter your new password below
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
+    <main className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="bg-white dark:bg-gray-800 max-w-md w-full p-8 rounded-xl shadow-lg">
+        <Link href="/" className="block text-center mb-6">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Eris Debate</h1>
+        </Link>
+        <p className="text-sm text-gray-700 dark:text-gray-300 text-center mb-6">
+          Enter your new password below
+        </p>
+
+        {error && (
+          <div className="mb-6">
+            <AlertMessage type="error" message={error} />
+          </div>
+        )}
+
+        {message && (
+          <div className="mb-6">
+            <AlertMessage type="success" message={message} />
+          </div>
+        )}
+
+        <form className="space-y-6" onSubmit={handleResetPassword}>
           <div className="space-y-4">
             <div className="relative">
               <EnhancedInput
@@ -150,37 +162,17 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
-          {error && (
-            <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-              <p className="text-sm text-green-800 dark:text-green-300">{message}</p>
-            </div>
-          )}
-
-          <div>
-            <EnhancedButton
-              type="submit"
-              loading={isLoading}
-              variant="primary"
-              size="lg"
-              className="w-full"
-              icon={
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-            >
-              Update Password
-            </EnhancedButton>
-          </div>
+          <Button
+            type="submit"
+            loading={isLoading}
+            variant="primary"
+            size="lg"
+            className="w-full"
+          >
+            Update Password
+          </Button>
         </form>
       </div>
-    </div>
+    </main>
   );
 } 

@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, AuthenticatedRequest } from '@/lib/auth-middleware';
+import { supabaseAdmin as supabase } from '@/server/lib/supabaseAdmin';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 
 const deleteSchema = z.object({
   documentId: z.string().uuid('Invalid document ID'),
@@ -26,21 +26,6 @@ export async function DELETE(request: NextRequest) {
       }
 
       const { documentId } = parsed.data;
-
-      // Use service role client for admin operations that need to bypass RLS
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      if (!supabaseUrl || !serviceRoleKey) {
-        return NextResponse.json(
-          { error: 'Server configuration error' },
-          { status: 500 }
-        );
-      }
-
-      const supabase = createClient(supabaseUrl, serviceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
 
       // Fetch the document first to get file info
       const { data: document, error: fetchError } = await supabase

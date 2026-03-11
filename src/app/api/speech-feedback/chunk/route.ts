@@ -7,9 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '@/lib/auth-middleware';
-import { withRateLimit, speechFeedbackRateLimiter } from '@/middleware/rateLimiter';
+import { withRateLimit, speechFeedbackRateLimiter } from '@/api-middleware/rateLimiter';
 import { UploadSessionStore } from '@/lib/uploadSessionStore';
-import { addSecurityHeaders } from '@/middleware/inputValidation';
+import { addSecurityHeaders } from '@/api-middleware/inputValidation';
 
 function sanitizeSessionId(sessionId: string): string {
   return sessionId.replace(/[^a-zA-Z0-9-_]/g, '');

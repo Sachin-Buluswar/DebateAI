@@ -141,7 +141,7 @@ export function ComponentName({ initialData = '', onSubmit }: ComponentNameProps
 
 ### Service Class
 ```typescript
-// src/backend/services/serviceName.ts
+// src/server/services/serviceName.ts
 import { withRetry } from '@/lib/errorRecovery';
 import { logger } from '@/lib/monitoring/logger';
 import { z } from 'zod';
@@ -192,8 +192,8 @@ export const serviceName = new ServiceName();
 
 ### OpenAI Integration
 ```typescript
-// src/backend/modules/[module]/aiOperations.ts
-import { openAIService } from '@/backend/services/openaiService';
+// src/server/modules/[module]/aiOperations.ts
+import { openAIService } from '@/server/services/openaiService';
 import { logger } from '@/lib/monitoring/logger';
 
 export async function generateContent(prompt: string): Promise<string> {
@@ -377,7 +377,7 @@ export async function createDebateWithMessages(
 
 ### Event Handlers
 ```typescript
-// src/backend/socket/handlers.ts
+// src/server/socket/handlers.ts
 import { Server, Socket } from 'socket.io';
 import { logger } from '@/lib/monitoring/logger';
 
@@ -534,7 +534,7 @@ export const viewport: Viewport = {
 ### Unit Test
 ```typescript
 // __tests__/services/serviceName.test.ts
-import { serviceName } from '@/backend/services/serviceName';
+import { serviceName } from '@/server/services/serviceName';
 import { mockClient } from '@/__mocks__/client';
 
 describe('ServiceName', () => {

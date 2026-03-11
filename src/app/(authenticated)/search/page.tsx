@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
+import AlertMessage from '@/components/ui/AlertMessage';
 import type { User, SearchResult, GeneratedAnswer } from '@/types';
 
 // Lazy load heavy components
@@ -17,7 +18,7 @@ const UnifiedSearchCard = dynamic(() => import('@/components/search/UnifiedSearc
   ssr: false,
 });
 import EnhancedInput from '@/components/ui/EnhancedInput';
-import EnhancedButton from '@/components/ui/EnhancedButton';
+import Button from '@/components/ui/Button';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -37,33 +38,27 @@ export default function SearchPage() {
   const [showRecentSearches, setShowRecentSearches] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  const authTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const checkUser = async () => {
       // Set a timeout to prevent indefinite loading
-      const timeoutId = setTimeout(() => {
-        if (loading) {
-          setLoading(false);
-          // Guest mode - continue without auth
-        }
+      authTimeoutRef.current = setTimeout(() => {
+        setLoading(false);
+        // Guest mode - continue without auth
       }, 3000); // 3 second timeout
 
       try {
         const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
-        clearTimeout(timeoutId);
+        if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
 
         if (userError) {
           // Don't block guest access on error
           setLoading(false);
           return;
         }
-
-        // GUEST MODE: Allow access without session
-        // if (!authUser) {
-        //   router.push('/auth');
-        //   return;
-        // }
 
         // Set user if authenticated, otherwise guest mode
         if (authUser) {
@@ -77,6 +72,10 @@ export default function SearchPage() {
     };
 
     checkUser();
+
+    return () => {
+      if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
+    };
   }, [router]);
 
   // Add a function to fetch search history
@@ -310,7 +309,7 @@ export default function SearchPage() {
             </h1>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {results.length > 0 && (
-                <EnhancedButton
+                <Button
                   onClick={handleGenerate}
                   loading={generating}
                   variant="primary"
@@ -323,7 +322,7 @@ export default function SearchPage() {
                   }
                 >
                   {generating ? 'Generating...' : 'Generate Answer'}
-                </EnhancedButton>
+                </Button>
               )}
             </div>
           </div>
@@ -334,22 +333,22 @@ export default function SearchPage() {
               Search Mode:
             </span>
             <div className="flex space-x-2">
-              <EnhancedButton
+              <Button
                 onClick={() => setSearchMode('rag')}
                 variant={searchMode === 'rag' ? 'primary' : 'secondary'}
                 size="sm"
                 icon={<span>📎</span>}
               >
                 Document Search
-              </EnhancedButton>
-              <EnhancedButton
+              </Button>
+              <Button
                 onClick={() => setSearchMode('assistant')}
                 variant={searchMode === 'assistant' ? 'primary' : 'secondary'}
                 size="sm"
                 icon={<span>🤖</span>}
               >
                 AI Assistant
-              </EnhancedButton>
+              </Button>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
               {searchMode === 'rag'
@@ -388,7 +387,7 @@ export default function SearchPage() {
                     className="text-lg resize-none"
                   />
                 </div>
-                <EnhancedButton
+                <Button
                   type="submit"
                   loading={searching}
                   variant="primary"
@@ -402,11 +401,11 @@ export default function SearchPage() {
                   }
                 >
                   {searching ? 'Searching...' : 'Search'}
-                </EnhancedButton>
+                </Button>
               </div>
             </form>
           </div>
-          {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <AlertMessage type="error" message={error} className="mt-4" />}
 
           {/* Search History */}
           {searchHistory.length > 0 && (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import DarkModeToggle from '@/components/ui/DarkModeToggle';
 import ProfileMenu from '@/components/auth/ProfileMenu';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/cn';
 import { useSidebar } from './Layout';
 
 const navigation = [

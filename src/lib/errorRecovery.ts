@@ -83,7 +83,7 @@ export async function withRetry<T>(
 /**
  * Circuit breaker implementation for preventing cascading failures
  */
-export class CircuitBreaker {
+class CircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
   private state: 'closed' | 'open' | 'half-open' = 'closed';
@@ -225,7 +225,7 @@ class RetryQueue<T> {
 /**
  * Error recovery manager for coordinating different recovery strategies
  */
-export class ErrorRecoveryManager {
+class ErrorRecoveryManager {
   private circuitBreakers = new Map<string, CircuitBreaker>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private retryQueues = new Map<string, RetryQueue<any>>();

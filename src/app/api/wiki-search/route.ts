@@ -1,130 +1,138 @@
-/**
- * Wiki Search API Endpoint
- *
- * Uses OpenAI's vector store for semantic document search.
- *
- * @endpoint POST /api/wiki-search
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import {
-  enhancedSearchVectorStore,
-  EnhancedSearchResult,
-} from '@/backend/modules/wikiSearch/enhancedRetrievalService';
-import { wikiSearchRateLimiter, withRateLimit } from '@/middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders } from '@/middleware/inputValidation';
+import { OpenAI } from 'openai';
+import { wikiSearchRateLimiter, withRateLimit } from '@/api-middleware/rateLimiter';
+import { validateRequest, validationSchemas, addSecurityHeaders } from '@/api-middleware/inputValidation';
 import { optionalAuth } from '@/lib/auth-middleware';
+import { createClient } from '@/lib/supabase/server';
 
-// Get environment variables
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
 
-// Lazy initialization pattern for OpenAI client
 let openai: OpenAI | null = null;
 
+interface VectorResult {
+  id: string;
+  document_id: string;
+  content: string;
+  page_number: number | null;
+  section_title: string | null;
+  chunk_index: number;
+  similarity: number;
+}
+
 export async function POST(request: NextRequest) {
-  // Apply rate limiting
   const rateLimitResult = await withRateLimit(request, wikiSearchRateLimiter, async () => {
     return optionalAuth(request, async () => {
-    // Environment Variable Check
-    if (!openaiApiKey) {
-      return addSecurityHeaders(
-        NextResponse.json({
-          error: 'Server configuration error: Search service unavailable.'
-        }, { status: 503 })
-      );
-    }
-    if (!vectorStoreId) {
-      return addSecurityHeaders(
-        NextResponse.json({
-          error: 'The search service is not configured. Please contact support.'
-        }, { status: 503 })
-      );
-    }
-
-    // Initialize OpenAI Client
-    if (!openai) {
-      openai = new OpenAI({ apiKey: openaiApiKey });
-    }
-
-    try {
-      // Validate and sanitize input
-      const validation = await validateRequest(request, validationSchemas.wikiSearch, {
-        body: true,
-        sanitize: true,
-      });
-
-      if (!validation.success) {
+      if (!openaiApiKey) {
         return addSecurityHeaders(
           NextResponse.json({
-            error: 'Invalid request',
-            details: validation.details
-          }, { status: 400 })
+            error: 'Server configuration error: Search service unavailable.'
+          }, { status: 503 })
         );
       }
 
-      const { query, maxResults = 5 } = validation.data;
+      if (!openai) {
+        openai = new OpenAI({ apiKey: openaiApiKey });
+      }
 
-      // Additional business logic validation
-      if (query.length < 3) {
+      try {
+        const validation = await validateRequest(request, validationSchemas.wikiSearch, {
+          body: true,
+          sanitize: true,
+        });
+
+        if (!validation.success) {
+          return addSecurityHeaders(
+            NextResponse.json({
+              error: 'Invalid request',
+              details: validation.details
+            }, { status: 400 })
+          );
+        }
+
+        const { query, maxResults = 5 } = validation.data;
+
+        if (query.length < 3) {
+          return addSecurityHeaders(
+            NextResponse.json({
+              error: 'Search query must be at least 3 characters long'
+            }, { status: 400 })
+          );
+        }
+
+        // Generate query embedding
+        const embeddingResponse = await openai.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: query,
+        });
+        const queryEmbedding = embeddingResponse.data[0].embedding;
+
+        // Vector search via RPC using authenticated client
+        const supabase = createClient();
+        const { data: vectorResults, error: rpcError } = await supabase.rpc('match_document_chunks', {
+          query_embedding: JSON.stringify(queryEmbedding),
+          match_threshold: 0.3,
+          match_count: Math.min(maxResults, 20),
+        });
+
+        if (rpcError) {
+          throw new Error(`Search RPC failed: ${rpcError.message}`);
+        }
+
+        const chunks = (vectorResults ?? []) as VectorResult[];
+
+        // Fetch document metadata
+        const docIds = [...new Set(chunks.map(c => c.document_id))];
+        const { data: documents } = docIds.length > 0
+          ? await supabase
+              .from('documents')
+              .select('id, title, file_name, file_url, source_type, indexed_at')
+              .in('id', docIds)
+          : { data: [] };
+
+        const docMap = new Map(documents?.map(d => [d.id, d]) ?? []);
+
+        const results = chunks.map(chunk => {
+          const doc = docMap.get(chunk.document_id);
+          return {
+            content: chunk.content,
+            source: doc?.file_name ?? 'Unknown',
+            score: chunk.similarity,
+            chunk_id: chunk.id,
+            document_id: chunk.document_id,
+            page_number: chunk.page_number ?? undefined,
+            pdf_url: doc?.file_url ?? '',
+            pdf_page_anchor: chunk.page_number ? `#page=${chunk.page_number}` : '',
+            context: { before: '', after: '' },
+            metadata: {
+              title: doc?.title ?? 'Unknown',
+              section: chunk.section_title ?? undefined,
+              source_type: doc?.source_type ?? 'other',
+              indexed_at: doc?.indexed_at ?? undefined,
+            },
+          };
+        });
+
         return addSecurityHeaders(
           NextResponse.json({
-            error: 'Search query must be at least 3 characters long'
-          }, { status: 400 })
+            success: true,
+            results,
+            query: query.substring(0, 200),
+            maxResults,
+            timestamp: new Date().toISOString(),
+            cached: false,
+          }, { status: 200 })
+        );
+
+      } catch (_error) {
+        return addSecurityHeaders(
+          NextResponse.json({
+            error: 'Search temporarily unavailable. Please try again later.'
+          }, { status: 500 })
         );
       }
-
-      // Perform search using enhanced vector store retrieval
-      const results: EnhancedSearchResult[] = await enhancedSearchVectorStore(
-        openai,
-        vectorStoreId,
-        query,
-        Math.min(maxResults, 20)
-      );
-
-      return addSecurityHeaders(
-        NextResponse.json({
-          success: true,
-          results,
-          query: query.substring(0, 200),
-          maxResults,
-          timestamp: new Date().toISOString(),
-          cached: false,
-        }, { status: 200 })
-      );
-
-    } catch (error) {
-      // Return appropriate error based on error type
-      if (error instanceof Error) {
-        if (error.message.includes('Rate limit') || error.message.includes('quota')) {
-          return addSecurityHeaders(
-            NextResponse.json({
-              error: 'Service temporarily overloaded. Please try again in a few minutes.'
-            }, { status: 503 })
-          );
-        }
-
-        if (error.message.includes('Authentication') || error.message.includes('API key')) {
-          return addSecurityHeaders(
-            NextResponse.json({
-              error: 'Search service configuration error. Please contact support.'
-            }, { status: 503 })
-          );
-        }
-      }
-
-      // Generic server error (don't expose internal details)
-      return addSecurityHeaders(
-        NextResponse.json({
-          error: 'Search temporarily unavailable. Please try again later.'
-        }, { status: 500 })
-      );
-    }
     });
   });
 
-  // Return rate limit response if blocked
   if (rateLimitResult instanceof Response) {
     return addSecurityHeaders(rateLimitResult);
   }
@@ -132,7 +140,6 @@ export async function POST(request: NextRequest) {
   return rateLimitResult;
 }
 
-// Handle OPTIONS for CORS
 export async function OPTIONS() {
   return addSecurityHeaders(
     new Response(null, {

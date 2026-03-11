@@ -73,14 +73,14 @@ This guide provides consistent layout patterns for the Eris Debate application t
 ```jsx
 // Horizontal
 <div className="button-group">
-  <EnhancedButton>Save</EnhancedButton>
-  <EnhancedButton variant="secondary">Cancel</EnhancedButton>
+  <Button>Save</Button>
+  <Button variant="secondary">Cancel</Button>
 </div>
 
 // Vertical
 <div className="button-group-vertical">
-  <EnhancedButton>Option 1</EnhancedButton>
-  <EnhancedButton>Option 2</EnhancedButton>
+  <Button>Option 1</Button>
+  <Button>Option 2</Button>
 </div>
 ```
 
@@ -168,8 +168,8 @@ This guide provides consistent layout patterns for the Eris Debate application t
       </div>
       
       <div className="button-group mt-6">
-        <EnhancedButton type="submit">Save Changes</EnhancedButton>
-        <EnhancedButton variant="secondary">Cancel</EnhancedButton>
+        <Button type="submit">Save Changes</Button>
+        <Button variant="secondary">Cancel</Button>
       </div>
     </form>
   </Card>
