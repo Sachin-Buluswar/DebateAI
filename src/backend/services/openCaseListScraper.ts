@@ -1,260 +1,273 @@
-import puppeteer, { type Page } from 'puppeteer';
-import { DocumentStorageService } from './documentStorageService';
-import { createClient } from '@supabase/supabase-js';
+import mammoth from 'mammoth';
+import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
+import { EnhancedIndexingService } from './enhancedIndexingService';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
+import { execSync } from 'child_process';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const ZIP_BASE_URL = 'https://caselist-files.s3.us-east-005.backblazeb2.com/openev';
+
+export interface ScrapeResult {
+  total: number;
+  indexed: number;
+  skipped: number;
+  failed: number;
+}
 
 export class OpenCaseListScraper {
-  private documentStorage: DocumentStorageService;
-  private email: string;
-  private password: string;
-  private baseUrl = 'https://opencaselist.com';
-  
+  private indexingService: EnhancedIndexingService;
+
   constructor() {
-    this.documentStorage = new DocumentStorageService();
-    
-    // Get credentials from environment variables
-    this.email = process.env.OPENCASELIST_EMAIL || '';
-    this.password = process.env.OPENCASELIST_PASSWORD || '';
-    
-    if (!this.email || !this.password) {
-      throw new Error('OpenCaseList credentials not configured. Please set OPENCASELIST_EMAIL and OPENCASELIST_PASSWORD environment variables.');
-    }
+    this.indexingService = new EnhancedIndexingService();
   }
 
-  async scrapeWikiFiles(): Promise<void> {
-    let browser;
-    
+  async scrapeYears(years: number[]): Promise<ScrapeResult> {
+    let total = 0;
+    let indexed = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const year of years) {
+      try {
+        const result = await this.scrapeYear(year);
+        total += result.total;
+        indexed += result.indexed;
+        skipped += result.skipped;
+        failed += result.failed;
+      } catch (_error) {
+        await this.logScrape(
+          `${ZIP_BASE_URL}/${year}OpenEv.zip`,
+          'failed',
+          undefined,
+          _error instanceof Error ? _error.message : 'Unknown error'
+        );
+      }
+    }
+
+    return { total, indexed, skipped, failed };
+  }
+
+  private async scrapeYear(year: number): Promise<ScrapeResult> {
+    const zipUrl = `${ZIP_BASE_URL}/${year}OpenEv.zip`;
+    const tmpDir = path.join(os.tmpdir(), `eris-scrape-${year}-${Date.now()}`);
+    const zipPath = path.join(tmpDir, `${year}OpenEv.zip`);
+    let indexed = 0;
+    let skipped = 0;
+    let failed = 0;
+
     try {
-      
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      
-      const page = await browser.newPage();
-      
-      // Set user agent to avoid detection
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-      
-      // Login
-      await this.login(page);
-      
-      // Navigate to OpenEv wiki section
-      await page.goto(`${this.baseUrl}/openev`, { waitUntil: 'networkidle2' });
-      
-      // Get all wiki file links
-      const wikiLinks = await this.extractWikiLinks(page);
-      
-      // Process each wiki file
-      for (const link of wikiLinks) {
-        await this.processWikiFile(page, link);
-      }
-      
-    } catch (error) {
-      throw error;
-    } finally {
-      if (browser) {
-        await browser.close();
-      }
-    }
-  }
+      // Create temp directory
+      fs.mkdirSync(tmpDir, { recursive: true });
 
-  private async login(page: Page): Promise<void> {
-    
-    // Go to login page
-    await page.goto(`${this.baseUrl}/login`, { waitUntil: 'networkidle2' });
-    
-    // Fill in credentials
-    await page.type('input[name="email"]', this.email);
-    await page.type('input[name="password"]', this.password);
-    
-    // Submit form
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle2' }),
-      page.click('button[type="submit"]')
-    ]);
-    
-    
-  }
+      // Download ZIP to disk using streaming
+      const response = await fetch(zipUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download ZIP for ${year}: ${response.statusText}`);
+      }
 
-  private async extractWikiLinks(page: Page): Promise<string[]> {
-    return await page.evaluate(() => {
-      const links: string[] = [];
-      const linkElements = document.querySelectorAll('a[href*="/openev/"]');
-      
-      linkElements.forEach(el => {
-        const href = el.getAttribute('href');
-        if (href && (href.includes('.pdf') || href.includes('.doc') || href.includes('.docx'))) {
-          links.push(href);
+      const arrayBuffer = await response.arrayBuffer();
+      fs.writeFileSync(zipPath, Buffer.from(arrayBuffer));
+
+      // List files in ZIP using unzip -l
+      const listOutput = execSync(`unzip -l "${zipPath}" 2>/dev/null`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const fileEntries = this.parseUnzipList(listOutput);
+
+      const total = fileEntries.length;
+
+      // Process files one at a time
+      const extractDir = path.join(tmpDir, 'extracted');
+      fs.mkdirSync(extractDir, { recursive: true });
+
+      for (const entryPath of fileEntries) {
+        try {
+          const fileName = path.basename(entryPath);
+
+          // Check if already processed
+          const { data: existing } = await supabase
+            .from('documents')
+            .select('id')
+            .eq('file_name', fileName)
+            .eq('source_type', 'opencaselist')
+            .limit(1);
+
+          if (existing && existing.length > 0) {
+            skipped++;
+            continue;
+          }
+
+          // Extract single file to disk
+          try {
+            execSync(`unzip -o -j "${zipPath}" "${entryPath}" -d "${extractDir}" 2>/dev/null`, {
+              encoding: 'utf-8',
+              maxBuffer: 50 * 1024 * 1024,
+            });
+          } catch {
+            failed++;
+            continue;
+          }
+
+          const extractedPath = path.join(extractDir, fileName);
+          if (!fs.existsSync(extractedPath)) {
+            failed++;
+            continue;
+          }
+
+          // Read file and extract text
+          const fileBuffer = fs.readFileSync(extractedPath);
+          const ext = path.extname(fileName).toLowerCase();
+          let text = '';
+
+          if (ext === '.docx') {
+            const result = await mammoth.extractRawText({ buffer: fileBuffer });
+            text = result.value;
+          } else if (ext === '.pdf') {
+            const pdfParse = await import('pdf-parse').then(m => m.default || m);
+            const pdfData = await pdfParse(fileBuffer);
+            text = pdfData.text;
+          }
+
+          // Clean up extracted file immediately
+          fs.unlinkSync(extractedPath);
+
+          if (text.trim().length < 100) {
+            skipped++;
+            continue;
+          }
+
+          const metadata = this.extractMetadata(fileName, entryPath, year);
+
+          // Create document record
+          const { data: doc, error: docError } = await supabase
+            .from('documents')
+            .insert({
+              title: (metadata.title as string) || fileName,
+              file_name: fileName,
+              file_url: '',
+              file_size: fileBuffer.length,
+              source_url: zipUrl,
+              source_type: 'opencaselist',
+              content: text.substring(0, 5000),
+              metadata,
+            })
+            .select()
+            .single();
+
+          if (docError) throw docError;
+
+          // Index: chunk + embed + store
+          await this.indexingService.indexDocument(doc.id, text, fileName);
+
+          await this.logScrape(
+            `${zipUrl}#${entryPath}`,
+            'completed',
+            doc.id
+          );
+
+          indexed++;
+        } catch (_error) {
+          failed++;
+          await this.logScrape(
+            `${ZIP_BASE_URL}/${year}#${entryPath}`,
+            'failed',
+            undefined,
+            _error instanceof Error ? _error.message : 'Unknown error'
+          );
         }
-      });
-      
-      return links;
-    });
-  }
-
-  private async processWikiFile(page: Page, fileLink: string): Promise<void> {
-    try {
-      const fullUrl = fileLink.startsWith('http') ? fileLink : `${this.baseUrl}${fileLink}`;
-      const fileName = path.basename(fileLink);
-      
-      
-      
-      // Check if already processed
-      const { data: existingLog } = await supabase
-        .from('opencaselist_scrape_log')
-        .select()
-        .eq('url', fullUrl)
-        .eq('status', 'completed')
-        .single();
-      
-      if (existingLog) {
-        return;
       }
-      
-      // Create scrape log entry
-      const { data: scrapeLog } = await supabase
-        .from('opencaselist_scrape_log')
-        .insert({
-          url: fullUrl,
-          status: 'processing',
-          attempted_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      if (!scrapeLog) throw new Error('Failed to create scrape log');
-      
-      // Download file
-      const fileBuffer = await this.downloadFile(page, fullUrl);
-      
-      // Upload to Supabase Storage
-      const { url: storageUrl } = await this.documentStorage.uploadPDF(
-        fileBuffer,
-        fileName
-      );
-      
-      // Extract metadata from filename/path
-      const metadata = this.extractMetadata(fileName, fileLink);
-      
-      // Create document record
-      const document = await this.documentStorage.createDocument(
-        (metadata.title as string) || fileName,
-        fileName,
-        storageUrl,
-        fileBuffer.length,
-        undefined, // Page count will be determined during indexing
-        fullUrl,
-        'opencaselist',
-        metadata
-      );
-      
-      // Update scrape log
-      await supabase
-        .from('opencaselist_scrape_log')
-        .update({
-          status: 'completed',
-          document_id: document.id,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', scrapeLog.id);
-      
-      
-      
-    } catch (error) {
-      
-      // Log failure
-      await supabase
-        .from('opencaselist_scrape_log')
-        .insert({
-          url: fileLink,
-          status: 'failed',
-          error_message: error instanceof Error ? error.message : 'Unknown error',
-          attempted_at: new Date().toISOString()
-        });
-    }
-  }
 
-  private async downloadFile(page: Page, url: string): Promise<Buffer> {
-    // Get cookies from puppeteer
-    const cookies = await page.cookies();
-    const cookieString = cookies.map((c: { name: string; value: string }) => `${c.name}=${c.value}`).join('; ');
-    
-    // Download file using fetch with cookies
-    const response = await fetch(url, {
-      headers: {
-        'Cookie': cookieString,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      return { total, indexed, skipped, failed };
+    } finally {
+      // Clean up temp directory
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {
+        // Best effort cleanup
       }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to download file: ${response.statusText}`);
     }
-    
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
   }
 
-  private extractMetadata(fileName: string, filePath: string): Record<string, unknown> {
-    const metadata: Record<string, unknown> = {};
-    
-    // Extract year from path if present
-    const yearMatch = filePath.match(/20\d{2}/);
-    if (yearMatch) {
-      metadata.year = yearMatch[0];
+  private parseUnzipList(output: string): string[] {
+    const files: string[] = [];
+    const lines = output.split('\n');
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // unzip -l format: "  length  date  time  name"
+      // Match lines that end with .docx or .pdf
+      const match = trimmed.match(/\d+\s+\d{2}-\d{2}-\d{2,4}\s+\d{2}:\d{2}\s+(.+)$/);
+      if (!match) continue;
+
+      const filePath = match[1];
+      const ext = path.extname(filePath).toLowerCase();
+
+      if (
+        (ext === '.docx' || ext === '.pdf') &&
+        !filePath.startsWith('__MACOSX') &&
+        !path.basename(filePath).startsWith('.')
+      ) {
+        files.push(filePath);
+      }
     }
-    
-    // Extract camp name if present
-    const campPatterns = [
-      /DDI|DDW/i,
-      /Michigan/i,
-      /Northwestern/i,
-      /Berkeley/i,
-      /Emory/i,
-      /Georgetown/i,
-      /Wake Forest/i
+
+    return files;
+  }
+
+  private extractMetadata(
+    fileName: string,
+    filePath: string,
+    year: number
+  ): Record<string, unknown> {
+    const metadata: Record<string, unknown> = { year };
+
+    const campPatterns: Array<[RegExp, string]> = [
+      [/DDI|DDW/i, 'DDI/DDW'],
+      [/Michigan|UMICH|UM7/i, 'Michigan'],
+      [/Northwestern/i, 'Northwestern'],
+      [/Berkeley/i, 'Berkeley'],
+      [/Emory/i, 'Emory'],
+      [/Georgetown/i, 'Georgetown'],
+      [/Wake\s*Forest/i, 'Wake Forest'],
+      [/Gonzaga/i, 'Gonzaga'],
+      [/CNDI/i, 'CNDI'],
+      [/GDI/i, 'GDI'],
+      [/SDI/i, 'SDI'],
     ];
-    
-    for (const pattern of campPatterns) {
+
+    for (const [pattern, name] of campPatterns) {
       if (pattern.test(filePath) || pattern.test(fileName)) {
-        metadata.camp = pattern.source.replace(/[/\\]/g, '');
+        metadata.camp = name;
         break;
       }
     }
-    
-    // Extract topic from filename
-    const topicPatterns = {
-      'Immigration': /immigr/i,
-      'Space': /space/i,
-      'Arms Sales': /arms?\s*sales?/i,
-      'Climate': /climate/i,
-      'Energy': /energy/i,
-      'NATO': /nato/i,
-      'China': /china/i,
-      'Russia': /russia/i
-    };
-    
-    for (const [topic, pattern] of Object.entries(topicPatterns)) {
-      if (pattern.test(fileName)) {
-        metadata.topic = topic;
-        break;
-      }
-    }
-    
-    // Clean title from filename
+
     metadata.title = fileName
-      .replace(/\.[^/.]+$/, '') // Remove extension
-      .replace(/[_-]/g, ' ') // Replace underscores and hyphens with spaces
-      .replace(/\s+/g, ' ') // Normalize spaces
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[_-]/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
-    
+
     return metadata;
+  }
+
+  private async logScrape(
+    url: string,
+    status: string,
+    documentId?: string,
+    errorMessage?: string
+  ): Promise<void> {
+    try {
+      await supabase.from('opencaselist_scrape_log').insert({
+        url,
+        status,
+        document_id: documentId,
+        error_message: errorMessage,
+        attempted_at: new Date().toISOString(),
+        completed_at: status === 'completed' ? new Date().toISOString() : undefined,
+      });
+    } catch {
+      // Non-critical
+    }
   }
 
   async getScrapingStatus(): Promise<{
@@ -266,14 +279,14 @@ export class OpenCaseListScraper {
     const { data } = await supabase
       .from('opencaselist_scrape_log')
       .select('status');
-    
+
     if (!data) return { total: 0, completed: 0, failed: 0, pending: 0 };
-    
+
     return {
       total: data.length,
       completed: data.filter(d => d.status === 'completed').length,
       failed: data.filter(d => d.status === 'failed').length,
-      pending: data.filter(d => d.status === 'pending' || d.status === 'processing').length
+      pending: data.filter(d => d.status === 'pending' || d.status === 'processing').length,
     };
   }
 }

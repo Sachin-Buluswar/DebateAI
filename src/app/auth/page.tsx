@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import CustomAuthForm from '@/components/auth/CustomAuthForm';
+import AlertMessage from '@/components/ui/AlertMessage';
 import './auth.css';
 
 function AuthPageContent() {
@@ -134,8 +135,8 @@ function AuthPageContent() {
         <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
         {error && (
-          <div className="text-red-600 bg-red-100 p-3 rounded text-sm max-w-md text-center mt-4">
-            {error}
+          <div className="max-w-md mt-4">
+            <AlertMessage type="error" message={error} />
           </div>
         )}
       </div>
@@ -144,7 +145,7 @@ function AuthPageContent() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <div className="bg-glass max-w-md w-full p-8 rounded-xl shadow-lg">
+      <div className="bg-white dark:bg-gray-800 max-w-md w-full p-8 rounded-xl shadow-lg">
         <Link href="/" className="block text-center mb-6">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Eris Debate</h1>
         </Link>
@@ -152,9 +153,8 @@ function AuthPageContent() {
           Sign in or create an account to get started
         </p>
         {error && (
-          <div className="mb-6 p-4 rounded-md bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800">
-            <p className="text-red-600 dark:text-red-300 font-medium">Error: {error}</p>
-            <p className="text-xs text-red-600 dark:text-red-300 mt-1">Please try again or contact support.</p>
+          <div className="mb-6">
+            <AlertMessage type="error" message={error} />
           </div>
         )}
         {isClient && <CustomAuthForm />}

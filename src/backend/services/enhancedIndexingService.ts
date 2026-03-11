@@ -1,379 +1,159 @@
 import { OpenAI } from 'openai';
-import { DocumentStorageService } from './documentStorageService';
-import { DocumentChunk } from '@/types/documents';
-import * as stream from 'stream';
-
+import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-interface ChunkMetadata {
-  pageNumber: number;
-  pageStartChar: number;
-  pageEndChar: number;
-  docStartChar: number;
-  docEndChar: number;
+interface ChunkData {
+  content: string;
   sectionTitle?: string;
+  chunkIndex: number;
 }
 
 export class EnhancedIndexingService {
-  private documentStorage: DocumentStorageService;
-  private chunkSize = 800; // tokens
-  private chunkOverlap = 200; // tokens
-  private vectorStoreId: string;
+  private chunkSize = 3200; // characters (~800 tokens)
+  private chunkOverlap = 800; // characters (~200 tokens)
 
-  constructor() {
-    this.documentStorage = new DocumentStorageService();
-    this.vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID!;
-  }
-
-  async indexPDFDocument(
+  async indexDocument(
     documentId: string,
-    pdfUrl: string,
+    text: string,
     fileName: string
   ): Promise<void> {
-    try {
-      
-      // Download PDF
-      const pdfBuffer = await this.downloadPDF(pdfUrl);
-      
-      // Dynamically import pdf-parse to avoid module-level execution
-      const pdfParse = await import('pdf-parse').then(m => m.default || m);
-      
-      // Parse PDF with custom page renderer to extract page-by-page content
-      const pages: Array<{ pageNumber: number; text: string }> = [];
-      let totalPages = 0;
-      
-      const pdfData = await pdfParse(pdfBuffer, {
-        // pdf-parse accepts async pagerender despite type definition saying sync
-        pagerender: ((pageData: unknown) => {
-          const pd = pageData as { getTextContent: () => Promise<{ items: Array<{ str: string }> }> };
-          return pd.getTextContent()
-            .then((textContent) => {
-              let text = '';
-              for (const item of textContent.items) {
-                text += item.str + ' ';
-              }
-              return text;
-            });
-        }) as unknown as (pageData: unknown) => string,
-        // renderTextLayer: false, // This option doesn't exist in pdf-parse
-      });
+    const chunks = this.chunkText(text, fileName);
 
-      // Get total pages
-      totalPages = pdfData.numpages;
+    if (chunks.length === 0) return;
 
-      // Parse PDF again to extract page-by-page content
-      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-        await pdfParse(pdfBuffer, {
-          max: pageNum,
-          // pdf-parse accepts async pagerender despite type definition saying sync
-          pagerender: ((pageData: unknown) => {
-            const pd = pageData as { pageNumber?: number; pageIndex?: number; getTextContent: () => Promise<{ items: Array<{ str: string }> }> };
-            const currentPage = pd.pageNumber || (pd.pageIndex ?? 0) + 1;
-            if (currentPage === pageNum) {
-              return pd.getTextContent()
-                .then((textContent) => {
-                  let text = '';
-                  for (const item of textContent.items) {
-                    text += item.str + ' ';
-                  }
-                  pages.push({ pageNumber: pageNum, text: text.trim() });
-                  return text;
-                });
-            }
-            return '';
-          }) as unknown as (pageData: unknown) => string,
-        });
-      }
-      
-      // Extract chunks with proper page metadata
-      const chunks = await this.extractChunksWithPageMetadata(pages, fileName);
-      
-      // Upload chunks to OpenAI
-      const openaiFileIds = await this.uploadChunksToOpenAI(chunks, documentId, fileName);
-      
-      // Store chunks in database with OpenAI file IDs
-      const dbChunks: Omit<DocumentChunk, 'id' | 'created_at'>[] = chunks.map((chunk, index) => ({
+    // Generate embeddings in batches of 50
+    const embeddings = await this.generateEmbeddings(
+      chunks.map(c => c.content)
+    );
+
+    // Insert chunks with embeddings in batches of 100
+    const batchSize = 100;
+    for (let i = 0; i < chunks.length; i += batchSize) {
+      const batch = chunks.slice(i, i + batchSize);
+      const batchEmbeddings = embeddings.slice(i, i + batchSize);
+
+      const rows = batch.map((chunk, j) => ({
         document_id: documentId,
-        chunk_index: index,
+        chunk_index: chunk.chunkIndex,
         content: chunk.content,
-        page_number: chunk.metadata.pageNumber,
-        page_start_char: chunk.metadata.pageStartChar,
-        page_end_char: chunk.metadata.pageEndChar,
-        doc_start_char: chunk.metadata.docStartChar,
-        doc_end_char: chunk.metadata.docEndChar,
-        section_title: chunk.metadata.sectionTitle,
-        openai_file_id: openaiFileIds[index],
+        section_title: chunk.sectionTitle,
+        embedding: JSON.stringify(batchEmbeddings[j]),
         metadata: {},
       }));
-      
-      await this.documentStorage.createDocumentChunks(dbChunks);
-      
-      // Update document as indexed
-      await this.documentStorage.updateDocumentIndexStatus(documentId);
-      
-      
-      
-    } catch (error) {
-      throw error;
+
+      const { error } = await supabase
+        .from('document_chunks')
+        .insert(rows);
+
+      if (error) throw new Error(`Failed to insert chunks: ${error.message}`);
     }
+
+    // Mark document as indexed
+    await supabase
+      .from('documents')
+      .update({ indexed_at: new Date().toISOString() })
+      .eq('id', documentId);
   }
 
-  private async downloadPDF(url: string): Promise<Buffer> {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to download PDF: ${response.statusText}`);
-    }
-    return Buffer.from(await response.arrayBuffer());
+  async generateQueryEmbedding(query: string): Promise<number[]> {
+    const response = await openai.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: query,
+    });
+    return response.data[0].embedding;
   }
 
-  private async extractChunksWithPageMetadata(
-    pages: Array<{ pageNumber: number; text: string }>,
-    fileName: string
-  ): Promise<Array<{ content: string; metadata: ChunkMetadata }>> {
-    const chunks: Array<{ content: string; metadata: ChunkMetadata }> = [];
-    let docCharOffset = 0;
+  private chunkText(text: string, fileName: string): ChunkData[] {
+    const chunks: ChunkData[] = [];
+    const lines = text.split('\n');
+    let currentSection: string | undefined;
+    let currentText = '';
+    let chunkIndex = 0;
 
-    // Process each page
-    for (const page of pages) {
-      const pageText = page.text;
-      const pageNumber = page.pageNumber;
-      
-      // Skip empty pages
-      if (!pageText.trim()) {
-        continue;
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Detect section headers (uppercase lines, numbered headings)
+      if (
+        trimmed.length > 0 &&
+        trimmed.length < 120 &&
+        (trimmed === trimmed.toUpperCase() || /^\d+[.)]\s/.test(trimmed))
+      ) {
+        currentSection = trimmed;
       }
-      
-      // Extract sections from page
-      const sections = this.extractSections(pageText);
-      
-      for (const section of sections) {
-        const sectionChunks = await this.chunkText(
-          section.content,
-          this.chunkSize,
-          this.chunkOverlap
-        );
-        
-        let sectionCharOffset = 0;
-        
-        for (const chunkText of sectionChunks) {
-          const chunkStartChar = section.content.indexOf(chunkText, sectionCharOffset);
-          const chunkEndChar = chunkStartChar + chunkText.length;
-          
-          // Update section offset for next search
-          sectionCharOffset = chunkStartChar + 1;
-          
+
+      currentText += line + '\n';
+
+      // Check if we've exceeded chunk size
+      if (currentText.length >= this.chunkSize) {
+        const breakPoint = this.findBreakPoint(currentText, this.chunkSize);
+        const chunkContent = currentText.slice(0, breakPoint).trim();
+
+        if (chunkContent.length > 50) {
+          const prefix = `[Source: ${fileName}${currentSection ? `, Section: ${currentSection}` : ''}]`;
           chunks.push({
-            content: this.formatChunkWithMetadata(
-              chunkText,
-              fileName,
-              pageNumber,
-              section.title
-            ),
-            metadata: {
-              pageNumber: pageNumber,
-              pageStartChar: chunkStartChar,
-              pageEndChar: chunkEndChar,
-              docStartChar: docCharOffset + chunkStartChar,
-              docEndChar: docCharOffset + chunkEndChar,
-              sectionTitle: section.title,
-            },
+            content: `${prefix}\n\n${chunkContent}`,
+            sectionTitle: currentSection,
+            chunkIndex: chunkIndex++,
           });
         }
+
+        // Keep overlap
+        currentText = currentText.slice(
+          Math.max(0, breakPoint - this.chunkOverlap)
+        );
       }
-      
-      docCharOffset += pageText.length;
     }
-    
+
+    // Last chunk
+    if (currentText.trim().length > 50) {
+      const prefix = `[Source: ${fileName}${currentSection ? `, Section: ${currentSection}` : ''}]`;
+      chunks.push({
+        content: `${prefix}\n\n${currentText.trim()}`,
+        sectionTitle: currentSection,
+        chunkIndex: chunkIndex,
+      });
+    }
+
     return chunks;
   }
 
-  private extractSections(pageText: string): Array<{ title?: string; content: string }> {
-    // Simple section extraction based on common patterns
-    const sections: Array<{ title?: string; content: string }> = [];
-    
-    // Look for headings (lines that are all caps or start with numbers)
-    const lines = pageText.split('\n');
-    let currentSection = { title: undefined as string | undefined, content: '' };
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      // Check if line is a heading
-      if (
-        trimmedLine.length > 0 &&
-        (trimmedLine === trimmedLine.toUpperCase() || /^\d+\./.test(trimmedLine)) &&
-        trimmedLine.length < 100
-      ) {
-        // Save previous section if it has content
-        if (currentSection.content.trim()) {
-          sections.push(currentSection);
-        }
-        
-        // Start new section
-        currentSection = { title: trimmedLine, content: '' };
-      } else {
-        currentSection.content += line + '\n';
-      }
-    }
-    
-    // Don't forget the last section
-    if (currentSection.content.trim()) {
-      sections.push(currentSection);
-    }
-    
-    // If no sections found, treat whole page as one section
-    if (sections.length === 0) {
-      sections.push({ content: pageText });
-    }
-    
-    return sections;
+  private findBreakPoint(text: string, target: number): number {
+    const rangeStart = Math.max(0, target - 500);
+    const rangeEnd = Math.min(text.length, target + 200);
+    const searchRange = text.slice(rangeStart, rangeEnd);
+
+    // Try sentence boundary first
+    const sentenceEnd = searchRange.lastIndexOf('. ');
+    if (sentenceEnd !== -1) return rangeStart + sentenceEnd + 2;
+
+    // Try newline
+    const newline = searchRange.lastIndexOf('\n');
+    if (newline !== -1) return rangeStart + newline + 1;
+
+    return target;
   }
 
-  private async chunkText(
-    text: string,
-    maxChunkSize: number,
-    overlap: number
-  ): Promise<string[]> {
-    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
-    const approxCharsPerToken = 4;
-    const maxChunkChars = maxChunkSize * approxCharsPerToken;
-    const overlapChars = overlap * approxCharsPerToken;
-    
-    const chunks: string[] = [];
-    let start = 0;
-    
-    while (start < text.length) {
-      let end = Math.min(start + maxChunkChars, text.length);
-      
-      // Try to break at sentence boundary
-      if (end < text.length) {
-        const lastPeriod = text.lastIndexOf('.', end);
-        const lastNewline = text.lastIndexOf('\n', end);
-        const breakPoint = Math.max(lastPeriod, lastNewline);
-        
-        if (breakPoint > start + maxChunkChars / 2) {
-          end = breakPoint + 1;
-        }
-      }
-      
-      chunks.push(text.slice(start, end).trim());
-      
-      // Move start position with overlap
-      start = end - overlapChars;
-      
-      // Ensure we don't get stuck
-      if (start >= text.length - 10) break;
-    }
-    
-    return chunks.filter(chunk => chunk.length > 0);
-  }
+  private async generateEmbeddings(texts: string[]): Promise<number[][]> {
+    const allEmbeddings: number[][] = [];
+    const batchSize = 50;
 
-  private formatChunkWithMetadata(
-    content: string,
-    fileName: string,
-    pageNumber: number,
-    sectionTitle?: string
-  ): string {
-    let metadata = `[Source: ${fileName}, Page: ${pageNumber}`;
-    if (sectionTitle) {
-      metadata += `, Section: ${sectionTitle}`;
-    }
-    metadata += ']\n\n';
-    
-    return metadata + content;
-  }
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const batch = texts.slice(i, i + batchSize);
 
-  private async uploadChunksToOpenAI(
-    chunks: Array<{ content: string; metadata: ChunkMetadata }>,
-    documentId: string,
-    fileName: string
-  ): Promise<string[]> {
-    const fileIds: string[] = [];
-    const batchSize = 10;
-    
-    // Process chunks in batches
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize);
-      const batchPromises = batch.map(async (chunk, batchIndex) => {
-        const chunkIndex = i + batchIndex;
-        const chunkFileName = `${fileName}_chunk_${chunkIndex}_page_${chunk.metadata.pageNumber}.txt`;
-        
-        // Create a file-like object for OpenAI upload
-        // OpenAI SDK accepts a stream with name property
-        const buffer = Buffer.from(chunk.content, 'utf-8');
-        const readableStream = new stream.Readable();
-        readableStream.push(buffer);
-        readableStream.push(null);
-        
-        // Add required properties for OpenAI SDK
-        const fileStream = readableStream as stream.Readable & { name: string; size: number };
-        fileStream.name = chunkFileName;
-        fileStream.size = buffer.length;
-
-        // Upload to OpenAI
-        const fileObject = await openai.files.create({
-          file: fileStream as unknown as File,
-          purpose: 'assistants',
-        });
-        
-        return fileObject.id;
+      const response = await openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: batch,
       });
-      
-      const batchFileIds = await Promise.all(batchPromises);
-      fileIds.push(...batchFileIds);
-    }
-    
-    // Add files to vector store
-    await this.addFilesToVectorStore(fileIds);
-    
-    return fileIds;
-  }
 
-  private async addFilesToVectorStore(fileIds: string[]): Promise<void> {
-    const batchSize = 100;
-    
-    for (let i = 0; i < fileIds.length; i += batchSize) {
-      const batch = fileIds.slice(i, i + batchSize);
-      
-      const response = await fetch(
-        `https://api.openai.com/v1/vector_stores/${this.vectorStoreId}/file_batches`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v2',
-          },
-          body: JSON.stringify({ file_ids: batch }),
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Failed to add files to vector store: ${response.statusText}`);
-      }
-      
-      // Wait for batch to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-
-  async reindexExistingDocuments(): Promise<void> {
-    
-    // Get all documents
-    const documents = await this.documentStorage.searchDocuments('');
-    
-    for (const document of documents) {
-      if (!document.indexed_at) {
-        try {
-          await this.indexPDFDocument(document.id, document.file_url, document.file_name);
-        } catch (_error) {
-        }
+      for (const item of response.data) {
+        allEmbeddings.push(item.embedding);
       }
     }
-    
-    
+
+    return allEmbeddings;
   }
 }

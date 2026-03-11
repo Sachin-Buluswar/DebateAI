@@ -94,10 +94,10 @@ async function runDemo() {
   section('🗃️ DATABASE INTEGRATION');
   
   // Test user preferences (dynamic route)
-  await testEndpoint('User Preferences Endpoint', 'GET', '/api/user_preferences');
-  
+  await testEndpoint('User Preferences Endpoint', 'GET', '/api/user-preferences');
+
   // Test user profiles
-  await testEndpoint('User Profiles Endpoint', 'GET', '/api/user_profiles');
+  await testEndpoint('User Profiles Endpoint', 'GET', '/api/user-profiles');
   
   section('🔍 SEARCH FUNCTIONALITY');
   

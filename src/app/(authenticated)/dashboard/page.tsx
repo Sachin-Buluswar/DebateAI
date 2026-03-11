@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -66,14 +66,17 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'year' | 'all'>('month');
   const [chartDateRange, setChartDateRange] = useState<'week' | 'month' | 'year'>('week');
   const [page] = useState(1);
+  const loadingCompleteRef = useRef(false);
 
   useEffect(() => {
+    loadingCompleteRef.current = false;
     // Check if user is logged in (with timeout to prevent hanging)
     const checkUser = async () => {
       // Set a timeout to prevent indefinite loading
       const timeoutId = setTimeout(() => {
         // If still loading after 5 seconds, assume guest mode
-        if (loading) {
+        if (!loadingCompleteRef.current) {
+          loadingCompleteRef.current = true;
           setLoading(false);
           // Guest mode - no data to show
         }
@@ -268,6 +271,7 @@ export default function Dashboard() {
       } catch {
         setError('An unexpected error occurred. Please try again later.');
       } finally {
+        loadingCompleteRef.current = true;
         setLoading(false);
       }
     };
@@ -276,7 +280,8 @@ export default function Dashboard() {
 
     // Add a safeguard against infinite loading
     const loadingTimeout = setTimeout(() => {
-      if (loading) {
+      if (!loadingCompleteRef.current) {
+        loadingCompleteRef.current = true;
         setLoading(false);
         setError(
           'Loading timed out. This could be due to slow database response. Please try refreshing the page or check your network connection.'

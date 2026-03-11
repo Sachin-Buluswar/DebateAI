@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useToast } from '@/components/ui/Toast';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 type Preferences = {
   darkMode: boolean;
@@ -212,15 +213,11 @@ export default function PreferencesSection() {
           </div>
 
           {error && (
-            <div className="mt-4 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm rounded-md">
-              {error}
-            </div>
+            <AlertMessage type="error" message={error} className="mt-4" />
           )}
 
           {success && (
-            <div className="mt-4 p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-md">
-              Preferences saved successfully!
-            </div>
+            <AlertMessage type="success" message="Preferences saved successfully!" className="mt-4" />
           )}
 
           <div className="mt-6">

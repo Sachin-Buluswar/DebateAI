@@ -3,9 +3,9 @@
  * Extracted core logic for processing speech feedback that can be called from Next.js API routes
  */
 
-import { createClient } from '@supabase/supabase-js';
 import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
+import { supabaseAdmin } from '@/backend/lib/supabaseAdmin';
 import { getAudioDuration } from '@/backend/utils/audioUtils';
 import { openAIService } from '@/backend/services/openaiService';
 import { aiLogger as logger } from '@/lib/monitoring/logger';
@@ -21,16 +21,6 @@ export const MAX_RECORDING_LENGTH_MINUTES = 70;
 export const MAX_USER_STORAGE_BYTES = 600 * 1024 * 1024;
 export const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
 export const WHISPER_MAX_BYTES = 25 * 1024 * 1024;
-
-// Initialize clients
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  logger.error('Supabase credentials missing');
-}
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export interface SpeechFeedbackInput {
   audioBuffer: Buffer;

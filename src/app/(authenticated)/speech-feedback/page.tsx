@@ -258,21 +258,21 @@ export default function SpeechFeedback() {
     }
   }, []);
 
+  const authTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const checkUser = async () => {
       // Set a timeout to prevent indefinite loading
-      const timeoutId = setTimeout(() => {
-        if (loading) {
-          setLoading(false);
-          // Guest mode - continue without auth
-        }
+      authTimeoutRef.current = setTimeout(() => {
+        setLoading(false);
+        // Guest mode - continue without auth
       }, 3000); // 3 second timeout
 
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
-        clearTimeout(timeoutId);
+        if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
 
         if (userError) {
           // Don't block guest access on error
@@ -302,8 +302,9 @@ export default function SpeechFeedback() {
     
     checkUser();
     
-    // Clean up recorder on unmount
+    // Clean up recorder and auth timeout on unmount
     return () => {
+      if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
       stopRecording();
       if (timerRef.current) {
         clearInterval(timerRef.current);

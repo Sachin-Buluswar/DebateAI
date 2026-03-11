@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { withRateLimit, apiRateLimiter } from '@/middleware/rateLimiter';
 
 export async function GET(
@@ -17,10 +17,7 @@ export async function GET(
       );
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = createClient();
 
     const { data: resource, error } = await supabase
       .from('educational_resources')

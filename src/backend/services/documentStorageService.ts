@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import { Document, DocumentChunk } from '@/types/documents';
+import { supabaseAdmin as supabase } from '@/backend/lib/supabaseAdmin';
 import crypto from 'crypto';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export class DocumentStorageService {
   private bucketName = 'debate-documents';

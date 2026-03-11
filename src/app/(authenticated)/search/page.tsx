@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
+import AlertMessage from '@/components/ui/AlertMessage';
 import type { User, SearchResult, GeneratedAnswer } from '@/types';
 
 // Lazy load heavy components
@@ -37,33 +38,27 @@ export default function SearchPage() {
   const [showRecentSearches, setShowRecentSearches] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  const authTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const checkUser = async () => {
       // Set a timeout to prevent indefinite loading
-      const timeoutId = setTimeout(() => {
-        if (loading) {
-          setLoading(false);
-          // Guest mode - continue without auth
-        }
+      authTimeoutRef.current = setTimeout(() => {
+        setLoading(false);
+        // Guest mode - continue without auth
       }, 3000); // 3 second timeout
 
       try {
         const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
-        clearTimeout(timeoutId);
+        if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
 
         if (userError) {
           // Don't block guest access on error
           setLoading(false);
           return;
         }
-
-        // GUEST MODE: Allow access without session
-        // if (!authUser) {
-        //   router.push('/auth');
-        //   return;
-        // }
 
         // Set user if authenticated, otherwise guest mode
         if (authUser) {
@@ -77,6 +72,10 @@ export default function SearchPage() {
     };
 
     checkUser();
+
+    return () => {
+      if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
+    };
   }, [router]);
 
   // Add a function to fetch search history
@@ -406,7 +405,7 @@ export default function SearchPage() {
               </div>
             </form>
           </div>
-          {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <AlertMessage type="error" message={error} className="mt-4" />}
 
           {/* Search History */}
           {searchHistory.length > 0 && (

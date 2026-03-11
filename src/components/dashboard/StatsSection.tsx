@@ -1,7 +1,7 @@
 'use client';
 
 import StatsCard from './StatsCard';
-import { formatScore } from '@/utils/scoring';
+import { formatScore } from '@/utils/scoreStandardization';
 
 interface StatsSectionProps {
   totalSpeeches: number;

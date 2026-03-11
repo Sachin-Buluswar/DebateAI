@@ -20,10 +20,10 @@ export default function CustomAuthForm() {
   const supabase = createClient();
   const router = useRouter();
 
-  // Clear error and message when switching forms
+  // Clear error and message when switching forms (but not when returning from forgot password with a success message)
   useEffect(() => {
     setError(null);
-    setMessage(null);
+    setMessage((prev) => showForgotPassword ? null : prev);
   }, [isSignUp, showForgotPassword]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -46,7 +46,7 @@ export default function CustomAuthForm() {
         });
         
         if (error) throw error;
-        
+
         setMessage('If an account exists with this email, you will receive a password reset link. Please check your inbox.');
         setShowForgotPassword(false);
         // Clear form

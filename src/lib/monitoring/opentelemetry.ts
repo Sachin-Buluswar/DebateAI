@@ -188,42 +188,6 @@ export function setSpanAttributes(attributes: Record<string, string | number | b
   }
 }
 
-// Custom instrumentation for Socket.IO
-export function instrumentSocketIO(io: { on: (event: string, cb: (socket: { id: string; handshake: { address: string }; emit: (event: string, ...args: unknown[]) => unknown; on: (event: string, cb: () => void) => void }) => void) => void }) {
-  io.on('connection', (socket: { id: string; handshake: { address: string }; emit: (event: string, ...args: unknown[]) => unknown; on: (event: string, cb: () => void) => void }) => {
-    const connectionSpan = createSpan('socket.io.connection', {
-      'socket.id': socket.id,
-      'socket.handshake.address': socket.handshake.address,
-    });
-
-    socket.on('disconnect', () => {
-      connectionSpan.addEvent('socket.disconnected');
-      connectionSpan.end();
-    });
-
-    // Instrument socket events
-    const originalEmit = socket.emit;
-    socket.emit = function(event: string, ...args: unknown[]) {
-      const span = createSpan(`socket.io.emit.${event}`, {
-        'socket.id': socket.id,
-        'event.name': event,
-      });
-      
-      try {
-        const result = originalEmit.apply(socket, [event, ...args]);
-        span.setStatus({ code: SpanStatusCode.OK });
-        return result;
-      } catch (error) {
-        span.recordException(error as Error);
-        span.setStatus({ code: SpanStatusCode.ERROR });
-        throw error;
-      } finally {
-        span.end();
-      }
-    };
-  });
-}
-
 // Export metrics helpers
 import { metrics } from '@opentelemetry/api';
 
@@ -265,7 +229,7 @@ export const debateMetrics = {
   
   // Gauge for active connections
   activeConnections: meter.createUpDownCounter('connections.active', {
-    description: 'Number of active Socket.IO connections',
+    description: 'Number of active connections',
   }),
   
   // Counter for errors by type

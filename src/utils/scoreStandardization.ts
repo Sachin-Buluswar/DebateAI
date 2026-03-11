@@ -348,3 +348,73 @@ export function batchStandardizeScores(feedbackRecords: { id: string; feedback: 
     standardizedScore: extractScoreFromFeedback(record.feedback)
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Legacy-compatible helpers (formerly in utils/scoring.ts)
+// ---------------------------------------------------------------------------
+
+export type ScoreType = 'nsda' | 'percentage' | 'ten-point';
+
+export interface ScoreInfo {
+  value: number;
+  type: ScoreType;
+  display: string;
+  description: string;
+}
+
+/**
+ * Detect score type based on numeric value
+ */
+export function detectScoreType(score: number): ScoreType {
+  if (score >= 25 && score <= 30) return 'nsda';
+  if (score >= 1 && score <= 10) return 'ten-point';
+  return 'percentage';
+}
+
+/**
+ * Format score for display with appropriate scale indicator
+ */
+export function formatScore(score: number, type?: ScoreType): ScoreInfo {
+  const scoreType = type || detectScoreType(score);
+
+  switch (scoreType) {
+    case 'nsda':
+      return {
+        value: score,
+        type: 'nsda',
+        display: `${score % 1 === 0 ? score.toFixed(0) : score.toFixed(1)}/30`,
+        description: 'NSDA Public Forum scale (half-point scoring)',
+      };
+    case 'ten-point':
+      return {
+        value: score,
+        type: 'ten-point',
+        display: `${score.toFixed(1)}/10`,
+        description: '10-point scale',
+      };
+    case 'percentage':
+    default:
+      return {
+        value: score,
+        type: 'percentage',
+        display: `${Math.round(score)}%`,
+        description: 'Percentage score',
+      };
+  }
+}
+
+/**
+ * Get Tailwind color class based on score value
+ */
+export function getScoreColor(score: number, type?: ScoreType): string {
+  const scoreType = type || detectScoreType(score);
+  let percentage = score;
+
+  if (scoreType === 'nsda') percentage = nsdaToPercentage(score);
+  else if (scoreType === 'ten-point') percentage = tenPointToPercentage(score);
+
+  if (percentage >= 90) return 'text-green-600 dark:text-green-400';
+  if (percentage >= 75) return 'text-blue-600 dark:text-blue-400';
+  if (percentage >= 60) return 'text-yellow-600 dark:text-yellow-400';
+  return 'text-red-600 dark:text-red-400';
+}

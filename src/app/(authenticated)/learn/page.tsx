@@ -142,9 +142,12 @@ export default function LearnPage() {
       if (selectedDifficulty) params.append('difficulty', selectedDifficulty);
       
       const response = await fetch(`/api/resources?${params}`);
+      if (!response.ok) {
+        throw new Error(`Server error (${response.status})`);
+      }
       const data = await response.json();
-      
-      // Handle response regardless of status
+
+      // Handle response
       if (data.resources) {
         setResources(data.resources);
         // Check for setup message
@@ -307,40 +310,26 @@ export default function LearnPage() {
           </section>
         )}
         
-        {/* Empty State (with filters) */}
-        {!loading && !error && !message && resources.length === 0 && (selectedCategory || selectedDifficulty) && (
+        {/* Empty State */}
+        {!loading && !error && !message && resources.length === 0 && (
           <div className="text-center py-12 animate-fade-in">
             <div className="text-4xl mb-4">🔍</div>
             <p className="text-gray-600 dark:text-gray-400">
-              No resources found matching your filters.
+              {selectedCategory || selectedDifficulty
+                ? 'No resources found matching your filters.'
+                : 'No resources available yet. Check back soon!'}
             </p>
-            <button
-              onClick={() => {
-                setSelectedCategory(null);
-                setSelectedDifficulty(null);
-              }}
-              className="mt-4 text-primary-500 hover:text-primary-600 transition-colors"
-            >
-              Clear filters
-            </button>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && !error && resources.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              No resources found matching your filters.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedCategory(null);
-                setSelectedDifficulty(null);
-              }}
-              className="mt-4 text-primary-500 hover:text-primary-600 transition-colors"
-            >
-              Clear filters
-            </button>
+            {(selectedCategory || selectedDifficulty) && (
+              <button
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setSelectedDifficulty(null);
+                }}
+                className="mt-4 text-primary-500 hover:text-primary-600 transition-colors"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         )}
     </div>

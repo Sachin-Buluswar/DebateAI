@@ -11,7 +11,6 @@ export {
   dbLogger,
   authLogger,
   aiLogger,
-  socketLogger
 } from './logger';
 
 // Performance monitoring exports
@@ -40,7 +39,6 @@ export {
   traceSync,
   addSpanEvent,
   setSpanAttributes,
-  instrumentSocketIO,
   debateMetrics,
   recordDebateStart,
   recordDebateEnd,
