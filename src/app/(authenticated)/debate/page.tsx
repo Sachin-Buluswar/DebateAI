@@ -220,7 +220,7 @@ export default function DebatePage() {
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. The United States should abolish the Electoral College"
+                placeholder="e.g. On balance, the benefits of genetically modified foods outweigh the harms"
                 className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 disabled={isStarting}
               />
