@@ -16,7 +16,7 @@ This guide provides step-by-step instructions for setting up the Eris Debate dev
 
 ```bash
 git clone [repository-url]
-cd debatetest2
+cd ErisDebate
 ```
 
 ### 2. Install Dependencies

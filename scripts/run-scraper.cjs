@@ -13,6 +13,9 @@
  * Estimated cost: ~$3.65 for all 6 years (text-embedding-3-small)
  *
  * Safe to interrupt (Ctrl+C) — already-indexed files are skipped on restart.
+ *
+ * Requires DATABASE_URL env var (direct Postgres connection string).
+ * Get it from: Supabase Dashboard → Settings → Database → Connection string (URI)
  */
 
 const dotenv = require('dotenv');
@@ -25,25 +28,41 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 const OpenAI = require('openai').default;
 const mammoth = require('mammoth');
 
 // Validate env
-for (const key of ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY']) {
+for (const key of ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY', 'DATABASE_URL']) {
   if (!process.env[key]) {
-    console.error(`Missing env var: ${key}`);
+    if (key === 'DATABASE_URL') {
+      console.error('Missing DATABASE_URL env var.');
+      console.error('Get it from: Supabase Dashboard → Settings → Database → Connection string (URI)');
+      console.error('Add it to .env.local: DATABASE_URL=postgresql://postgres.[ref]:[password]@...:5432/postgres');
+    } else {
+      console.error(`Missing env var: ${key}`);
+    }
     process.exit(1);
   }
 }
 
+// Supabase REST client (for reads + document record management)
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Direct Postgres connection (for chunk inserts — bypasses PostgREST timeout)
+const pgPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 2,
+  statement_timeout: 120000, // 120 seconds — plenty for batch inserts
+});
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const ZIP_BASE_URL = 'https://caselist-files.s3.us-east-005.backblazeb2.com/openev';
 const CHUNK_SIZE = 3200;
 const CHUNK_OVERLAP = 800;
 const EMBEDDING_BATCH_SIZE = 50;
-const DB_INSERT_BATCH_SIZE = 5;
+const DB_INSERT_BATCH_SIZE = 20; // Safe with direct PG connection
 
 // ---- Chunking ----
 function chunkText(text, fileName) {
@@ -102,35 +121,48 @@ async function generateEmbeddings(texts) {
   return all;
 }
 
-// ---- Index a document ----
+// ---- Index a document (uses direct PG connection) ----
 async function indexDocument(docId, text, fileName) {
   const chunks = chunkText(text, fileName);
   if (chunks.length === 0) return 0;
 
   const embeddings = await generateEmbeddings(chunks.map(c => c.content));
 
-  for (let i = 0; i < chunks.length; i += DB_INSERT_BATCH_SIZE) {
-    const batch = chunks.slice(i, i + DB_INSERT_BATCH_SIZE);
-    const batchEmb = embeddings.slice(i, i + DB_INSERT_BATCH_SIZE);
-    const rows = batch.map((chunk, j) => ({
-      document_id: docId,
-      chunk_index: chunk.chunkIndex,
-      content: chunk.content,
-      section_title: chunk.sectionTitle,
-      embedding: JSON.stringify(batchEmb[j]),
-      metadata: {},
-    }));
-    let lastError;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const { error } = await supabase.from('document_chunks').insert(rows);
-      if (!error) { lastError = null; break; }
-      lastError = error;
-      console.log(`    Chunk insert retry ${attempt + 1}/3: ${error.message}`);
-      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+  const client = await pgPool.connect();
+  try {
+    for (let i = 0; i < chunks.length; i += DB_INSERT_BATCH_SIZE) {
+      const batch = chunks.slice(i, i + DB_INSERT_BATCH_SIZE);
+      const batchEmb = embeddings.slice(i, i + DB_INSERT_BATCH_SIZE);
+
+      // Build parameterized multi-row INSERT
+      const values = [];
+      const params = [];
+      let idx = 1;
+
+      for (let j = 0; j < batch.length; j++) {
+        values.push(`($${idx}, $${idx+1}, $${idx+2}, $${idx+3}, $${idx+4}::vector, $${idx+5}::jsonb)`);
+        params.push(
+          docId,
+          batch[j].chunkIndex,
+          batch[j].content,
+          batch[j].sectionTitle || null,
+          `[${batchEmb[j].join(',')}]`,  // pgvector literal format
+          JSON.stringify({})
+        );
+        idx += 6;
+      }
+
+      await client.query(
+        `INSERT INTO document_chunks (document_id, chunk_index, content, section_title, embedding, metadata)
+         VALUES ${values.join(', ')}`,
+        params
+      );
     }
-    if (lastError) throw new Error(`DB insert failed after 3 retries: ${lastError.message}`);
+  } finally {
+    client.release();
   }
 
+  // Update indexed_at via Supabase REST (small update, no timeout risk)
   await supabase.from('documents').update({ indexed_at: new Date().toISOString() }).eq('id', docId);
   return chunks.length;
 }
@@ -260,7 +292,6 @@ async function scrapeYear(year) {
 async function repairIncomplete() {
   console.log('\n  Checking for incomplete documents (failed chunk inserts)...');
 
-  // Find documents that were created but never fully indexed
   const { data: incomplete, error } = await supabase
     .from('documents')
     .select('id, file_name')
@@ -279,30 +310,16 @@ async function repairIncomplete() {
 
   console.log(`  Found ${incomplete.length} incomplete documents. Cleaning up...`);
 
-  for (const doc of incomplete) {
-    // Delete any partial chunks
-    const { error: chunkErr } = await supabase
-      .from('document_chunks')
-      .delete()
-      .eq('document_id', doc.id);
-
-    if (chunkErr) {
-      console.error(`    Failed to delete chunks for ${doc.file_name}: ${chunkErr.message}`);
-      continue;
+  // Use direct PG for faster bulk delete
+  const client = await pgPool.connect();
+  try {
+    for (const doc of incomplete) {
+      await client.query('DELETE FROM document_chunks WHERE document_id = $1', [doc.id]);
+      await client.query('DELETE FROM documents WHERE id = $1', [doc.id]);
+      console.log(`    Cleaned: ${doc.file_name}`);
     }
-
-    // Delete the document record so scraper will re-process it
-    const { error: docErr } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', doc.id);
-
-    if (docErr) {
-      console.error(`    Failed to delete doc ${doc.file_name}: ${docErr.message}`);
-      continue;
-    }
-
-    console.log(`    Cleaned: ${doc.file_name}`);
+  } finally {
+    client.release();
   }
 
   console.log(`  Repaired ${incomplete.length} documents. They will be re-processed.\n`);
@@ -321,8 +338,18 @@ async function main() {
   console.log('╚══════════════════════════════════════════════╝');
   console.log(`Years: ${years.join(', ')}`);
   console.log(`Embedding model: text-embedding-3-small`);
-  console.log(`Estimated cost: ~$0.60/year (~$${(years.length * 0.6).toFixed(2)} total)`);
+  console.log(`DB: direct Postgres connection (120s timeout)`);
   console.log(`Safe to Ctrl+C — progress is saved, skips already-indexed files.\n`);
+
+  // Verify PG connection works
+  try {
+    const res = await pgPool.query('SELECT 1 as ok');
+    if (res.rows[0].ok === 1) console.log('  ✓ Database connection verified');
+  } catch (err) {
+    console.error(`  ✗ Database connection failed: ${err.message}`);
+    console.error('  Check your DATABASE_URL in .env.local');
+    process.exit(1);
+  }
 
   // Repair any incomplete documents from previous failed runs
   await repairIncomplete();
@@ -343,6 +370,9 @@ async function main() {
       console.error(`  Year ${year} FAILED: ${err.message || err}`);
     }
   }
+
+  // Close PG pool
+  await pgPool.end();
 
   const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
   console.log(`\n╔══════════════════════════════════════════════╗`);

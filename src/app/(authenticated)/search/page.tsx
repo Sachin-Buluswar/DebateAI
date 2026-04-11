@@ -249,7 +249,8 @@ export default function SearchPage() {
     setError(null);
 
     try {
-      // Call the wiki-generate API endpoint
+      // Call the wiki-generate API endpoint, passing current results as context
+      // so the answer is grounded in exactly what's displayed
       const generateResponse = await fetch('/api/wiki-generate', {
         method: 'POST',
         headers: {
@@ -257,7 +258,12 @@ export default function SearchPage() {
         },
         body: JSON.stringify({
           query: query,
-          maxResults: 5, // Use top 5 results for generation
+          maxResults: 5,
+          context: results.slice(0, 5).map(r => ({
+            content: r.content.substring(0, 5000),
+            source: r.source,
+            relevance: Math.min(1, Math.max(0, r.score ?? 0.5)),
+          })),
         }),
       });
 

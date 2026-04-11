@@ -20,7 +20,17 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         const isTXT = file.name.endsWith('.txt');
 
         if (!isPDF && !isTXT) {
-          return NextResponse.json({ error: 'Invalid file type. Only PDF and TXT files are supported.' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'Invalid file type. Only PDF and TXT files are supported.' },
+            { status: 400 }
+          );
+        }
+
+        if (file.size > 100 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: 'File too large. Maximum size is 100MB.' },
+            { status: 413 }
+          );
         }
 
         const documentStorage = new DocumentStorageService();
@@ -33,7 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         // Extract text from file
         let text = '';
         if (isPDF) {
-          const pdfParse = await import('pdf-parse').then(m => m.default || m);
+          const pdfParse = await import('pdf-parse').then((m) => m.default || m);
           const pdfData = await pdfParse(fileBuffer);
           text = pdfData.text;
         } else {
@@ -65,10 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         );
       } catch (_error) {
         return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Failed to upload document' },
-            { status: 500 }
-          )
+          NextResponse.json({ error: 'Failed to upload document' }, { status: 500 })
         );
       }
     });

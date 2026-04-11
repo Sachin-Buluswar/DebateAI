@@ -14,7 +14,7 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   {
-    ignores: [".next/**", "src/temp-debatetest2-refactor/**"],
+    ignores: [".next/**"],
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tsParser,

@@ -81,7 +81,7 @@ Password: [SendGrid API Key]
 
 ## Rate Limiting
 
-Edit /Users/sachinbuluswar/Documents/debatetest2/src/lib/rateLimit.ts:
+Edit /Users/sachinbuluswar/Documents/ErisDebate/src/lib/rateLimit.ts:
 ```typescript
 const limits = {
   '/api/debate': { requests: 30, window: '1m' },
@@ -93,7 +93,7 @@ const limits = {
 ## Security
 
 ### CSP Headers
-Edit /Users/sachinbuluswar/Documents/debatetest2/next.config.js:
+Edit /Users/sachinbuluswar/Documents/ErisDebate/next.config.js:
 ```javascript
 const cspHeader = `
   default-src 'self';
@@ -141,6 +141,6 @@ npm run test:apis
 - Ensure RLS configured
 
 ## File Locations
-Environment: /Users/sachinbuluswar/Documents/debatetest2/.env.local
-Rate limiting: /Users/sachinbuluswar/Documents/debatetest2/src/lib/rateLimit.ts
-Security config: /Users/sachinbuluswar/Documents/debatetest2/next.config.js
+Environment: /Users/sachinbuluswar/Documents/ErisDebate/.env.local
+Rate limiting: /Users/sachinbuluswar/Documents/ErisDebate/src/lib/rateLimit.ts
+Security config: /Users/sachinbuluswar/Documents/ErisDebate/next.config.js
