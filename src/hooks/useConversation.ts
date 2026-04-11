@@ -10,9 +10,14 @@ export interface TranscriptEntry {
   timestamp: number;
 }
 
+interface DisconnectDetails {
+  reason?: string;
+  message?: string;
+}
+
 interface UseConversationCallbacks {
   onConnect?: () => void;
-  onDisconnect?: () => void;
+  onDisconnect?: (details?: DisconnectDetails) => void;
   onError?: (message: string) => void;
 }
 
@@ -36,9 +41,6 @@ export function useConversation(callbacks?: UseConversationCallbacks) {
       setIsMuted(false);
       setStatus('connecting');
 
-      // Request mic permission before starting (required by SDK)
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-
       const conversation = await Conversation.startSession({
         signedUrl,
         overrides: {
@@ -52,11 +54,11 @@ export function useConversation(callbacks?: UseConversationCallbacks) {
           setStatus('connected');
           callbacksRef.current?.onConnect?.();
         },
-        onDisconnect: () => {
+        onDisconnect: (details?: DisconnectDetails) => {
           setStatus('disconnected');
           setMode('listening');
           conversationRef.current = null;
-          callbacksRef.current?.onDisconnect?.();
+          callbacksRef.current?.onDisconnect?.(details);
         },
         onError: (message: string) => {
           callbacksRef.current?.onError?.(message);

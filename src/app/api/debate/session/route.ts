@@ -15,7 +15,36 @@ const topicOnlySchema = z.object({
 
 const requestSchema = z.union([sessionSchema, topicOnlySchema]);
 
+const TOPIC_CATEGORIES = [
+  'criminal justice and policing',
+  'environmental policy and climate change',
+  'education reform',
+  'healthcare and public health',
+  'immigration policy',
+  'international relations and diplomacy',
+  'economic policy and trade',
+  'technology regulation and privacy',
+  'military and defense policy',
+  'space exploration and funding',
+  'energy policy and nuclear power',
+  'democratic institutions and voting',
+  'artificial intelligence governance',
+  'bioethics and genetic engineering',
+  'housing and urban development',
+  'food and agricultural policy',
+  'transportation and infrastructure',
+  'intellectual property and patents',
+  'youth and child welfare',
+  'foreign aid and development',
+  'nuclear proliferation and arms control',
+  'water rights and resource management',
+  'censorship and free expression',
+  'labor rights and automation',
+  'pandemic preparedness',
+];
+
 async function generateDebateTopic(): Promise<string> {
+  const category = TOPIC_CATEGORIES[Math.floor(Math.random() * TOPIC_CATEGORIES.length)];
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_GENERATION_MODEL || 'gpt-4o-mini',
@@ -24,13 +53,15 @@ async function generateDebateTopic(): Promise<string> {
     messages: [
       {
         role: 'system',
-        content:
-          'Generate a single interesting, debatable topic suitable for high school or college debate practice. Return ONLY the topic as a short statement (under 15 words). No quotes, no preamble.',
+        content: `Generate a single Public Forum debate resolution about ${category}. The resolution MUST be a declarative statement that can be affirmed or negated — NOT a question. Use phrasing like "The United States should...", "On balance, X outweighs Y", "Countries ought to...", or similar declarative forms. It should be specific, balanced, and suitable for high school or college debate. Return ONLY the resolution (under 20 words). No quotes, no "Resolved:" prefix, no preamble.`,
       },
-      { role: 'user', content: 'Give me a debate topic.' },
+      { role: 'user', content: 'Generate a resolution.' },
     ],
   });
-  return response.choices[0]?.message?.content?.trim() || 'Social media does more harm than good';
+  return (
+    response.choices[0]?.message?.content?.trim() ||
+    'The United States should substantially increase its investment in nuclear energy'
+  );
 }
 
 async function getSignedUrl(agentId: string): Promise<string> {

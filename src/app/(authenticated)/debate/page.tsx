@@ -122,7 +122,13 @@ export default function DebatePage() {
   const { status, mode, transcript, isMuted, start, stop, toggleMute } =
     useConversation({
       onConnect: () => toast.success('Connected — start speaking!'),
-      onDisconnect: () => toast.info('Debate ended.'),
+      onDisconnect: (details) => {
+        if (details?.reason === 'error') {
+          toast.error(details.message || 'Debate connection lost.');
+        } else {
+          toast.info('Debate ended.');
+        }
+      },
       onError: (message: string) => toast.error(message || 'Connection error'),
     });
 
@@ -214,7 +220,7 @@ export default function DebatePage() {
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. Social media does more harm than good"
+                placeholder="e.g. The United States should abolish the Electoral College"
                 className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 disabled={isStarting}
               />
