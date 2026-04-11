@@ -88,10 +88,7 @@ function TranscriptView({ entries }: { entries: TranscriptEntry[] }) {
   return (
     <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
       {entries.map((entry, i) => (
-        <div
-          key={i}
-          className={`flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}
-        >
+        <div key={i} className={`flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}>
           <div
             className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
               entry.role === 'user'
@@ -119,12 +116,11 @@ export default function DebatePage() {
   const [isStarting, setIsStarting] = useState(false);
 
   // Callbacks passed via ref inside the hook, so object identity doesn't matter
-  const { status, mode, transcript, isMuted, start, stop, toggleMute } =
-    useConversation({
-      onConnect: () => toast.success('Connected — start speaking!'),
-      onDisconnect: () => toast.info('Debate ended.'),
-      onError: (message: string) => toast.error(message || 'Connection error'),
-    });
+  const { status, mode, transcript, isMuted, start, stop, toggleMute } = useConversation({
+    onConnect: () => toast.success('Connected — start speaking!'),
+    onDisconnect: () => toast.info('Debate ended.'),
+    onError: (message: string) => toast.error(message || 'Connection error'),
+  });
 
   const isActive = status === 'connected' || status === 'connecting';
 
@@ -183,16 +179,31 @@ export default function DebatePage() {
   }, [toast]);
 
   const handleEnd = useCallback(async () => {
+    const currentTranscript = transcript;
+    const currentTopic = activeTopic;
     await stop();
-  }, [stop]);
+
+    if (currentTranscript.length > 0 && currentTopic) {
+      try {
+        const res = await fetch('/api/debate/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic: currentTopic, transcript: currentTranscript }),
+        });
+        if (res.ok) {
+          toast.success('Debate saved to history.');
+        }
+      } catch {
+        // Non-critical — don't block the user
+      }
+    }
+  }, [stop, transcript, activeTopic, toast]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-light text-gray-900 dark:text-gray-100">
-          debate practice
-        </h1>
+        <h1 className="text-2xl font-light text-gray-900 dark:text-gray-100">debate practice</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           have a live voice conversation with an AI debate opponent
         </p>
@@ -247,9 +258,7 @@ export default function DebatePage() {
               <p className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
                 topic
               </p>
-              <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
-                {activeTopic}
-              </p>
+              <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{activeTopic}</p>
             </div>
             <StatusIndicator status={status} mode={mode} />
           </div>

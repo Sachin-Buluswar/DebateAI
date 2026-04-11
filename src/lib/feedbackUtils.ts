@@ -1,5 +1,5 @@
 // Feedback utilities consolidated for main app runtime.
-// Source: temp-debatetest2-refactor/lib/utils/feedbackUtils.ts (trimmed slightly for clarity)
+// Source: lib/utils/feedbackUtils.ts (trimmed slightly for clarity)
 
 interface Feedback {
   overall?: string;

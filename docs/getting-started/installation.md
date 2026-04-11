@@ -17,7 +17,7 @@ Create accounts:
 ### 1. Clone Repository
 ```bash
 git clone <repository-url>
-cd debatetest2
+cd ErisDebate
 ```
 
 ### 2. Install Dependencies
@@ -43,7 +43,7 @@ cp .env.example .env.local
 
 #### Run Migrations
 1. Open SQL Editor in Supabase Dashboard
-2. Execute each file in order from /Users/sachinbuluswar/Documents/debatetest2/supabase/migrations/
+2. Execute each file in order from /Users/sachinbuluswar/Documents/ErisDebate/supabase/migrations/
 3. Verify tables exist: profiles, debates, speeches, search_history
 
 #### Enable RLS
@@ -112,6 +112,6 @@ curl http://localhost:3001/api/health
 ```
 
 ## File Locations
-Project root: /Users/sachinbuluswar/Documents/debatetest2
-Migrations: /Users/sachinbuluswar/Documents/debatetest2/supabase/migrations/
-Environment: /Users/sachinbuluswar/Documents/debatetest2/.env.local
+Project root: /Users/sachinbuluswar/Documents/ErisDebate
+Migrations: /Users/sachinbuluswar/Documents/ErisDebate/supabase/migrations/
+Environment: /Users/sachinbuluswar/Documents/ErisDebate/.env.local

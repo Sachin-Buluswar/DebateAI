@@ -4,7 +4,7 @@ import { EnhancedIndexingService } from './enhancedIndexingService';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const ZIP_BASE_URL = 'https://caselist-files.s3.us-east-005.backblazeb2.com/openev';
 
@@ -70,7 +70,11 @@ export class OpenCaseListScraper {
       fs.writeFileSync(zipPath, Buffer.from(arrayBuffer));
 
       // List files in ZIP using unzip -l
-      const listOutput = execSync(`unzip -l "${zipPath}" 2>/dev/null`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const listOutput = execFileSync('unzip', ['-l', zipPath], {
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
       const fileEntries = this.parseUnzipList(listOutput);
 
       const total = fileEntries.length;
@@ -78,6 +82,9 @@ export class OpenCaseListScraper {
       // Process files one at a time
       const extractDir = path.join(tmpDir, 'extracted');
       fs.mkdirSync(extractDir, { recursive: true });
+      const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB per extracted file
+      const MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024; // 2GB total per year
+      let totalExtractedSize = 0;
 
       for (const entryPath of fileEntries) {
         try {
@@ -98,9 +105,10 @@ export class OpenCaseListScraper {
 
           // Extract single file to disk
           try {
-            execSync(`unzip -o -j "${zipPath}" "${entryPath}" -d "${extractDir}" 2>/dev/null`, {
+            execFileSync('unzip', ['-o', '-j', zipPath, entryPath, '-d', extractDir], {
               encoding: 'utf-8',
               maxBuffer: 50 * 1024 * 1024,
+              stdio: ['pipe', 'pipe', 'ignore'],
             });
           } catch {
             failed++;
@@ -113,6 +121,19 @@ export class OpenCaseListScraper {
             continue;
           }
 
+          // Zip bomb protection: check extracted file size
+          const fileStats = fs.statSync(extractedPath);
+          if (fileStats.size > MAX_FILE_SIZE) {
+            fs.unlinkSync(extractedPath);
+            failed++;
+            continue;
+          }
+          totalExtractedSize += fileStats.size;
+          if (totalExtractedSize > MAX_TOTAL_SIZE) {
+            fs.unlinkSync(extractedPath);
+            throw new Error('Total extracted size exceeds safety limit');
+          }
+
           // Read file and extract text
           const fileBuffer = fs.readFileSync(extractedPath);
           const ext = path.extname(fileName).toLowerCase();
@@ -122,7 +143,7 @@ export class OpenCaseListScraper {
             const result = await mammoth.extractRawText({ buffer: fileBuffer });
             text = result.value;
           } else if (ext === '.pdf') {
-            const pdfParse = await import('pdf-parse').then(m => m.default || m);
+            const pdfParse = await import('pdf-parse').then((m) => m.default || m);
             const pdfData = await pdfParse(fileBuffer);
             text = pdfData.text;
           }
@@ -158,11 +179,7 @@ export class OpenCaseListScraper {
           // Index: chunk + embed + store
           await this.indexingService.indexDocument(doc.id, text, fileName);
 
-          await this.logScrape(
-            `${zipUrl}#${entryPath}`,
-            'completed',
-            doc.id
-          );
+          await this.logScrape(`${zipUrl}#${entryPath}`, 'completed', doc.id);
 
           indexed++;
         } catch (_error) {
@@ -276,17 +293,15 @@ export class OpenCaseListScraper {
     failed: number;
     pending: number;
   }> {
-    const { data } = await supabase
-      .from('opencaselist_scrape_log')
-      .select('status');
+    const { data } = await supabase.from('opencaselist_scrape_log').select('status');
 
     if (!data) return { total: 0, completed: 0, failed: 0, pending: 0 };
 
     return {
       total: data.length,
-      completed: data.filter(d => d.status === 'completed').length,
-      failed: data.filter(d => d.status === 'failed').length,
-      pending: data.filter(d => d.status === 'pending' || d.status === 'processing').length,
+      completed: data.filter((d) => d.status === 'completed').length,
+      failed: data.filter((d) => d.status === 'failed').length,
+      pending: data.filter((d) => d.status === 'pending' || d.status === 'processing').length,
     };
   }
 }
