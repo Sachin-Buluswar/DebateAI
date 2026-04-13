@@ -30,6 +30,7 @@ export default function SearchPage() {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [searchHistory, setSearchHistory] = useState<
     Array<{ id: string; query: string; results_count: number; created_at: string }>
   >([]);
@@ -189,7 +190,8 @@ export default function SearchPage() {
 
     setSearching(true);
     setError(null);
-    setGeneratedAnswer(null); // Reset generated answer when performing a new search
+    setGeneratedAnswer(null);
+    setHasSearched(true);
 
     try {
 
@@ -210,7 +212,8 @@ export default function SearchPage() {
       });
 
       if (!searchResponse.ok) {
-        throw new Error(`Search API returned status: ${searchResponse.status}`);
+        const errorData = await searchResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Search failed (status ${searchResponse.status})`);
       }
 
       const searchData = await searchResponse.json();
@@ -232,8 +235,9 @@ export default function SearchPage() {
 
       // Refresh search history after successful search
       fetchSearchHistory();
-    } catch {
-      setError('An unexpected error occurred. Please try again later.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(message);
     } finally {
       setSearching(false);
     }
@@ -577,26 +581,42 @@ export default function SearchPage() {
           {/* Results */}
           <div className="mt-8 space-y-4">
             {results.length > 0 && (
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {searchMode === 'rag' ? 'Document Search Results' : 'AI Assistant Results'} (
-                  {results.length})
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {searchMode === 'rag' ? 'Document Search Results' : 'AI Assistant Results'} (
+                    {results.length})
+                  </h3>
+                  <span
+                    className="px-3 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200"
+                  >
+                    {searchMode === 'rag' ? 'Document Search' : 'AI-Enhanced'}
+                  </span>
+                </div>
+                {results.map((res, idx) => (
+                  <UnifiedSearchCard
+                    key={idx}
+                    result={res}
+                    index={idx}
+                    searchMode={searchMode}
+                  />
+                ))}
+              </>
+            )}
+            {hasSearched && !searching && results.length === 0 && !error && (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                  No results found
                 </h3>
-                <span
-                  className="px-3 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200"
-                >
-                  {searchMode === 'rag' ? 'Document Search' : 'AI-Enhanced'}
-                </span>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                  No documents matched your search for &ldquo;{query}&rdquo;. Try different keywords or switch search modes.
+                </p>
               </div>
             )}
-            {results.map((res, idx) => (
-              <UnifiedSearchCard
-                key={idx}
-                result={res}
-                index={idx}
-                searchMode={searchMode}
-              />
-            ))}
           </div>
         </div>
     </ErrorBoundary>
