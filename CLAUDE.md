@@ -158,8 +158,7 @@ src/
 │   ├── scoreStandardization.ts # Score conversion utilities
 │   ├── supabaseClient.ts  # Supabase browser client singleton
 │   ├── toast.ts           # Toast notification system
-│   ├── uploadSessionStore.ts # File upload session management
-│   └── validation.ts      # Form validation utilities
+│   └── uploadSessionStore.ts # File upload session management
 ├── api-middleware/         # API route middleware (not Next.js Edge middleware)
 │   ├── auth.ts            # Edge runtime authentication
 │   ├── cors.ts            # CORS configuration
@@ -349,9 +348,8 @@ export function Component({ props }: ComponentProps) {
 ```typescript
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/lib/toast';
-import { FormValidator } from '@/lib/validation';
 import { Button } from '@/components/ui/Button';
 
 export function FormComponent() {
@@ -360,25 +358,27 @@ export function FormComponent() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   
-  const validator = useMemo(() => new FormValidator({
-    email: {
-      required: 'Email is required',
-      pattern: {
-        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        message: 'Enter a valid email address'
-      }
-    },
-    message: {
-      required: 'Message is required',
-      minLength: { value: 10, message: 'Message must be at least 10 characters' }
+  // Inline validation — returns a map of field -> error message
+  const validate = (data: typeof formData) => {
+    const errors: Record<string, string> = {};
+    if (!data.email) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.email = 'Enter a valid email address';
     }
-  }), []);
+    if (!data.message) {
+      errors.message = 'Message is required';
+    } else if (data.message.length < 10) {
+      errors.message = 'Message must be at least 10 characters';
+    }
+    return errors;
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate all fields
-    const errors = validator.validateAll(formData);
+    const errors = validate(formData);
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       toast.error('Please fix the errors in the form');
@@ -579,12 +579,11 @@ class ServiceName {
    
    import { useState } from 'react';
    import { useToast } from '@/lib/toast';
-   import { FormValidator } from '@/lib/validation';
    ```
    
 2. **Set up validation**:
    - Copy pattern from existing forms
-   - Use `FormValidator` from `@/lib/validation`
+   - Add inline field validation that returns user-friendly messages
    - Define Zod schema for type safety
    
 3. **Handle submission**:
