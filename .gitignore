@@ -48,6 +48,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# generated assets (auto-copied from node_modules by the copy-pdf-worker npm script)
+/public/pdf.worker.min.mjs
+
 # temporary upload directory
 .tmp/
 
