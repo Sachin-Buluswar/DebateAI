@@ -53,40 +53,46 @@ class Logger {
       // Human-readable format for development
       const levelColors = {
         debug: '\x1b[36m', // cyan
-        info: '\x1b[32m',  // green
-        warn: '\x1b[33m',  // yellow
+        info: '\x1b[32m', // green
+        warn: '\x1b[33m', // yellow
         error: '\x1b[31m', // red
-        fatal: '\x1b[35m'  // magenta
+        fatal: '\x1b[35m', // magenta
       };
-      
+
       const color = levelColors[entry.level];
       const reset = '\x1b[0m';
-      
+
       let output = `${color}[${entry.level.toUpperCase()}]${reset} ${entry.timestamp} [${this.serviceName}] ${entry.message}`;
-      
+
       if (entry.context) {
         output += `\n  Context: ${JSON.stringify(entry.context, null, 2)}`;
       }
-      
+
       if (entry.error) {
         output += `\n  Error: ${entry.error.name}: ${entry.error.message}`;
         if (entry.error.stack) {
           output += `\n  Stack: ${entry.error.stack}`;
         }
       }
-      
+
       return output;
     } else {
       // JSON format for production (easier to parse by log aggregators)
       return JSON.stringify({
         ...entry,
         service: this.serviceName,
-        environment: process.env.NODE_ENV
+        environment: process.env.NODE_ENV,
       });
     }
   }
 
-  private log(level: LogLevel, message: string, context?: LogContext, error?: Error, duration?: number) {
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+    error?: Error,
+    duration?: number
+  ) {
     if (!this.shouldLog(level)) return;
 
     const entry: LogEntry = {
@@ -94,7 +100,7 @@ class Logger {
       level,
       message,
       context,
-      duration
+      duration,
     };
 
     if (error) {
@@ -102,12 +108,12 @@ class Logger {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        code: (error as Error & { code?: string }).code
+        code: (error as Error & { code?: string }).code,
       };
     }
 
     const formattedLog = this.formatLog(entry);
-    
+
     switch (level) {
       case 'debug':
       case 'info':
@@ -171,12 +177,12 @@ class Logger {
     const start = Date.now();
     return () => {
       const duration = Date.now() - start;
-      this.info(`${label} completed`, { 
-        ...context, 
-        metadata: { 
-          ...context?.metadata, 
-          duration: `${duration}ms` 
-        } 
+      this.info(`${label} completed`, {
+        ...context,
+        metadata: {
+          ...context?.metadata,
+          duration: `${duration}ms`,
+        },
       });
     };
   }
@@ -190,8 +196,8 @@ class Logger {
         method: req.method,
         url: req.url,
         userAgent: req.headers.get('user-agent'),
-        ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip')
-      }
+        ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+      },
     };
 
     this.info(`${req.method} ${new URL(req.url).pathname}`, requestContext);
@@ -201,13 +207,13 @@ class Logger {
   // Create a child logger with additional context
   child(additionalContext: LogContext): Logger {
     const childLogger = new Logger(`${this.serviceName}:${additionalContext.service || 'child'}`);
-    
+
     // Override log method to include parent context
     const originalLog = childLogger.log.bind(childLogger);
     childLogger.log = (level, message, context, error, duration) => {
       originalLog(level, message, { ...additionalContext, ...context }, error, duration);
     };
-    
+
     return childLogger;
   }
 }

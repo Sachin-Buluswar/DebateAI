@@ -72,12 +72,14 @@ export default function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const sidebarContext = useSidebar();
   const isCollapsed = sidebarContext?.isCollapsed || false;
-  
+
   useEffect(() => {
     // Get user info when the sidebar mounts
     const getUserInfo = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user?.email) {
           const name = user.email.split('@')[0];
           setUserName(name.toLowerCase());
@@ -89,11 +91,13 @@ export default function Sidebar() {
         setIsAuthenticated(false);
       }
     };
-    
+
     getUserInfo();
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user?.email) {
         const name = session.user.email.split('@')[0];
         setUserName(name.toLowerCase());
@@ -107,17 +111,17 @@ export default function Sidebar() {
       subscription.unsubscribe();
     };
   }, []);
-  
+
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       setShowLogoutConfirm(false);
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         return;
       }
-      
+
       router.push('/');
       router.refresh();
     } catch (_error) {
@@ -140,7 +144,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-4 py-8 space-y-2">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
-          
+
           // Handle external links differently
           if (item.external) {
             return (
@@ -160,7 +164,7 @@ export default function Sidebar() {
               </a>
             );
           }
-          
+
           return (
             <Link
               key={item.name}
@@ -168,9 +172,10 @@ export default function Sidebar() {
               className={`
                 block py-2 text-sm transition-colors duration-200
                 ${isCollapsed ? 'text-center' : 'px-4'}
-                ${isActive 
-                  ? 'text-primary-500' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                ${
+                  isActive
+                    ? 'text-primary-500'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
                 }
               `}
               title={isCollapsed ? item.name : undefined}
@@ -184,9 +189,7 @@ export default function Sidebar() {
       {/* User section */}
       <div className="border-t border-gray-200 dark:border-gray-800 px-4 py-6 relative">
         {!isCollapsed && isAuthenticated && (
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            {userName}
-          </div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">{userName}</div>
         )}
         <button
           onClick={handleAuthButtonClick}
@@ -198,10 +201,18 @@ export default function Sidebar() {
           `}
           title={isCollapsed ? (isAuthenticated ? 'sign out' : 'log in') : undefined}
         >
-          {isLoggingOut ? '...' : (isCollapsed ? (isAuthenticated ? 'x' : '→') : (isAuthenticated ? 'sign out' : 'log in'))}
+          {isLoggingOut
+            ? '...'
+            : isCollapsed
+              ? isAuthenticated
+                ? 'x'
+                : '→'
+              : isAuthenticated
+                ? 'sign out'
+                : 'log in'}
         </button>
       </div>
-      
+
       <ConfirmDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}

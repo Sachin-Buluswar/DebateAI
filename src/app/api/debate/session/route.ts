@@ -161,15 +161,16 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        aiLogger.error('Failed to create debate session', error instanceof Error ? error : undefined, {
-          service: 'debate-session',
-          action: 'create',
-          metadata: { errorMessage: error instanceof Error ? error.message : String(error) },
-        });
-        return NextResponse.json(
-          { error: 'Failed to create debate session' },
-          { status: 500 }
+        aiLogger.error(
+          'Failed to create debate session',
+          error instanceof Error ? error : undefined,
+          {
+            service: 'debate-session',
+            action: 'create',
+            metadata: { errorMessage: error instanceof Error ? error.message : String(error) },
+          }
         );
+        return NextResponse.json({ error: 'Failed to create debate session' }, { status: 500 });
       }
     });
   });

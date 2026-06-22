@@ -29,10 +29,10 @@ export interface UserRoleView {
  * Role hierarchy for permission checking
  */
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  'user': 0,
-  'moderator': 1,
-  'admin': 2,
-  'super_admin': 3,
+  user: 0,
+  moderator: 1,
+  admin: 2,
+  super_admin: 3,
 };
 
 /**
@@ -44,4 +44,3 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 export function hasRolePermission(userRole: UserRole, requiredRole: UserRole): boolean {
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 }
-

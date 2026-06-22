@@ -11,29 +11,64 @@ export const commonSchemas = {
   uuid: z.string().uuid('Invalid UUID format'),
   email: z.string().email('Invalid email format'),
   nonEmptyString: z.string().min(1, 'Field cannot be empty'),
-  safeString: z.string().max(1000, 'Text too long').regex(
-    /^[a-zA-Z0-9\s\-_.,!?'"()[\]{}:;@#$%&*+=<>\/\\]*$/,
-    'Contains invalid characters'
-  ),
-  debateTopic: z.string()
+  safeString: z
+    .string()
+    .max(1000, 'Text too long')
+    .regex(/^[a-zA-Z0-9\s\-_.,!?'"()[\]{}:;@#$%&*+=<>\/\\]*$/, 'Contains invalid characters'),
+  debateTopic: z
+    .string()
     .min(10, 'Topic must be at least 10 characters')
     .max(500, 'Topic too long')
-    .regex(
-      /^[a-zA-Z0-9\s\-_.,!?'"()[\]{}:;@#$%&*+=<>\/\\]*$/,
-      'Topic contains invalid characters'
-    ),
-  speechType: z.enum([
-    'debate', 'presentation', 'speech', 'constructive', 'rebuttal', 'cross-examination', 'summary', 'final-focus',
-    // Public Forum specific types
-    'pro_case', 'con_case', 'pro_rebuttal', 'con_rebuttal', 'pro_summary', 'con_summary', 'pro_final_focus', 'con_final_focus',
-    // Policy debate types (for backward compatibility)
-    '1AC', '1NC', '2AC', '2NC', '1NR', '1AR', '2NR', '2AR'
-  ], {
-    errorMap: () => ({ message: 'Invalid speech type' })
-  }),
-  audioMimeType: z.enum(['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a'], {
-    errorMap: () => ({ message: 'Unsupported audio format' })
-  }),
+    .regex(/^[a-zA-Z0-9\s\-_.,!?'"()[\]{}:;@#$%&*+=<>\/\\]*$/, 'Topic contains invalid characters'),
+  speechType: z.enum(
+    [
+      'debate',
+      'presentation',
+      'speech',
+      'constructive',
+      'rebuttal',
+      'cross-examination',
+      'summary',
+      'final-focus',
+      // Public Forum specific types
+      'pro_case',
+      'con_case',
+      'pro_rebuttal',
+      'con_rebuttal',
+      'pro_summary',
+      'con_summary',
+      'pro_final_focus',
+      'con_final_focus',
+      // Policy debate types (for backward compatibility)
+      '1AC',
+      '1NC',
+      '2AC',
+      '2NC',
+      '1NR',
+      '1AR',
+      '2NR',
+      '2AR',
+    ],
+    {
+      errorMap: () => ({ message: 'Invalid speech type' }),
+    }
+  ),
+  audioMimeType: z.enum(
+    [
+      'audio/mpeg',
+      'audio/wav',
+      'audio/mp3',
+      'audio/ogg',
+      'audio/webm',
+      'audio/aac',
+      'audio/flac',
+      'audio/m4a',
+      'audio/x-m4a',
+    ],
+    {
+      errorMap: () => ({ message: 'Unsupported audio format' }),
+    }
+  ),
 };
 
 // Specific validation schemas for different endpoints
@@ -63,11 +98,13 @@ export const validationSchemas = {
   userProfile: z.object({
     displayName: commonSchemas.safeString.min(2).max(50).optional(),
     email: commonSchemas.email.optional(),
-    preferences: z.object({
-      theme: z.enum(['light', 'dark', 'system']).optional(),
-      notifications: z.boolean().optional(),
-      autoplay: z.boolean().optional(),
-    }).optional(),
+    preferences: z
+      .object({
+        theme: z.enum(['light', 'dark', 'system']).optional(),
+        notifications: z.boolean().optional(),
+        autoplay: z.boolean().optional(),
+      })
+      .optional(),
   }),
 
   // OpenAI-specific schemas
@@ -79,12 +116,17 @@ export const validationSchemas = {
   }),
 
   debateAnalysis: z.object({
-    transcript: z.array(z.object({
-      participantId: z.string(),
-      participantName: z.string(),
-      content: z.string().min(1).max(10000, 'Content too long'),
-      timestamp: z.number().optional(),
-    })).min(1, 'Transcript must have at least one entry').max(100, 'Transcript too long'),
+    transcript: z
+      .array(
+        z.object({
+          participantId: z.string(),
+          participantName: z.string(),
+          content: z.string().min(1).max(10000, 'Content too long'),
+          timestamp: z.number().optional(),
+        })
+      )
+      .min(1, 'Transcript must have at least one entry')
+      .max(100, 'Transcript too long'),
     userParticipantId: z.string(),
     debateTopic: commonSchemas.debateTopic.optional(),
     debateFormat: z.string().max(50).optional(),
@@ -93,19 +135,28 @@ export const validationSchemas = {
   wikiGenerate: z.object({
     query: commonSchemas.safeString.min(3, 'Query too short'),
     maxResults: z.number().int().min(1).max(10).optional().default(3),
-    context: z.array(z.object({
-      content: z.string().max(5000, 'Context chunk too large'),
-      source: z.string().optional(),
-      relevance: z.number().min(0).max(1).optional(),
-    })).optional(),
+    context: z
+      .array(
+        z.object({
+          content: z.string().max(5000, 'Context chunk too large'),
+          source: z.string().optional(),
+          relevance: z.number().min(0).max(1).optional(),
+        })
+      )
+      .optional(),
   }),
 
   wikiIndex: z.object({
-    files: z.array(z.object({
-      name: z.string().min(1).max(255, 'Filename too long'),
-      content: z.string().min(1).max(1000000, 'File content too large (1MB limit)'),
-      metadata: z.record(z.string()).optional(),
-    })).min(1, 'At least one file required').max(100, 'Too many files'),
+    files: z
+      .array(
+        z.object({
+          name: z.string().min(1).max(255, 'Filename too long'),
+          content: z.string().min(1).max(1000000, 'File content too large (1MB limit)'),
+          metadata: z.record(z.string()).optional(),
+        })
+      )
+      .min(1, 'At least one file required')
+      .max(100, 'Too many files'),
     vectorStoreId: z.string().optional(),
   }),
 
@@ -128,7 +179,17 @@ export const validationSchemas = {
 export const fileValidation = {
   audio: {
     maxSize: MAX_UPLOAD_SIZE_BYTES,
-    allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/webm', 'audio/aac', 'audio/flac', 'audio/m4a', 'audio/x-m4a'],
+    allowedTypes: [
+      'audio/mpeg',
+      'audio/wav',
+      'audio/mp3',
+      'audio/ogg',
+      'audio/webm',
+      'audio/aac',
+      'audio/flac',
+      'audio/m4a',
+      'audio/x-m4a',
+    ],
     maxDuration: MAX_RECORDING_MINUTES * 60, // Convert minutes to seconds
   },
 };
@@ -183,7 +244,7 @@ export class InputSanitizer {
       if (obj.length > 100) {
         throw new Error('Array too large');
       }
-      return obj.map(item => this.sanitizeObject(item, depth - 1));
+      return obj.map((item) => this.sanitizeObject(item, depth - 1));
     }
 
     if (obj && typeof obj === 'object') {
@@ -195,7 +256,10 @@ export class InputSanitizer {
       const sanitized: Record<string, unknown> = {};
       for (const key of keys) {
         const sanitizedKey = this.sanitizeHtml(key);
-        sanitized[sanitizedKey] = this.sanitizeObject((obj as Record<string, unknown>)[key], depth - 1);
+        sanitized[sanitizedKey] = this.sanitizeObject(
+          (obj as Record<string, unknown>)[key],
+          depth - 1
+        );
       }
       return sanitized;
     }
@@ -219,7 +283,7 @@ export async function validateRequest<T>(
 
     if (options.body) {
       const contentType = req.headers.get('content-type');
-      
+
       if (contentType?.includes('application/json')) {
         const body = await req.text();
         if (options.sanitize) {
@@ -256,7 +320,7 @@ export async function validateRequest<T>(
     }
 
     const result = schema.safeParse(data);
-    
+
     if (!result.success) {
       return {
         success: false,
@@ -299,7 +363,7 @@ export function validateAudioFile(file: File): { valid: boolean; error?: string 
 // Security headers helper
 export function addSecurityHeaders(response: Response): Response {
   const headers = new Headers(response.headers);
-  
+
   // Basic security headers
   headers.set('X-Content-Type-Options', 'nosniff');
   // Allow framing from Google Docs for PDF preview, deny all others
@@ -308,7 +372,7 @@ export function addSecurityHeaders(response: Response): Response {
   headers.set('X-XSS-Protection', '1; mode=block');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
-  
+
   // Remove potentially sensitive headers
   headers.delete('Server');
   headers.delete('X-Powered-By');
@@ -323,21 +387,17 @@ export function addSecurityHeaders(response: Response): Response {
 // CORS configuration for production
 export const corsConfig = {
   allowedOrigins: [
-    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [
-      `https://${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
-      `https://www.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
-      `https://app.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
-    ]),
+    ...(process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+      : [
+          `https://${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
+          `https://www.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
+          `https://app.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'erisdebate.com'}`,
+        ]),
     ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3001'] : []),
   ],
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-  ],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   credentials: true,
 };
 

@@ -35,10 +35,7 @@ async function checkSupabase(): Promise<HealthCheckResult> {
     // Use the authenticated server client instead of service role key
     const supabase = createClient();
 
-    const { error } = await supabase
-      .from('health_check')
-      .select('id')
-      .limit(1);
+    const { error } = await supabase.from('health_check').select('id').limit(1);
 
     const responseTime = Date.now() - start;
 
@@ -73,7 +70,7 @@ async function checkOpenAI(): Promise<HealthCheckResult> {
     const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       signal: AbortSignal.timeout(5000),
     });
@@ -152,25 +149,31 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
     ]);
 
     const checks: HealthCheckResult[] = [
-      supabaseCheck.status === 'fulfilled' ? supabaseCheck.value : {
-        service: 'supabase',
-        status: 'unhealthy' as const,
-        error: 'Check failed',
-      },
-      openaiCheck.status === 'fulfilled' ? openaiCheck.value : {
-        service: 'openai',
-        status: 'unhealthy' as const,
-        error: 'Check failed',
-      },
-      elevenlabsCheck.status === 'fulfilled' ? elevenlabsCheck.value : {
-        service: 'elevenlabs',
-        status: 'unhealthy' as const,
-        error: 'Check failed',
-      },
+      supabaseCheck.status === 'fulfilled'
+        ? supabaseCheck.value
+        : {
+            service: 'supabase',
+            status: 'unhealthy' as const,
+            error: 'Check failed',
+          },
+      openaiCheck.status === 'fulfilled'
+        ? openaiCheck.value
+        : {
+            service: 'openai',
+            status: 'unhealthy' as const,
+            error: 'Check failed',
+          },
+      elevenlabsCheck.status === 'fulfilled'
+        ? elevenlabsCheck.value
+        : {
+            service: 'elevenlabs',
+            status: 'unhealthy' as const,
+            error: 'Check failed',
+          },
     ];
 
-    const unhealthyCount = checks.filter(c => c.status === 'unhealthy').length;
-    const degradedCount = checks.filter(c => c.status === 'degraded').length;
+    const unhealthyCount = checks.filter((c) => c.status === 'unhealthy').length;
+    const degradedCount = checks.filter((c) => c.status === 'degraded').length;
 
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy';
     if (unhealthyCount > 0) {
@@ -204,7 +207,7 @@ export const GET = withMonitoring(async (_request: NextRequest) => {
       apiLogger.warn('Health check detected issues', {
         metadata: {
           status: overallStatus,
-          failedChecks: checks.filter(c => c.status !== 'healthy'),
+          failedChecks: checks.filter((c) => c.status !== 'healthy'),
         },
       });
     }

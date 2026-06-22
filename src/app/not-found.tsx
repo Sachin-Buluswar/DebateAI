@@ -10,12 +10,9 @@ export default function NotFound() {
       <p className="text-gray-600 dark:text-gray-400 max-w-md mb-8">
         The page you are looking for doesn't exist or has been moved.
       </p>
-      <Link 
-        href="/" 
-        className="btn btn-primary"
-      >
+      <Link href="/" className="btn btn-primary">
         Go Back Home
       </Link>
     </div>
   );
-} 
+}

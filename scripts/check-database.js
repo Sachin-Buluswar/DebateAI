@@ -44,12 +44,15 @@ async function checkDatabase() {
 
   // Check for storage buckets
   const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-  
+
   if (bucketsError) {
     console.error('Error checking buckets:', bucketsError);
   } else {
-    console.log('\nStorage buckets:', buckets?.map(b => b.name));
-    const debateBucket = buckets?.find(b => b.name === 'debate-documents');
+    console.log(
+      '\nStorage buckets:',
+      buckets?.map((b) => b.name)
+    );
+    const debateBucket = buckets?.find((b) => b.name === 'debate-documents');
     console.log('debate-documents bucket exists:', !!debateBucket);
   }
 
@@ -59,7 +62,7 @@ async function checkDatabase() {
     if (extError) {
       console.log('\nCould not check extensions (function might not exist)');
     } else {
-      const hasPgTrgm = extensions?.some(ext => ext.extname === 'pg_trgm');
+      const hasPgTrgm = extensions?.some((ext) => ext.extname === 'pg_trgm');
       console.log('\npg_trgm extension installed:', hasPgTrgm);
     }
   } catch (e) {
@@ -68,12 +71,12 @@ async function checkDatabase() {
 
   // Try to query documents table directly
   console.log('\n📊 Testing direct queries...');
-  
+
   try {
     const { count, error } = await supabase
       .from('documents')
       .select('*', { count: 'exact', head: true });
-    
+
     if (error) {
       console.log('Documents table query error:', error.message);
     } else {
@@ -87,7 +90,7 @@ async function checkDatabase() {
     const { count, error } = await supabase
       .from('document_chunks')
       .select('*', { count: 'exact', head: true });
-    
+
     if (error) {
       console.log('Document chunks table query error:', error.message);
     } else {

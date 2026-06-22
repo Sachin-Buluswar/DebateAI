@@ -9,11 +9,7 @@ interface BackButtonProps {
   className?: string;
 }
 
-export default function BackButton({ 
-  href = '/', 
-  label = '← back', 
-  className 
-}: BackButtonProps) {
+export default function BackButton({ href = '/', label = '← back', className }: BackButtonProps) {
   const router = useRouter();
 
   const handleBack = () => {

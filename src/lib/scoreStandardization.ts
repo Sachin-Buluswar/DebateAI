@@ -8,9 +8,9 @@
  * Score format types that exist in the system
  */
 enum ScoreFormat {
-  NSDA = 'nsda',           // 25-30 point scale
+  NSDA = 'nsda', // 25-30 point scale
   PERCENTAGE = 'percentage', // 0-100 scale
-  TEN_POINT = 'ten_point',  // 1-10 scale
+  TEN_POINT = 'ten_point', // 1-10 scale
   JSON_OBJECT = 'json_object', // Legacy format with nested scores
 }
 
@@ -54,7 +54,7 @@ function detectScoreFormat(score: unknown): ScoreFormat {
   if (typeof score === 'object' && score !== null && !Array.isArray(score)) {
     return ScoreFormat.JSON_OBJECT;
   }
-  
+
   // Check if it's a number
   if (typeof score === 'number') {
     if (score >= 25 && score <= 30) {
@@ -65,7 +65,7 @@ function detectScoreFormat(score: unknown): ScoreFormat {
       return ScoreFormat.PERCENTAGE;
     }
   }
-  
+
   // Try to parse string as number
   if (typeof score === 'string') {
     const parsed = parseFloat(score);
@@ -73,8 +73,7 @@ function detectScoreFormat(score: unknown): ScoreFormat {
       return detectScoreFormat(parsed);
     }
   }
-  
-  
+
   return ScoreFormat.PERCENTAGE; // Default fallback
 }
 
@@ -103,13 +102,13 @@ function extractFromJsonObject(scoreObj: unknown): number | null {
   // If no direct score found, try to calculate average from components
   const components = ['content', 'delivery', 'argumentation'];
   const validScores = components
-    .map(key => parseFloat(String(obj[key])))
-    .filter(val => !isNaN(val));
-  
+    .map((key) => parseFloat(String(obj[key])))
+    .filter((val) => !isNaN(val));
+
   if (validScores.length > 0) {
     return validScores.reduce((sum, val) => sum + val, 0) / validScores.length;
   }
-  
+
   return null;
 }
 
@@ -120,9 +119,9 @@ export function standardizeToPercentage(score: unknown): number | null {
   if (score === null || score === undefined) {
     return null;
   }
-  
+
   const format = detectScoreFormat(score);
-  
+
   switch (format) {
     case ScoreFormat.NSDA:
       return nsdaToPercentage(parseFloat(String(score)));
@@ -153,24 +152,26 @@ export function standardizeToPercentage(score: unknown): number | null {
  * Extract score from feedback object (handles all legacy formats)
  * Returns the score in NSDA format (25-30) for consistency
  */
-export function extractScoreFromFeedback(feedback: Record<string, unknown> | null | undefined): number | null {
+export function extractScoreFromFeedback(
+  feedback: Record<string, unknown> | null | undefined
+): number | null {
   if (!feedback) return null;
-  
+
   // Priority 1: New format - speakerScore (NSDA scale 25-30)
   if (typeof feedback.speakerScore === 'number') {
     return feedback.speakerScore;
   }
-  
+
   // Priority 2: Check for already standardized score (percentage) and convert to NSDA
   if (typeof feedback.standardizedScore === 'number') {
     return percentageToNSDA(feedback.standardizedScore);
   }
-  
+
   // Priority 3: Check for overall_score (database column - stored as percentage)
   if (typeof feedback.overall_score === 'number') {
     return percentageToNSDA(feedback.overall_score);
   }
-  
+
   // Priority 4: Legacy format - scores.overall (percentage)
   const scores = feedback.scores;
   if (scores && typeof scores === 'object' && !Array.isArray(scores)) {
@@ -189,13 +190,12 @@ export function extractScoreFromFeedback(feedback: Record<string, unknown> | nul
         const parsed = JSON.parse(feedback.score);
         const percentage = standardizeToPercentage(parsed);
         return percentage !== null ? percentageToNSDA(percentage) : null;
-      } catch {
-      }
+      } catch {}
     }
     const percentage = standardizeToPercentage(feedback.score);
     return percentage !== null ? percentageToNSDA(percentage) : null;
   }
-  
+
   return null;
 }
 

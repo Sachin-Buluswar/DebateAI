@@ -40,7 +40,9 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchPreferences = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (user) {
           const { data, error } = await supabase
@@ -70,14 +72,19 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
 
     // Save to database if user is logged in
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (user) {
-        await supabase.from('user_preferences').upsert({
-          user_id: user.id,
-          preferences: newPreferences,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
+        await supabase.from('user_preferences').upsert(
+          {
+            user_id: user.id,
+            preferences: newPreferences,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
       }
     } catch (_err) {
       // PRODUCTION: Console disabled

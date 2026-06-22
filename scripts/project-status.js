@@ -24,10 +24,10 @@ const checkEnvVars = () => {
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
     'OPENAI_API_KEY',
-    'ELEVENLABS_API_KEY'
+    'ELEVENLABS_API_KEY',
   ];
-  
-  const missing = required.filter(key => !process.env[key]);
+
+  const missing = required.filter((key) => !process.env[key]);
   return { total: required.length, missing };
 };
 
@@ -52,7 +52,9 @@ if (env.missing.length > 0) {
 }
 
 // 2. Development Server
-console.log(`${isRunning() ? '✅' : '❌'} Development Server: ${isRunning() ? 'Running' : 'Not running'}`);
+console.log(
+  `${isRunning() ? '✅' : '❌'} Development Server: ${isRunning() ? 'Running' : 'Not running'}`
+);
 
 // 3. Build Status
 console.log(`✅ Build Configuration: ${canBuild() ? 'Ready' : 'Not configured'}`);

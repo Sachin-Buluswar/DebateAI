@@ -2,7 +2,7 @@
 
 /**
  * Bundle Analysis Script
- * 
+ *
  * This script helps analyze the Next.js bundle size and identify
  * opportunities for optimization.
  */
@@ -38,16 +38,15 @@ const tempConfigPath = path.join(process.cwd(), 'next.config.analyze.js');
 try {
   // Write temporary config
   fs.writeFileSync(tempConfigPath, analyzeConfig);
-  
+
   console.log('🛠️  Building with bundle analyzer...');
   console.log('This will open your browser with the bundle analysis.\n');
-  
+
   // Run build with analyzer
-  execSync('ANALYZE=true next build --config next.config.analyze.js', { 
+  execSync('ANALYZE=true next build --config next.config.analyze.js', {
     stdio: 'inherit',
-    env: { ...process.env, ANALYZE: 'true' }
+    env: { ...process.env, ANALYZE: 'true' },
   });
-  
 } catch (error) {
   console.error('❌ Error during bundle analysis:', error.message);
 } finally {

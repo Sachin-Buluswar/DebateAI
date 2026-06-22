@@ -34,8 +34,7 @@ export function useUserRole(): UseUserRoleReturn {
       setError(null);
 
       // Call the RPC function to get user role
-      const { data, error: rpcError } = await supabase
-        .rpc('get_user_role');
+      const { data, error: rpcError } = await supabase.rpc('get_user_role');
 
       if (rpcError) {
         throw rpcError;
@@ -89,7 +88,7 @@ export function useUserRole(): UseUserRoleReturn {
  */
 export function useHasRole(requiredRole: UserRole) {
   const { role, loading, error, hasRole } = useUserRole();
-  
+
   return {
     hasRole: hasRole(requiredRole),
     loading,

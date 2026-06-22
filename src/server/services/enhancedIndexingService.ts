@@ -15,19 +15,13 @@ export class EnhancedIndexingService {
   private chunkSize = 3200; // characters (~800 tokens)
   private chunkOverlap = 800; // characters (~200 tokens)
 
-  async indexDocument(
-    documentId: string,
-    text: string,
-    fileName: string
-  ): Promise<void> {
+  async indexDocument(documentId: string, text: string, fileName: string): Promise<void> {
     const chunks = this.chunkText(text, fileName);
 
     if (chunks.length === 0) return;
 
     // Generate embeddings in batches of 50
-    const embeddings = await this.generateEmbeddings(
-      chunks.map(c => c.content)
-    );
+    const embeddings = await this.generateEmbeddings(chunks.map((c) => c.content));
 
     // Insert chunks with embeddings in batches of 100
     const batchSize = 100;
@@ -44,9 +38,7 @@ export class EnhancedIndexingService {
         metadata: {},
       }));
 
-      const { error } = await supabase
-        .from('document_chunks')
-        .insert(rows);
+      const { error } = await supabase.from('document_chunks').insert(rows);
 
       if (error) throw new Error(`Failed to insert chunks: ${error.message}`);
     }
@@ -94,9 +86,7 @@ export class EnhancedIndexingService {
         }
 
         // Keep overlap
-        currentText = currentText.slice(
-          Math.max(0, breakPoint - this.chunkOverlap)
-        );
+        currentText = currentText.slice(Math.max(0, breakPoint - this.chunkOverlap));
       }
     }
 

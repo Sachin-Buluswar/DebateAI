@@ -21,29 +21,35 @@ interface SessionMetadata {
 
 export class UploadSessionStore {
   // Store session metadata in memory with expiration
-  private static sessions = new Map<string, {
-    metadata: SessionMetadata;
-    chunks: Map<number, Buffer>;
-    createdAt: number;
-  }>();
+  private static sessions = new Map<
+    string,
+    {
+      metadata: SessionMetadata;
+      chunks: Map<number, Buffer>;
+      createdAt: number;
+    }
+  >();
 
   // Clean up old sessions every 5 minutes
-  private static cleanupInterval = setInterval(() => {
-    const now = Date.now();
-    const oneHourAgo = now - 60 * 60 * 1000;
-    
-    for (const [sessionId, session] of this.sessions.entries()) {
-      if (session.createdAt < oneHourAgo) {
-        this.sessions.delete(sessionId);
+  private static cleanupInterval = setInterval(
+    () => {
+      const now = Date.now();
+      const oneHourAgo = now - 60 * 60 * 1000;
+
+      for (const [sessionId, session] of this.sessions.entries()) {
+        if (session.createdAt < oneHourAgo) {
+          this.sessions.delete(sessionId);
+        }
       }
-    }
-  }, 5 * 60 * 1000);
+    },
+    5 * 60 * 1000
+  );
 
   static async createSession(sessionId: string, metadata: SessionMetadata): Promise<void> {
     this.sessions.set(sessionId, {
       metadata,
       chunks: new Map(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
   }
 
@@ -60,11 +66,9 @@ export class UploadSessionStore {
     if (!session) {
       throw new Error('Session not found');
     }
-    
+
     session.chunks.set(chunkIndex, data);
     session.metadata.uploadedChunks = session.chunks.size;
-    
-    
   }
 
   static async updateSession(sessionId: string, updates: Partial<SessionMetadata>): Promise<void> {
@@ -72,7 +76,7 @@ export class UploadSessionStore {
     if (!session) {
       throw new Error('Session not found');
     }
-    
+
     session.metadata = { ...session.metadata, ...updates };
   }
 
@@ -83,7 +87,7 @@ export class UploadSessionStore {
     }
 
     const { metadata, chunks } = session;
-    
+
     // Verify all chunks are present
     if (chunks.size !== metadata.totalChunks) {
       throw new Error(`Missing chunks: expected ${metadata.totalChunks}, got ${chunks.size}`);

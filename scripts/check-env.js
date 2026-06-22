@@ -75,13 +75,16 @@ for (const varInfo of OPTIONAL_VARS) {
 
 // Check Supabase connection
 console.log('\nChecking Supabase connection...');
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+if (
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
+) {
   const { createClient } = require('@supabase/supabase-js');
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
-  
+
   supabase
     .from('health_check')
     .select('*')
@@ -93,7 +96,7 @@ if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_UR
       } else {
         console.log('✅ Supabase connection successful!\n');
       }
-      
+
       // Summary
       if (hasErrors) {
         console.log('\n❌ Environment setup incomplete!');
@@ -114,4 +117,4 @@ if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_UR
     console.log('   Please set all required variables in .env.local\n');
     process.exit(1);
   }
-} 
+}

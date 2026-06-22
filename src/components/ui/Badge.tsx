@@ -7,11 +7,16 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-[#87A96B]/10 text-[#87A96B] dark:bg-[#87A96B]/20 dark:text-[#87A96B] border border-[#87A96B]/20',
-        secondary: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700',
-        success: 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-200 border border-green-200 dark:border-green-800',
-        warning: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800',
-        error: 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200 border border-red-200 dark:border-red-800',
+        primary:
+          'bg-[#87A96B]/10 text-[#87A96B] dark:bg-[#87A96B]/20 dark:text-[#87A96B] border border-[#87A96B]/20',
+        secondary:
+          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700',
+        success:
+          'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-200 border border-green-200 dark:border-green-800',
+        warning:
+          'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800',
+        error:
+          'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200 border border-red-200 dark:border-red-800',
         info: 'bg-gray-50 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700',
         outline: 'border border-current',
       },
@@ -29,9 +34,7 @@ const badgeVariants = cva(
   }
 );
 
-interface BadgeProps
-  extends HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {
+interface BadgeProps extends HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {
   children: React.ReactNode;
   dot?: boolean;
 }
@@ -68,4 +71,4 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
 
 Badge.displayName = 'Badge';
 
-export default Badge; 
+export default Badge;

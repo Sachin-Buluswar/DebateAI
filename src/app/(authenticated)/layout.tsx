@@ -11,11 +11,7 @@ import Layout from '@/components/layout/Layout';
  * Guest users use localStorage, authenticated users use cloud storage.
  * The authentication state is handled by individual components.
  */
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   // No authentication checks - just render the layout
   // Individual components will handle guest vs authenticated logic
   return <Layout>{children}</Layout>;

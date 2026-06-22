@@ -17,7 +17,8 @@ export default function SpeechFeedbackError({
             something went wrong
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            we encountered an error loading speech feedback. please try again or return to the dashboard.
+            we encountered an error loading speech feedback. please try again or return to the
+            dashboard.
           </p>
           {error.digest && (
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">

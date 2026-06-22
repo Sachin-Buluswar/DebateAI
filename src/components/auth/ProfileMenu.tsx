@@ -14,12 +14,14 @@ export default function ProfileMenu() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  
+
   useEffect(() => {
     // Fetch user info when component mounts
     const fetchUserInfo = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           // Use email as username or first part of email before @
           const email = user.email || '';
@@ -33,31 +35,31 @@ export default function ProfileMenu() {
         setIsAuthenticated(false);
       }
     };
-    
+
     fetchUserInfo();
-    
+
     // Add click outside listener to close dropdown
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  
+
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         return;
       }
-      
+
       // Redirect to home page after successful logout
       router.push('/');
       router.refresh();
@@ -71,7 +73,7 @@ export default function ProfileMenu() {
     setIsOpen(false);
     setShowLogoutConfirm(true);
   };
-  
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -83,37 +85,37 @@ export default function ProfileMenu() {
       >
         {userName || 'account'}
       </button>
-      
+
       {isOpen && (
-        <div 
+        <div
           className="absolute right-0 mt-4 w-48 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 py-2"
-          role="menu" 
-          aria-orientation="vertical" 
+          role="menu"
+          aria-orientation="vertical"
           aria-labelledby="user-menu-button"
           tabIndex={-1}
         >
           {isAuthenticated ? (
             <>
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 role="menuitem"
                 onClick={() => setIsOpen(false)}
               >
                 dashboard
               </Link>
-              
-              <Link 
-                href="/preferences" 
+
+              <Link
+                href="/preferences"
                 className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 role="menuitem"
                 onClick={() => setIsOpen(false)}
               >
                 settings
               </Link>
-              
+
               <div className="border-t border-gray-200 dark:border-gray-800 my-2"></div>
-              
+
               <button
                 className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-500 transition-colors"
                 role="menuitem"
@@ -125,8 +127,8 @@ export default function ProfileMenu() {
             </>
           ) : (
             <>
-              <Link 
-                href="/auth" 
+              <Link
+                href="/auth"
                 className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 role="menuitem"
                 onClick={() => setIsOpen(false)}
@@ -137,7 +139,7 @@ export default function ProfileMenu() {
           )}
         </div>
       )}
-      
+
       <ConfirmDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}

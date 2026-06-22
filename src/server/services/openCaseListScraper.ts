@@ -70,7 +70,10 @@ export class OpenCaseListScraper {
       fs.writeFileSync(zipPath, Buffer.from(arrayBuffer));
 
       // List files in ZIP using unzip -l
-      const listOutput = execSync(`unzip -l "${zipPath}" 2>/dev/null`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const listOutput = execSync(`unzip -l "${zipPath}" 2>/dev/null`, {
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
+      });
       const fileEntries = this.parseUnzipList(listOutput);
 
       const total = fileEntries.length;
@@ -122,7 +125,7 @@ export class OpenCaseListScraper {
             const result = await mammoth.extractRawText({ buffer: fileBuffer });
             text = result.value;
           } else if (ext === '.pdf') {
-            const pdfParse = await import('pdf-parse').then(m => m.default || m);
+            const pdfParse = await import('pdf-parse').then((m) => m.default || m);
             const pdfData = await pdfParse(fileBuffer);
             text = pdfData.text;
           }
@@ -158,11 +161,7 @@ export class OpenCaseListScraper {
           // Index: chunk + embed + store
           await this.indexingService.indexDocument(doc.id, text, fileName);
 
-          await this.logScrape(
-            `${zipUrl}#${entryPath}`,
-            'completed',
-            doc.id
-          );
+          await this.logScrape(`${zipUrl}#${entryPath}`, 'completed', doc.id);
 
           indexed++;
         } catch (_error) {
@@ -276,17 +275,15 @@ export class OpenCaseListScraper {
     failed: number;
     pending: number;
   }> {
-    const { data } = await supabase
-      .from('opencaselist_scrape_log')
-      .select('status');
+    const { data } = await supabase.from('opencaselist_scrape_log').select('status');
 
     if (!data) return { total: 0, completed: 0, failed: 0, pending: 0 };
 
     return {
       total: data.length,
-      completed: data.filter(d => d.status === 'completed').length,
-      failed: data.filter(d => d.status === 'failed').length,
-      pending: data.filter(d => d.status === 'pending' || d.status === 'processing').length,
+      completed: data.filter((d) => d.status === 'completed').length,
+      failed: data.filter((d) => d.status === 'failed').length,
+      pending: data.filter((d) => d.status === 'pending' || d.status === 'processing').length,
     };
   }
 }

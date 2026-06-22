@@ -15,7 +15,7 @@ function AuthPageContent() {
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   useEffect(() => {
     setIsClient(true);
 
@@ -27,21 +27,25 @@ function AuthPageContent() {
     if (urlError) {
       // Map error codes to user-friendly messages
       const errorMessages: Record<string, string> = {
-        'verification_link_expired': 'Your email verification link has expired. Please sign up again to receive a new link.',
-        'auth_code_expired': 'The authentication code has expired. Please try signing in again.',
-        'invalid_auth_code': 'Invalid authentication code. Please try signing in again.',
-        'session_creation_failed': 'Unable to create session. Please try signing in again.',
-        'access_denied': 'Access denied. Please check your credentials and try again.',
-        'invalid_auth_request': 'Invalid authentication request. Please try again.',
-        'session_failed': 'Failed to establish session. Please try signing in again.',
-        'unexpected_error': 'An unexpected error occurred. Please try again or contact support if the issue persists.',
-        'authentication_failed': 'Authentication failed. Please check your credentials and try again.'
+        verification_link_expired:
+          'Your email verification link has expired. Please sign up again to receive a new link.',
+        auth_code_expired: 'The authentication code has expired. Please try signing in again.',
+        invalid_auth_code: 'Invalid authentication code. Please try signing in again.',
+        session_creation_failed: 'Unable to create session. Please try signing in again.',
+        access_denied: 'Access denied. Please check your credentials and try again.',
+        invalid_auth_request: 'Invalid authentication request. Please try again.',
+        session_failed: 'Failed to establish session. Please try signing in again.',
+        unexpected_error:
+          'An unexpected error occurred. Please try again or contact support if the issue persists.',
+        authentication_failed:
+          'Authentication failed. Please check your credentials and try again.',
       };
 
       // Use specific message if available, otherwise use generic message
-      const message = errorMessages[urlError] ||
-                     (urlErrorDescription ||
-                      `Authentication error: ${urlError}. Please try again or contact support.`);
+      const message =
+        errorMessages[urlError] ||
+        urlErrorDescription ||
+        `Authentication error: ${urlError}. Please try again or contact support.`;
 
       setError(message);
 
@@ -83,10 +87,12 @@ function AuthPageContent() {
               return;
             }
           }
-        } catch {
-        }
+        } catch {}
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
         if (userError) {
           // User not authenticated is expected on auth page, only show real errors
           if (userError.message !== 'Auth session missing!' && userError.status !== 401) {
@@ -111,16 +117,15 @@ function AuthPageContent() {
     checkUser();
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-
-        if (event === 'SIGNED_IN' && session) {
-          router.push('/dashboard');
-        } else if (event === 'SIGNED_OUT') {
-          setLoading(false);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (event === 'SIGNED_IN' && session) {
+        router.push('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        setLoading(false);
       }
-    );
+    });
 
     // Clean up both timeout and subscription
     return () => {
@@ -177,4 +182,4 @@ export default function AuthPage() {
       <AuthPageContent />
     </Suspense>
   );
-} 
+}

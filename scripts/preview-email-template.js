@@ -30,7 +30,9 @@ const templateFile = path.join(templateDir, `${templateName}.html`);
 
 if (!fs.existsSync(templateFile)) {
   console.error(`❌ Template "${templateName}" not found!`);
-  console.log('\nAvailable templates: confirm-signup, reset-password, magic-link, change-email, welcome\n');
+  console.log(
+    '\nAvailable templates: confirm-signup, reset-password, magic-link, change-email, welcome\n'
+  );
   process.exit(1);
 }
 
@@ -39,7 +41,10 @@ let content = fs.readFileSync(templateFile, 'utf8');
 
 // Replace template variables with sample data
 content = content
-  .replace(/\{\{ \.ConfirmationURL \}\}/g, 'https://your-site.com/auth/confirm?token=sample-token-123')
+  .replace(
+    /\{\{ \.ConfirmationURL \}\}/g,
+    'https://your-site.com/auth/confirm?token=sample-token-123'
+  )
   .replace(/\{\{ \.Email \}\}/g, 'user@example.com')
   .replace(/\{\{ \.SiteURL \}\}/g, 'https://your-site.com');
 
@@ -55,7 +60,7 @@ server.listen(port, () => {
   console.log(`\n✨ Email template preview server running at: ${url}`);
   console.log('\n📧 Previewing:', templateName);
   console.log('\nPress Ctrl+C to stop the server\n');
-  
+
   // Open browser
   const platform = process.platform;
   try {

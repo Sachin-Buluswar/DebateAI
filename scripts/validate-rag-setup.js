@@ -22,7 +22,7 @@ async function validateRAGSetup() {
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
     'OPENAI_API_KEY',
-    'OPENAI_VECTOR_STORE_ID'
+    'OPENAI_VECTOR_STORE_ID',
   ];
 
   for (const envVar of requiredEnvVars) {
@@ -37,7 +37,7 @@ async function validateRAGSetup() {
   if (hasErrors) {
     console.log(chalk.red('\n❌ Missing environment variables. Cannot continue validation.'));
     console.log(chalk.red('Errors:'));
-    errors.forEach(err => console.log(chalk.red(`  - ${err}`)));
+    errors.forEach((err) => console.log(chalk.red(`  - ${err}`)));
     process.exit(1);
   }
 
@@ -54,7 +54,7 @@ async function validateRAGSetup() {
     'document_chunks',
     'opencaselist_scrape_log',
     'search_results_cache',
-    'saved_searches'
+    'saved_searches',
   ];
 
   for (const table of requiredTables) {
@@ -85,21 +85,23 @@ async function validateRAGSetup() {
   console.log(chalk.yellow('\n3. Checking storage buckets...'));
   try {
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
+
     if (bucketsError) {
       warnings.push(`Could not list storage buckets: ${bucketsError.message}`);
       console.log(chalk.yellow(`  ⚠ Could not list storage buckets: ${bucketsError.message}`));
     } else {
       const requiredBuckets = ['debate-documents', 'speech_audio'];
-      
+
       for (const bucketName of requiredBuckets) {
-        const bucket = buckets?.find(b => b.name === bucketName);
+        const bucket = buckets?.find((b) => b.name === bucketName);
         if (bucket) {
           console.log(chalk.green(`  ✓ Storage bucket '${bucketName}' exists`));
-          
+
           // Check if bucket is public
           if (bucketName === 'debate-documents' && !bucket.public) {
-            warnings.push(`Storage bucket '${bucketName}' is not public. PDFs may not be accessible.`);
+            warnings.push(
+              `Storage bucket '${bucketName}' is not public. PDFs may not be accessible.`
+            );
             console.log(chalk.yellow(`    ⚠ Bucket is not public`));
           }
         } else {
@@ -123,12 +125,9 @@ async function validateRAGSetup() {
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       );
-      
-      const { error } = await anonSupabase
-        .from(table)
-        .select('id')
-        .limit(1);
-      
+
+      const { error } = await anonSupabase.from(table).select('id').limit(1);
+
       if (error) {
         if (error.message.includes('permission denied')) {
           console.log(chalk.green(`  ✓ RLS enabled for '${table}'`));
@@ -157,9 +156,9 @@ async function validateRAGSetup() {
       `https://api.openai.com/v1/vector_stores/${process.env.OPENAI_VECTOR_STORE_ID}`,
       {
         headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'OpenAI-Beta': 'assistants=v2'
-        }
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          'OpenAI-Beta': 'assistants=v2',
+        },
       }
     );
 
@@ -168,7 +167,9 @@ async function validateRAGSetup() {
       console.log(chalk.green(`  ✓ Vector store exists: ${vectorStore.name || 'Unnamed'}`));
       console.log(chalk.green(`    File count: ${vectorStore.file_counts?.total || 0}`));
     } else if (response.status === 404) {
-      errors.push('OpenAI Vector Store not found. Please create one and update OPENAI_VECTOR_STORE_ID.');
+      errors.push(
+        'OpenAI Vector Store not found. Please create one and update OPENAI_VECTOR_STORE_ID.'
+      );
       hasErrors = true;
       console.log(chalk.red('  ✗ Vector store not found'));
     } else {
@@ -182,15 +183,15 @@ async function validateRAGSetup() {
 
   // 7. Summary
   console.log(chalk.blue('\n📊 Validation Summary:'));
-  
+
   if (hasErrors) {
     console.log(chalk.red(`\n❌ Found ${errors.length} error(s):`));
-    errors.forEach(err => console.log(chalk.red(`  - ${err}`)));
+    errors.forEach((err) => console.log(chalk.red(`  - ${err}`)));
   }
-  
+
   if (warnings.length > 0) {
     console.log(chalk.yellow(`\n⚠️  Found ${warnings.length} warning(s):`));
-    warnings.forEach(warn => console.log(chalk.yellow(`  - ${warn}`)));
+    warnings.forEach((warn) => console.log(chalk.yellow(`  - ${warn}`)));
   }
 
   if (!hasErrors && warnings.length === 0) {
@@ -199,17 +200,17 @@ async function validateRAGSetup() {
     console.log(chalk.green('\n✅ RAG system is functional with warnings.'));
   } else {
     console.log(chalk.red('\n❌ RAG system has configuration errors that must be fixed.'));
-    
+
     // Provide fix instructions
     console.log(chalk.blue('\n📝 To fix these issues:'));
-    if (errors.some(e => e.includes('Table') && e.includes('does not exist'))) {
+    if (errors.some((e) => e.includes('Table') && e.includes('does not exist'))) {
       console.log(chalk.cyan('  1. Run database migrations:'));
       console.log(chalk.gray('     npm run db:migrate'));
     }
-    if (errors.some(e => e.includes('Storage bucket') && e.includes('does not exist'))) {
+    if (errors.some((e) => e.includes('Storage bucket') && e.includes('does not exist'))) {
       console.log(chalk.cyan('  2. Create storage buckets in Supabase dashboard'));
     }
-    if (errors.some(e => e.includes('Vector Store'))) {
+    if (errors.some((e) => e.includes('Vector Store'))) {
       console.log(chalk.cyan('  3. Create OpenAI Vector Store:'));
       console.log(chalk.gray('     - Go to https://platform.openai.com'));
       console.log(chalk.gray('     - Create a new vector store'));
@@ -221,7 +222,7 @@ async function validateRAGSetup() {
 }
 
 // Run validation
-validateRAGSetup().catch(err => {
+validateRAGSetup().catch((err) => {
   console.error(chalk.red('Fatal error:'), err);
   process.exit(1);
 });

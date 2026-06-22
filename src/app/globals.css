@@ -14,16 +14,16 @@
     /* Font families */
     --font-inter: 'Inter', sans-serif;
     --font-mono: 'IBM Plex Mono', monospace;
-    
+
     /* Minimalist spacing scale */
     --spacing-unit: 0.5rem;
-    
+
     /* Subtle transitions */
     --transition-base: 200ms ease;
     --transition-slow: 300ms ease;
-    
+
     /* Minimalist color palette */
-    --color-sage: #87A96B;
+    --color-sage: #87a96b;
     --color-sage-dark: #6e8a57;
     --color-text: #171717;
     --color-text-muted: #525252;
@@ -31,7 +31,7 @@
     --color-bg-subtle: #fafafa;
     --color-border: #e5e5e5;
   }
-  
+
   /* Dark mode colors */
   .dark {
     --color-text: #f5f5f5;
@@ -40,7 +40,7 @@
     --color-bg-subtle: #171717;
     --color-border: #262626;
   }
-  
+
   /* Base styles */
   html {
     font-size: 18px;
@@ -48,12 +48,12 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  
+
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Minimalist body */
   body {
     @apply min-h-screen;
@@ -63,34 +63,34 @@
     background-color: var(--color-bg);
     line-height: 1.6;
   }
-  
+
   /* Selection styles */
   ::selection {
     background-color: var(--color-sage);
     color: white;
   }
-  
+
   /* Focus styles - minimal and subtle */
   :focus-visible {
     outline: 2px solid var(--color-sage);
     outline-offset: 4px;
   }
-  
+
   /* Minimalist scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: 4px;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
   }
@@ -98,56 +98,61 @@
 
 /* Typography - Clean and minimal */
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 500;
     letter-spacing: -0.02em;
     line-height: 1.2;
     margin: 0;
   }
-  
+
   h1 {
     font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
     font-weight: 300;
   }
-  
+
   h2 {
     font-size: clamp(2rem, 4vw + 0.5rem, 3rem);
     font-weight: 400;
   }
-  
+
   h3 {
     font-size: clamp(1.5rem, 3vw + 0.25rem, 2rem);
   }
-  
+
   h4 {
     font-size: clamp(1.25rem, 2vw + 0.25rem, 1.5rem);
   }
-  
+
   h5 {
     font-size: clamp(1.125rem, 1.5vw + 0.25rem, 1.25rem);
   }
-  
+
   h6 {
     font-size: clamp(1rem, 1vw + 0.25rem, 1.125rem);
   }
-  
+
   p {
     font-size: clamp(0.95rem, 1vw + 0.25rem, 1.125rem);
     color: var(--color-text-muted);
     line-height: 1.8;
   }
-  
+
   a {
     color: var(--color-sage);
     text-decoration: none;
     transition: all var(--transition-base);
     position: relative;
   }
-  
+
   a:hover {
     color: var(--color-sage-dark);
   }
-  
+
   /* Subtle underline on hover */
   a:not(.btn):hover::after {
     content: '';
@@ -159,7 +164,7 @@
     background-color: currentColor;
     opacity: 0.3;
   }
-  
+
   code {
     font-family: var(--font-mono);
     @apply text-sm;
@@ -168,7 +173,7 @@
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
   }
-  
+
   pre {
     font-family: var(--font-mono);
     @apply text-sm p-6;
@@ -177,7 +182,7 @@
     border-radius: 0.5rem;
     overflow-x: auto;
   }
-  
+
   blockquote {
     @apply pl-6 my-6;
     border-left: 2px solid var(--color-sage);
@@ -205,34 +210,34 @@
     white-space: nowrap;
     min-width: 0;
   }
-  
+
   .btn:active {
     transform: translateY(1px);
   }
-  
+
   /* Primary button - minimal with sage accent */
   .btn-primary {
     background: transparent;
     color: var(--color-sage);
     border: 1px solid var(--color-sage);
   }
-  
+
   .btn-primary:hover {
     background: var(--color-sage);
     color: white;
   }
-  
+
   /* Secondary button - ultra minimal */
   .btn-secondary {
     background: transparent;
     color: var(--color-text);
     border: 1px solid var(--color-border);
   }
-  
+
   .btn-secondary:hover {
     border-color: var(--color-text);
   }
-  
+
   /* Ghost button - text only */
   .btn-ghost {
     background: transparent;
@@ -241,39 +246,39 @@
     padding-left: 0;
     padding-right: 0;
   }
-  
+
   .btn-ghost:hover {
     color: var(--color-text);
   }
-  
+
   /* Button sizes */
   .btn-sm {
     @apply px-6 py-2 text-sm;
     min-width: 0;
     flex-shrink: 0;
   }
-  
+
   .btn-lg {
     @apply px-10 py-4 text-lg;
     min-width: 0;
     flex-shrink: 0;
   }
-  
+
   /* Responsive button adjustments */
   @media (max-width: 640px) {
     .btn {
       @apply px-4 py-2 text-sm;
     }
-    
+
     .btn-sm {
       @apply px-3 py-1.5 text-xs;
     }
-    
+
     .btn-lg {
       @apply px-6 py-3 text-base;
     }
   }
-  
+
   /* Cards - Minimal with lots of whitespace */
   .card {
     background: var(--color-bg);
@@ -284,11 +289,11 @@
     overflow: hidden;
     word-wrap: break-word;
   }
-  
+
   .card:hover {
     border-color: var(--color-sage);
   }
-  
+
   /* Inputs - Clean and minimal */
   .input {
     @apply w-full px-0 py-3;
@@ -305,22 +310,22 @@
     overflow-wrap: break-word;
     word-wrap: break-word;
   }
-  
+
   .input:focus {
     outline: none;
     border-color: var(--color-sage);
   }
-  
+
   .input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   .input::placeholder {
     color: var(--color-text-muted);
     opacity: 0.5;
   }
-  
+
   /* Labels - Small and subtle */
   .label {
     @apply block text-sm mb-2;
@@ -328,7 +333,7 @@
     text-transform: lowercase;
     letter-spacing: 0.05em;
   }
-  
+
   /* Navigation - Minimal text links */
   .nav-link {
     @apply px-4 py-2 text-sm;
@@ -336,15 +341,15 @@
     transition: color var(--transition-base);
     position: relative;
   }
-  
+
   .nav-link:hover {
     color: var(--color-text);
   }
-  
+
   .nav-link-active {
     color: var(--color-sage);
   }
-  
+
   /* Dividers - Subtle */
   .divider {
     border-top: 1px solid var(--color-border);
@@ -358,26 +363,26 @@
   .space-y-section > * + * {
     margin-top: 3rem;
   }
-  
+
   .space-y-content > * + * {
     margin-top: 2rem;
   }
-  
+
   /* Text utilities */
   .text-muted {
     color: var(--color-text-muted);
   }
-  
+
   .text-sage {
     color: var(--color-sage);
   }
-  
+
   /* Fade in animation - Subtle and fast */
   .animate-fade-in {
     animation: fadeIn 0.4s ease-out forwards;
     opacity: 0;
   }
-  
+
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -394,7 +399,7 @@
     animation: fadeInUp 0.5s ease-out forwards;
     opacity: 0;
   }
-  
+
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -405,61 +410,70 @@
       transform: translateY(0);
     }
   }
-  
+
   /* Subtle pulse animation */
   .animate-pulse-subtle {
     animation: pulseSubtle 2s ease-in-out infinite;
   }
-  
+
   @keyframes pulseSubtle {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
       opacity: 0.9;
     }
   }
-  
+
   /* Stagger animations - Faster delays */
-  .stagger-1 { animation-delay: 50ms; }
-  .stagger-2 { animation-delay: 100ms; }
-  .stagger-3 { animation-delay: 150ms; }
-  .stagger-4 { animation-delay: 200ms; }
-  
+  .stagger-1 {
+    animation-delay: 50ms;
+  }
+  .stagger-2 {
+    animation-delay: 100ms;
+  }
+  .stagger-3 {
+    animation-delay: 150ms;
+  }
+  .stagger-4 {
+    animation-delay: 200ms;
+  }
+
   /* Zen breathing space */
   .breathing-room {
     padding: 4rem 2rem;
   }
-  
+
   @media (min-width: 768px) {
     .breathing-room {
       padding: 6rem 4rem;
     }
   }
-  
+
   /* Responsive card padding */
   .card-responsive {
     padding: 1.5rem;
   }
-  
+
   @media (min-width: 640px) {
     .card-responsive {
       padding: 2rem;
     }
   }
-  
+
   @media (min-width: 768px) {
     .card-responsive {
       padding: 3rem;
     }
   }
-  
+
   /* Responsive input sizing */
   .input-responsive {
     min-height: 2.5rem;
     padding: 0.75rem 0;
   }
-  
+
   @media (max-width: 640px) {
     .input-responsive {
       min-height: 2rem;
@@ -483,13 +497,13 @@
 }
 
 /* Prevent text inputs from being resizable */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
-input[type="number"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='url'],
+input[type='tel'],
+input[type='number'],
 textarea {
   resize: none !important;
   box-sizing: border-box;
@@ -512,21 +526,21 @@ textarea {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   .card {
     padding: 1.5rem;
   }
-  
+
   .btn {
     padding: 0.625rem 1.5rem;
     font-size: 0.875rem;
   }
-  
+
   .btn-lg {
     padding: 0.75rem 2rem;
     font-size: 1rem;
   }
-  
+
   .btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
@@ -539,7 +553,7 @@ textarea {
     background: white;
     color: black;
   }
-  
+
   .no-print {
     display: none;
   }
@@ -582,7 +596,7 @@ textarea {
   .md\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  
+
   .lg\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -599,7 +613,7 @@ textarea {
   .flex-responsive {
     flex-direction: column;
   }
-  
+
   .flex-responsive > * {
     width: 100%;
     min-width: 0;

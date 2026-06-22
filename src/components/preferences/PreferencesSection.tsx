@@ -187,7 +187,6 @@ export default function PreferencesSection() {
                   ></span>
                 </button>
               </div>
-
             </div>
 
             {/* Select Preferences */}
@@ -208,16 +207,17 @@ export default function PreferencesSection() {
                   readOnly
                 />
               </div>
-
             </div>
           </div>
 
-          {error && (
-            <AlertMessage type="error" message={error} className="mt-4" />
-          )}
+          {error && <AlertMessage type="error" message={error} className="mt-4" />}
 
           {success && (
-            <AlertMessage type="success" message="Preferences saved successfully!" className="mt-4" />
+            <AlertMessage
+              type="success"
+              message="Preferences saved successfully!"
+              className="mt-4"
+            />
           )}
 
           <div className="mt-6">

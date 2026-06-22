@@ -9,32 +9,35 @@ const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 const ENVIRONMENT = process.env.NEXT_PUBLIC_APP_ENV || 'development';
 
 // Only initialize Sentry in production or if explicitly enabled
-if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABLE_SENTRY_DEV === 'true')) {
+if (
+  SENTRY_DSN &&
+  (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABLE_SENTRY_DEV === 'true')
+) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: ENVIRONMENT,
-    
+
     // Performance Monitoring
     tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0, // 10% in production, 100% in dev
-    
+
     // Session Replay
     replaysSessionSampleRate: 0.1, // 10% of sessions will be recorded
     replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
-    
+
     // Release tracking
     release: process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0',
-    
+
     // Integrations
     integrations: [
       // Browser tracing
       Sentry.browserTracingIntegration(),
-      
+
       // Replay integration
       Sentry.replayIntegration({
         maskAllText: false,
         blockAllMedia: false,
       }),
-      
+
       // Custom integration for debate events
       {
         name: 'Eris Debate',
@@ -50,7 +53,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
                 data: customEvent.detail,
               });
             });
-            
+
             window.addEventListener('debate:error', (event: Event) => {
               const customEvent = event as CustomEvent;
               Sentry.captureException(new Error(customEvent.detail?.message || 'Debate error'), {
@@ -64,7 +67,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
         },
       },
     ],
-    
+
     // Configure what to capture
     ignoreErrors: [
       // Browser extensions
@@ -76,7 +79,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
       /NetworkError/,
       /Failed to fetch/,
     ],
-    
+
     // Before sending event to Sentry
     beforeSend(event, hint) {
       // Filter out non-critical errors in development
@@ -88,7 +91,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.NEXT_PUBLIC_ENABL
           }
         }
       }
-      
+
       // Add user context if available
       if (typeof window !== 'undefined') {
         const userString = window.localStorage.getItem('user');

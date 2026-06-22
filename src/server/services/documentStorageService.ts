@@ -5,7 +5,11 @@ import crypto from 'crypto';
 export class DocumentStorageService {
   private bucketName = 'debate-documents';
 
-  async uploadPDF(file: File | Buffer, fileName: string, _metadata?: Record<string, unknown>): Promise<{ url: string; path: string }> {
+  async uploadPDF(
+    file: File | Buffer,
+    fileName: string,
+    _metadata?: Record<string, unknown>
+  ): Promise<{ url: string; path: string }> {
     try {
       const fileBuffer = file instanceof File ? Buffer.from(await file.arrayBuffer()) : file;
       const fileHash = crypto.createHash('md5').update(fileBuffer).digest('hex');
@@ -13,19 +17,17 @@ export class DocumentStorageService {
       const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
       const path = `${timestamp}_${fileHash}_${safeName}`;
 
-      const { error } = await supabase.storage
-        .from(this.bucketName)
-        .upload(path, fileBuffer, {
-          contentType: 'application/pdf',
-          cacheControl: '3600',
-          upsert: false
-        });
+      const { error } = await supabase.storage.from(this.bucketName).upload(path, fileBuffer, {
+        contentType: 'application/pdf',
+        cacheControl: '3600',
+        upsert: false,
+      });
 
       if (error) throw error;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from(this.bucketName)
-        .getPublicUrl(path);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(this.bucketName).getPublicUrl(path);
 
       return { url: publicUrl, path };
     } catch (error) {
@@ -54,7 +56,7 @@ export class DocumentStorageService {
         source_url: sourceUrl,
         source_type: sourceType,
         metadata: metadata || {},
-        indexed_at: null
+        indexed_at: null,
       })
       .select()
       .single();
@@ -64,11 +66,7 @@ export class DocumentStorageService {
   }
 
   async getDocument(documentId: string): Promise<Document | null> {
-    const { data, error } = await supabase
-      .from('documents')
-      .select()
-      .eq('id', documentId)
-      .single();
+    const { data, error } = await supabase.from('documents').select().eq('id', documentId).single();
 
     if (error) return null;
     return data;
@@ -99,14 +97,12 @@ export class DocumentStorageService {
 
   async setSearchResultsCache(queryText: string, results: unknown): Promise<void> {
     const queryHash = crypto.createHash('md5').update(queryText).digest('hex');
-    
-    await supabase
-      .from('search_results_cache')
-      .upsert({
-        query_hash: queryHash,
-        query_text: queryText,
-        results,
-        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
-      });
+
+    await supabase.from('search_results_cache').upsert({
+      query_hash: queryHash,
+      query_text: queryText,
+      results,
+      expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+    });
   }
 }

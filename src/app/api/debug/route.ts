@@ -57,9 +57,7 @@ export async function GET(request: NextRequest) {
       },
       adminUser: req.user.email,
       requestIP:
-        request.headers.get('x-forwarded-for') ||
-        request.headers.get('x-real-ip') ||
-        'unknown',
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
     };
 
     return NextResponse.json(diagnostics);

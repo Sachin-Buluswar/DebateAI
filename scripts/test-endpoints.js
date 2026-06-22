@@ -11,7 +11,13 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 const API_ENDPOINTS = [
   { method: 'GET', path: '/api/health', expected: 200, name: 'Health Check' },
   { method: 'GET', path: '/api/monitoring/health', expected: 200, name: 'Monitoring Health' },
-  { method: 'POST', path: '/api/wiki-search', expected: 401, name: 'Wiki Search (Auth Required)', body: { query: 'test' } },
+  {
+    method: 'POST',
+    path: '/api/wiki-search',
+    expected: 401,
+    name: 'Wiki Search (Auth Required)',
+    body: { query: 'test' },
+  },
   { method: 'GET', path: '/api/resources', expected: 200, name: 'Learning Resources' },
 ];
 

@@ -22,7 +22,7 @@ export default function ConfirmDialog({
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  confirmButtonClass
+  confirmButtonClass,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const mounted = useRef(false);
@@ -66,9 +66,9 @@ export default function ConfirmDialog({
   if (!isOpen || typeof window === 'undefined') return null;
 
   const dialogContent = (
-    <div 
+    <div
       className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-[9999] backdrop-blur-sm"
-      style={{ 
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -76,28 +76,24 @@ export default function ConfirmDialog({
         bottom: 0,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
       }}
       onClick={handleBackdropClick}
     >
-      <div 
+      <div
         ref={dialogRef}
         className="bg-white dark:bg-gray-900 p-8 max-w-md w-full mx-4 shadow-sm border border-gray-200 dark:border-gray-700 animate-fade-in"
-        style={{ 
+        style={{
           borderRadius: 0,
           position: 'relative',
           margin: 'auto',
           maxHeight: '90vh',
-          overflow: 'auto'
+          overflow: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-          {title}
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-          {message}
-        </p>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{title}</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">{message}</p>
         <div className="flex justify-end gap-4">
           <button
             onClick={onClose}
@@ -108,7 +104,10 @@ export default function ConfirmDialog({
           </button>
           <button
             onClick={handleConfirm}
-            className={confirmButtonClass || "px-8 py-3 text-sm font-medium bg-[#87A96B] hover:bg-[#6e8a57] text-white border border-[#87A96B] hover:border-[#6e8a57] transition-all duration-200 lowercase tracking-wide"}
+            className={
+              confirmButtonClass ||
+              'px-8 py-3 text-sm font-medium bg-[#87A96B] hover:bg-[#6e8a57] text-white border border-[#87A96B] hover:border-[#6e8a57] transition-all duration-200 lowercase tracking-wide'
+            }
             style={{ borderRadius: 0 }}
           >
             {confirmText.toLowerCase()}

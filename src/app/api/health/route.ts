@@ -13,11 +13,7 @@ export async function GET() {
 
   try {
     // A simple check to see if env variables are loaded.
-    if (
-      !env.OPENAI_API_KEY ||
-      !env.SUPABASE_SERVICE_ROLE_KEY ||
-      !env.NEXT_PUBLIC_SUPABASE_URL
-    ) {
+    if (!env.OPENAI_API_KEY || !env.SUPABASE_SERVICE_ROLE_KEY || !env.NEXT_PUBLIC_SUPABASE_URL) {
       healthCheck.checks.env = 'ERROR: Missing required environment variables.';
       return NextResponse.json(healthCheck, { status: 500 });
     }
@@ -25,9 +21,6 @@ export async function GET() {
     return NextResponse.json(healthCheck);
   } catch (_error) {
     healthCheck.message = 'ERROR';
-    return NextResponse.json(
-      { ...healthCheck, error: 'Health check failed' },
-      { status: 500 },
-    );
+    return NextResponse.json({ ...healthCheck, error: 'Health check failed' }, { status: 500 });
   }
-} 
+}

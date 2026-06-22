@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, ClockIcon, AcademicCapIcon, ChartBarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ClockIcon,
+  AcademicCapIcon,
+  ChartBarIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline';
 import { cn } from '@/lib/cn';
 
 interface Exercise {
@@ -27,18 +34,18 @@ const difficultyColors = {
   beginner: {
     bg: 'bg-green-100 dark:bg-green-900/30',
     text: 'text-green-700 dark:text-green-300',
-    border: 'border-green-300 dark:border-green-700'
+    border: 'border-green-300 dark:border-green-700',
   },
   intermediate: {
     bg: 'bg-blue-100 dark:bg-blue-900/30',
     text: 'text-blue-700 dark:text-blue-300',
-    border: 'border-blue-300 dark:border-blue-700'
+    border: 'border-blue-300 dark:border-blue-700',
   },
   advanced: {
     bg: 'bg-purple-100 dark:bg-purple-900/30',
     text: 'text-purple-700 dark:text-purple-300',
-    border: 'border-purple-300 dark:border-purple-700'
-  }
+    border: 'border-purple-300 dark:border-purple-700',
+  },
 };
 
 function ExerciseCard({ exercise, index }: { exercise: Exercise; index: number }) {
@@ -46,26 +53,23 @@ function ExerciseCard({ exercise, index }: { exercise: Exercise; index: number }
   const colors = difficultyColors[exercise.difficulty] || difficultyColors.intermediate;
 
   return (
-    <div className={cn(
-      "border-2 rounded-lg overflow-hidden transition-all duration-200",
-      colors.border,
-      isExpanded ? "shadow-lg" : "shadow-sm hover:shadow-md"
-    )}>
-      <div 
-        className={cn(
-          "p-4 cursor-pointer",
-          colors.bg
-        )}
+    <div
+      className={cn(
+        'border-2 rounded-lg overflow-hidden transition-all duration-200',
+        colors.border,
+        isExpanded ? 'shadow-lg' : 'shadow-sm hover:shadow-md'
+      )}
+    >
+      <div
+        className={cn('p-4 cursor-pointer', colors.bg)}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className={cn(
-                "text-sm font-semibold px-2 py-1 rounded",
-                colors.bg,
-                colors.text
-              )}>
+              <span
+                className={cn('text-sm font-semibold px-2 py-1 rounded', colors.bg, colors.text)}
+              >
                 Exercise {index + 1}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -82,7 +86,7 @@ function ExerciseCard({ exercise, index }: { exercise: Exercise; index: number }
           </div>
           <button
             className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
             {isExpanded ? (
               <ChevronUpIcon className="w-5 h-5" />
@@ -93,10 +97,12 @@ function ExerciseCard({ exercise, index }: { exercise: Exercise; index: number }
         </div>
       </div>
 
-      <div className={cn(
-        "transition-all duration-300 ease-in-out overflow-hidden",
-        isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
-      )}>
+      <div
+        className={cn(
+          'transition-all duration-300 ease-in-out overflow-hidden',
+          isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+        )}
+      >
         <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           {/* Instructions */}
           <div className="mb-4">
@@ -137,7 +143,10 @@ function ExerciseCard({ exercise, index }: { exercise: Exercise; index: number }
               </h4>
               <ul className="space-y-1">
                 {exercise.metrics.map((metric, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                  >
                     <CheckCircleIcon className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                     <span>{metric}</span>
                   </li>
@@ -158,17 +167,19 @@ export default function TrainingSection({ trainingPlan, className }: TrainingSec
     return null;
   }
 
-  const exercisesToShow = showAllExercises 
-    ? trainingPlan.exercises 
+  const exercisesToShow = showAllExercises
+    ? trainingPlan.exercises
     : trainingPlan.exercises.slice(0, 2);
 
   return (
-    <div className={cn(
-      "bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-900",
-      "border-2 border-primary-200 dark:border-primary-800",
-      "rounded-xl shadow-lg overflow-hidden",
-      className
-    )}>
+    <div
+      className={cn(
+        'bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-900',
+        'border-2 border-primary-200 dark:border-primary-800',
+        'rounded-xl shadow-lg overflow-hidden',
+        className
+      )}
+    >
       <div className="px-6 py-5 bg-gradient-to-r from-primary-500 to-primary-600 text-white">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <AcademicCapIcon className="w-7 h-7" />
@@ -197,7 +208,10 @@ export default function TrainingSection({ trainingPlan, className }: TrainingSec
               {showAllExercises ? (
                 <>Show Less Exercises</>
               ) : (
-                <>Show {trainingPlan.exercises.length - 2} More Exercise{trainingPlan.exercises.length - 2 > 1 ? 's' : ''}</>
+                <>
+                  Show {trainingPlan.exercises.length - 2} More Exercise
+                  {trainingPlan.exercises.length - 2 > 1 ? 's' : ''}
+                </>
               )}
             </button>
           </div>

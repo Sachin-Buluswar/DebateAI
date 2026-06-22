@@ -26,18 +26,18 @@ export default function ResetPasswordButton({ userEmail }: ResetPasswordButtonPr
       const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
-      
+
       if (error) throw error;
-      
-      addToast({ 
-        message: 'Password reset email sent! Please check your inbox.', 
-        type: 'success' 
+
+      addToast({
+        message: 'Password reset email sent! Please check your inbox.',
+        type: 'success',
       });
       setShowConfirm(false);
     } catch (_error) {
-      addToast({ 
-        message: 'Failed to send reset email. Please try again.', 
-        type: 'error' 
+      addToast({
+        message: 'Failed to send reset email. Please try again.',
+        type: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -54,7 +54,7 @@ export default function ResetPasswordButton({ userEmail }: ResetPasswordButtonPr
       >
         reset password
       </Button>
-      
+
       <ConfirmDialog
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}

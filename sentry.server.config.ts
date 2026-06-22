@@ -13,36 +13,36 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: ENVIRONMENT,
-    
+
     // Performance Monitoring
     tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0,
-    
+
     // Profile sample rate (requires tracing)
     profilesSampleRate: 0.1,
-    
+
     // Release tracking
     release: process.env.npm_package_version || '0.1.0',
-    
+
     // Server name
     serverName: process.env.HOSTNAME || 'eris-debate-server',
-    
+
     // Integrations
     integrations: [
       // HTTP integration
       Sentry.httpIntegration({
         breadcrumbs: true,
       }),
-      
+
       // Custom integration for AI services
       {
         name: 'AIServices',
         setupOnce() {
           // Hook into AI service calls
           const originalFetch = global.fetch;
-          global.fetch = async function(...args) {
+          global.fetch = async function (...args) {
             const [url, options] = args;
             const urlString = typeof url === 'string' ? url : url.toString();
-            
+
             // Track OpenAI calls
             if (urlString.includes('api.openai.com')) {
               Sentry.addBreadcrumb({
@@ -55,7 +55,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
                 },
               });
             }
-            
+
             // Track ElevenLabs calls
             if (urlString.includes('api.elevenlabs.io')) {
               Sentry.addBreadcrumb({
@@ -68,13 +68,13 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
                 },
               });
             }
-            
+
             return originalFetch.apply(this, args);
           };
         },
       },
     ],
-    
+
     // Configure what to capture
     ignoreErrors: [
       // Expected errors
@@ -83,7 +83,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
       // Rate limiting
       'Too many requests',
     ],
-    
+
     // Before sending event to Sentry
     beforeSend(event, _hint) {
       // Sanitize sensitive data
@@ -94,7 +94,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
           delete event.request.headers.cookie;
           delete event.request.headers['x-api-key'];
         }
-        
+
         // Remove sensitive query params
         if (event.request.query_string && typeof event.request.query_string === 'string') {
           event.request.query_string = event.request.query_string.replace(
@@ -103,7 +103,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
           );
         }
       }
-      
+
       // Add additional context
       event.contexts = {
         ...event.contexts,
@@ -116,17 +116,17 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
           app_start_time: new Date(Date.now() - process.uptime() * 1000).toISOString(),
         },
       };
-      
+
       return event;
     },
-    
+
     // Error filtering
     beforeSendTransaction(transaction) {
       // Don't send transactions for health checks
       if (transaction.transaction?.includes('/health')) {
         return null;
       }
-      
+
       return transaction;
     },
   });
@@ -181,7 +181,7 @@ export const sentryServer = {
         name: options?.name || handler.name || 'anonymous',
         op: options?.op || 'function',
       });
-      
+
       try {
         const result = await handler(...args);
         transaction?.end();

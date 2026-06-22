@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { wikiSearchRateLimiter, withRateLimit } from '@/api-middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders } from '@/api-middleware/inputValidation';
+import {
+  validateRequest,
+  validationSchemas,
+  addSecurityHeaders,
+} from '@/api-middleware/inputValidation';
 import { optionalAuth } from '@/lib/auth-middleware';
 import { createClient } from '@/lib/supabase/server';
 
@@ -24,9 +28,12 @@ export async function POST(request: NextRequest) {
     return optionalAuth(request, async () => {
       if (!openaiApiKey) {
         return addSecurityHeaders(
-          NextResponse.json({
-            error: 'Server configuration error: Search service unavailable.'
-          }, { status: 503 })
+          NextResponse.json(
+            {
+              error: 'Server configuration error: Search service unavailable.',
+            },
+            { status: 503 }
+          )
         );
       }
 
@@ -42,10 +49,13 @@ export async function POST(request: NextRequest) {
 
         if (!validation.success) {
           return addSecurityHeaders(
-            NextResponse.json({
-              error: 'Invalid request',
-              details: validation.details
-            }, { status: 400 })
+            NextResponse.json(
+              {
+                error: 'Invalid request',
+                details: validation.details,
+              },
+              { status: 400 }
+            )
           );
         }
 
@@ -53,9 +63,12 @@ export async function POST(request: NextRequest) {
 
         if (query.length < 3) {
           return addSecurityHeaders(
-            NextResponse.json({
-              error: 'Search query must be at least 3 characters long'
-            }, { status: 400 })
+            NextResponse.json(
+              {
+                error: 'Search query must be at least 3 characters long',
+              },
+              { status: 400 }
+            )
           );
         }
 
@@ -68,11 +81,14 @@ export async function POST(request: NextRequest) {
 
         // Vector search via RPC using authenticated client
         const supabase = createClient();
-        const { data: vectorResults, error: rpcError } = await supabase.rpc('match_document_chunks', {
-          query_embedding: JSON.stringify(queryEmbedding),
-          match_threshold: 0.3,
-          match_count: Math.min(maxResults, 20),
-        });
+        const { data: vectorResults, error: rpcError } = await supabase.rpc(
+          'match_document_chunks',
+          {
+            query_embedding: JSON.stringify(queryEmbedding),
+            match_threshold: 0.3,
+            match_count: Math.min(maxResults, 20),
+          }
+        );
 
         if (rpcError) {
           throw new Error(`Search RPC failed: ${rpcError.message}`);
@@ -81,17 +97,18 @@ export async function POST(request: NextRequest) {
         const chunks = (vectorResults ?? []) as VectorResult[];
 
         // Fetch document metadata
-        const docIds = [...new Set(chunks.map(c => c.document_id))];
-        const { data: documents } = docIds.length > 0
-          ? await supabase
-              .from('documents')
-              .select('id, title, file_name, file_url, source_type, indexed_at')
-              .in('id', docIds)
-          : { data: [] };
+        const docIds = [...new Set(chunks.map((c) => c.document_id))];
+        const { data: documents } =
+          docIds.length > 0
+            ? await supabase
+                .from('documents')
+                .select('id, title, file_name, file_url, source_type, indexed_at')
+                .in('id', docIds)
+            : { data: [] };
 
-        const docMap = new Map(documents?.map(d => [d.id, d]) ?? []);
+        const docMap = new Map(documents?.map((d) => [d.id, d]) ?? []);
 
-        const results = chunks.map(chunk => {
+        const results = chunks.map((chunk) => {
           const doc = docMap.get(chunk.document_id);
           return {
             content: chunk.content,
@@ -113,21 +130,26 @@ export async function POST(request: NextRequest) {
         });
 
         return addSecurityHeaders(
-          NextResponse.json({
-            success: true,
-            results,
-            query: query.substring(0, 200),
-            maxResults,
-            timestamp: new Date().toISOString(),
-            cached: false,
-          }, { status: 200 })
+          NextResponse.json(
+            {
+              success: true,
+              results,
+              query: query.substring(0, 200),
+              maxResults,
+              timestamp: new Date().toISOString(),
+              cached: false,
+            },
+            { status: 200 }
+          )
         );
-
       } catch (_error) {
         return addSecurityHeaders(
-          NextResponse.json({
-            error: 'Search temporarily unavailable. Please try again later.'
-          }, { status: 500 })
+          NextResponse.json(
+            {
+              error: 'Search temporarily unavailable. Please try again later.',
+            },
+            { status: 500 }
+          )
         );
       }
     });
@@ -145,7 +167,10 @@ export async function OPTIONS() {
     new Response(null, {
       status: 200,
       headers: {
-        'Access-Control-Allow-Origin': process.env.NODE_ENV === 'development' ? '*' : (process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com'),
+        'Access-Control-Allow-Origin':
+          process.env.NODE_ENV === 'development'
+            ? '*'
+            : process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

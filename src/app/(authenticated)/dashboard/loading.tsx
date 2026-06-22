@@ -7,10 +7,7 @@ export default function DashboardLoading() {
       {/* stat cards row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
-          />
+          <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
         ))}
       </div>
 

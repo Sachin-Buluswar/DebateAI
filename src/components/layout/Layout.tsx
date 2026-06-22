@@ -30,7 +30,7 @@ type LayoutProps = {
 export default function Layout({ children }: LayoutProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+
   // Determine if sidebar should be shown based on current path
   const showSidebar = !!pathname && !pathsWithoutSidebar.includes(pathname);
 
@@ -48,29 +48,29 @@ export default function Layout({ children }: LayoutProps) {
       {/* Minimalist background */}
       <div className="min-h-screen bg-white dark:bg-gray-950">
         <Navbar />
-        <div className="flex pt-20"> {/* Add padding-top to account for fixed Navbar height */}
+        <div className="flex pt-20">
+          {' '}
+          {/* Add padding-top to account for fixed Navbar height */}
           {showSidebar && (
             // Minimalist sidebar styling
-            <div className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:pt-20 lg:z-30 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ${
-              isCollapsed ? 'lg:w-20' : 'lg:w-64'
-            }`}>
+            <div
+              className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:pt-20 lg:z-30 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ${
+                isCollapsed ? 'lg:w-20' : 'lg:w-64'
+              }`}
+            >
               <Sidebar />
             </div>
           )}
           {/* Adjust main content margin based on sidebar presence and state */}
-          <main className={`flex-1 transition-all duration-300 ease-in-out ${
-            showSidebar 
-              ? isCollapsed 
-                ? 'lg:ml-20' 
-                : 'lg:ml-64' 
-              : ''
-          } px-8 py-12 lg:px-16 lg:py-16`}>
-            <PageTransition>
-              {children}
-            </PageTransition>
+          <main
+            className={`flex-1 transition-all duration-300 ease-in-out ${
+              showSidebar ? (isCollapsed ? 'lg:ml-20' : 'lg:ml-64') : ''
+            } px-8 py-12 lg:px-16 lg:py-16`}
+          >
+            <PageTransition>{children}</PageTransition>
           </main>
         </div>
       </div>
     </SidebarContext.Provider>
   );
-} 
+}

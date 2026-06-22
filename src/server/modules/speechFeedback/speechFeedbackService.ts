@@ -12,7 +12,7 @@ import { aiLogger as logger } from '@/lib/monitoring/logger';
 import {
   standardizeToPercentage,
   nsdaToPercentage,
-  extractScoreFromFeedback
+  extractScoreFromFeedback,
 } from '@/lib/scoreStandardization';
 import { MAX_USER_STORAGE_BYTES, MAX_UPLOAD_SIZE_BYTES } from '@/config/constants';
 
@@ -49,20 +49,17 @@ export interface SpeechFeedbackResult {
  */
 export async function getUserStorageUsage(userId: string): Promise<number> {
   try {
-    const { data, error } = await supabaseAdmin
-      .storage
-      .from(SPEECH_BUCKET)
-      .list(userId);
-    
+    const { data, error } = await supabaseAdmin.storage.from(SPEECH_BUCKET).list(userId);
+
     if (error) {
       return 0;
     }
-    
+
     let totalBytes = 0;
     for (const file of data || []) {
       totalBytes += file.metadata?.size || 0;
     }
-    
+
     return totalBytes;
   } catch (_error) {
     return 0;
@@ -72,7 +69,9 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
 /**
  * Get skill level modifier for the prompt
  */
-function getSkillLevelModifier(skillLevel: 'novice' | 'intermediate' | 'advanced' = 'intermediate'): string {
+function getSkillLevelModifier(
+  skillLevel: 'novice' | 'intermediate' | 'advanced' = 'intermediate'
+): string {
   const modifiers = {
     novice: `
 SKILL LEVEL: NOVICE DEBATER (First year, learning fundamentals)
@@ -112,16 +111,18 @@ Adjust your feedback for competitive excellence:
 - Example: "Your probabilistic weighing in the 2AR failed to engage their delink on structural violence"
 - Compare to top tournament performances when relevant
 - Emphasize refinement: "These adjustments will give you a competitive edge"
-- Can handle comprehensive critique across all areas`
+- Can handle comprehensive critique across all areas`,
   };
-  
+
   return modifiers[skillLevel] || modifiers.intermediate;
 }
 
 /**
  * Get training plan instructions based on skill level
  */
-function getTrainingPlanInstructions(skillLevel: 'novice' | 'intermediate' | 'advanced' = 'intermediate'): string {
+function getTrainingPlanInstructions(
+  skillLevel: 'novice' | 'intermediate' | 'advanced' = 'intermediate'
+): string {
   const trainingInstructions = {
     novice: `
 TRAINING PLAN FOR NOVICE (Generate 2-3 exercises):
@@ -131,7 +132,7 @@ Based on the identified weaknesses, create basic exercises:
 - Each exercise 5-10 minutes
 - Include encouragement
 - Example exercise: "Basic Flowing Drill: 1) Get a notebook, 2) Draw 4 columns for each speaker, 3) Watch a sample speech and write one key word per argument, 4) Practice daily for 10 minutes"`,
-    
+
     intermediate: `
 TRAINING PLAN FOR INTERMEDIATE (Generate 3-4 exercises):
 Based on the identified weaknesses, create targeted exercises:
@@ -140,7 +141,7 @@ Based on the identified weaknesses, create targeted exercises:
 - Each exercise 10-15 minutes  
 - Include self-assessment metrics
 - Example exercise: "Impact Weighing Drill: 1) List 3 impacts from your case, 2) Compare on magnitude/probability/timeframe, 3) Write 30-second weighing overview, 4) Record and refine"`,
-    
+
     advanced: `
 TRAINING PLAN FOR ADVANCED (Generate 3-5 exercises):
 Based on the identified weaknesses, create sophisticated exercises:
@@ -148,19 +149,26 @@ Based on the identified weaknesses, create sophisticated exercises:
 - Be concise but strategic
 - Each exercise 15-20 minutes
 - Include tournament prep elements
-- Example exercise: "Crystallization Practice: 1) Identify 2 key voters, 2) Write 90-second overview, 3) Include offensive/defensive balance, 4) Practice at tournament speed"`
+- Example exercise: "Crystallization Practice: 1) Identify 2 key voters, 2) Write 90-second overview, 3) Include offensive/defensive balance, 4) Practice at tournament speed"`,
   };
-  
+
   return trainingInstructions[skillLevel] || trainingInstructions.intermediate;
 }
 
 /**
  * Get the system prompt for different speech types
  */
-function getSpeechTypePrompt(speechType: string, topic: string, userSide?: string, customInstructions?: string, skillLevel?: 'novice' | 'intermediate' | 'advanced'): string {
-  const sideContext = userSide && userSide !== 'None' ? ` The speaker is on the ${userSide} side.` : '';
+function getSpeechTypePrompt(
+  speechType: string,
+  topic: string,
+  userSide?: string,
+  customInstructions?: string,
+  skillLevel?: 'novice' | 'intermediate' | 'advanced'
+): string {
+  const sideContext =
+    userSide && userSide !== 'None' ? ` The speaker is on the ${userSide} side.` : '';
   const basePrompt = `You are an expert Public Forum debate coach with 20+ years of experience judging at the highest levels of competition including NSDA Nationals and TOC. You are analyzing a ${speechType} on the topic: "${topic}".${sideContext}`;
-  
+
   const prompts: Record<string, string> = {
     // Legacy types for backward compatibility
     debate: `${basePrompt} Focus on argumentation, evidence use, rebuttals, and persuasiveness.`,
@@ -171,7 +179,7 @@ function getSpeechTypePrompt(speechType: string, topic: string, userSide?: strin
     'cross-examination': `${basePrompt} This is a cross-examination period. Focus on: strategic questioning to expose weaknesses, clarity of questions, control of the cross-ex, ability to set up future arguments, and professional demeanor under pressure.`,
     summary: `${basePrompt} This is a summary speech. Focus on: crystallization of key voting issues, impact comparison and weighing, narrative construction, judge appeal, and strategic choice of what arguments to go for in the final speech.`,
     'final-focus': `${basePrompt} This is a final focus speech. Focus on: final impact comparison, resolution of key clashes, persuasive conclusion, strategic voting issue selection, and ability to close the debate decisively.`,
-    
+
     // Specific debate speech types
     '1AC': `${basePrompt} This is the 1st Affirmative Constructive (1AC). Focus on: establishing a clear framework/definitions, presenting the affirmative case with strong contentions, providing solid evidence with proper citations, establishing clear impacts and link chains, setting up the narrative for the round, and delivering with confidence and clarity. The 1AC sets the foundation for the entire debate.`,
     '1NC': `${basePrompt} This is the 1st Negative Constructive (1NC). Focus on: effectively responding to the 1AC framework, presenting negative case/disadvantages, attacking affirmative contentions with evidence, establishing negative ground in the debate, time allocation between offense and defense, and maintaining organization while covering multiple arguments.`,
@@ -181,31 +189,31 @@ function getSpeechTypePrompt(speechType: string, topic: string, userSide?: strin
     '1AR': `${basePrompt} This is the 1st Affirmative Rebuttal (1AR). Focus on: covering the entire flow efficiently in limited time (4 minutes), extending key affirmative arguments, responding to negative voting issues, re-establishing affirmative narrative, smart argument selection, and maintaining composure under time pressure.`,
     '2NR': `${basePrompt} This is the 2nd Negative Rebuttal (2NR). Focus on: crystallizing 1-2 key voting issues, impact comparison and outweighing, telling the negative ballot story, responding to 1AR coverage, strategic argument selection (going for the right arguments), and closing the debate persuasively.`,
     '2AR': `${basePrompt} This is the 2nd Affirmative Rebuttal (2AR). Focus on: winning the key voting issues identified by 2NR, final impact comparison, resolving major clashes in the debate, appealing to the judge's decision calculus, maintaining consistency with earlier speeches, and delivering a persuasive final message.`,
-    
+
     // Public Forum specific speech types
-    'pro_case': `${basePrompt} This is a Pro Team Case in Public Forum debate. Focus on: establishing a clear framework and definitions, presenting pro contentions with strong evidence, creating compelling narratives, establishing clear impacts and weighing mechanisms, setting up the debate structure, and delivering with confidence. The case should be accessible to lay judges while maintaining competitive rigor.`,
-    
-    'con_case': `${basePrompt} This is a Con Team Case in Public Forum debate. Focus on: responding to the pro framework when necessary, presenting con contentions with strong evidence, establishing why the status quo is preferable or why the pro side fails, creating compelling counter-narratives, providing clear impacts and weighing, and setting up negative ground for the round.`,
-    
-    'pro_rebuttal': `${basePrompt} This is a Pro Team Rebuttal in Public Forum debate. Focus on: effectively attacking con contentions with evidence and logic, defending the pro case against con attacks, establishing clash on key issues, beginning impact comparison, maintaining organization across multiple arguments, and efficiently using time to cover the most important arguments.`,
-    
-    'con_rebuttal': `${basePrompt} This is a Con Team Rebuttal in Public Forum debate. Focus on: effectively attacking pro contentions with evidence and logic, defending the con case against pro attacks, establishing clash on key issues, beginning impact comparison, maintaining organization across multiple arguments, and efficiently using time to cover the most important arguments.`,
-    
-    'pro_summary': `${basePrompt} This is a Pro Team Summary in Public Forum debate. Focus on: crystallizing the key voting issues in the round, providing clear impact comparison and weighing analysis, extending the most important arguments from earlier speeches, responding to major con claims, creating a clear narrative for why pro should win, and making strategic choices about which arguments to prioritize.`,
-    
-    'con_summary': `${basePrompt} This is a Con Team Summary in Public Forum debate. Focus on: crystallizing the key voting issues in the round, providing clear impact comparison and weighing analysis, extending the most important arguments from earlier speeches, responding to major pro claims, creating a clear narrative for why con should win, and making strategic choices about which arguments to prioritize.`,
-    
-    'pro_final_focus': `${basePrompt} This is a Pro Team Final Focus in Public Forum debate. Focus on: making the final case for why pro should win the round, providing ultimate impact comparison and weighing, resolving key clashes identified in summary speeches, appealing directly to the judge's decision-making process, maintaining consistency with the pro summary, and delivering a compelling closing argument that crystallizes the pro ballot story.`,
-    
-    'con_final_focus': `${basePrompt} This is a Con Team Final Focus in Public Forum debate. Focus on: making the final case for why con should win the round, providing ultimate impact comparison and weighing, resolving key clashes identified in summary speeches, appealing directly to the judge's decision-making process, maintaining consistency with the con summary, and delivering a compelling closing argument that crystallizes the con ballot story.`,
-    
-    default: `${basePrompt} Provide comprehensive feedback on all aspects of the delivery and argumentation.`
+    pro_case: `${basePrompt} This is a Pro Team Case in Public Forum debate. Focus on: establishing a clear framework and definitions, presenting pro contentions with strong evidence, creating compelling narratives, establishing clear impacts and weighing mechanisms, setting up the debate structure, and delivering with confidence. The case should be accessible to lay judges while maintaining competitive rigor.`,
+
+    con_case: `${basePrompt} This is a Con Team Case in Public Forum debate. Focus on: responding to the pro framework when necessary, presenting con contentions with strong evidence, establishing why the status quo is preferable or why the pro side fails, creating compelling counter-narratives, providing clear impacts and weighing, and setting up negative ground for the round.`,
+
+    pro_rebuttal: `${basePrompt} This is a Pro Team Rebuttal in Public Forum debate. Focus on: effectively attacking con contentions with evidence and logic, defending the pro case against con attacks, establishing clash on key issues, beginning impact comparison, maintaining organization across multiple arguments, and efficiently using time to cover the most important arguments.`,
+
+    con_rebuttal: `${basePrompt} This is a Con Team Rebuttal in Public Forum debate. Focus on: effectively attacking pro contentions with evidence and logic, defending the con case against pro attacks, establishing clash on key issues, beginning impact comparison, maintaining organization across multiple arguments, and efficiently using time to cover the most important arguments.`,
+
+    pro_summary: `${basePrompt} This is a Pro Team Summary in Public Forum debate. Focus on: crystallizing the key voting issues in the round, providing clear impact comparison and weighing analysis, extending the most important arguments from earlier speeches, responding to major con claims, creating a clear narrative for why pro should win, and making strategic choices about which arguments to prioritize.`,
+
+    con_summary: `${basePrompt} This is a Con Team Summary in Public Forum debate. Focus on: crystallizing the key voting issues in the round, providing clear impact comparison and weighing analysis, extending the most important arguments from earlier speeches, responding to major pro claims, creating a clear narrative for why con should win, and making strategic choices about which arguments to prioritize.`,
+
+    pro_final_focus: `${basePrompt} This is a Pro Team Final Focus in Public Forum debate. Focus on: making the final case for why pro should win the round, providing ultimate impact comparison and weighing, resolving key clashes identified in summary speeches, appealing directly to the judge's decision-making process, maintaining consistency with the pro summary, and delivering a compelling closing argument that crystallizes the pro ballot story.`,
+
+    con_final_focus: `${basePrompt} This is a Con Team Final Focus in Public Forum debate. Focus on: making the final case for why con should win the round, providing ultimate impact comparison and weighing, resolving key clashes identified in summary speeches, appealing directly to the judge's decision-making process, maintaining consistency with the con summary, and delivering a compelling closing argument that crystallizes the con ballot story.`,
+
+    default: `${basePrompt} Provide comprehensive feedback on all aspects of the delivery and argumentation.`,
   };
-  
+
   const specificPrompt = prompts[speechType] || prompts.default;
   const skillModifier = getSkillLevelModifier(skillLevel || 'intermediate');
   const trainingPlanInstructions = getTrainingPlanInstructions(skillLevel || 'intermediate');
-  
+
   return `${specificPrompt}
 
 ${skillModifier}
@@ -291,86 +299,96 @@ Analyze the transcription and provide feedback in JSON format with these exact f
       }
     ]
   }
-}`
+}`;
 }
 
 /**
  * Main speech feedback processing function
  */
-export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise<SpeechFeedbackResult> {
-  const { audioBuffer, filename, topic, userId, speechType = 'debate', userSide, skillLevel = 'intermediate' } = input;
-  
+export async function processSpeechFeedback(
+  input: SpeechFeedbackInput
+): Promise<SpeechFeedbackResult> {
+  const {
+    audioBuffer,
+    filename,
+    topic,
+    userId,
+    speechType = 'debate',
+    userSide,
+    skillLevel = 'intermediate',
+  } = input;
+
   // Sanitize filename for logging (prevent log injection)
   const _sanitizedFilename = filename.replace(/[^\w.-]/g, '_');
-  
+
   // Validate file size
   if (audioBuffer.length > MAX_UPLOAD_SIZE_BYTES) {
     throw new Error(`File exceeds maximum size of ${MAX_UPLOAD_SIZE_BYTES / 1024 / 1024}MB`);
   }
-  
+
   // Check user storage
   const currentUsage = await getUserStorageUsage(userId);
   if (currentUsage + audioBuffer.length > MAX_USER_STORAGE_BYTES) {
     throw new Error('Storage limit exceeded. Please delete existing recordings.');
   }
-  
+
   // For now, skip complex audio processing and work with the original buffer
   // In a production environment, you'd want FFmpeg for proper audio processing
   const fileId = `speech_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   // Sanitize fileId to prevent path traversal
   const sanitizedFileId = fileId.replace(/[^a-zA-Z0-9_-]/g, '');
   const tempFilePath = `/tmp/${sanitizedFileId}.mp3`;
-  
+
   // Write buffer to temporary file
   await fs.writeFile(tempFilePath, audioBuffer);
-  
+
   // Get actual audio duration using improved detection
   const durationSeconds = await getAudioDuration(tempFilePath);
-  
+
   // Validate duration
   const durationMinutes = durationSeconds / 60;
   if (durationMinutes > MAX_RECORDING_LENGTH_MINUTES) {
     // Clean up temp file
     await fs.unlink(tempFilePath).catch(() => {});
-    throw new Error(`Recording duration of ${Math.round(durationMinutes)} minutes exceeds maximum of ${MAX_RECORDING_LENGTH_MINUTES} minutes`);
+    throw new Error(
+      `Recording duration of ${Math.round(durationMinutes)} minutes exceeds maximum of ${MAX_RECORDING_LENGTH_MINUTES} minutes`
+    );
   }
-  
+
   const processedAudio = {
     filePath: tempFilePath,
     fileId,
-    durationSeconds
+    durationSeconds,
   };
-  
+
   // Check processed file size
   const processedFileSize = audioBuffer.length;
-  
+
   // Upload to storage
   const storagePath = `${userId}/${processedAudio.fileId}.mp3`;
-  
+
   // Use buffer instead of stream to avoid Node.js stream issues
-  const { error: storageError } = await supabaseAdmin
-    .storage
+  const { error: storageError } = await supabaseAdmin.storage
     .from(SPEECH_BUCKET)
     .upload(storagePath, audioBuffer, {
       contentType: 'audio/mpeg',
       cacheControl: '3600',
-      upsert: true
+      upsert: true,
     });
-  
+
   if (storageError) {
     throw new Error(`Storage upload failed: ${storageError.message}`);
   }
-  
+
   // Get public URL
   const { data: publicUrlData } = supabaseAdmin.storage
     .from(SPEECH_BUCKET)
     .getPublicUrl(storagePath);
-  
+
   const audioUrl = publicUrlData.publicUrl;
-  
+
   // Handle large files without transcription
   if (processedFileSize > WHISPER_MAX_BYTES) {
-    
     const { data: insertedRecord, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
       .insert({
@@ -379,250 +397,267 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         speech_type: speechType,
         user_side: userSide,
         skill_level: skillLevel,
-        feedback: { 
+        feedback: {
           message: 'Audio file too large for automated feedback.',
-          standardizedScore: 0 // Include standardized score even for large files
+          standardizedScore: 0, // Include standardized score even for large files
         },
         overall_score: 0, // Populate the overall_score column
         audio_url: audioUrl,
         transcription: null,
         file_size_bytes: processedFileSize,
-        duration_seconds: processedAudio.durationSeconds || 60 // Use actual duration
+        duration_seconds: processedAudio.durationSeconds || 60, // Use actual duration
       })
       .select('id')
       .single();
-    
+
     if (dbError) throw dbError;
-    
+
     // Cleanup
     await fs.unlink(processedAudio.filePath).catch(() => {});
-    
+
     return {
-      feedback: { 
+      feedback: {
         speakerScore: 25.0, // Minimum NSDA score (half-point scoring)
         standardizedScore: 0, // 0% in standardized format
         scoreJustification: 'File too large for automated analysis',
         overallSummary: 'Audio file uploaded successfully but is too large for automated feedback.',
-        message: 'Audio file too large for automated feedback.' 
+        message: 'Audio file too large for automated feedback.',
       },
       audioUrl,
-      feedbackId: insertedRecord?.id
+      feedbackId: insertedRecord?.id,
     };
   }
-  
+
   // Transcribe audio using OpenAI Whisper with error recovery
-  let transcription: { text?: string; segments?: Array<{ start: number; end: number; text: string }>; duration?: number };
+  let transcription: {
+    text?: string;
+    segments?: Array<{ start: number; end: number; text: string }>;
+    duration?: number;
+  };
   const fallbackTranscription = {
     text: `[Transcription temporarily unavailable] Speech about ${topic} by ${userSide || 'speaker'} - Duration: ${Math.round(processedAudio.durationSeconds)} seconds.`,
     segments: [],
-    duration: processedAudio.durationSeconds
+    duration: processedAudio.durationSeconds,
   };
-  
+
   try {
     logger.info('Starting audio transcription', {
       userId,
       metadata: {
         fileId: processedAudio.fileId,
-        duration: processedAudio.durationSeconds
-      }
+        duration: processedAudio.durationSeconds,
+      },
     });
-    
+
     const audioFileStream = createReadStream(processedAudio.filePath);
-    
-    const whisperResponse = await openAIService.createTranscription({
-      file: audioFileStream,
-      model: 'whisper-1',
-      response_format: 'verbose_json',
-    }, {
-      fallbackResponse: fallbackTranscription
-    });
-    
+
+    const whisperResponse = await openAIService.createTranscription(
+      {
+        file: audioFileStream,
+        model: 'whisper-1',
+        response_format: 'verbose_json',
+      },
+      {
+        fallbackResponse: fallbackTranscription,
+      }
+    );
+
     transcription = {
       ...whisperResponse,
-      duration: (whisperResponse as unknown as Record<string, unknown>).duration as number || processedAudio.durationSeconds
+      duration:
+        ((whisperResponse as unknown as Record<string, unknown>).duration as number) ||
+        processedAudio.durationSeconds,
     };
-    
+
     logger.info('Transcription completed successfully', {
       metadata: {
         textLength: transcription.text?.length,
-        segments: transcription.segments?.length
-      }
+        segments: transcription.segments?.length,
+      },
     });
   } catch (error) {
     logger.error('Transcription failed', error as Error, {
       metadata: {
-        fileId: processedAudio.fileId
-      }
+        fileId: processedAudio.fileId,
+      },
     });
-    
+
     transcription = fallbackTranscription;
   }
-  
+
   // Generate AI feedback using GPT-4o with structured output
   let feedback: Record<string, unknown>;
   const fallbackFeedback = {
-      speakerScore: 25.0,
-      scoreJustification: "Unable to provide score - OpenAI API not configured",
-      overallSummary: `Unable to provide AI analysis - OpenAI API not configured. Manual review recommended for speech about ${topic}.`,
-      structureOrganization: {
-        analysis: "API configuration required for detailed feedback",
-        examples: []
-      },
-      argumentationEvidence: {
-        analysis: "API configuration required for detailed feedback",
-        examples: []
-      },
-      clarityConciseness: {
-        analysis: "API configuration required for detailed feedback",
-        examples: []
-      },
-      persuasivenessImpact: {
-        analysis: "API configuration required for detailed feedback",
-        examples: []
-      },
-      deliveryStyle: {
-        analysis: "API configuration required for detailed feedback",
-        examples: []
-      },
-      relevanceToSpeechType: {
-        analysis: "API configuration required for detailed feedback",
-        examples: []
-      },
-      actionableSuggestions: ["Configure OpenAI API key to enable AI-powered feedback"],
-      strengths: ["Unable to analyze without API"],
-      areasForImprovement: ["Unable to analyze without API"]
-    };
-  
+    speakerScore: 25.0,
+    scoreJustification: 'Unable to provide score - OpenAI API not configured',
+    overallSummary: `Unable to provide AI analysis - OpenAI API not configured. Manual review recommended for speech about ${topic}.`,
+    structureOrganization: {
+      analysis: 'API configuration required for detailed feedback',
+      examples: [],
+    },
+    argumentationEvidence: {
+      analysis: 'API configuration required for detailed feedback',
+      examples: [],
+    },
+    clarityConciseness: {
+      analysis: 'API configuration required for detailed feedback',
+      examples: [],
+    },
+    persuasivenessImpact: {
+      analysis: 'API configuration required for detailed feedback',
+      examples: [],
+    },
+    deliveryStyle: {
+      analysis: 'API configuration required for detailed feedback',
+      examples: [],
+    },
+    relevanceToSpeechType: {
+      analysis: 'API configuration required for detailed feedback',
+      examples: [],
+    },
+    actionableSuggestions: ['Configure OpenAI API key to enable AI-powered feedback'],
+    strengths: ['Unable to analyze without API'],
+    areasForImprovement: ['Unable to analyze without API'],
+  };
+
   try {
-    const systemPrompt = getSpeechTypePrompt(speechType, topic, userSide, input.customInstructions, skillLevel);
-    
+    const systemPrompt = getSpeechTypePrompt(
+      speechType,
+      topic,
+      userSide,
+      input.customInstructions,
+      skillLevel
+    );
+
     logger.info('Generating AI feedback', {
       metadata: {
         speechType,
         topic,
-        transcriptionLength: transcription.text?.length
+        transcriptionLength: transcription.text?.length,
+      },
+    });
+
+    const feedbackCompletion = await openAIService.createChatCompletion(
+      {
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `Here is the transcription of my speech:\n\n${JSON.stringify(transcription)}\n\nPlease provide detailed feedback in the specified JSON format. Remember to be specific with examples from the speech and provide constructive, actionable feedback.`,
+          },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+      },
+      {
+        fallbackResponse: JSON.stringify(fallbackFeedback),
       }
-    });
-    
-    const feedbackCompletion = await openAIService.createChatCompletion({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { 
-          role: 'user', 
-          content: `Here is the transcription of my speech:\n\n${JSON.stringify(transcription)}\n\nPlease provide detailed feedback in the specified JSON format. Remember to be specific with examples from the speech and provide constructive, actionable feedback.` 
-        }
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
-    }, {
-      fallbackResponse: JSON.stringify(fallbackFeedback)
-    });
-    
+    );
+
     const feedbackContent = feedbackCompletion.choices[0].message.content;
-    
+
     try {
       feedback = JSON.parse(feedbackContent || '{}');
-      
+
       // Standardize the score immediately after parsing
       const standardizedScore = feedback.speakerScore
         ? nsdaToPercentage(feedback.speakerScore as number)
         : standardizeToPercentage(feedback.score as number) || 0;
-      
+
       // Add standardized score to feedback object
       feedback.standardizedScore = standardizedScore;
-      
+
       logger.info('AI feedback generated successfully', {
         metadata: {
           speakerScore: feedback.speakerScore,
-          standardizedScore: standardizedScore
-        }
+          standardizedScore: standardizedScore,
+        },
       });
     } catch (parseError) {
       logger.error('Failed to parse AI feedback', parseError as Error, {
         metadata: {
-          contentSnippet: feedbackContent?.substring(0, 200)
-        }
+          contentSnippet: feedbackContent?.substring(0, 200),
+        },
       });
-        feedback = {
-          speakerScore: 25,
-          standardizedScore: 0, // 25 NSDA = 0%
-          scoreJustification: "Default score due to parsing error",
-          overallSummary: 'AI feedback generated but could not be parsed properly. Please try uploading your speech again.',
-          structureOrganization: {
-            analysis: "Unable to parse detailed feedback",
-            examples: []
-          },
-          argumentationEvidence: {
-            analysis: "Unable to parse detailed feedback",
-            examples: []
-          },
-          clarityConciseness: {
-            analysis: "Unable to parse detailed feedback",
-            examples: []
-          },
-          persuasivenessImpact: {
-            analysis: "Unable to parse detailed feedback",
-            examples: []
-          },
-          deliveryStyle: {
-            analysis: "Unable to parse detailed feedback",
-            examples: []
-          },
-          relevanceToSpeechType: {
-            analysis: "Unable to parse detailed feedback",
-            examples: []
-          },
-          actionableSuggestions: ["Please try uploading your speech again"],
-          strengths: ["Unable to parse feedback"],
-          areasForImprovement: ["Unable to parse feedback"]
-        };
-    }
-  } catch (_error) {
       feedback = {
-        speakerScore: 25, // Minimum NSDA score
-        standardizedScore: 0, // 0% standardized
-        scoreJustification: "Unable to provide score due to API error",
-        overallSummary: `Speech analysis failed due to API error. Basic assessment: Speech about ${topic} was recorded successfully.`,
+        speakerScore: 25,
+        standardizedScore: 0, // 25 NSDA = 0%
+        scoreJustification: 'Default score due to parsing error',
+        overallSummary:
+          'AI feedback generated but could not be parsed properly. Please try uploading your speech again.',
         structureOrganization: {
-          analysis: "Unable to analyze due to API error",
-          examples: []
+          analysis: 'Unable to parse detailed feedback',
+          examples: [],
         },
         argumentationEvidence: {
-          analysis: "Unable to analyze due to API error",
-          examples: []
+          analysis: 'Unable to parse detailed feedback',
+          examples: [],
         },
         clarityConciseness: {
-          analysis: "Unable to analyze due to API error",
-          examples: []
+          analysis: 'Unable to parse detailed feedback',
+          examples: [],
         },
         persuasivenessImpact: {
-          analysis: "Unable to analyze due to API error",
-          examples: []
+          analysis: 'Unable to parse detailed feedback',
+          examples: [],
         },
         deliveryStyle: {
-          analysis: "Unable to analyze due to API error",
-          examples: []
+          analysis: 'Unable to parse detailed feedback',
+          examples: [],
         },
         relevanceToSpeechType: {
-          analysis: "Unable to analyze due to API error",
-          examples: []
+          analysis: 'Unable to parse detailed feedback',
+          examples: [],
         },
-        actionableSuggestions: ["Please try again later or contact support"],
-        strengths: ["Unable to analyze"],
-        areasForImprovement: ["Unable to analyze"]
+        actionableSuggestions: ['Please try uploading your speech again'],
+        strengths: ['Unable to parse feedback'],
+        areasForImprovement: ['Unable to parse feedback'],
       };
+    }
+  } catch (_error) {
+    feedback = {
+      speakerScore: 25, // Minimum NSDA score
+      standardizedScore: 0, // 0% standardized
+      scoreJustification: 'Unable to provide score due to API error',
+      overallSummary: `Speech analysis failed due to API error. Basic assessment: Speech about ${topic} was recorded successfully.`,
+      structureOrganization: {
+        analysis: 'Unable to analyze due to API error',
+        examples: [],
+      },
+      argumentationEvidence: {
+        analysis: 'Unable to analyze due to API error',
+        examples: [],
+      },
+      clarityConciseness: {
+        analysis: 'Unable to analyze due to API error',
+        examples: [],
+      },
+      persuasivenessImpact: {
+        analysis: 'Unable to analyze due to API error',
+        examples: [],
+      },
+      deliveryStyle: {
+        analysis: 'Unable to analyze due to API error',
+        examples: [],
+      },
+      relevanceToSpeechType: {
+        analysis: 'Unable to analyze due to API error',
+        examples: [],
+      },
+      actionableSuggestions: ['Please try again later or contact support'],
+      strengths: ['Unable to analyze'],
+      areasForImprovement: ['Unable to analyze'],
+    };
   }
-  
+
   // Save to database with standardized score
   let insertedRecord;
   try {
     // Extract and standardize the score for database storage
     const standardizedScore = extractScoreFromFeedback(feedback) || 0;
     const overallScore = Math.round(standardizedScore); // Round for integer column
-    
-    
-    
+
     const { data, error: dbError } = await supabaseAdmin
       .from('speech_feedback')
       .insert({
@@ -633,17 +668,17 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
         skill_level: skillLevel,
         feedback: {
           ...feedback,
-          standardizedScore: standardizedScore // Ensure standardized score is in JSON
+          standardizedScore: standardizedScore, // Ensure standardized score is in JSON
         },
         overall_score: overallScore, // Populate the overall_score column!
         audio_url: audioUrl,
         transcription: JSON.stringify(transcription),
         file_size_bytes: processedFileSize,
-        duration_seconds: processedAudio.durationSeconds || 60 // Use actual duration with fallback
+        duration_seconds: processedAudio.durationSeconds || 60, // Use actual duration with fallback
       })
       .select('id')
       .single();
-    
+
     if (dbError) {
       // Continue with execution but use a mock ID
       insertedRecord = { id: `temp-feedback-${Date.now()}` };
@@ -653,22 +688,25 @@ export async function processSpeechFeedback(input: SpeechFeedbackInput): Promise
   } catch (_error) {
     insertedRecord = { id: `temp-feedback-${Date.now()}` };
   }
-  
+
   // Cleanup
   await fs.unlink(processedAudio.filePath).catch(() => {});
-  
+
   return {
     feedback,
     audioUrl,
     feedbackId: insertedRecord?.id,
-    transcription: transcription ? {
-      text: transcription.text || '',
-      duration: transcription.duration || 0,
-      segments: transcription.segments?.map((seg: { start: number; end: number; text: string }) => ({
-        start: seg.start,
-        end: seg.end,
-        text: seg.text
-      })) || []
-    } : undefined
+    transcription: transcription
+      ? {
+          text: transcription.text || '',
+          duration: transcription.duration || 0,
+          segments:
+            transcription.segments?.map((seg: { start: number; end: number; text: string }) => ({
+              start: seg.start,
+              end: seg.end,
+              text: seg.text,
+            })) || [],
+        }
+      : undefined,
   };
 }
