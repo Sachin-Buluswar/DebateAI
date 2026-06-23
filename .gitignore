@@ -41,6 +41,9 @@ yarn-error.log*
 .env.vercel.production
 *.env
 
+# Local MCP server config — contains API tokens; use .mcp.json.example as a template
+.mcp.json
+
 # vercel
 .vercel
 
