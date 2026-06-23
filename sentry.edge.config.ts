@@ -12,22 +12,19 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: ENVIRONMENT,
-    
+
     // Performance Monitoring
     tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0,
-    
+
     // Release tracking
     release: process.env.npm_package_version || '0.1.0',
-    
+
     // Edge runtime doesn't support all integrations
     integrations: [],
-    
+
     // Configure what to capture
-    ignoreErrors: [
-      'NEXT_NOT_FOUND',
-      'NEXT_REDIRECT',
-    ],
-    
+    ignoreErrors: ['NEXT_NOT_FOUND', 'NEXT_REDIRECT'],
+
     // Before sending event to Sentry
     beforeSend(event) {
       // Add edge runtime context
@@ -37,7 +34,7 @@ if (SENTRY_DSN && (ENVIRONMENT === 'production' || process.env.ENABLE_SENTRY_DEV
           name: 'Edge',
         },
       };
-      
+
       return event;
     },
   });

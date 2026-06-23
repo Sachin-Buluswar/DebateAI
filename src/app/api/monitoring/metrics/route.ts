@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMonitoring } from '@/lib/monitoring/middleware';
-import { apiPerformance, dbPerformance, openaiPerformance, elevenLabsPerformance } from '@/lib/monitoring/performance';
+import {
+  apiPerformance,
+  dbPerformance,
+  openaiPerformance,
+  elevenLabsPerformance,
+} from '@/lib/monitoring/performance';
 import { createClient } from '@/lib/supabase/server';
 
 interface MetricsResponse {
@@ -73,11 +78,14 @@ async function getUsageMetrics() {
 
     if (debatesError) throw debatesError;
 
-    const activeDebates = debates?.filter(d => d.status === 'active').length || 0;
-    const debatesByTopic = debates?.reduce((acc, d) => {
-      acc[d.topic] = (acc[d.topic] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const activeDebates = debates?.filter((d) => d.status === 'active').length || 0;
+    const debatesByTopic = debates?.reduce(
+      (acc, d) => {
+        acc[d.topic] = (acc[d.topic] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     // Get user metrics
     const { count: totalUsers } = await supabase
@@ -132,12 +140,11 @@ async function getUsageMetrics() {
 export const GET = withMonitoring(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const period = searchParams.get('period') || '1h';
-  
+
   // Calculate period timestamps
   const now = new Date();
-  const periodMs = period === '24h' ? 24 * 60 * 60 * 1000 :
-                   period === '1h' ? 60 * 60 * 1000 :
-                   15 * 60 * 1000; // Default 15 minutes
+  const periodMs =
+    period === '24h' ? 24 * 60 * 60 * 1000 : period === '1h' ? 60 * 60 * 1000 : 15 * 60 * 1000; // Default 15 minutes
   const periodStart = new Date(now.getTime() - periodMs);
 
   // Get performance reports

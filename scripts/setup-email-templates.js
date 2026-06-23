@@ -11,14 +11,14 @@ const path = require('path');
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 const templates = [
   { name: 'confirm-signup', description: 'Email verification for new signups' },
   { name: 'reset-password', description: 'Password reset requests' },
   { name: 'magic-link', description: 'Passwordless login links' },
-  { name: 'change-email', description: 'Email address change confirmation' }
+  { name: 'change-email', description: 'Email address change confirmation' },
 ];
 
 console.log('\n🎨 Eris Debate Email Template Setup Assistant\n');
@@ -42,19 +42,19 @@ function showStep() {
   const template = templates[currentStep];
   console.log(`\n📧 Step ${currentStep + 1}/${templates.length}: ${template.description}`);
   console.log('─'.repeat(60));
-  
+
   rl.question('\nPress Enter to copy the template to clipboard...', () => {
     try {
       // Copy template to clipboard
       execSync(`npm run copy-email ${template.name}`, { stdio: 'inherit' });
-      
+
       console.log('\n📋 Template copied! Now:\n');
       console.log('1. Go to Supabase Dashboard → Authentication → Email Templates');
       console.log(`2. Select "${template.name.replace('-', ' ')}" template`);
       console.log('3. Toggle "Enable custom email" to ON');
       console.log('4. Paste the template (Cmd/Ctrl + V)');
       console.log('5. Save changes\n');
-      
+
       rl.question('Press Enter when done to continue to next template...', () => {
         currentStep++;
         showStep();

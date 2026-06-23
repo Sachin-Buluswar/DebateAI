@@ -19,52 +19,53 @@ const nextConfig = {
         fs: false,
         child_process: false,
         path: false,
-        url: false
+        url: false,
       };
     }
-    
+
     // Add rule to ignore markdown files in node_modules
     config.module.rules.push({
       test: /\.md$/,
-      loader: 'ignore-loader'
+      loader: 'ignore-loader',
     });
-    
+
     // Add alias to ignore problematic ffprobe sync require
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@ffprobe-installer/ffprobe': false
+      '@ffprobe-installer/ffprobe': false,
     };
-    
+
     return config;
   },
-  
+
   // Ensure strict mode is enabled for React
   reactStrictMode: true,
-  
+
   // Optimize production builds
   productionBrowserSourceMaps: false,
-  
+
   // Enable experimental optimizations
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['recharts', 'react-markdown', '@heroicons/react'],
   },
-  
+
   // Adding a custom path for the API server
   serverRuntimeConfig: {
     apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
-  
+
   // Configure allowed image domains
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') || 'localhost',
+        hostname:
+          process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', '').replace('http://', '') ||
+          'localhost',
       },
     ],
   },
-  
 };
 
 // Sentry configuration options
@@ -72,8 +73,8 @@ const sentryWebpackPluginOptions = {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: process.env.SENTRY_ORG || "eris-debate",
-  project: process.env.SENTRY_PROJECT || "javascript-nextjs",
+  org: process.env.SENTRY_ORG || 'eris-debate',
+  project: process.env.SENTRY_PROJECT || 'javascript-nextjs',
 
   // Only upload source maps in production
   silent: process.env.NODE_ENV !== 'production',
@@ -93,7 +94,7 @@ const sentryWebpackPluginOptions = {
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
-  tunnelRoute: "/monitoring",
+  tunnelRoute: '/monitoring',
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,
@@ -108,6 +109,6 @@ const sentryWebpackPluginOptions = {
 // Export the config wrapped with Sentry only if auth token is available
 const shouldUseSentry = process.env.SENTRY_AUTH_TOKEN && process.env.NODE_ENV === 'production';
 
-export default shouldUseSentry 
+export default shouldUseSentry
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig;

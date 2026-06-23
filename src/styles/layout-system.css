@@ -303,11 +303,11 @@
   .mobile-full-width {
     @apply w-full !important;
   }
-  
+
   .mobile-stack {
     @apply flex-col !important;
   }
-  
+
   .mobile-hidden {
     @apply hidden !important;
   }
@@ -318,11 +318,11 @@
   .no-print {
     @apply hidden !important;
   }
-  
+
   .print-break-before {
     page-break-before: always;
   }
-  
+
   .print-break-after {
     page-break-after: always;
   }

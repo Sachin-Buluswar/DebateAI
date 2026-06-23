@@ -181,7 +181,7 @@
   }
 
   .table-mobile td:before {
-    content: attr(data-label) ": ";
+    content: attr(data-label) ': ';
     font-weight: 600;
     display: inline-block;
     margin-right: 0.5rem;

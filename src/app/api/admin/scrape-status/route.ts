@@ -14,10 +14,7 @@ export async function GET(request: NextRequest): Promise<NextResponse | Response
         return addSecurityHeaders(NextResponse.json(status));
       } catch (_error) {
         return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Failed to get scraping status' },
-            { status: 500 }
-          )
+          NextResponse.json({ error: 'Failed to get scraping status' }, { status: 500 })
         );
       }
     });

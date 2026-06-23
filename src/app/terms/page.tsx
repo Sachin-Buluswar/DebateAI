@@ -11,15 +11,13 @@ export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <Navbar />
-      
+
       <main className="breathing-room max-w-4xl mx-auto">
         <BackButton className="mb-12" />
-        
+
         <article className="space-y-12">
           <header className="space-y-4">
-            <h1 className="text-gray-900 dark:text-gray-100">
-              terms of service
-            </h1>
+            <h1 className="text-gray-900 dark:text-gray-100">terms of service</h1>
             <p className="text-sm text-gray-500">
               effective date: {new Date().toLocaleDateString()}
             </p>
@@ -30,15 +28,15 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">acceptance of terms</h2>
             <p>
-              by accessing or using eris debate, you agree to be bound by these terms of service. 
-              if you do not agree to these terms, please do not use our service.
+              by accessing or using eris debate, you agree to be bound by these terms of service. if
+              you do not agree to these terms, please do not use our service.
             </p>
           </section>
 
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">description of service</h2>
             <p>
-              eris debate provides ai-powered debate training tools including simulated debates, 
+              eris debate provides ai-powered debate training tools including simulated debates,
               speech analysis, and research assistance for educational purposes.
             </p>
           </section>
@@ -74,13 +72,13 @@ export default function TermsOfServicePage() {
             <div className="space-y-4">
               <h3 className="text-primary-500">your content</h3>
               <p>
-                you retain ownership of content you create. by using our service, you grant us 
-                a license to use, store, and process your content to provide our services.
+                you retain ownership of content you create. by using our service, you grant us a
+                license to use, store, and process your content to provide our services.
               </p>
-              
+
               <h3 className="text-primary-500 mt-4">our content</h3>
               <p>
-                eris debate and its licensors own all rights to the service, including ai models, 
+                eris debate and its licensors own all rights to the service, including ai models,
                 software, and educational materials.
               </p>
             </div>
@@ -89,7 +87,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">privacy</h2>
             <p>
-              your use of our service is governed by our privacy policy. please review it to 
+              your use of our service is governed by our privacy policy. please review it to
               understand our data practices.
             </p>
           </section>
@@ -97,7 +95,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">disclaimers</h2>
             <p>
-              the service is provided "as is" without warranties of any kind. we do not guarantee 
+              the service is provided "as is" without warranties of any kind. we do not guarantee
               uninterrupted service or specific outcomes from using our platform.
             </p>
           </section>
@@ -105,7 +103,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">limitation of liability</h2>
             <p>
-              to the fullest extent permitted by law, eris debate shall not be liable for any 
+              to the fullest extent permitted by law, eris debate shall not be liable for any
               indirect, incidental, or consequential damages arising from your use of the service.
             </p>
           </section>
@@ -113,15 +111,15 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">indemnification</h2>
             <p>
-              you agree to indemnify and hold harmless eris debate from any claims arising from 
-              your use of the service or violation of these terms.
+              you agree to indemnify and hold harmless eris debate from any claims arising from your
+              use of the service or violation of these terms.
             </p>
           </section>
 
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">termination</h2>
             <p>
-              we may terminate or suspend your account at any time for violations of these terms. 
+              we may terminate or suspend your account at any time for violations of these terms.
               you may also delete your account at any time through your account settings.
             </p>
           </section>
@@ -129,7 +127,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">changes to terms</h2>
             <p>
-              we may modify these terms at any time. continued use after changes constitutes 
+              we may modify these terms at any time. continued use after changes constitutes
               acceptance of the new terms.
             </p>
           </section>
@@ -137,8 +135,8 @@ export default function TermsOfServicePage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">governing law</h2>
             <p>
-              these terms are governed by the laws of the united states, without regard to 
-              conflict of law principles.
+              these terms are governed by the laws of the united states, without regard to conflict
+              of law principles.
             </p>
           </section>
 

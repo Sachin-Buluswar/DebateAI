@@ -4,25 +4,18 @@
  */
 
 // Logger exports
-export {
-  default as Logger,
-  apiLogger,
-  authLogger,
-  aiLogger,
-} from './logger';
+export { default as Logger, apiLogger, authLogger, aiLogger } from './logger';
 
 // Performance monitoring exports
 export {
   apiPerformance,
   dbPerformance,
   openaiPerformance,
-  elevenLabsPerformance
+  elevenLabsPerformance,
 } from './performance';
 
 // Middleware exports
-export {
-  withMonitoring,
-} from './middleware';
+export { withMonitoring } from './middleware';
 
 // OpenTelemetry exports
 export {
@@ -49,7 +42,7 @@ export async function initializeMonitoring() {
     // Server-side error handling
     process.on('unhandledRejection', (reason, promise) => {
       localApiLogger.fatal('Unhandled Promise Rejection', reason as Error, {
-        metadata: { promise: promise.toString() }
+        metadata: { promise: promise.toString() },
       });
 
       import('../../../sentry.server.config').then(({ sentryServer }) => {
@@ -59,7 +52,7 @@ export async function initializeMonitoring() {
 
     process.on('uncaughtException', (error) => {
       localApiLogger.fatal('Uncaught Exception', error, {
-        metadata: { fatal: true }
+        metadata: { fatal: true },
       });
 
       import('../../../sentry.server.config').then(({ sentryServer }) => {
@@ -94,8 +87,8 @@ export async function initializeMonitoring() {
       environment: process.env.NODE_ENV,
       logLevel: process.env.LOG_LEVEL || 'info',
       openTelemetryEnabled: !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-      sentryEnabled: !!process.env.SENTRY_DSN
-    }
+      sentryEnabled: !!process.env.SENTRY_DSN,
+    },
   });
 }
 

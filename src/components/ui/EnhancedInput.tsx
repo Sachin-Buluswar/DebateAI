@@ -24,7 +24,10 @@ interface EnhancedTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaEleme
 type Props = EnhancedInputProps | EnhancedTextareaProps;
 
 const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
-  ({ label, error, helperText, size = 'md', className, multiline = false, rows = 4, ...props }, ref) => {
+  (
+    { label, error, helperText, size = 'md', className, multiline = false, rows = 4, ...props },
+    ref
+  ) => {
     const [isFocused, setIsFocused] = useState(false);
     const [hasValue, setHasValue] = useState(false);
     const inputId = useId();
@@ -47,20 +50,20 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
         input: 'pt-5 pb-1 text-sm',
         label: 'text-xs',
         labelOffset: 'top-1.5',
-        labelFloat: '-translate-y-2.5 scale-90'
+        labelFloat: '-translate-y-2.5 scale-90',
       },
       md: {
         input: 'pt-6 pb-1.5 text-base',
         label: 'text-sm',
         labelOffset: 'top-2',
-        labelFloat: '-translate-y-3 scale-90'
+        labelFloat: '-translate-y-3 scale-90',
       },
       lg: {
         input: 'pt-7 pb-2 text-lg',
         label: 'text-base',
         labelOffset: 'top-2.5',
-        labelFloat: '-translate-y-3.5 scale-90'
-      }
+        labelFloat: '-translate-y-3.5 scale-90',
+      },
     };
 
     const currentSize = sizes[size];
@@ -71,8 +74,8 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
       'placeholder-transparent resize-none box-border overflow-hidden',
       'break-words overflow-wrap-break-word min-w-0',
       currentSize.input,
-      error 
-        ? 'border-red-500 text-red-900 dark:text-red-400 focus:border-red-600' 
+      error
+        ? 'border-red-500 text-red-900 dark:text-red-400 focus:border-red-600'
         : 'border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-gray-900 dark:focus:border-gray-100',
       className
     );
@@ -84,8 +87,8 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
       isFloating ? currentSize.labelFloat : '',
       error
         ? 'text-red-600 dark:text-red-400'
-        : isFloating 
-          ? 'text-gray-700 dark:text-gray-300' 
+        : isFloating
+          ? 'text-gray-700 dark:text-gray-300'
           : 'text-gray-500 dark:text-gray-400'
     );
 
@@ -106,15 +109,12 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
             style={{ resize: 'none' }}
             {...(componentProps as Record<string, unknown>)}
           />
-          <label
-            htmlFor={inputId}
-            className={labelStyles}
-          >
+          <label htmlFor={inputId} className={labelStyles}>
             {label}
           </label>
-          
+
           {/* Focus indicator line */}
-          <div 
+          <div
             className={cn(
               'absolute bottom-0 left-0 h-0.5 bg-gray-900 dark:bg-gray-100 transition-all duration-300',
               isFocused ? 'w-full' : 'w-0',
@@ -122,13 +122,15 @@ const EnhancedInput = forwardRef<HTMLInputElement | HTMLTextAreaElement, Props>(
             )}
           />
         </div>
-        
+
         {/* Helper text or error message */}
         {(error || helperText) && (
-          <p className={cn(
-            'mt-1.5 text-xs break-words overflow-hidden',
-            error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
-          )}>
+          <p
+            className={cn(
+              'mt-1.5 text-xs break-words overflow-hidden',
+              error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+            )}
+          >
             {error || helperText}
           </p>
         )}

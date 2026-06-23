@@ -22,15 +22,19 @@ export default function StatsCard({
   icon,
   description,
   accentColor = '#87A96B',
-  loading = false
+  loading = false,
 }: StatsCardProps) {
   const getChangeIndicator = () => {
     if (!change) return null;
-    
+
     const isPositive = change.type === 'increase';
-    const changeColor = isPositive ? 'text-[#87A96B]' : change.type === 'decrease' ? 'text-red-500' : 'text-gray-500';
+    const changeColor = isPositive
+      ? 'text-[#87A96B]'
+      : change.type === 'decrease'
+        ? 'text-red-500'
+        : 'text-gray-500';
     const changeIcon = isPositive ? '↑' : change.type === 'decrease' ? '↓' : '→';
-    
+
     return (
       <span className={`inline-flex items-center text-sm font-medium ${changeColor}`}>
         <span className="mr-1">{changeIcon}</span>
@@ -54,10 +58,7 @@ export default function StatsCard({
   return (
     <div className="relative p-6 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden group hover:shadow-lg transition-all duration-300">
       {/* Accent line */}
-      <div 
-        className="absolute top-0 left-0 w-full h-1"
-        style={{ backgroundColor: accentColor }}
-      />
+      <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: accentColor }} />
 
       {/* Icon */}
       {icon && (
@@ -68,26 +69,20 @@ export default function StatsCard({
 
       {/* Content */}
       <div className="space-y-1">
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 lowercase">
-          {title}
-        </h3>
-        
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 lowercase">{title}</h3>
+
         <div className="flex items-baseline gap-3">
-          <p className="text-3xl font-semibold text-gray-900 dark:text-white">
-            {value}
-          </p>
+          <p className="text-3xl font-semibold text-gray-900 dark:text-white">{value}</p>
           {getChangeIndicator()}
         </div>
-        
+
         {description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            {description}
-          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{description}</p>
         )}
       </div>
 
       {/* Hover effect */}
-      <div 
+      <div
         className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300"
         style={{ backgroundColor: accentColor }}
       />

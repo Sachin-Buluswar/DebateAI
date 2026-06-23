@@ -25,16 +25,16 @@ export async function exportFeedbackAsPDF(
   try {
     // Dynamically import html2pdf to avoid SSR issues
     const html2pdf = (await import('html2pdf.js')).default;
-    
+
     // Configure marked for clean HTML output
     marked.setOptions({
       breaks: true,
       gfm: true,
     });
-    
+
     // Convert markdown to HTML
     const htmlContent = await marked.parse(markdownContent);
-    
+
     // Create styled HTML document that matches the professional look
     const styledHTML = `
       <!DOCTYPE html>
@@ -205,43 +205,41 @@ export async function exportFeedbackAsPDF(
       </body>
       </html>
     `;
-    
+
     // Configure PDF generation options
     const pdfOptions = {
       margin: [15, 15, 15, 15] as [number, number, number, number], // top, left, bottom, right in mm
       filename: filename,
       image: {
         type: 'jpeg' as const,
-        quality: 0.98
+        quality: 0.98,
       },
-      html2canvas: { 
+      html2canvas: {
         scale: 2, // Higher scale for better quality
         useCORS: true,
         letterRendering: true,
-        logging: false
+        logging: false,
       },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
         orientation: 'portrait' as const,
-        compress: true
+        compress: true,
       },
       pagebreak: {
         mode: ['avoid-all', 'css', 'legacy'],
         before: '.page-break-before',
         after: '.page-break-after',
-        avoid: ['h2', 'h3', '.section']
-      }
+        avoid: ['h2', 'h3', '.section'],
+      },
     };
-    
+
     // Generate and download PDF
-    await html2pdf()
-      .set(pdfOptions)
-      .from(styledHTML)
-      .save();
-      
+    await html2pdf().set(pdfOptions).from(styledHTML).save();
   } catch (error) {
-    throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -250,10 +248,12 @@ export async function exportFeedbackAsPDF(
  */
 export function isPDFExportSupported(): boolean {
   // Check for required browser APIs
-  return typeof window !== 'undefined' && 
-         typeof Blob !== 'undefined' && 
-         typeof URL !== 'undefined' &&
-         typeof URL.createObjectURL === 'function';
+  return (
+    typeof window !== 'undefined' &&
+    typeof Blob !== 'undefined' &&
+    typeof URL !== 'undefined' &&
+    typeof URL.createObjectURL === 'function'
+  );
 }
 
 /**
@@ -266,9 +266,9 @@ export function formatMarkdownForPDF(content: string): string {
     .replace(/\n{3,}/g, '\n\n') // Remove excessive line breaks
     .replace(/^#+\s+/gm, '\n$&') // Add space before headers
     .trim();
-  
+
   // Ensure bullet points are properly formatted
   formatted = formatted.replace(/^-\s+/gm, '• ');
-  
+
   return formatted;
 }

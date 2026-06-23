@@ -13,7 +13,9 @@ async function setupStorageBuckets() {
   // Check environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error(chalk.red('❌ Missing required environment variables'));
-    console.error(chalk.red('Please ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set'));
+    console.error(
+      chalk.red('Please ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set')
+    );
     process.exit(1);
   }
 
@@ -26,13 +28,13 @@ async function setupStorageBuckets() {
     {
       name: 'debate-documents',
       public: true,
-      description: 'Stores PDF documents for RAG search'
+      description: 'Stores PDF documents for RAG search',
     },
     {
       name: 'speech_audio',
       public: true,
-      description: 'Stores speech audio recordings'
-    }
+      description: 'Stores speech audio recordings',
+    },
   ];
 
   let created = 0;
@@ -42,33 +44,37 @@ async function setupStorageBuckets() {
   for (const bucketConfig of bucketsToCreate) {
     try {
       console.log(chalk.yellow(`Creating bucket: ${bucketConfig.name}...`));
-      
+
       // Check if bucket already exists
       const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
+
       if (listError) {
         console.error(chalk.red(`  ✗ Failed to list buckets: ${listError.message}`));
         failed++;
         continue;
       }
 
-      const existingBucket = buckets?.find(b => b.name === bucketConfig.name);
-      
+      const existingBucket = buckets?.find((b) => b.name === bucketConfig.name);
+
       if (existingBucket) {
         console.log(chalk.green(`  ✓ Bucket already exists`));
         existing++;
-        
+
         // Check if public setting matches
         if (existingBucket.public !== bucketConfig.public) {
-          console.log(chalk.yellow(`  ⚠ Bucket exists but public setting differs (current: ${existingBucket.public}, expected: ${bucketConfig.public})`));
+          console.log(
+            chalk.yellow(
+              `  ⚠ Bucket exists but public setting differs (current: ${existingBucket.public}, expected: ${bucketConfig.public})`
+            )
+          );
           console.log(chalk.yellow(`    Please update this in the Supabase dashboard`));
         }
       } else {
         // Create bucket
         const { data, error } = await supabase.storage.createBucket(bucketConfig.name, {
-          public: bucketConfig.public
+          public: bucketConfig.public,
         });
-        
+
         if (error) {
           console.error(chalk.red(`  ✗ Failed to create bucket: ${error.message}`));
           failed++;
@@ -94,13 +100,15 @@ async function setupStorageBuckets() {
   if (failed === 0) {
     console.log(chalk.green('\n✅ All storage buckets are set up!'));
   } else {
-    console.log(chalk.red('\n❌ Some buckets could not be created. Please check the Supabase dashboard.'));
+    console.log(
+      chalk.red('\n❌ Some buckets could not be created. Please check the Supabase dashboard.')
+    );
     process.exit(1);
   }
 }
 
 // Run setup
-setupStorageBuckets().catch(err => {
+setupStorageBuckets().catch((err) => {
   console.error(chalk.red('Fatal error:'), err);
   process.exit(1);
 });

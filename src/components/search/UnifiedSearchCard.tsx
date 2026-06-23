@@ -42,11 +42,7 @@ interface UnifiedSearchCardProps {
   searchMode: 'assistant' | 'rag';
 }
 
-export default function UnifiedSearchCard({ 
-  result, 
-  index, 
-  searchMode 
-}: UnifiedSearchCardProps) {
+export default function UnifiedSearchCard({ result, index, searchMode }: UnifiedSearchCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
@@ -70,7 +66,7 @@ export default function UnifiedSearchCard({
           'animate-fade-in-up backdrop-blur-sm'
         )}
         style={{
-          animationDelay: `${Math.min(index * 50, 200)}ms`
+          animationDelay: `${Math.min(index * 50, 200)}ms`,
         }}
       >
         {/* Card Header */}
@@ -87,7 +83,7 @@ export default function UnifiedSearchCard({
                 </p>
               )}
             </div>
-            
+
             {/* Badges */}
             <div className="flex items-center gap-2">
               {pageNumber && (
@@ -106,14 +102,16 @@ export default function UnifiedSearchCard({
 
         {/* Card Content */}
         <div className="px-6 pb-6">
-          <div className={cn(
-            'prose prose-sm dark:prose-invert max-w-none',
-            'text-gray-700 dark:text-gray-300',
-            !isExpanded && 'line-clamp-3'
-          )}>
+          <div
+            className={cn(
+              'prose prose-sm dark:prose-invert max-w-none',
+              'text-gray-700 dark:text-gray-300',
+              !isExpanded && 'line-clamp-3'
+            )}
+          >
             <p className="leading-relaxed">{result.content}</p>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="mt-4 flex flex-wrap gap-3">
             {result.content.length > 200 && (
@@ -124,7 +122,7 @@ export default function UnifiedSearchCard({
                 {isExpanded ? 'Show less' : 'Show more'}
               </button>
             )}
-            
+
             {hasContext && searchMode === 'rag' && (
               <button
                 onClick={() => setShowContext(!showContext)}
@@ -133,7 +131,7 @@ export default function UnifiedSearchCard({
                 {showContext ? 'Hide context' : 'Show surrounding context'}
               </button>
             )}
-            
+
             {hasPdfLink && (
               <button
                 onClick={() => setShowPdfViewer(true)}
@@ -144,29 +142,35 @@ export default function UnifiedSearchCard({
               </button>
             )}
           </div>
-          
+
           {/* Surrounding Context (Document Search mode only) */}
           {showContext && hasContext && searchMode === 'rag' && (
             <div className="mt-4 space-y-3 animate-fade-in">
               {result.context!.before && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Before:</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Before:
+                  </p>
                   <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
                     {result.context!.before}
                   </p>
                 </div>
               )}
-              
+
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Matched chunk:</p>
+                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+                  Matched chunk:
+                </p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   {result.content.substring(0, 200)}...
                 </p>
               </div>
-              
+
               {result.context!.after && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">After:</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    After:
+                  </p>
                   <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
                     {result.context!.after}
                   </p>
@@ -183,8 +187,12 @@ export default function UnifiedSearchCard({
               {searchMode === 'assistant' && (
                 <span className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
                   </svg>
                   AI-processed for relevance
                 </span>
@@ -192,8 +200,12 @@ export default function UnifiedSearchCard({
               {searchMode === 'rag' && (
                 <span className="flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
                   </svg>
                   Direct from document
                 </span>
@@ -204,7 +216,7 @@ export default function UnifiedSearchCard({
             )}
           </div>
         </div>
-        
+
         {/* Decorative gradient on hover */}
         <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary-500/5 via-transparent to-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       </div>

@@ -26,12 +26,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Set light mode as default
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   useEffect(() => {
     // Always default to light mode unless user has a saved preference
     const fetchUserPreference = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (user) {
           // User is logged in, try to get their preference
@@ -40,7 +42,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
             .select('preferences')
             .eq('user_id', user.id)
             .single();
-          
+
           if (data && data.preferences && typeof data.preferences.darkMode === 'boolean') {
             setIsDarkMode(data.preferences.darkMode);
           } else {
@@ -62,10 +64,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         setIsLoading(false);
       }
     };
-    
+
     fetchUserPreference();
   }, []);
-  
+
   // Update HTML class when dark mode changes
   useEffect(() => {
     if (!isLoading) {
@@ -74,36 +76,36 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       } else {
         document.documentElement.classList.remove('dark');
       }
-      
+
       // Store in localStorage for non-logged-in users
       localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
     }
   }, [isDarkMode, isLoading]);
-  
+
   const toggleDarkMode = async () => {
     const newValue = !isDarkMode;
     setIsDarkMode(newValue);
-    
+
     try {
       // Try to update user preference if logged in
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (user) {
-        await supabase
-          .from('user_preferences')
-          .upsert({
+        await supabase.from('user_preferences').upsert(
+          {
             user_id: user.id,
             preferences: { darkMode: newValue },
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id' });
+          },
+          { onConflict: 'user_id' }
+        );
       }
-    } catch (_error) {
-    }
+    } catch (_error) {}
   };
-  
+
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>{children}</ThemeContext.Provider>
   );
-} 
+}

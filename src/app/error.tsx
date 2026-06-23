@@ -21,19 +21,13 @@ export default function Error({
         An error occurred while loading this page. Please try again later.
       </p>
       <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={reset}
-          className="btn btn-primary"
-        >
+        <button onClick={reset} className="btn btn-primary">
           Try again
         </button>
-        <Link 
-          href="/" 
-          className="btn btn-secondary"
-        >
+        <Link href="/" className="btn btn-secondary">
           Go Back Home
         </Link>
       </div>
     </div>
   );
-} 
+}

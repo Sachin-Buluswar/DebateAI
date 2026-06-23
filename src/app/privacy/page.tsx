@@ -11,18 +11,14 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <Navbar />
-      
+
       <main className="breathing-room max-w-4xl mx-auto">
         <BackButton className="mb-12" />
-        
+
         <article className="space-y-12">
           <header className="space-y-4">
-            <h1 className="text-gray-900 dark:text-gray-100">
-              privacy policy
-            </h1>
-            <p className="text-sm text-gray-500">
-              last updated: {new Date().toLocaleDateString()}
-            </p>
+            <h1 className="text-gray-900 dark:text-gray-100">privacy policy</h1>
+            <p className="text-sm text-gray-500">last updated: {new Date().toLocaleDateString()}</p>
           </header>
 
           <div className="divider"></div>
@@ -30,34 +26,34 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">introduction</h2>
             <p>
-              this privacy policy explains how eris debate collects, uses, and protects your information. 
-              by using our platform, you agree to the collection and use of information in accordance 
-              with this policy.
+              this privacy policy explains how eris debate collects, uses, and protects your
+              information. by using our platform, you agree to the collection and use of information
+              in accordance with this policy.
             </p>
           </section>
 
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">information we collect</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <h3 className="text-primary-500 mb-2">personal information</h3>
                 <p>email address, name, profile preferences, and communication settings.</p>
               </div>
-              
+
               <div>
                 <h3 className="text-primary-500 mb-2">usage information</h3>
                 <p>
-                  audio recordings of speeches, debate topics, participation history, 
-                  analysis results, search queries, and platform usage patterns.
+                  audio recordings of speeches, debate topics, participation history, analysis
+                  results, search queries, and platform usage patterns.
                 </p>
               </div>
-              
+
               <div>
                 <h3 className="text-primary-500 mb-2">technical information</h3>
                 <p>
-                  ip address, device information, browser type, operating system, 
-                  and usage analytics.
+                  ip address, device information, browser type, operating system, and usage
+                  analytics.
                 </p>
               </div>
             </div>
@@ -79,7 +75,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">data security</h2>
             <p>
-              we implement appropriate security measures including encryption, access controls, 
+              we implement appropriate security measures including encryption, access controls,
               regular audits, and secure cloud storage to protect your information.
             </p>
           </section>
@@ -100,16 +96,16 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">data retention</h2>
             <p>
-              speech recordings and analysis data are retained for 2 years unless you request 
-              earlier deletion. account information is kept for the duration of your account 
-              plus 30 days.
+              speech recordings and analysis data are retained for 2 years unless you request
+              earlier deletion. account information is kept for the duration of your account plus 30
+              days.
             </p>
           </section>
 
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">children's privacy</h2>
             <p>
-              our service is not intended for children under 13. we do not knowingly collect 
+              our service is not intended for children under 13. we do not knowingly collect
               information from children under 13.
             </p>
           </section>
@@ -117,8 +113,8 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-6">
             <h2 className="text-gray-900 dark:text-gray-100">updates to this policy</h2>
             <p>
-              we may update this policy periodically. material changes will be posted on this 
-              page with an updated date.
+              we may update this policy periodically. material changes will be posted on this page
+              with an updated date.
             </p>
           </section>
 

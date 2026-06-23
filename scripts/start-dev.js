@@ -8,5 +8,5 @@ const { spawn } = require('child_process');
     console.warn(`⚠️  Port ${preferred} in use, starting dev server on ${port}`);
   }
   const dev = spawn('next', ['dev', '-p', port], { stdio: 'inherit', shell: true });
-  dev.on('close', code => process.exit(code));
-})(); 
+  dev.on('close', (code) => process.exit(code));
+})();

@@ -46,10 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         );
       } catch (_error) {
         return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Failed to start scraping' },
-            { status: 500 }
-          )
+          NextResponse.json({ error: 'Failed to start scraping' }, { status: 500 })
         );
       }
     });

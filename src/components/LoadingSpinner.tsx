@@ -8,7 +8,7 @@ export function LoadingSpinner({ fullScreen = false, size = 'md', text }: Loadin
   const sizeClasses = {
     sm: 'w-6 h-6 border-2',
     md: 'w-8 h-8 border-4',
-    lg: 'w-12 h-12 border-4'
+    lg: 'w-12 h-12 border-4',
   };
 
   const spinner = (
@@ -18,7 +18,9 @@ export function LoadingSpinner({ fullScreen = false, size = 'md', text }: Loadin
         style={{ borderWidth: size === 'sm' ? '2px' : '3px' }}
       />
       {text && (
-        <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm font-normal lowercase">{text}</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm font-normal lowercase">
+          {text}
+        </p>
       )}
     </div>
   );
@@ -32,4 +34,4 @@ export function LoadingSpinner({ fullScreen = false, size = 'md', text }: Loadin
   }
 
   return spinner;
-} 
+}

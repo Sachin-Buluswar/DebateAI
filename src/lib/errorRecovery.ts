@@ -23,9 +23,11 @@ const DEFAULT_RETRY_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'shouldRetr
  */
 function isRetryableError(error: Error): boolean {
   // Network errors
-  if (error.message.includes('fetch failed') || 
-      error.message.includes('ECONNREFUSED') ||
-      error.message.includes('ETIMEDOUT')) {
+  if (
+    error.message.includes('fetch failed') ||
+    error.message.includes('ECONNREFUSED') ||
+    error.message.includes('ETIMEDOUT')
+  ) {
     return true;
   }
 
@@ -33,10 +35,12 @@ function isRetryableError(error: Error): boolean {
   if ('status' in error) {
     const status = (error as Error & { status?: number }).status;
     if (status === undefined) return false;
-    return status === 429 || // Rate limited
-           status === 503 || // Service unavailable
-           status === 504 || // Gateway timeout
-           status >= 500;    // Server errors
+    return (
+      status === 429 || // Rate limited
+      status === 503 || // Service unavailable
+      status === 504 || // Gateway timeout
+      status >= 500
+    ); // Server errors
   }
 
   return false;
@@ -45,21 +49,18 @@ function isRetryableError(error: Error): boolean {
 /**
  * Execute a function with exponential backoff retry logic
  */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {}
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const opts = { ...DEFAULT_RETRY_OPTIONS, ...options };
   const shouldRetry = opts.shouldRetry || isRetryableError;
 
   let lastError: Error;
-  
+
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === opts.maxRetries || !shouldRetry(lastError)) {
         throw lastError;
       }
@@ -73,7 +74,7 @@ export async function withRetry<T>(
         opts.maxDelay
       );
 
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -118,7 +119,7 @@ class CircuitBreaker {
   private recordFailure() {
     this.failures++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failures >= this.threshold) {
       this.state = 'open';
     }
@@ -135,22 +136,18 @@ class CircuitBreaker {
  * Fallback handler for graceful degradation
  */
 class FallbackHandler<T> {
-  constructor(
-    private readonly fallbacks: Array<() => Promise<T> | T>
-  ) {}
+  constructor(private readonly fallbacks: Array<() => Promise<T> | T>) {}
 
   async execute(primaryFn: () => Promise<T>): Promise<T> {
     try {
       return await primaryFn();
     } catch (_primaryError) {
-      
       for (let i = 0; i < this.fallbacks.length; i++) {
         try {
           return await this.fallbacks[i]();
-        } catch {
-        }
+        } catch {}
       }
-      
+
       throw new Error('All fallbacks failed');
     }
   }
@@ -166,7 +163,7 @@ class RetryQueue<T> {
     reject: (error: Error) => void;
     attempts: number;
   }> = [];
-  
+
   private processing = false;
 
   constructor(
@@ -188,12 +185,12 @@ class RetryQueue<T> {
 
   private async startProcessing() {
     if (this.processing) return;
-    
+
     this.processing = true;
-    
+
     while (this.processing) {
       await this.processQueue();
-      await new Promise(resolve => setTimeout(resolve, this.processInterval));
+      await new Promise((resolve) => setTimeout(resolve, this.processInterval));
     }
   }
 
@@ -207,7 +204,7 @@ class RetryQueue<T> {
         item.resolve(result);
       } catch (error) {
         item.attempts++;
-        
+
         if (item.attempts < 3) {
           this.queue.push(item);
         } else {
@@ -254,7 +251,12 @@ class ErrorRecoveryManager {
       retryOptions?: RetryOptions;
     } = {}
   ): Promise<T> {
-    const { useCircuitBreaker = true, useRetryQueue = true, fallbacks = [], retryOptions } = options;
+    const {
+      useCircuitBreaker = true,
+      useRetryQueue = true,
+      fallbacks = [],
+      retryOptions,
+    } = options;
 
     // Wrap with retry logic
     const retriableFn = () => withRetry(fn, retryOptions);
@@ -274,7 +276,11 @@ class ErrorRecoveryManager {
       return await protectedFn();
     } catch (error) {
       // Add to retry queue if enabled and circuit breaker is not open
-      if (useRetryQueue && error instanceof Error && !error.message.includes('Circuit breaker is open')) {
+      if (
+        useRetryQueue &&
+        error instanceof Error &&
+        !error.message.includes('Circuit breaker is open')
+      ) {
         return this.getRetryQueue<T>(key).add(fn);
       }
       throw error;
@@ -282,7 +288,7 @@ class ErrorRecoveryManager {
   }
 
   cleanup() {
-    this.retryQueues.forEach(queue => queue.stop());
+    this.retryQueues.forEach((queue) => queue.stop());
     this.circuitBreakers.clear();
     this.retryQueues.clear();
   }

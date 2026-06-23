@@ -17,74 +17,86 @@ function sanitizeSessionId(sessionId: string): string {
 export async function POST(req: NextRequest) {
   return await withRateLimit(req, speechFeedbackRateLimiter, async () => {
     return requireAuth(req, async (authenticatedRequest: AuthenticatedRequest) => {
-    try {
-      const user = authenticatedRequest.user;
+      try {
+        const user = authenticatedRequest.user;
 
-      const data = await req.json();
-      const {
-        filename,
-        contentType,
-        totalSize,
-        totalChunks,
-        sessionId,
-        topic,
-        speechType,
-        userSide,
-        skillLevel,
-        customInstructions
-      } = data;
-
-      // Use authenticated user's ID, not client-provided
-      const userId = user.id;
-
-      // Validate required fields
-      if (!filename || !contentType || !totalSize || !totalChunks || !sessionId || !topic || !speechType || !userSide) {
-        return addSecurityHeaders(
-          NextResponse.json({ error: 'Missing required fields for init' }, { status: 400 })
-        );
-      }
-
-      // Sanitize session ID
-      const sanitizedSessionId = sanitizeSessionId(sessionId);
-      if (sanitizedSessionId !== sessionId) {
-        return addSecurityHeaders(
-          NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 })
-        );
-      }
-
-    // Create session metadata
-    const metadata = {
-      filename,
-      contentType,
-      totalSize,
-      totalChunks,
-      userId,
-      topic: topic || '',
-      speechType: speechType || 'debate',
-      userSide: userSide || 'None',
-      skillLevel: skillLevel || 'intermediate',
-      customInstructions: customInstructions || '',
-      uploadedChunks: 0,
-      completed: false
-    };
-
-    // Store session in memory
-    await UploadSessionStore.createSession(sanitizedSessionId, metadata);
-
-      return addSecurityHeaders(
-        NextResponse.json({
-          success: true,
+        const data = await req.json();
+        const {
+          filename,
+          contentType,
+          totalSize,
+          totalChunks,
           sessionId,
-          message: 'Upload session initialized'
-        })
-      );
-    } catch (_error) {
-      return addSecurityHeaders(
-        NextResponse.json({
-          error: 'Failed to initialize upload session'
-        }, { status: 500 })
-      );
-  }
+          topic,
+          speechType,
+          userSide,
+          skillLevel,
+          customInstructions,
+        } = data;
+
+        // Use authenticated user's ID, not client-provided
+        const userId = user.id;
+
+        // Validate required fields
+        if (
+          !filename ||
+          !contentType ||
+          !totalSize ||
+          !totalChunks ||
+          !sessionId ||
+          !topic ||
+          !speechType ||
+          !userSide
+        ) {
+          return addSecurityHeaders(
+            NextResponse.json({ error: 'Missing required fields for init' }, { status: 400 })
+          );
+        }
+
+        // Sanitize session ID
+        const sanitizedSessionId = sanitizeSessionId(sessionId);
+        if (sanitizedSessionId !== sessionId) {
+          return addSecurityHeaders(
+            NextResponse.json({ error: 'Invalid session ID format' }, { status: 400 })
+          );
+        }
+
+        // Create session metadata
+        const metadata = {
+          filename,
+          contentType,
+          totalSize,
+          totalChunks,
+          userId,
+          topic: topic || '',
+          speechType: speechType || 'debate',
+          userSide: userSide || 'None',
+          skillLevel: skillLevel || 'intermediate',
+          customInstructions: customInstructions || '',
+          uploadedChunks: 0,
+          completed: false,
+        };
+
+        // Store session in memory
+        await UploadSessionStore.createSession(sanitizedSessionId, metadata);
+
+        return addSecurityHeaders(
+          NextResponse.json({
+            success: true,
+            sessionId,
+            message: 'Upload session initialized',
+          })
+        );
+      } catch (_error) {
+        return addSecurityHeaders(
+          NextResponse.json(
+            {
+              error: 'Failed to initialize upload session',
+            },
+            { status: 500 }
+          )
+        );
+      }
     });
   });
 }

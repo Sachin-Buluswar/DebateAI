@@ -6,15 +6,15 @@ import { Document, Page, pdfjs } from 'react-pdf';
 // Import CSS files for react-pdf
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { 
-  XMarkIcon, 
-  ArrowLeftIcon, 
+import {
+  XMarkIcon,
+  ArrowLeftIcon,
   ArrowRightIcon,
   MagnifyingGlassPlusIcon,
   MagnifyingGlassMinusIcon,
   ArrowDownTrayIcon,
   ArrowsPointingOutIcon,
-  ArrowsPointingInIcon
+  ArrowsPointingInIcon,
 } from '@heroicons/react/24/outline';
 
 // Configure PDF.js worker
@@ -29,13 +29,13 @@ interface EnhancedPDFViewerProps {
   showDownload?: boolean;
 }
 
-export function EnhancedPDFViewer({ 
-  pdfUrl, 
+export function EnhancedPDFViewer({
+  pdfUrl,
   title = 'PDF Document',
-  initialPage = 1, 
+  initialPage = 1,
   onClose,
   className = '',
-  showDownload = true
+  showDownload = true,
 }: EnhancedPDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(initialPage);
@@ -75,7 +75,7 @@ export function EnhancedPDFViewer({
   };
 
   const changePage = (offset: number) => {
-    setPageNumber(prevPageNumber => {
+    setPageNumber((prevPageNumber) => {
       const newPage = prevPageNumber + offset;
       if (newPage >= 1 && numPages && newPage <= numPages) {
         return newPage;
@@ -85,11 +85,11 @@ export function EnhancedPDFViewer({
   };
 
   const handleZoomIn = () => {
-    setScale(prevScale => Math.min(prevScale + 0.25, 3));
+    setScale((prevScale) => Math.min(prevScale + 0.25, 3));
   };
 
   const handleZoomOut = () => {
-    setScale(prevScale => Math.max(prevScale - 0.25, 0.5));
+    setScale((prevScale) => Math.max(prevScale - 0.25, 0.5));
   };
 
   const handleFullscreen = () => {
@@ -105,7 +105,7 @@ export function EnhancedPDFViewer({
     document.body.removeChild(link);
   };
 
-  const containerClass = isFullscreen 
+  const containerClass = isFullscreen
     ? 'fixed inset-0 z-50 bg-white dark:bg-gray-900'
     : `bg-white dark:bg-gray-900 rounded-lg shadow-xl ${className}`;
 
@@ -120,11 +120,13 @@ export function EnhancedPDFViewer({
             </h3>
             {numPages && (
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                <span>Page {pageNumber} of {numPages}</span>
+                <span>
+                  Page {pageNumber} of {numPages}
+                </span>
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {/* Zoom controls */}
             <button
@@ -144,12 +146,12 @@ export function EnhancedPDFViewer({
             >
               <MagnifyingGlassPlusIcon className="h-5 w-5" />
             </button>
-            
+
             {/* Fullscreen toggle */}
             <button
               onClick={handleFullscreen}
               className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
               {isFullscreen ? (
                 <ArrowsPointingInIcon className="h-5 w-5" />
@@ -157,7 +159,7 @@ export function EnhancedPDFViewer({
                 <ArrowsPointingOutIcon className="h-5 w-5" />
               )}
             </button>
-            
+
             {/* Download button */}
             {showDownload && (
               <button
@@ -168,7 +170,7 @@ export function EnhancedPDFViewer({
                 <ArrowDownTrayIcon className="h-5 w-5" />
               </button>
             )}
-            
+
             {/* Close button */}
             {onClose && (
               <button
@@ -247,7 +249,7 @@ export function EnhancedPDFViewer({
               <ArrowLeftIcon className="h-4 w-4 mr-1" />
               Previous
             </button>
-            
+
             <div className="flex items-center space-x-2">
               <input
                 type="number"
@@ -262,11 +264,9 @@ export function EnhancedPDFViewer({
                 }}
                 className="w-16 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                / {numPages}
-              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">/ {numPages}</span>
             </div>
-            
+
             <button
               onClick={() => changePage(1)}
               disabled={pageNumber >= numPages}
@@ -283,13 +283,13 @@ export function EnhancedPDFViewer({
 }
 
 // Inline PDF viewer for embedding in pages
-export function InlinePDFViewer({ 
-  pdfUrl, 
+export function InlinePDFViewer({
+  pdfUrl,
   title,
   height = '700px',
-  showControls = true 
-}: { 
-  pdfUrl: string; 
+  showControls = true,
+}: {
+  pdfUrl: string;
   title?: string;
   height?: string;
   showControls?: boolean;

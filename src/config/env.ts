@@ -10,7 +10,7 @@ const isDevMode = process.env.NODE_ENV === 'development';
 
 const serverSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
-  ELEVENLABS_API_KEY: isDevMode 
+  ELEVENLABS_API_KEY: isDevMode
     ? z.string().optional().default('sk_placeholder_key_for_elevenlabs')
     : z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
@@ -40,7 +40,7 @@ if (typeof window === 'undefined') {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   };
-  
+
   const parsed = mergedSchema.safeParse(serverEnv);
 
   if (!parsed.success) {
@@ -62,7 +62,7 @@ if (typeof window === 'undefined') {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   };
-  
+
   const parsed = clientSchema.safeParse(clientEnv);
 
   if (!parsed.success) {
@@ -74,4 +74,4 @@ if (typeof window === 'undefined') {
   env = parsed.data as z.infer<typeof mergedSchema>;
 }
 
-export { env }; 
+export { env };

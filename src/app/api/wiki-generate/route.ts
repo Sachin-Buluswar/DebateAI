@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { optionalAuth } from '@/lib/auth-middleware';
 import { User } from '@supabase/supabase-js';
 import { withRateLimit, wikiSearchRateLimiter } from '@/api-middleware/rateLimiter';
-import { validateRequest, validationSchemas, addSecurityHeaders } from '@/api-middleware/inputValidation';
+import {
+  validateRequest,
+  validationSchemas,
+  addSecurityHeaders,
+} from '@/api-middleware/inputValidation';
 import { apiLogger as logger } from '@/lib/monitoring/logger';
 import {
   generateAnswerFromContext,
@@ -30,10 +34,7 @@ interface RpcChunkResult {
 /**
  * Retrieve context chunks using pgvector similarity search.
  */
-async function retrieveContext(
-  query: string,
-  maxResults: number
-): Promise<SearchResult[]> {
+async function retrieveContext(query: string, maxResults: number): Promise<SearchResult[]> {
   if (!openai) {
     openai = new OpenAI({ apiKey: openaiApiKey! });
   }
@@ -60,13 +61,14 @@ async function retrieveContext(
   const chunks = (results ?? []) as RpcChunkResult[];
 
   // Fetch document names for source attribution
-  const docIds = [...new Set(chunks.map(c => c.document_id))];
-  const { data: documents } = docIds.length > 0
-    ? await supabase.from('documents').select('id, file_name').in('id', docIds)
-    : { data: [] };
-  const docMap = new Map(documents?.map(d => [d.id, d.file_name]) ?? []);
+  const docIds = [...new Set(chunks.map((c) => c.document_id))];
+  const { data: documents } =
+    docIds.length > 0
+      ? await supabase.from('documents').select('id, file_name').in('id', docIds)
+      : { data: [] };
+  const docMap = new Map(documents?.map((d) => [d.id, d.file_name]) ?? []);
 
-  return chunks.map(chunk => ({
+  return chunks.map((chunk) => ({
     content: chunk.content,
     source: docMap.get(chunk.document_id) ?? 'Unknown',
     score: chunk.similarity,
@@ -76,114 +78,130 @@ async function retrieveContext(
 export async function POST(request: NextRequest) {
   const result = await withRateLimit(request, wikiSearchRateLimiter, async () => {
     return optionalAuth(request, async (req) => {
-    try {
-      const user = (req as unknown as { user?: User }).user;
+      try {
+        const user = (req as unknown as { user?: User }).user;
 
-      if (!openaiApiKey) {
-        logger.error('OPENAI_API_KEY environment variable is not set');
-        return addSecurityHeaders(
-          NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+        if (!openaiApiKey) {
+          logger.error('OPENAI_API_KEY environment variable is not set');
+          return addSecurityHeaders(
+            NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+          );
+        }
+
+        const validation = await validateRequest(request, validationSchemas.wikiGenerate, {
+          body: true,
+          sanitize: true,
+        });
+
+        if (!validation.success) {
+          return addSecurityHeaders(
+            NextResponse.json(
+              {
+                error: 'Invalid request data',
+                details: validation.details || validation.error,
+              },
+              { status: 400 }
+            )
+          );
+        }
+
+        const { query, maxResults, context } = validation.data;
+
+        logger.info('Processing wiki generation request', {
+          userId: user?.id || 'guest',
+          metadata: {
+            query: query.substring(0, 50) + '...',
+            maxResults,
+          },
+        });
+
+        // Step 1: Use provided context or retrieve via pgvector search
+        let contextChunks: SearchResult[];
+
+        if (context && context.length > 0) {
+          contextChunks = context.map(
+            (ctx: { content: string; source?: string; relevance?: number }, idx: number) => ({
+              content: ctx.content,
+              source: ctx.source || `Context ${idx + 1}`,
+              score: ctx.relevance || 0.8,
+            })
+          );
+          logger.info('Using provided context', { metadata: { contextCount: context.length } });
+        } else {
+          contextChunks = await retrieveContext(query, maxResults || 5);
+          logger.info('Retrieved context from pgvector', {
+            metadata: { chunksFound: contextChunks.length },
+          });
+        }
+
+        // Step 2: Generate answer from context
+        const generatedResult: GeneratedAnswer = await generateAnswerFromContext(
+          null,
+          generationModel,
+          query,
+          contextChunks
         );
-      }
 
-      const validation = await validateRequest(request, validationSchemas.wikiGenerate, { body: true, sanitize: true });
+        logger.info('Wiki generation completed', {
+          userId: user?.id || 'guest',
+          metadata: {
+            answerLength: generatedResult.answer.length,
+            sourcesCount: generatedResult.sources.length,
+          },
+        });
 
-      if (!validation.success) {
         return addSecurityHeaders(
           NextResponse.json({
-            error: 'Invalid request data',
-            details: validation.details || validation.error
-          }, { status: 400 })
+            success: true,
+            ...generatedResult,
+          })
         );
-      }
-
-      const { query, maxResults, context } = validation.data;
-
-      logger.info('Processing wiki generation request', {
-        userId: user?.id || 'guest',
-        metadata: {
-          query: query.substring(0, 50) + '...',
-          maxResults
-        }
-      });
-
-      // Step 1: Use provided context or retrieve via pgvector search
-      let contextChunks: SearchResult[];
-
-      if (context && context.length > 0) {
-        contextChunks = context.map((ctx: { content: string; source?: string; relevance?: number }, idx: number) => ({
-          content: ctx.content,
-          source: ctx.source || `Context ${idx + 1}`,
-          score: ctx.relevance || 0.8
-        }));
-        logger.info('Using provided context', { metadata: { contextCount: context.length } });
-      } else {
-        contextChunks = await retrieveContext(query, maxResults || 5);
-        logger.info('Retrieved context from pgvector', {
-          metadata: { chunksFound: contextChunks.length }
+      } catch (error) {
+        logger.error('Wiki generation failed', error as Error, {
+          userId: 'unknown',
         });
-      }
 
-      // Step 2: Generate answer from context
-      const generatedResult: GeneratedAnswer = await generateAnswerFromContext(
-        null,
-        generationModel,
-        query,
-        contextChunks
-      );
-
-      logger.info('Wiki generation completed', {
-        userId: user?.id || 'guest',
-        metadata: {
-          answerLength: generatedResult.answer.length,
-          sourcesCount: generatedResult.sources.length
+        if (error instanceof SyntaxError) {
+          return addSecurityHeaders(
+            NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+          );
         }
-      });
 
-      return addSecurityHeaders(
-        NextResponse.json({
-          success: true,
-          ...generatedResult
-        })
-      );
+        if (error instanceof Error) {
+          if (error.message.includes('Search RPC failed')) {
+            return addSecurityHeaders(
+              NextResponse.json(
+                {
+                  error: 'Search service temporarily unavailable',
+                  message: 'Unable to search the knowledge base. Please try again in a moment.',
+                },
+                { status: 503 }
+              )
+            );
+          }
+          if (error.message.includes('Failed to generate answer')) {
+            return addSecurityHeaders(
+              NextResponse.json(
+                {
+                  error: 'Generation service temporarily unavailable',
+                  message: 'Unable to generate an answer. Please try again in a moment.',
+                },
+                { status: 503 }
+              )
+            );
+          }
+        }
 
-    } catch (error) {
-      logger.error('Wiki generation failed', error as Error, {
-        userId: 'unknown'
-      });
-
-      if (error instanceof SyntaxError) {
         return addSecurityHeaders(
-          NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+          NextResponse.json(
+            {
+              error: 'Internal server error',
+              message: 'An unexpected error occurred. Please try again later.',
+            },
+            { status: 500 }
+          )
         );
       }
-
-      if (error instanceof Error) {
-        if (error.message.includes('Search RPC failed')) {
-          return addSecurityHeaders(
-            NextResponse.json({
-              error: 'Search service temporarily unavailable',
-              message: 'Unable to search the knowledge base. Please try again in a moment.'
-            }, { status: 503 })
-          );
-        }
-        if (error.message.includes('Failed to generate answer')) {
-          return addSecurityHeaders(
-            NextResponse.json({
-              error: 'Generation service temporarily unavailable',
-              message: 'Unable to generate an answer. Please try again in a moment.'
-            }, { status: 503 })
-          );
-        }
-      }
-
-      return addSecurityHeaders(
-        NextResponse.json({
-          error: 'Internal server error',
-          message: 'An unexpected error occurred. Please try again later.'
-        }, { status: 500 })
-      );
-    }
     });
   });
 

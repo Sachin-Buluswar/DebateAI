@@ -14,11 +14,11 @@ export default function LogoutButton({ className = '' }) {
     try {
       setIsLoggingOut(true);
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         return;
       }
-      
+
       // Redirect to home page after successful logout
       router.push('/');
       router.refresh();
@@ -38,7 +38,7 @@ export default function LogoutButton({ className = '' }) {
       >
         {isLoggingOut ? 'signing out...' : 'sign out'}
       </button>
-      
+
       <ConfirmDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
@@ -51,4 +51,4 @@ export default function LogoutButton({ className = '' }) {
       />
     </>
   );
-} 
+}

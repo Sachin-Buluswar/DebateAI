@@ -1,9 +1,9 @@
 /**
  * Centralized Authentication Middleware
- * 
+ *
  * Provides consistent authentication and authorization checks across all API routes.
  * This replaces the scattered auth implementations with a single source of truth.
- * 
+ *
  * Security principles:
  * - Always use server-side authentication checks
  * - Never trust client-side auth state
@@ -30,36 +30,35 @@ export async function requireAuth(
 ): Promise<NextResponse | Response> {
   try {
     const supabase = createClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
     if (error || !user) {
       return NextResponse.json(
-        { 
+        {
           error: 'Unauthorized',
-          message: 'Please log in to access this resource.'
+          message: 'Please log in to access this resource.',
         },
         { status: 401 }
       );
     }
-    
+
     // Attach user to request for handler to use
     (request as AuthenticatedRequest).user = user;
-    
+
     return handler(request as AuthenticatedRequest);
   } catch (error) {
-    authLogger.error(
-      'Error checking authentication',
-      error instanceof Error ? error : undefined,
-      { 
-        service: 'auth-middleware',
-        action: 'requireAuth',
-        metadata: { errorMessage: error instanceof Error ? error.message : String(error) }
-      }
-    );
+    authLogger.error('Error checking authentication', error instanceof Error ? error : undefined, {
+      service: 'auth-middleware',
+      action: 'requireAuth',
+      metadata: { errorMessage: error instanceof Error ? error.message : String(error) },
+    });
     return NextResponse.json(
-      { 
+      {
         error: 'Authentication error',
-        message: 'An error occurred while verifying authentication.'
+        message: 'An error occurred while verifying authentication.',
       },
       { status: 500 }
     );
@@ -76,62 +75,61 @@ export async function requireAdmin(
 ): Promise<NextResponse | Response> {
   try {
     const supabase = createClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
     if (error || !user) {
       return NextResponse.json(
-        { 
+        {
           error: 'Unauthorized',
-          message: 'Please log in to access this resource.'
+          message: 'Please log in to access this resource.',
         },
         { status: 401 }
       );
     }
-    
+
     // Check admin role
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
-    
+
     if (roleError || !roleData) {
       // User has no role assigned - not an admin
       return NextResponse.json(
-        { 
+        {
           error: 'Forbidden',
-          message: 'You do not have permission to access this resource.'
+          message: 'You do not have permission to access this resource.',
         },
         { status: 403 }
       );
     }
-    
+
     if (roleData.role !== 'admin' && roleData.role !== 'super_admin') {
       return NextResponse.json(
-        { 
+        {
           error: 'Forbidden',
-          message: 'Admin access required for this resource.'
+          message: 'Admin access required for this resource.',
         },
         { status: 403 }
       );
     }
-    
+
     (request as AuthenticatedRequest).user = user;
     return handler(request as AuthenticatedRequest);
   } catch (error) {
-    authLogger.error(
-      'Error checking admin role',
-      error instanceof Error ? error : undefined,
-      {
-        service: 'auth-middleware',
-        action: 'requireAdmin',
-        metadata: { errorMessage: error instanceof Error ? error.message : String(error) }
-      }
-    );
+    authLogger.error('Error checking admin role', error instanceof Error ? error : undefined, {
+      service: 'auth-middleware',
+      action: 'requireAdmin',
+      metadata: { errorMessage: error instanceof Error ? error.message : String(error) },
+    });
     return NextResponse.json(
-      { 
+      {
         error: 'Authorization error',
-        message: 'An error occurred while verifying permissions.'
+        message: 'An error occurred while verifying permissions.',
       },
       { status: 500 }
     );
@@ -148,20 +146,22 @@ export async function optionalAuth(
 ): Promise<NextResponse | Response> {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     // Attach user if authenticated, but don't fail if not
     if (user) {
       (request as NextRequest & { user?: User }).user = user;
     }
-    
+
     return handler(request as NextRequest & { user?: User });
   } catch (error) {
     // Log error but continue without auth
     authLogger.warn('Error checking optional authentication', {
       service: 'auth-middleware',
       action: 'optionalAuth',
-      metadata: { error: error instanceof Error ? error.message : String(error) }
+      metadata: { error: error instanceof Error ? error.message : String(error) },
     });
     return handler(request);
   }
@@ -174,10 +174,10 @@ export function blockEndpoint(
   reason: string = 'This endpoint is temporarily disabled for security updates.'
 ): NextResponse {
   return NextResponse.json(
-    { 
+    {
       error: 'Service Unavailable',
       message: reason,
-      status: 503
+      status: 503,
     },
     { status: 503 }
   );
@@ -187,7 +187,7 @@ export function blockEndpoint(
  * Helper to check if a user has a specific role
  */
 export async function hasRole(
-  userId: string, 
+  userId: string,
   requiredRole: 'user' | 'moderator' | 'admin' | 'super_admin'
 ): Promise<boolean> {
   try {
@@ -197,32 +197,27 @@ export async function hasRole(
       .select('role')
       .eq('user_id', userId)
       .single();
-    
+
     if (error || !data) return false;
-    
+
     // Check role hierarchy
     const roleHierarchy = {
-      'user': 1,
-      'moderator': 2,
-      'admin': 3,
-      'super_admin': 4
+      user: 1,
+      moderator: 2,
+      admin: 3,
+      super_admin: 4,
     };
-    
+
     const userRoleLevel = roleHierarchy[data.role as keyof typeof roleHierarchy] || 0;
     const requiredRoleLevel = roleHierarchy[requiredRole] || 999;
-    
+
     return userRoleLevel >= requiredRoleLevel;
   } catch (error) {
-    authLogger.error(
-      'Error checking user role',
-      error instanceof Error ? error : undefined,
-      {
-        service: 'auth-middleware',
-        action: 'hasRole',
-        metadata: { errorMessage: error instanceof Error ? error.message : String(error) }
-      }
-    );
+    authLogger.error('Error checking user role', error instanceof Error ? error : undefined, {
+      service: 'auth-middleware',
+      action: 'hasRole',
+      metadata: { errorMessage: error instanceof Error ? error.message : String(error) },
+    });
     return false;
   }
 }
-

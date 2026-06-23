@@ -6,8 +6,16 @@ import { supabase } from '@/lib/supabaseClient';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import dynamic from 'next/dynamic';
 import type { SpeechFeedback } from '@/types';
-import { parseFeedbackMarkdown, convertStructuredFeedbackToMarkdown, StructuredFeedback } from '@/lib/feedbackUtils';
-import { exportFeedbackAsPDF, formatMarkdownForPDF, isPDFExportSupported } from '@/lib/pdf/exportFeedbackPDF';
+import {
+  parseFeedbackMarkdown,
+  convertStructuredFeedbackToMarkdown,
+  StructuredFeedback,
+} from '@/lib/feedbackUtils';
+import {
+  exportFeedbackAsPDF,
+  formatMarkdownForPDF,
+  isPDFExportSupported,
+} from '@/lib/pdf/exportFeedbackPDF';
 
 // Lazy load heavy components
 const ErrorBoundary = dynamic(() => import('@/components/ErrorBoundary'), {
@@ -47,7 +55,7 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
     } else {
       // Reset error state when attempting to play
       setError(null);
-      audioRef.current.play().catch(_err => {
+      audioRef.current.play().catch((_err) => {
         setError('Unable to play audio. The file may be corrupted or inaccessible.');
         setIsPlaying(false);
       });
@@ -65,21 +73,21 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
     setDuration(audioRef.current.duration);
     setLoading(false);
   };
-  
+
   const formatTime = (time: number) => {
     if (isNaN(time) || time === Infinity) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
-  
+
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
     const newTime = parseFloat(e.target.value);
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
-  
+
   const handleEnded = () => {
     setIsPlaying(false);
     setCurrentTime(0);
@@ -106,7 +114,7 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
       {error ? (
         <div className="text-red-500 dark:text-red-400 py-2 text-sm flex items-center justify-center">
           {error}
-          <button 
+          <button
             onClick={() => {
               setError(null);
               setLoading(true);
@@ -123,16 +131,22 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
         <div className="flex justify-center items-center py-6">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '100ms' }}></div>
-            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></div>
+            <div
+              className="w-2 h-2 bg-primary-600 rounded-full animate-bounce"
+              style={{ animationDelay: '100ms' }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-primary-600 rounded-full animate-bounce"
+              style={{ animationDelay: '200ms' }}
+            ></div>
             <span className="ml-2 text-gray-500 dark:text-gray-400">Loading audio...</span>
           </div>
         </div>
       ) : null}
-      
-      <audio 
+
+      <audio
         ref={audioRef}
-        src={audioUrl} 
+        src={audioUrl}
         className="hidden"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
@@ -142,30 +156,34 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
       />
       {!error && !loading && (
         <div className="flex items-center space-x-4">
-          <button 
+          <button
             onClick={handlePlayPause}
             className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-500/30 disabled:opacity-50"
             aria-label={isPlaying ? 'Pause' : 'Play'}
             disabled={!!error || loading}
           >
-            {isPlaying ? <PauseIcon className="h-6 w-6" /> : <PlayIcon className="h-6 w-6 ml-0.5" />}
+            {isPlaying ? (
+              <PauseIcon className="h-6 w-6" />
+            ) : (
+              <PlayIcon className="h-6 w-6 ml-0.5" />
+            )}
           </button>
           <div className="flex-1 space-y-2">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full transition-all duration-300"
                     style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
                   ></div>
                 </div>
               </div>
-              <input 
-                type="range" 
-                min="0" 
+              <input
+                type="range"
+                min="0"
                 max={duration || 0}
                 step="0.1"
-                value={currentTime} 
+                value={currentTime}
                 onChange={handleSeek}
                 className="relative w-full h-2 opacity-0 cursor-pointer z-10"
                 aria-label="Audio progress"
@@ -189,11 +207,14 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
   const [feedback, setFeedback] = useState<SpeechFeedback | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exportingPDF, setExportingPDF] = useState(false);
-  
+
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
         if (userError) {
           setError('Authentication error. Please try signing in again.');
@@ -213,17 +234,20 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           .eq('id', params.id)
           .eq('user_id', user.id)
           .single();
-        
+
         if (feedbackError) {
-          if (feedbackError.code === 'PGRST116') { // Not found
-             setError('Speech feedback not found. It may have been deleted or you may not have permission to view it.');
+          if (feedbackError.code === 'PGRST116') {
+            // Not found
+            setError(
+              'Speech feedback not found. It may have been deleted or you may not have permission to view it.'
+            );
           } else {
-             setError('Failed to load speech feedback. Please try again.');
+            setError('Failed to load speech feedback. Please try again.');
           }
           setLoading(false);
           return;
         }
-        
+
         setFeedback(feedbackData as SpeechFeedback);
       } catch (_error) {
         setError('An unexpected error occurred. Please try again later.');
@@ -231,10 +255,10 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         setLoading(false);
       }
     };
-    
+
     checkUser();
   }, [router, params.id]);
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -242,59 +266,63 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     }).format(date);
   };
-  
+
   const formatSpeechType = (type: string | undefined | null): string => {
     if (!type) return 'Speech';
     // Example: Adjust if your speech_type values differ
     const typeMappings: { [key: string]: string } = {
-      'Constructive': 'Constructive', 
-      'Rebuttal': 'Rebuttal', 
-      'Cross-Examination': 'Cross-Examination', 
-      'Summary': 'Summary', 
-      'Final Focus': 'Final Focus'
+      Constructive: 'Constructive',
+      Rebuttal: 'Rebuttal',
+      'Cross-Examination': 'Cross-Examination',
+      Summary: 'Summary',
+      'Final Focus': 'Final Focus',
       // Add other types as needed
     };
     return typeMappings[type] || type.charAt(0).toUpperCase() + type.slice(1);
   };
-  
+
   // Parse the feedback when available - handle both old and new formats
   let parsedFeedbackSections: { [key: string]: string } = {};
-  
+
   if (feedback?.feedback) {
     // Check if it's the new structured format
     if (feedback.feedback.speakerScore !== undefined && feedback.feedback.structureOrganization) {
       // New structured format
-      parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
+      parsedFeedbackSections = convertStructuredFeedbackToMarkdown(
+        feedback.feedback as StructuredFeedback
+      );
     } else if (feedback.feedback.overall) {
       // Old format with overall string
       parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overall);
     } else if (feedback.feedback.overallSummary) {
       // New format but might be missing some fields - convert what we have
       try {
-        parsedFeedbackSections = convertStructuredFeedbackToMarkdown(feedback.feedback as StructuredFeedback);
+        parsedFeedbackSections = convertStructuredFeedbackToMarkdown(
+          feedback.feedback as StructuredFeedback
+        );
       } catch (_e) {
         // Fallback to treating overallSummary as markdown
         parsedFeedbackSections = parseFeedbackMarkdown(feedback.feedback.overallSummary);
       }
     }
   }
-  
+
   // Add a function to handle exporting feedback
   const handleExportFeedback = async () => {
     if (!feedback) return;
-    
+
     setExportingPDF(true);
-    
+
     try {
       // Create content for export
       const title = `## Speech Feedback: ${feedback.topic}\n`;
       const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
-      
+
       let content = '';
-      
+
       // Export based on format
       if (Object.keys(parsedFeedbackSections).length > 0) {
         // Export parsed sections in the same order as displayed in UI
@@ -309,9 +337,9 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           'Persuasiveness & Impact',
           'Delivery Style',
           'Strategic success Speech Type(s)',
-          'Training Plan'
+          'Training Plan',
         ];
-        
+
         for (const heading of sectionOrder) {
           const sectionContent = parsedFeedbackSections[heading];
           if (sectionContent) {
@@ -329,20 +357,23 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
         // New format - export as structured text
         content = feedback.feedback.overallSummary;
       }
-      
+
       // Add training plan if not already included in parsed sections
       if (feedback.feedback?.trainingPlan && !parsedFeedbackSections['Training Plan']) {
         content += `\n\n<div class="page-break-before"></div>\n\n### Personalized Training Plan\n\n`;
-        
+
         // Add exercises
-        if (feedback.feedback.trainingPlan.exercises && feedback.feedback.trainingPlan.exercises.length > 0) {
+        if (
+          feedback.feedback.trainingPlan.exercises &&
+          feedback.feedback.trainingPlan.exercises.length > 0
+        ) {
           content += `#### Practice Exercises\n\n`;
           feedback.feedback.trainingPlan.exercises.forEach((exercise, index) => {
             content += `**Exercise ${index + 1}: ${exercise.title}**\n\n`;
             content += `- **Focus:** ${exercise.focus}\n`;
             content += `- **Duration:** ${exercise.duration}\n`;
             content += `- **Difficulty:** ${exercise.difficulty}\n\n`;
-            
+
             if (exercise.instructions && exercise.instructions.length > 0) {
               content += `**Instructions:**\n`;
               exercise.instructions.forEach((instruction, i) => {
@@ -350,34 +381,33 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
               });
               content += `\n`;
             }
-            
+
             if (exercise.example) {
               content += `**Example:** ${exercise.example}\n\n`;
             }
-            
+
             if (exercise.metrics && exercise.metrics.length > 0) {
               content += `**Success Metrics:**\n`;
-              exercise.metrics.forEach(metric => {
+              exercise.metrics.forEach((metric) => {
                 content += `- ${metric}\n`;
               });
               content += `\n`;
             }
           });
         }
-        
       }
-      
+
       // Combine all content
       const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
-      
+
       // Format markdown for better PDF rendering
       const formattedContent = formatMarkdownForPDF(exportContent);
-      
+
       // Check if PDF export is supported
       if (isPDFExportSupported()) {
         // Export as PDF
         await exportFeedbackAsPDF(formattedContent, {
-          filename: `speech-feedback-${formatDateForFilename(feedback.created_at)}.pdf`
+          filename: `speech-feedback-${formatDateForFilename(feedback.created_at)}.pdf`,
         });
       } else {
         // Fallback to markdown if PDF export is not supported
@@ -395,7 +425,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
       // Fallback to markdown export on error
       const title = `## Speech Feedback: ${feedback.topic}\n`;
       const metadata = `- Date: ${formatDate(feedback.created_at)}\n- Type: ${formatSpeechType(feedback.speech_type || feedback.speech_types)}\n\n`;
-      
+
       let content = '';
       if (Object.keys(parsedFeedbackSections).length > 0) {
         // Use same section order as main export
@@ -409,9 +439,9 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
           'Clarity & Conciseness',
           'Persuasiveness & Impact',
           'Delivery Style',
-          'Strategic success Speech Type(s)'
+          'Strategic success Speech Type(s)',
         ];
-        
+
         for (const heading of sectionOrder) {
           const sectionContent = parsedFeedbackSections[heading];
           if (sectionContent) {
@@ -423,7 +453,7 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
       } else if (feedback.feedback?.overallSummary) {
         content = feedback.feedback.overallSummary;
       }
-      
+
       const exportContent = `# Speech Feedback Export\n\n${title}${metadata}${content}`;
       const blob = new Blob([exportContent], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -438,201 +468,256 @@ export default function SpeechFeedbackDetail({ params }: { params: { id: string 
       setExportingPDF(false);
     }
   };
-  
+
   // Helper function to format date for filename
   const formatDateForFilename = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
-  
+
   if (loading) {
     return <LoadingSpinner fullScreen text="Loading speech feedback..." />;
   }
-  
+
   return (
-    <ErrorBoundary fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Something went wrong</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              We encountered an error while loading your speech feedback. Please try refreshing.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn btn-primary"
-            >
-              Try again
-            </button>
+    <ErrorBoundary
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Something went wrong
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                We encountered an error while loading your speech feedback. Please try refreshing.
+              </p>
+              <button onClick={() => window.location.reload()} className="btn btn-primary">
+                Try again
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    }>
-        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          {/* Back button and page header */}
-          <div className="flex justify-between items-center mb-6">
-            <button 
-              onClick={() => router.back()}
-              className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+      }
+    >
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Back button and page header */}
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ArrowLeftIcon className="h-5 w-5 mr-1" />
+            Back
+          </button>
+
+          {/* Export button - Export as PDF */}
+          {feedback && (
+            <button
+              onClick={handleExportFeedback}
+              className="btn btn-secondary btn-sm flex items-center gap-2"
+              title="Export feedback as PDF"
+              disabled={exportingPDF}
+              aria-label={exportingPDF ? 'Generating PDF' : 'Export feedback as PDF'}
             >
-              <ArrowLeftIcon className="h-5 w-5 mr-1" />
-              Back
-            </button>
-            
-            {/* Export button - Export as PDF */}
-            {feedback && (
-              <button
-                onClick={handleExportFeedback}
-                className="btn btn-secondary btn-sm flex items-center gap-2"
-                title="Export feedback as PDF"
-                disabled={exportingPDF}
-                aria-label={exportingPDF ? "Generating PDF" : "Export feedback as PDF"}
-              >
-                {exportingPDF ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Generating PDF...
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Export as PDF
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          
-          {/* Error Message */} 
-          {error && !feedback && (
-            <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-md p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              {exportingPDF ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700 dark:text-red-300 font-medium">{error}</p>
-                </div>
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Export as PDF
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Error Message */}
+        {error && !feedback && (
+          <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-red-500 dark:text-red-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700 dark:text-red-300 font-medium">{error}</p>
               </div>
             </div>
-          )}
-          
-          {/* Feedback Content */}
-          {feedback && (
-            <div className="space-y-8">
-              {/* Header Section */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-5 border-b border-gray-200 dark:border-gray-700">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {feedback.topic || 'Speech Feedback'}
-                  </h1>
-                  <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-2">
-                    <span>{formatSpeechType(feedback.speech_type || feedback.speech_types)}</span>
-                    <span>•</span>
-                    <span>{formatDate(feedback.created_at)}</span>
-                  </div>
+          </div>
+        )}
+
+        {/* Feedback Content */}
+        {feedback && (
+          <div className="space-y-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-5 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {feedback.topic || 'Speech Feedback'}
+                </h1>
+                <div className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400 space-x-2">
+                  <span>{formatSpeechType(feedback.speech_type || feedback.speech_types)}</span>
+                  <span>•</span>
+                  <span>{formatDate(feedback.created_at)}</span>
                 </div>
-                <button
-                  onClick={() => router.push('/history')}
-                  className="btn btn-secondary mt-4 md:mt-0"
-                >
-                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                  Back to History
-                </button>
               </div>
-              
-              {/* Audio Player Section */}
-              {feedback.audio_url && (
-                <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-                  <div className="px-4 py-5 sm:px-6">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Audio Recording</h2>
-                     <AudioPlayer audioUrl={feedback.audio_url} />
-                  </div>
+              <button
+                onClick={() => router.push('/history')}
+                className="btn btn-secondary mt-4 md:mt-0"
+              >
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back to History
+              </button>
+            </div>
+
+            {/* Audio Player Section */}
+            {feedback.audio_url && (
+              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                <div className="px-4 py-5 sm:px-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Audio Recording
+                  </h2>
+                  <AudioPlayer audioUrl={feedback.audio_url} />
                 </div>
-              )}
-              
-              {/* RENDER FEEDBACK SECTIONS IN PRIORITIZED ORDER */}
-              {[
+              </div>
+            )}
+
+            {/* RENDER FEEDBACK SECTIONS IN PRIORITIZED ORDER */}
+            {[
+              'Overall Summary',
+              'Strengths',
+              'Areas for Improvement',
+              'Next Steps',
+              'Structure & Organization',
+              'Argumentation & Evidence',
+              'Clarity & Conciseness',
+              'Persuasiveness & Impact',
+              'Delivery Style',
+              'Strategic success Speech Type(s)',
+            ].map((heading) => {
+              const content = parsedFeedbackSections[heading];
+              if (!content) return null;
+              const displayTitle = heading;
+              const initialCollapsed = ![
                 'Overall Summary',
                 'Strengths',
                 'Areas for Improvement',
                 'Next Steps',
-                'Structure & Organization',
-                'Argumentation & Evidence',
-                'Clarity & Conciseness',
-                'Persuasiveness & Impact',
-                'Delivery Style',
-                'Strategic success Speech Type(s)'
-              ].map(heading => {
-                const content = parsedFeedbackSections[heading];
-                if (!content) return null;
-                const displayTitle = heading;
-                const initialCollapsed = !['Overall Summary', 'Strengths', 'Areas for Improvement', 'Next Steps'].includes(heading);
-                
-                // Determine accent color based on section type (example logic)
-                let accentColor = 'primary-500'; // Default
-                if (['Strengths'].includes(heading)) accentColor = 'primary-500';
-                if (['Areas for Improvement', 'Actionable Suggestions'].includes(heading)) accentColor = 'secondary-500';
-                if (['Overall Summary', 'Next Steps'].includes(heading)) accentColor = 'primary-500'; 
+              ].includes(heading);
 
-                return (
-                  <FeedbackSection
-                    key={heading}
-                    title={displayTitle}
-                    content={content}
-                    initialCollapsed={initialCollapsed}
-                    accentColor={accentColor} // Pass the determined color
-                  />
-                );
-              })}
+              // Determine accent color based on section type (example logic)
+              let accentColor = 'primary-500'; // Default
+              if (['Strengths'].includes(heading)) accentColor = 'primary-500';
+              if (['Areas for Improvement', 'Actionable Suggestions'].includes(heading))
+                accentColor = 'secondary-500';
+              if (['Overall Summary', 'Next Steps'].includes(heading)) accentColor = 'primary-500';
 
-              {/* Training Plan Section */}
-              {feedback.feedback?.trainingPlan && (
-                <TrainingSection 
-                  trainingPlan={feedback.feedback.trainingPlan}
-                  className="mt-8"
+              return (
+                <FeedbackSection
+                  key={heading}
+                  title={displayTitle}
+                  content={content}
+                  initialCollapsed={initialCollapsed}
+                  accentColor={accentColor} // Pass the determined color
                 />
-              )}
+              );
+            })}
 
-              {/* Fallback or message if parsing fails or no sections found */}
-              {Object.keys(parsedFeedbackSections).length === 0 && (feedback.feedback?.overall || feedback.feedback?.overallSummary) && (
-                 <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-                   <div className="px-4 py-5 sm:px-6">
-                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Feedback Assessment</h2>
-                     <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
-                       <ReactMarkdown>{feedback.feedback.overall || feedback.feedback.overallSummary}</ReactMarkdown>
-                     </div>
-                     <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                       Note: Could not automatically parse feedback into sections. Displaying raw content.
-                     </p>
-                   </div>
-                 </div>
-              )}
+            {/* Training Plan Section */}
+            {feedback.feedback?.trainingPlan && (
+              <TrainingSection trainingPlan={feedback.feedback.trainingPlan} className="mt-8" />
+            )}
 
-              {/* Message if no feedback content at all */}
-              {!feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
-                <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-300 dark:border-gray-700 rounded-md p-4">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">Feedback is still processing or was not generated for this speech.</p>
+            {/* Fallback or message if parsing fails or no sections found */}
+            {Object.keys(parsedFeedbackSections).length === 0 &&
+              (feedback.feedback?.overall || feedback.feedback?.overallSummary) && (
+                <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                  <div className="px-4 py-5 sm:px-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                      Feedback Assessment
+                    </h2>
+                    <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert max-w-none">
+                      <ReactMarkdown>
+                        {feedback.feedback.overall || feedback.feedback.overallSummary}
+                      </ReactMarkdown>
+                    </div>
+                    <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                      Note: Could not automatically parse feedback into sections. Displaying raw
+                      content.
+                    </p>
+                  </div>
                 </div>
               )}
+
+            {/* Message if no feedback content at all */}
+            {!feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
+              <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-300 dark:border-gray-700 rounded-md p-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Feedback is still processing or was not generated for this speech.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Case where feedback object exists but no URL and no overall text */}
+        {feedback &&
+          !feedback.audio_url &&
+          !feedback.feedback?.overall &&
+          !feedback.feedback?.overallSummary && (
+            <div className="mt-6 bg-gray-50 dark:bg-gray-800 shadow-md rounded-lg p-6 text-center">
+              <p className="text-gray-600 dark:text-gray-400">
+                No audio recording or feedback text is available for this entry.
+              </p>
             </div>
           )}
-          
-          {/* Case where feedback object exists but no URL and no overall text */}
-          {feedback && !feedback.audio_url && !feedback.feedback?.overall && !feedback.feedback?.overallSummary && (
-             <div className="mt-6 bg-gray-50 dark:bg-gray-800 shadow-md rounded-lg p-6 text-center">
-               <p className="text-gray-600 dark:text-gray-400">No audio recording or feedback text is available for this entry.</p>
-             </div>
-          )}
-
-        </div>
+      </div>
     </ErrorBoundary>
   );
-} 
+}

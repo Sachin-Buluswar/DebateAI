@@ -5,5 +5,5 @@ import { env } from '@/config/env';
 // It uses the service role key and has admin privileges.
 export const supabaseAdmin = createClient(
   env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY,
-); 
+  env.SUPABASE_SERVICE_ROLE_KEY
+);

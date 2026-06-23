@@ -16,7 +16,7 @@ export interface Debate {
   created_at: string;
   updated_at: string;
   audio_url?: string;
-  
+
   // UI compatibility properties (not in the database)
   topic?: string;
   status?: 'active' | 'completed' | 'paused';
@@ -73,7 +73,7 @@ export interface SpeechFeedback {
     intonation?: string[];
     clarity?: string[];
     score?: number;
-    
+
     // New structured format fields
     speakerScore?: number;
     scoreJustification?: string;
@@ -105,7 +105,7 @@ export interface SpeechFeedback {
     actionableSuggestions?: string[];
     strengths?: string[];
     areasForImprovement?: string[];
-    
+
     // Training plan for skill development
     trainingPlan?: {
       exercises: Array<{
@@ -118,7 +118,7 @@ export interface SpeechFeedback {
         metrics?: string[];
       }>;
     };
-    
+
     // Additional fields for error states
     message?: string;
   } | null;
@@ -141,4 +141,4 @@ export interface ApiError {
   message: string;
   code: string;
   status: number;
-} 
+}

@@ -11,7 +11,12 @@ interface PDFViewerProps {
   onClose: () => void;
 }
 
-export function PDFViewer({ pdfUrl, pageNumber = 1, highlightText: _highlightText, onClose }: PDFViewerProps) {
+export function PDFViewer({
+  pdfUrl,
+  pageNumber = 1,
+  highlightText: _highlightText,
+  onClose,
+}: PDFViewerProps) {
   const [useGoogleViewer, setUseGoogleViewer] = useState(false);
 
   // If the native viewer fails, we can fall back to Google Docs viewer
@@ -49,7 +54,9 @@ function GoogleDocsPDFViewer({ pdfUrl, pageNumber = 1, onClose }: PDFViewerProps
   };
 
   const handleIframeError = () => {
-    setError('Failed to load PDF with Google Docs viewer. Please try downloading the file instead.');
+    setError(
+      'Failed to load PDF with Google Docs viewer. Please try downloading the file instead.'
+    );
     setIsLoading(false);
   };
 
@@ -66,9 +73,7 @@ function GoogleDocsPDFViewer({ pdfUrl, pageNumber = 1, onClose }: PDFViewerProps
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-semibold">PDF Viewer (Google Docs)</h3>
-            {pageNumber && (
-              <span className="text-sm text-gray-600">Page {pageNumber}</span>
-            )}
+            {pageNumber && <span className="text-sm text-gray-600">Page {pageNumber}</span>}
           </div>
           <div className="flex items-center gap-2">
             <a
@@ -78,10 +83,7 @@ function GoogleDocsPDFViewer({ pdfUrl, pageNumber = 1, onClose }: PDFViewerProps
             >
               Download PDF
             </a>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
+            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
@@ -151,10 +153,7 @@ export function SimplePDFViewer({ pdfUrl, pageNumber, onClose }: PDFViewerProps)
             >
               Download
             </a>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
+            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
               <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
@@ -162,11 +161,7 @@ export function SimplePDFViewer({ pdfUrl, pageNumber, onClose }: PDFViewerProps)
 
         {/* PDF Embed */}
         <div className="flex-1">
-          <embed
-            src={pdfUrlWithPage}
-            type="application/pdf"
-            className="w-full h-full"
-          />
+          <embed src={pdfUrlWithPage} type="application/pdf" className="w-full h-full" />
         </div>
       </div>
     </div>

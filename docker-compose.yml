@@ -14,7 +14,7 @@ services:
     image: eris-debate:development
     container_name: eris-debate-app-dev
     ports:
-      - "${PORT:-3001}:3001"
+      - '${PORT:-3001}:3001'
     environment:
       # Core environment variables
       - NODE_ENV=development
@@ -31,7 +31,13 @@ services:
       # API URL
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -48,10 +54,10 @@ services:
       - uploads:/app/uploads
       - temp:/app/temp
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
     # Resource limits for development
     deploy:
       resources:

@@ -18,7 +18,8 @@ import { trace, context, SpanStatusCode, Span } from '@opentelemetry/api';
 import { apiLogger } from './logger';
 
 // Configuration
-const OTEL_EXPORTER_OTLP_ENDPOINT = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318';
+const OTEL_EXPORTER_OTLP_ENDPOINT =
+  process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318';
 const SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'eris-debate';
 const SERVICE_VERSION = process.env.npm_package_version || '0.1.0';
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
@@ -33,7 +34,7 @@ const resource = resourceFromAttributes({
 // Create trace exporter
 const traceExporter = new OTLPTraceExporter({
   url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`,
-  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS 
+  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS
     ? JSON.parse(process.env.OTEL_EXPORTER_OTLP_HEADERS)
     : {},
 });
@@ -41,7 +42,7 @@ const traceExporter = new OTLPTraceExporter({
 // Create metric exporter
 const metricExporter = new OTLPMetricExporter({
   url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/metrics`,
-  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS 
+  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS
     ? JSON.parse(process.env.OTEL_EXPORTER_OTLP_HEADERS)
     : {},
 });
@@ -108,7 +109,10 @@ const tracer = trace.getTracer(SERVICE_NAME, SERVICE_VERSION);
 /**
  * Create a custom span for tracing
  */
-export function createSpan(name: string, attributes?: Record<string, string | number | boolean>): Span {
+export function createSpan(
+  name: string,
+  attributes?: Record<string, string | number | boolean>
+): Span {
   const span = tracer.startSpan(name);
   if (attributes) {
     span.setAttributes(attributes);
@@ -125,7 +129,7 @@ export async function traceAsync<T>(
   attributes?: Record<string, string | number | boolean>
 ): Promise<T> {
   const span = createSpan(name, attributes);
-  
+
   try {
     const result = await context.with(trace.setSpan(context.active(), span), operation);
     span.setStatus({ code: SpanStatusCode.OK });
@@ -153,42 +157,41 @@ export const debateMetrics = {
   debateSessions: meter.createCounter('debate.sessions.total', {
     description: 'Total number of debate sessions started',
   }),
-  
+
   // Histogram for debate duration
   debateDuration: meter.createHistogram('debate.duration', {
     description: 'Duration of debate sessions in seconds',
     unit: 's',
   }),
-  
+
   // Counter for AI responses
   aiResponses: meter.createCounter('ai.responses.total', {
     description: 'Total number of AI responses generated',
   }),
-  
+
   // Histogram for AI response time
   aiResponseTime: meter.createHistogram('ai.response.time', {
     description: 'Time taken to generate AI responses',
     unit: 'ms',
   }),
-  
+
   // Counter for speech feedback sessions
   speechFeedback: meter.createCounter('speech.feedback.total', {
     description: 'Total number of speech feedback sessions',
   }),
-  
+
   // Counter for wiki searches
   wikiSearches: meter.createCounter('wiki.searches.total', {
     description: 'Total number of wiki searches performed',
   }),
-  
+
   // Gauge for active connections
   activeConnections: meter.createUpDownCounter('connections.active', {
     description: 'Number of active connections',
   }),
-  
+
   // Counter for errors by type
   errors: meter.createCounter('errors.total', {
     description: 'Total number of errors by type',
   }),
 };
-

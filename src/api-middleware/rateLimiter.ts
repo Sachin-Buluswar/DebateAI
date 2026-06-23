@@ -34,7 +34,7 @@ class RateLimiter {
     const forwarded = req.headers.get('x-forwarded-for');
     const realIP = req.headers.get('x-real-ip');
     const cfIP = req.headers.get('cf-connecting-ip');
-    
+
     if (forwarded) {
       return forwarded.split(',')[0].trim();
     }
@@ -44,7 +44,7 @@ class RateLimiter {
     if (cfIP) {
       return cfIP;
     }
-    
+
     // Fallback for local development
     return '127.0.0.1';
   }
@@ -52,13 +52,15 @@ class RateLimiter {
   private refillTokens(bucket: { tokens: number; lastRefill: number }): void {
     const now = Date.now();
     const timePassed = now - bucket.lastRefill;
-    const tokensToAdd = Math.floor(timePassed / this.config.windowMs * this.config.maxRequests);
-    
+    const tokensToAdd = Math.floor((timePassed / this.config.windowMs) * this.config.maxRequests);
+
     bucket.tokens = Math.min(this.config.maxRequests, bucket.tokens + tokensToAdd);
     bucket.lastRefill = now;
   }
 
-  async checkRateLimit(req: Request): Promise<{ allowed: boolean; remainingTokens: number; resetTime: number }> {
+  async checkRateLimit(
+    req: Request
+  ): Promise<{ allowed: boolean; remainingTokens: number; resetTime: number }> {
     const key = this.config.keyGenerator!(req);
     const now = Date.now();
 
@@ -168,9 +170,12 @@ export async function withRateLimit<T>(
 }
 
 // Cleanup job (should be run periodically)
-setInterval(() => {
-  apiRateLimiter.cleanup();
-  speechFeedbackRateLimiter.cleanup();
-  wikiSearchRateLimiter.cleanup();
-  debateRateLimiter.cleanup();
-}, 30 * 60 * 1000); // Clean up every 30 minutes
+setInterval(
+  () => {
+    apiRateLimiter.cleanup();
+    speechFeedbackRateLimiter.cleanup();
+    wikiSearchRateLimiter.cleanup();
+    debateRateLimiter.cleanup();
+  },
+  30 * 60 * 1000
+); // Clean up every 30 minutes

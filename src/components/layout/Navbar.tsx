@@ -21,7 +21,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
-  
+
   // Get sidebar context
   const sidebarContext = useSidebar();
 
@@ -38,12 +38,10 @@ export default function Navbar() {
 
   return (
     <>
-      <nav 
+      <nav
         className={cn(
           'fixed w-full z-40 top-0 left-0 transition-all duration-300',
-          isScrolled
-            ? 'bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm'
-            : 'bg-transparent',
+          isScrolled ? 'bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm' : 'bg-transparent',
           isScrolled && 'border-b border-gray-200 dark:border-gray-800'
         )}
       >
@@ -60,22 +58,32 @@ export default function Navbar() {
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     {sidebarContext.isCollapsed ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                      />
                     ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                      />
                     )}
                   </svg>
                 </button>
               )}
-              
-              <Link 
-                href="/" 
+
+              <Link
+                href="/"
                 className="text-2xl font-light tracking-wide text-gray-900 dark:text-gray-100 hover:text-primary-500 transition-colors"
               >
                 eris
               </Link>
             </div>
-            
+
             {/* Desktop Navigation - Hidden when sidebar is visible */}
             {!showSidebarToggle && (
               <div className="hidden md:flex md:items-center md:space-x-8">
@@ -98,13 +106,13 @@ export default function Navbar() {
                 })}
               </div>
             )}
-            
+
             {/* Right side items - Minimal */}
             <div className="hidden md:flex md:items-center md:space-x-6">
               <DarkModeToggle />
               <ProfileMenu />
             </div>
-            
+
             {/* Mobile menu button - Simple hamburger */}
             <div className="flex items-center md:hidden space-x-4">
               <DarkModeToggle />
@@ -116,9 +124,19 @@ export default function Navbar() {
                 <span className="sr-only">menu</span>
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {isMobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
                   )}
                 </svg>
               </button>
@@ -144,7 +162,12 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>

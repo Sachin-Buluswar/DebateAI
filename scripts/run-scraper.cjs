@@ -36,7 +36,10 @@ for (const key of ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPE
   }
 }
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const ZIP_BASE_URL = 'https://caselist-files.s3.us-east-005.backblazeb2.com/openev';
@@ -55,8 +58,11 @@ function chunkText(text, fileName) {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.length > 0 && trimmed.length < 120 &&
-        (trimmed === trimmed.toUpperCase() || /^\d+[.)]\s/.test(trimmed))) {
+    if (
+      trimmed.length > 0 &&
+      trimmed.length < 120 &&
+      (trimmed === trimmed.toUpperCase() || /^\d+[.)]\s/.test(trimmed))
+    ) {
       currentSection = trimmed;
     }
     currentText += line + '\n';
@@ -66,7 +72,11 @@ function chunkText(text, fileName) {
       const content = currentText.slice(0, bp).trim();
       if (content.length > 50) {
         const prefix = `[Source: ${fileName}${currentSection ? `, Section: ${currentSection}` : ''}]`;
-        chunks.push({ content: `${prefix}\n\n${content}`, sectionTitle: currentSection, chunkIndex: chunkIndex++ });
+        chunks.push({
+          content: `${prefix}\n\n${content}`,
+          sectionTitle: currentSection,
+          chunkIndex: chunkIndex++,
+        });
       }
       currentText = currentText.slice(Math.max(0, bp - CHUNK_OVERLAP));
     }
@@ -74,7 +84,11 @@ function chunkText(text, fileName) {
 
   if (currentText.trim().length > 50) {
     const prefix = `[Source: ${fileName}${currentSection ? `, Section: ${currentSection}` : ''}]`;
-    chunks.push({ content: `${prefix}\n\n${currentText.trim()}`, sectionTitle: currentSection, chunkIndex: chunkIndex });
+    chunks.push({
+      content: `${prefix}\n\n${currentText.trim()}`,
+      sectionTitle: currentSection,
+      chunkIndex: chunkIndex,
+    });
   }
 
   return chunks;
@@ -107,7 +121,7 @@ async function indexDocument(docId, text, fileName) {
   const chunks = chunkText(text, fileName);
   if (chunks.length === 0) return 0;
 
-  const embeddings = await generateEmbeddings(chunks.map(c => c.content));
+  const embeddings = await generateEmbeddings(chunks.map((c) => c.content));
 
   for (let i = 0; i < chunks.length; i += DB_INSERT_BATCH_SIZE) {
     const batch = chunks.slice(i, i + DB_INSERT_BATCH_SIZE);
@@ -123,10 +137,13 @@ async function indexDocument(docId, text, fileName) {
     let lastError;
     for (let attempt = 0; attempt < 3; attempt++) {
       const { error } = await supabase.from('document_chunks').insert(rows);
-      if (!error) { lastError = null; break; }
+      if (!error) {
+        lastError = null;
+        break;
+      }
       lastError = error;
       console.log(`    Chunk insert retry ${attempt + 1}/3: ${error.message}`);
-      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
     }
     if (lastError) throw new Error(`DB insert failed after 3 retries: ${lastError.message}`);
   }
@@ -139,16 +156,29 @@ async function indexDocument(docId, text, fileName) {
 function extractMetadata(fileName, filePath, year) {
   const metadata = { year };
   const campPatterns = [
-    [/DDI|DDW/i, 'DDI/DDW'], [/Michigan|UMICH|UM7/i, 'Michigan'],
-    [/Northwestern/i, 'Northwestern'], [/Berkeley/i, 'Berkeley'],
-    [/Emory/i, 'Emory'], [/Georgetown/i, 'Georgetown'],
-    [/Wake\s*Forest/i, 'Wake Forest'], [/Gonzaga/i, 'Gonzaga'],
-    [/CNDI/i, 'CNDI'], [/GDI/i, 'GDI'], [/SDI/i, 'SDI'],
+    [/DDI|DDW/i, 'DDI/DDW'],
+    [/Michigan|UMICH|UM7/i, 'Michigan'],
+    [/Northwestern/i, 'Northwestern'],
+    [/Berkeley/i, 'Berkeley'],
+    [/Emory/i, 'Emory'],
+    [/Georgetown/i, 'Georgetown'],
+    [/Wake\s*Forest/i, 'Wake Forest'],
+    [/Gonzaga/i, 'Gonzaga'],
+    [/CNDI/i, 'CNDI'],
+    [/GDI/i, 'GDI'],
+    [/SDI/i, 'SDI'],
   ];
   for (const [pattern, name] of campPatterns) {
-    if (pattern.test(filePath) || pattern.test(fileName)) { metadata.camp = name; break; }
+    if (pattern.test(filePath) || pattern.test(fileName)) {
+      metadata.camp = name;
+      break;
+    }
   }
-  metadata.title = fileName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  metadata.title = fileName
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   return metadata;
 }
 
@@ -160,7 +190,11 @@ function parseUnzipList(output) {
     if (!m) continue;
     const fp = m[1];
     const ext = path.extname(fp).toLowerCase();
-    if ((ext === '.docx' || ext === '.pdf') && !fp.startsWith('__MACOSX') && !path.basename(fp).startsWith('.')) {
+    if (
+      (ext === '.docx' || ext === '.pdf') &&
+      !fp.startsWith('__MACOSX') &&
+      !path.basename(fp).startsWith('.')
+    ) {
       files.push(fp);
     }
   }
@@ -172,7 +206,9 @@ async function scrapeYear(year) {
   const zipUrl = `${ZIP_BASE_URL}/${year}OpenEv.zip`;
   const tmpDir = path.join(os.tmpdir(), `eris-scrape-${year}-${Date.now()}`);
   const zipPath = path.join(tmpDir, `${year}OpenEv.zip`);
-  let indexed = 0, skipped = 0, failed = 0;
+  let indexed = 0,
+    skipped = 0,
+    failed = 0;
 
   try {
     fs.mkdirSync(tmpDir, { recursive: true });
@@ -183,7 +219,10 @@ async function scrapeYear(year) {
     fs.writeFileSync(zipPath, Buffer.from(await resp.arrayBuffer()));
     console.log(`  Downloaded: ${(fs.statSync(zipPath).size / 1024 / 1024).toFixed(1)} MB`);
 
-    const listOutput = execSync(`unzip -l "${zipPath}" 2>/dev/null`, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+    const listOutput = execSync(`unzip -l "${zipPath}" 2>/dev/null`, {
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024,
+    });
     const entries = parseUnzipList(listOutput);
     const total = entries.length;
     console.log(`  Files: ${total}`);
@@ -199,8 +238,11 @@ async function scrapeYear(year) {
       try {
         // Skip if already indexed
         const { data: existing } = await supabase
-          .from('documents').select('id')
-          .eq('file_name', fileName).eq('source_type', 'opencaselist').limit(1);
+          .from('documents')
+          .select('id')
+          .eq('file_name', fileName)
+          .eq('source_type', 'opencaselist')
+          .limit(1);
         if (existing && existing.length > 0) {
           skipped++;
           continue;
@@ -208,11 +250,19 @@ async function scrapeYear(year) {
 
         // Extract single file
         try {
-          execSync(`unzip -o -j "${zipPath}" "${entryPath}" -d "${extractDir}" 2>/dev/null`, { maxBuffer: 50 * 1024 * 1024 });
-        } catch { failed++; continue; }
+          execSync(`unzip -o -j "${zipPath}" "${entryPath}" -d "${extractDir}" 2>/dev/null`, {
+            maxBuffer: 50 * 1024 * 1024,
+          });
+        } catch {
+          failed++;
+          continue;
+        }
 
         const extractedPath = path.join(extractDir, fileName);
-        if (!fs.existsSync(extractedPath)) { failed++; continue; }
+        if (!fs.existsSync(extractedPath)) {
+          failed++;
+          continue;
+        }
 
         const fileBuffer = fs.readFileSync(extractedPath);
         const ext = path.extname(fileName).toLowerCase();
@@ -221,29 +271,41 @@ async function scrapeYear(year) {
         if (ext === '.docx') {
           text = (await mammoth.extractRawText({ buffer: fileBuffer })).value;
         } else if (ext === '.pdf') {
-          const pdfParse = await import('pdf-parse').then(m => m.default || m);
+          const pdfParse = await import('pdf-parse').then((m) => m.default || m);
           text = (await pdfParse(fileBuffer)).text;
         }
 
         // Clean up extracted file immediately
-        try { fs.unlinkSync(extractedPath); } catch {}
+        try {
+          fs.unlinkSync(extractedPath);
+        } catch {}
 
-        if (text.trim().length < 100) { skipped++; continue; }
+        if (text.trim().length < 100) {
+          skipped++;
+          continue;
+        }
 
         const metadata = extractMetadata(fileName, entryPath, year);
 
-        const { data: doc, error: docErr } = await supabase.from('documents').insert({
-          title: metadata.title || fileName,
-          file_name: fileName, file_url: '',
-          file_size: fileBuffer.length, source_url: zipUrl,
-          source_type: 'opencaselist', content: text.substring(0, 5000), metadata,
-        }).select().single();
+        const { data: doc, error: docErr } = await supabase
+          .from('documents')
+          .insert({
+            title: metadata.title || fileName,
+            file_name: fileName,
+            file_url: '',
+            file_size: fileBuffer.length,
+            source_url: zipUrl,
+            source_type: 'opencaselist',
+            content: text.substring(0, 5000),
+            metadata,
+          })
+          .select()
+          .single();
         if (docErr) throw docErr;
 
         const numChunks = await indexDocument(doc.id, text, fileName);
         indexed++;
         console.log(`  ${progress} ✓ ${fileName} (${text.length} chars, ${numChunks} chunks)`);
-
       } catch (err) {
         failed++;
         console.error(`  ${progress} ✗ ${fileName}: ${err.message || err}`);
@@ -252,7 +314,9 @@ async function scrapeYear(year) {
 
     return { total, indexed, skipped, failed };
   } finally {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {}
   }
 }
 
@@ -292,10 +356,7 @@ async function repairIncomplete() {
     }
 
     // Delete the document record so scraper will re-process it
-    const { error: docErr } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', doc.id);
+    const { error: docErr } = await supabase.from('documents').delete().eq('id', doc.id);
 
     if (docErr) {
       console.error(`    Failed to delete doc ${doc.file_name}: ${docErr.message}`);
@@ -312,9 +373,10 @@ async function repairIncomplete() {
 // ---- Main ----
 async function main() {
   const args = process.argv.slice(2);
-  const years = args.length > 0
-    ? args.map(Number).filter(n => n >= 2013 && n <= 2030)
-    : [2025, 2024, 2023, 2022, 2021, 2020];
+  const years =
+    args.length > 0
+      ? args.map(Number).filter((n) => n >= 2013 && n <= 2030)
+      : [2025, 2024, 2023, 2022, 2021, 2020];
 
   console.log('╔══════════════════════════════════════════════╗');
   console.log('║  Eris Debate — OpenCaseList Scraper          ║');
@@ -328,7 +390,10 @@ async function main() {
   await repairIncomplete();
 
   const startTime = Date.now();
-  let grandTotal = 0, grandIndexed = 0, grandSkipped = 0, grandFailed = 0;
+  let grandTotal = 0,
+    grandIndexed = 0,
+    grandSkipped = 0,
+    grandFailed = 0;
 
   for (const year of years) {
     console.log(`\n━━━ ${year} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
@@ -338,7 +403,9 @@ async function main() {
       grandIndexed += result.indexed;
       grandSkipped += result.skipped;
       grandFailed += result.failed;
-      console.log(`  Year ${year} done: ${result.indexed} indexed, ${result.skipped} skipped, ${result.failed} failed`);
+      console.log(
+        `  Year ${year} done: ${result.indexed} indexed, ${result.skipped} skipped, ${result.failed} failed`
+      );
     } catch (err) {
       console.error(`  Year ${year} FAILED: ${err.message || err}`);
     }
@@ -356,4 +423,7 @@ async function main() {
   console.log(`Memory:       ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(0)} MB`);
 }
 
-main().catch(err => { console.error('FATAL:', err); process.exit(1); });
+main().catch((err) => {
+  console.error('FATAL:', err);
+  process.exit(1);
+});

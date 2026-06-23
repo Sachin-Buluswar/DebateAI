@@ -25,10 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         }
 
         // Delete existing chunks
-        await supabaseAdmin
-          .from('document_chunks')
-          .delete()
-          .eq('document_id', documentId);
+        await supabaseAdmin.from('document_chunks').delete().eq('document_id', documentId);
 
         // Re-extract text if we have a file URL, otherwise use stored content
         let text = '';
@@ -38,7 +35,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
             if (response.ok) {
               const buffer = Buffer.from(await response.arrayBuffer());
               if (document.file_name.endsWith('.pdf')) {
-                const pdfParse = await import('pdf-parse').then(m => m.default || m);
+                const pdfParse = await import('pdf-parse').then((m) => m.default || m);
                 const pdfData = await pdfParse(buffer);
                 text = pdfData.text;
               } else {
@@ -57,10 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
 
         if (!text || text.trim().length < 50) {
           return addSecurityHeaders(
-            NextResponse.json(
-              { error: 'No content available for reindexing' },
-              { status: 400 }
-            )
+            NextResponse.json({ error: 'No content available for reindexing' }, { status: 400 })
           );
         }
 
@@ -74,10 +68,7 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
         );
       } catch (_error) {
         return addSecurityHeaders(
-          NextResponse.json(
-            { error: 'Failed to reindex document' },
-            { status: 500 }
-          )
+          NextResponse.json({ error: 'Failed to reindex document' }, { status: 500 })
         );
       }
     });

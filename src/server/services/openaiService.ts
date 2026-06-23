@@ -5,15 +5,15 @@ import type { OpenAI } from 'openai';
 
 /**
  * OpenAI Service - High-level interface for all OpenAI operations
- * 
+ *
  * This service acts as the primary integration point for OpenAI's APIs in the debate system.
  * It provides a unified interface for chat completions, transcriptions, and embeddings.
- * 
+ *
  * Role in the System:
  * - Powers the AI debate agents' reasoning and response generation
  * - Transcribes user speech input for the speech feedback system
  * - Generates embeddings for document search and retrieval (future RAG implementation)
- * 
+ *
  * Features:
  * - Centralized configuration management with environment-based model selection
  * - Built-in validation with Zod schemas to ensure API compatibility
@@ -21,7 +21,7 @@ import type { OpenAI } from 'openai';
  * - Performance monitoring and token usage tracking for cost management
  * - Structured output helpers for reliable JSON responses
  * - Streaming support for real-time debate interactions
- * 
+ *
  * Authentication:
  * - Uses API key from OPENAI_API_KEY environment variable
  * - Managed through openAIManager for connection pooling and rate limiting
@@ -32,16 +32,20 @@ import type { OpenAI } from 'openai';
 // and provide type safety throughout the application
 export const openAISchemas = {
   chatCompletion: z.object({
-    messages: z.array(z.object({
-      role: z.enum(['system', 'user', 'assistant']),
-      content: z.string().min(1).max(32000), // OpenAI token limit approximation
-    })),
+    messages: z.array(
+      z.object({
+        role: z.enum(['system', 'user', 'assistant']),
+        content: z.string().min(1).max(32000), // OpenAI token limit approximation
+      })
+    ),
     model: z.string().default('gpt-4o-mini'), // Default to cost-efficient model
     temperature: z.number().min(0).max(2).optional(), // Controls randomness: 0=deterministic, 2=very random
     max_tokens: z.number().min(1).max(4096).optional(), // Limits response length
-    response_format: z.object({
-      type: z.enum(['text', 'json_object']), // json_object ensures valid JSON output
-    }).optional(),
+    response_format: z
+      .object({
+        type: z.enum(['text', 'json_object']), // json_object ensures valid JSON output
+      })
+      .optional(),
     frequency_penalty: z.number().min(-2).max(2).optional(), // Reduces repetition of tokens
     presence_penalty: z.number().min(-2).max(2).optional(), // Encourages new topics
   }),
@@ -54,7 +58,6 @@ export const openAISchemas = {
     response_format: z.enum(['json', 'text', 'srt', 'verbose_json', 'vtt']).optional(),
     temperature: z.number().min(0).max(1).optional(),
   }),
-
 };
 
 export type ChatCompletionParams = z.infer<typeof openAISchemas.chatCompletion>;
@@ -74,7 +77,7 @@ class OpenAIService {
 
   /**
    * Create a chat completion with validation and error handling
-   * 
+   *
    * This is the primary method for generating AI responses in debates.
    * It handles the complete lifecycle of a chat completion request:
    * 1. Input validation using Zod schemas
@@ -82,7 +85,7 @@ class OpenAIService {
    * 3. Request execution with automatic retry on failures
    * 4. Response validation if a validator is provided
    * 5. Usage tracking for cost monitoring
-   * 
+   *
    * The method integrates with openAIManager for:
    * - Connection pooling and reuse
    * - Rate limiting to avoid 429 errors
@@ -98,13 +101,13 @@ class OpenAIService {
   ): Promise<OpenAI.ChatCompletion> {
     // Validate input
     const validated = openAISchemas.chatCompletion.parse(params);
-    
+
     logger.info('Creating chat completion', {
       metadata: {
         model: validated.model,
         messageCount: validated.messages.length,
         temperature: validated.temperature,
-      }
+      },
     });
 
     try {
@@ -136,7 +139,7 @@ class OpenAIService {
             metadata: {
               model: validated.model,
               response: content.substring(0, 100),
-            }
+            },
           });
         }
       }
@@ -149,7 +152,7 @@ class OpenAIService {
             promptTokens: response.usage.prompt_tokens,
             completionTokens: response.usage.completion_tokens,
             totalTokens: response.usage.total_tokens,
-          }
+          },
         });
       }
 
@@ -159,7 +162,7 @@ class OpenAIService {
         metadata: {
           model: validated.model,
           messageCount: validated.messages.length,
-        }
+        },
       });
       throw error;
     }
@@ -167,17 +170,17 @@ class OpenAIService {
 
   /**
    * Create a transcription with validation and error handling
-   * 
+   *
    * Converts audio to text using OpenAI's Whisper model.
    * Used in the speech feedback system to transcribe user debate speeches.
-   * 
+   *
    * Key features:
    * - Supports multiple audio formats (mp3, mp4, mpeg, mpga, m4a, wav, webm)
    * - Language detection or specific language targeting
    * - Multiple output formats (json, text, srt, vtt)
    * - Automatic retry on transient failures
    * - File size validation (max 25MB per OpenAI limits)
-   * 
+   *
    * Error handling:
    * - 413 errors (file too large) are not retried
    * - 429 errors (rate limit) trigger exponential backoff
@@ -198,7 +201,7 @@ class OpenAIService {
         model: validated.model,
         language: validated.language,
         responseFormat: validated.response_format,
-      }
+      },
     });
 
     try {
@@ -224,13 +227,12 @@ class OpenAIService {
     } catch (error) {
       logger.error('Transcription failed', error as Error, {
         metadata: {
-          model: validated.model
-        }
+          model: validated.model,
+        },
       });
       throw error;
     }
   }
-
 }
 
 // Export singleton instance

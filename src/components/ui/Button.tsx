@@ -16,39 +16,47 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({
-    variant = 'primary',
-    size = 'md',
-    loading = false,
-    loadingText = 'loading...',
-    icon,
-    iconPosition = 'left',
-    fullWidth = false,
-    className,
-    children,
-    disabled,
-    ...props
-  }, ref) => {
-    const baseStyles = 'relative inline-flex items-center justify-center font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed overflow-hidden';
+  (
+    {
+      variant = 'primary',
+      size = 'md',
+      loading = false,
+      loadingText = 'loading...',
+      icon,
+      iconPosition = 'left',
+      fullWidth = false,
+      className,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const baseStyles =
+      'relative inline-flex items-center justify-center font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed overflow-hidden';
 
     const variants = {
-      primary: 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 focus:ring-gray-500 disabled:bg-gray-400 dark:disabled:bg-gray-600',
-      secondary: 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400 disabled:bg-gray-50 dark:disabled:bg-gray-900',
-      ghost: 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-gray-400 disabled:text-gray-400',
-      outline: 'border border-gray-300 dark:border-gray-700 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-gray-400 disabled:text-gray-400',
-      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300'
+      primary:
+        'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 focus:ring-gray-500 disabled:bg-gray-400 dark:disabled:bg-gray-600',
+      secondary:
+        'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-400 disabled:bg-gray-50 dark:disabled:bg-gray-900',
+      ghost:
+        'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-gray-400 disabled:text-gray-400',
+      outline:
+        'border border-gray-300 dark:border-gray-700 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-gray-400 disabled:text-gray-400',
+      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300',
     };
 
     const sizes = {
       sm: 'px-3 py-1.5 text-sm gap-1.5',
       md: 'px-4 py-2 text-base gap-2',
-      lg: 'px-6 py-3 text-lg gap-2.5'
+      lg: 'px-6 py-3 text-lg gap-2.5',
     };
 
     const ringOffsets = {
       sm: 'focus:ring-offset-1',
       md: 'focus:ring-offset-2',
-      lg: 'focus:ring-offset-2'
+      lg: 'focus:ring-offset-2',
     };
 
     // Loading spinner component
@@ -112,19 +120,23 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ) : (
             <>
               {icon && iconPosition === 'left' && (
-                <span className={cn(
-                  'transition-transform duration-300 group-hover:scale-110',
-                  size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'
-                )}>
+                <span
+                  className={cn(
+                    'transition-transform duration-300 group-hover:scale-110',
+                    size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'
+                  )}
+                >
                   {icon}
                 </span>
               )}
               <span className="lowercase">{children}</span>
               {icon && iconPosition === 'right' && (
-                <span className={cn(
-                  'transition-transform duration-300 group-hover:scale-110',
-                  size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'
-                )}>
+                <span
+                  className={cn(
+                    'transition-transform duration-300 group-hover:scale-110',
+                    size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'
+                  )}
+                >
                   {icon}
                 </span>
               )}

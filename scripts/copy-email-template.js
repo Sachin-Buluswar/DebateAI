@@ -30,16 +30,18 @@ const templateFile = path.join(templateDir, `${templateName}.html`);
 
 if (!fs.existsSync(templateFile)) {
   console.error(`❌ Template "${templateName}" not found!`);
-  console.log('\nAvailable templates: confirm-signup, reset-password, magic-link, change-email, welcome\n');
+  console.log(
+    '\nAvailable templates: confirm-signup, reset-password, magic-link, change-email, welcome\n'
+  );
   process.exit(1);
 }
 
 try {
   const content = fs.readFileSync(templateFile, 'utf8');
-  
+
   // Detect OS and use appropriate clipboard command
   const platform = process.platform;
-  
+
   if (platform === 'darwin') {
     // macOS
     execSync('pbcopy', { input: content });
@@ -57,7 +59,7 @@ try {
   } else {
     throw new Error('Unsupported platform');
   }
-  
+
   console.log(`\n✅ Template "${templateName}" copied to clipboard!`);
   console.log('\n📋 Next steps:');
   console.log('1. Go to Supabase Dashboard → Authentication → Email Templates');
@@ -65,7 +67,6 @@ try {
   console.log('3. Enable "Custom email"');
   console.log('4. Paste the template (Cmd/Ctrl + V)');
   console.log('5. Save changes\n');
-  
 } catch (error) {
   console.error('❌ Failed to copy to clipboard:', error.message);
   console.log('\nYou can manually copy the template from:');

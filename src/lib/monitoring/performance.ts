@@ -38,7 +38,7 @@ export class PerformanceMonitor {
       name,
       startTime: performance.now(),
       metadata,
-      threshold: threshold || this.defaultThreshold
+      threshold: threshold || this.defaultThreshold,
     });
   }
 
@@ -54,7 +54,7 @@ export class PerformanceMonitor {
 
     metric.endTime = performance.now();
     metric.duration = metric.endTime - metric.startTime;
-    
+
     if (additionalMetadata) {
       metric.metadata = { ...metric.metadata, ...additionalMetadata };
     }
@@ -65,8 +65,8 @@ export class PerformanceMonitor {
         metadata: {
           duration: `${metric.duration.toFixed(2)}ms`,
           threshold: `${metric.threshold}ms`,
-          ...metric.metadata
-        }
+          ...metric.metadata,
+        },
       });
     }
 
@@ -83,15 +83,15 @@ export class PerformanceMonitor {
     threshold?: number
   ): Promise<T> {
     this.startTimer(name, metadata, threshold);
-    
+
     try {
       const result = await operation();
       this.endTimer(name, { status: 'success' });
       return result;
     } catch (error) {
-      this.endTimer(name, { 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      this.endTimer(name, {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -107,15 +107,15 @@ export class PerformanceMonitor {
     threshold?: number
   ): T {
     this.startTimer(name, metadata, threshold);
-    
+
     try {
       const result = operation();
       this.endTimer(name, { status: 'success' });
       return result;
     } catch (error) {
-      this.endTimer(name, { 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      this.endTimer(name, {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -125,23 +125,19 @@ export class PerformanceMonitor {
    * Generate a performance report
    */
   generateReport(): PerformanceReport {
-    const completedMetrics = Array.from(this.metrics.values())
-      .filter(m => m.duration !== undefined);
-    
-    const totalDuration = completedMetrics.reduce(
-      (sum, m) => sum + (m.duration || 0), 
-      0
+    const completedMetrics = Array.from(this.metrics.values()).filter(
+      (m) => m.duration !== undefined
     );
-    
-    const slowOperations = completedMetrics.filter(
-      m => m.duration! > m.threshold!
-    );
+
+    const totalDuration = completedMetrics.reduce((sum, m) => sum + (m.duration || 0), 0);
+
+    const slowOperations = completedMetrics.filter((m) => m.duration! > m.threshold!);
 
     const report: PerformanceReport = {
       timestamp: new Date().toISOString(),
       metrics: completedMetrics,
       totalDuration,
-      slowOperations
+      slowOperations,
     };
 
     // Log the report
@@ -149,8 +145,8 @@ export class PerformanceMonitor {
       metadata: {
         totalOperations: completedMetrics.length,
         totalDuration: `${totalDuration.toFixed(2)}ms`,
-        slowOperations: slowOperations.length
-      }
+        slowOperations: slowOperations.length,
+      },
     });
 
     return report;
@@ -170,34 +166,34 @@ export class PerformanceMonitor {
     return async (req: Request, handler: () => Promise<Response>): Promise<Response> => {
       const url = new URL(req.url);
       const timerName = `${req.method} ${url.pathname}`;
-      
+
       this.startTimer(timerName, {
         method: req.method,
         path: url.pathname,
-        query: url.search
+        query: url.search,
       });
 
       try {
         const response = await handler();
-        
+
         const duration = this.endTimer(timerName, {
           status: response.status,
-          ok: response.ok
+          ok: response.ok,
         });
 
         // Add performance header
         const headers = new Headers(response.headers);
         headers.set('X-Response-Time', `${duration?.toFixed(2)}ms`);
-        
+
         return new Response(response.body, {
           status: response.status,
           statusText: response.statusText,
-          headers
+          headers,
         });
       } catch (error) {
         this.endTimer(timerName, {
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
         throw error;
       }

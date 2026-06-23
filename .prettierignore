@@ -1,0 +1,24 @@
+# Dependencies and build output
+node_modules
+.next
+out
+dist
+build
+coverage
+
+# Generated / vendored files
+package-lock.json
+public/pdf.worker.min.mjs
+
+# Local, gitignored tooling config
+.claude/
+
+# MCP server configuration — left as-is (not reformatted)
+.mcp.json
+
+# Documentation and prose — kept hand-authored; Prettier does not reflow these
+*.md
+docs/
+
+# Hand-crafted HTML email templates — Prettier reformatting can break email-client rendering
+src/email-templates/

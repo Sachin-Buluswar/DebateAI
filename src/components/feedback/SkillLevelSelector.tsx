@@ -15,36 +15,35 @@ const SKILL_LEVELS = [
     value: 'novice' as const,
     label: 'Novice',
     description: 'First year debater',
-    tooltip: 'New to debate, learning fundamental skills and format. Feedback will focus on basics with extra encouragement.',
+    tooltip:
+      'New to debate, learning fundamental skills and format. Feedback will focus on basics with extra encouragement.',
     color: 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200',
     selectedColor: 'bg-green-200 border-green-500',
-    emoji: '🌱'
+    emoji: '🌱',
   },
   {
     value: 'intermediate' as const,
     label: 'Intermediate',
     description: '1-2 years experience',
-    tooltip: 'Comfortable with format, developing strategic thinking. Balanced feedback with both encouragement and critique.',
+    tooltip:
+      'Comfortable with format, developing strategic thinking. Balanced feedback with both encouragement and critique.',
     color: 'bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200',
     selectedColor: 'bg-blue-200 border-blue-500',
-    emoji: '📈'
+    emoji: '📈',
   },
   {
     value: 'advanced' as const,
     label: 'Advanced',
     description: 'Varsity level',
-    tooltip: 'Competing at high levels, refining advanced techniques. Direct, strategic feedback with high standards.',
+    tooltip:
+      'Competing at high levels, refining advanced techniques. Direct, strategic feedback with high standards.',
     color: 'bg-purple-100 border-purple-300 text-purple-800 hover:bg-purple-200',
     selectedColor: 'bg-purple-200 border-purple-500',
-    emoji: '🏆'
-  }
+    emoji: '🏆',
+  },
 ];
 
-export function SkillLevelSelector({ 
-  value, 
-  onChange, 
-  className 
-}: SkillLevelSelectorProps) {
+export function SkillLevelSelector({ value, onChange, className }: SkillLevelSelectorProps) {
   return (
     <div className={className}>
       <div className="flex items-center gap-2 mb-3">
@@ -58,7 +57,7 @@ export function SkillLevelSelector({
           </div>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {SKILL_LEVELS.map((level) => (
           <div key={level.value} className="relative">
@@ -74,8 +73,8 @@ export function SkillLevelSelector({
             <label
               htmlFor={`skill-${level.value}`}
               className={cn(
-                "flex flex-col p-4 rounded-lg border-2 cursor-pointer",
-                "transition-all duration-200",
+                'flex flex-col p-4 rounded-lg border-2 cursor-pointer',
+                'transition-all duration-200',
                 value === level.value
                   ? `${level.selectedColor} ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900`
                   : level.color,
@@ -90,9 +89,7 @@ export function SkillLevelSelector({
                   {level.label}
                 </span>
               </div>
-              <span className="text-sm opacity-90">
-                {level.description}
-              </span>
+              <span className="text-sm opacity-90">{level.description}</span>
             </label>
             <div className="group absolute top-2 right-2">
               <button

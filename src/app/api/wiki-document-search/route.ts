@@ -1,21 +1,21 @@
 /**
  * Eris Debate - Direct Document Search API Endpoint
- * 
+ *
  * This endpoint implements database-based document search without vector embeddings.
  * It provides a complementary search method to the RAG approach, using PostgreSQL's
  * full-text search capabilities for exact and fuzzy text matching.
- * 
+ *
  * Key differences from RAG search:
  * - No vector embeddings: Uses PostgreSQL full-text search and ILIKE queries
  * - Direct database queries: Searches pre-chunked documents stored in Supabase
  * - Exact matching: Better for finding specific terms or phrases
  * - Lower latency: No API calls to OpenAI, direct database access
- * 
+ *
  * Document Storage Structure:
  * - documents table: Stores document metadata (title, URL, source type)
  * - document_chunks table: Stores text chunks with positional metadata
  * - Chunks maintain relationships for retrieving surrounding context
- * 
+ *
  * @endpoint POST /api/wiki-document-search
  * @param {string} query - Search terms to find in documents
  * @param {number} maxResults - Maximum results to return (default: 10, max: 20)
@@ -82,13 +82,16 @@ async function performDirectDocumentSearch(
   query: string,
   maxResults: number = 10
 ): Promise<EnhancedSearchResult[]> {
-  const searchTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2);
+  const searchTerms = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((term) => term.length > 2);
   if (searchTerms.length === 0) return [];
 
   // Use ILIKE with OR conditions, backed by the content_trgm GIN index.
   // Fetch extra candidates so client-side AND-filtering + scoring has enough to work with.
   const fetchLimit = maxResults * 5;
-  const orConditions = searchTerms.map(term => `content.ilike.%${term}%`).join(',');
+  const orConditions = searchTerms.map((term) => `content.ilike.%${term}%`).join(',');
 
   const { data: chunks, error: searchError } = await supabase
     .from('document_chunks')
@@ -104,23 +107,26 @@ async function performDirectDocumentSearch(
 
   // Score, rank, and take top results. scoreChunk rewards all-terms-present.
   const scored = (chunks as SearchChunk[])
-    .map(chunk => ({ chunk, score: scoreChunk(chunk, query, searchTerms) }))
+    .map((chunk) => ({ chunk, score: scoreChunk(chunk, query, searchTerms) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, maxResults);
 
   // Fetch document metadata for all results in a single query
-  const docIds = [...new Set(scored.map(s => s.chunk.document_id))];
+  const docIds = [...new Set(scored.map((s) => s.chunk.document_id))];
   const { data: documents } = await supabase
     .from('documents')
     .select('id, title, file_name, file_url, source_type, indexed_at')
     .in('id', docIds);
 
-  const docMap = new Map(documents?.map(d => [d.id, d]) ?? []);
+  const docMap = new Map(documents?.map((d) => [d.id, d]) ?? []);
 
   // Batch-fetch context chunks in a single query
-  const contextConditions = scored.map(
-    s => `and(document_id.eq.${s.chunk.document_id},chunk_index.gte.${Math.max(0, s.chunk.chunk_index - 2)},chunk_index.lte.${s.chunk.chunk_index + 2})`
-  ).join(',');
+  const contextConditions = scored
+    .map(
+      (s) =>
+        `and(document_id.eq.${s.chunk.document_id},chunk_index.gte.${Math.max(0, s.chunk.chunk_index - 2)},chunk_index.lte.${s.chunk.chunk_index + 2})`
+    )
+    .join(',');
 
   const { data: allContextChunks } = await supabase
     .from('document_chunks')
@@ -138,8 +144,8 @@ async function performDirectDocumentSearch(
   return scored.map(({ chunk, score }) => {
     const doc = docMap.get(chunk.document_id);
     const docCtx = contextMap.get(chunk.document_id) ?? [];
-    const beforeChunks = docCtx.filter(c => c.chunk_index < chunk.chunk_index);
-    const afterChunks = docCtx.filter(c => c.chunk_index > chunk.chunk_index);
+    const beforeChunks = docCtx.filter((c) => c.chunk_index < chunk.chunk_index);
+    const afterChunks = docCtx.filter((c) => c.chunk_index > chunk.chunk_index);
     const pdfPageAnchor = chunk.page_number ? `#page=${chunk.page_number}` : '';
 
     return {
@@ -152,8 +158,8 @@ async function performDirectDocumentSearch(
       pdf_url: doc?.file_url ?? '',
       pdf_page_anchor: pdfPageAnchor,
       context: {
-        before: beforeChunks.map(c => c.content).join('\n\n'),
-        after: afterChunks.map(c => c.content).join('\n\n'),
+        before: beforeChunks.map((c) => c.content).join('\n\n'),
+        after: afterChunks.map((c) => c.content).join('\n\n'),
       },
       metadata: {
         title: doc?.title ?? 'Untitled',
@@ -167,23 +173,23 @@ async function performDirectDocumentSearch(
 
 /**
  * POST /api/wiki-document-search - HTTP handler for database document search
- * 
+ *
  * This endpoint provides an alternative to vector search, using traditional
  * database querying methods. It's particularly effective for:
  * - Exact phrase matching
  * - Finding specific terms or acronyms
  * - Lower-latency searches (no external API calls)
  * - Fallback when vector search is unavailable
- * 
+ *
  * The endpoint integrates with the same document corpus as RAG search,
  * but uses different retrieval methods. Results include the same metadata
  * and context format for consistency across search types.
- * 
+ *
  * Error handling:
  * - Returns empty results rather than errors to prevent UI disruption
  * - Logs errors for debugging while maintaining service availability
  * - Gracefully handles database connection issues
- * 
+ *
  * @param {Request} request - HTTP request with JSON body {query, maxResults}
  * @returns {Response} JSON response with search results and metadata
  */
@@ -193,7 +199,7 @@ export async function POST(request: NextRequest) {
       try {
         // Create authenticated Supabase client that respects RLS
         const supabase = createClient();
-        
+
         // Validate request
         const validation = await validateRequest(request, validationSchemas.wikiSearch, {
           body: true,
@@ -269,7 +275,9 @@ export async function OPTIONS() {
       status: 200,
       headers: {
         'Access-Control-Allow-Origin':
-          process.env.NODE_ENV === 'development' ? '*' : (process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com'),
+          process.env.NODE_ENV === 'development'
+            ? '*'
+            : process.env.NEXT_PUBLIC_APP_URL || 'https://erisdebate.com',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Max-Age': '86400',

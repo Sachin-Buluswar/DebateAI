@@ -26,10 +26,10 @@ jobs:
         run: |
           # Update dependencies to latest minor versions
           npm update
-          
+
           # Check for major version updates
           npx npm-check-updates -u --target minor
-          
+
           # Install updated dependencies
           npm install
 
@@ -54,19 +54,19 @@ jobs:
           title: 'chore: weekly dependency update'
           body: |
             ## Weekly Dependency Update
-            
+
             This PR contains automatic dependency updates for the week.
-            
+
             ### Changes
             - Updated npm dependencies to latest minor versions
             - All tests have been run and passed
-            
+
             ### Review Checklist
             - [ ] Review dependency changes in package.json
             - [ ] Check for any breaking changes in updated packages
             - [ ] Verify application still builds and runs correctly
             - [ ] Test critical user flows
-            
+
             ---
             *This PR was automatically created by the dependency update workflow.*
           branch: deps/weekly-update

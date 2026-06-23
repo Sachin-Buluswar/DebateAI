@@ -35,39 +35,25 @@ export async function DELETE(request: NextRequest) {
         .single();
 
       if (fetchError || !document) {
-        return NextResponse.json(
-          { error: 'Document not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Document not found' }, { status: 404 });
       }
 
       // Delete document chunks first (in case cascade isn't set up)
-      await supabase
-        .from('document_chunks')
-        .delete()
-        .eq('document_id', documentId);
+      await supabase.from('document_chunks').delete().eq('document_id', documentId);
 
       // Delete from storage if file URL exists
       if (document.file_url) {
         const path = document.file_url.split('/').pop();
         if (path) {
-          await supabase.storage
-            .from('debate-documents')
-            .remove([path]);
+          await supabase.storage.from('debate-documents').remove([path]);
         }
       }
 
       // Delete the document record
-      const { error: deleteError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', documentId);
+      const { error: deleteError } = await supabase.from('documents').delete().eq('id', documentId);
 
       if (deleteError) {
-        return NextResponse.json(
-          { error: 'Failed to delete document' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 });
       }
 
       return NextResponse.json({
@@ -76,15 +62,9 @@ export async function DELETE(request: NextRequest) {
       });
     } catch (error) {
       if (error instanceof SyntaxError) {
-        return NextResponse.json(
-          { error: 'Invalid JSON body' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
       }
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
   });
 }

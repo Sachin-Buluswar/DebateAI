@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 /**
  * Centralised Supabase browser client that shares the auth cookie using
  * the modern SSR pattern for Next.js 13+ app directory.
- * 
+ *
  * Note: This client is for use in client components only.
  * For server components and API routes, use createClient from '@/lib/supabase/server'
  */
@@ -21,7 +21,7 @@ if (typeof window === 'undefined') {
     {
       auth: {
         persistSession: false,
-      }
+      },
     }
   );
 } else {
@@ -30,4 +30,4 @@ if (typeof window === 'undefined') {
 }
 
 export { supabase };
-export default supabase; 
+export default supabase;

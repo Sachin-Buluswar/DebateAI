@@ -83,7 +83,10 @@ export default function Dashboard() {
       }, 5000);
 
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
         // Clear timeout if we get a response
         clearTimeout(timeoutId);
@@ -119,8 +122,7 @@ export default function Dashboard() {
               setError('Failed to load debates. Please try refreshing the page.');
             }
           }
-        } catch {
-        }
+        } catch {}
 
         try {
           // Only fetch speech recordings if user is authenticated
@@ -138,136 +140,145 @@ export default function Dashboard() {
               setSpeechHistory(fetchedSpeeches);
             } else if (speechError.code !== '42P01') {
               // Error that's not "table doesn't exist" - show error
-              setError(prev => prev ? `${prev} Failed to load speech history.` : 'Failed to load speech history. Please try refreshing the page.');
+              setError((prev) =>
+                prev
+                  ? `${prev} Failed to load speech history.`
+                  : 'Failed to load speech history. Please try refreshing the page.'
+              );
             }
           }
 
           // Calculate stats from speech feedback only if we have data
-            if (fetchedSpeeches.length > 0 || fetchedDebates.length > 0) {
-              // Hours spent estimate
-              const speechHours = fetchedSpeeches.reduce(
-                (sum, speech) => {
-                  // Use actual duration from database
-                  return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 0);
-                },
-                0
-              );
-              const debateHours = fetchedDebates.length * (10 / 60); // 10 minutes per debate
-              setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
+          if (fetchedSpeeches.length > 0 || fetchedDebates.length > 0) {
+            // Hours spent estimate
+            const speechHours = fetchedSpeeches.reduce((sum, speech) => {
+              // Use actual duration from database
+              return sum + (speech.duration_seconds ? speech.duration_seconds / 3600 : 0);
+            }, 0);
+            const debateHours = fetchedDebates.length * (10 / 60); // 10 minutes per debate
+            setHoursSpent(Math.round((speechHours + debateHours) * 10) / 10);
 
-              // Calculate average score and highest score
-              const speechesWithScores = fetchedSpeeches.filter(s => {
+            // Calculate average score and highest score
+            const speechesWithScores = fetchedSpeeches.filter((s) => {
+              const score = extractScore(s.feedback);
+              return (
+                score !== null &&
+                typeof score === 'number' &&
+                !isNaN(score) &&
+                score >= 25 &&
+                score <= 30
+              );
+            });
+
+            if (speechesWithScores.length > 0) {
+              const scores = speechesWithScores.map((s) => {
                 const score = extractScore(s.feedback);
-                return score !== null && typeof score === 'number' && !isNaN(score) && score >= 25 && score <= 30;
+                return score !== null && !isNaN(score) ? score : 25;
               });
-              
-              if (speechesWithScores.length > 0) {
-                const scores = speechesWithScores.map(s => {
-                  const score = extractScore(s.feedback);
-                  return score !== null && !isNaN(score) ? score : 25;
+
+              // Filter out any remaining invalid scores (should be between 25-30 for NSDA)
+              const validScores = scores.filter((s) => s >= 25 && s <= 30);
+
+              if (validScores.length > 0) {
+                // Average score (in NSDA format)
+                const totalScore = validScores.reduce((sum, score) => sum + score, 0);
+                const average = totalScore / validScores.length;
+                setAvgScores({
+                  overall: Math.round(average * 10) / 10, // Keep in NSDA format
+                  count: validScores.length,
                 });
-                
-                // Filter out any remaining invalid scores (should be between 25-30 for NSDA)
-                const validScores = scores.filter(s => s >= 25 && s <= 30);
-                
-                if (validScores.length > 0) {
-                  // Average score (in NSDA format)
-                  const totalScore = validScores.reduce((sum, score) => sum + score, 0);
-                  const average = totalScore / validScores.length;
-                  setAvgScores({
-                    overall: Math.round(average * 10) / 10, // Keep in NSDA format
-                    count: validScores.length
-                  });
-                  
-                  // Highest score (in NSDA format)
-                  const maxScore = Math.max(...validScores);
-                  setHighestScore(Math.round(maxScore * 10) / 10);
-                } else {
-                  setAvgScores({ overall: 0, count: 0 });
-                  setHighestScore(null);
-                }
-                
-                // Score trend data for chart (keep in NSDA format)
-                const sortedSpeeches = [...speechesWithScores].sort(
-                  (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-                );
-                
-                const trendData = sortedSpeeches.map(speech => {
-                  const score = extractScore(speech.feedback);
-                  return {
-                    date: new Date(speech.created_at).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric',
-                      year: sortedSpeeches.length > 10 ? '2-digit' : undefined
-                    }),
-                    score: score !== null && !isNaN(score) && score >= 25 && score <= 30 
-                      ? Math.round(score * 10) / 10 
-                      : 25
-                  };
-                }).filter(item => item.score >= 25 && item.score <= 30); // Filter out any invalid scores
-                
-                setScoreTrendData(trendData);
+
+                // Highest score (in NSDA format)
+                const maxScore = Math.max(...validScores);
+                setHighestScore(Math.round(maxScore * 10) / 10);
               } else {
-                // No scores available
                 setAvgScores({ overall: 0, count: 0 });
                 setHighestScore(null);
-                setScoreTrendData([]);
               }
 
-              // Calculate weekly activity for chart
-              const now = new Date();
-              const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              const weeklyDataMap = new Map<string, number>();
-              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-              const orderedDays: string[] = [];
+              // Score trend data for chart (keep in NSDA format)
+              const sortedSpeeches = [...speechesWithScores].sort(
+                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
 
-              // Initialize map for the last 7 days
-              for (let i = 6; i >= 0; i--) {
-                const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-                const dayName = days[d.getDay()];
-                orderedDays.push(dayName);
-                weeklyDataMap.set(dayName, 0);
-              }
+              const trendData = sortedSpeeches
+                .map((speech) => {
+                  const score = extractScore(speech.feedback);
+                  return {
+                    date: new Date(speech.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: sortedSpeeches.length > 10 ? '2-digit' : undefined,
+                    }),
+                    score:
+                      score !== null && !isNaN(score) && score >= 25 && score <= 30
+                        ? Math.round(score * 10) / 10
+                        : 25,
+                  };
+                })
+                .filter((item) => item.score >= 25 && item.score <= 30); // Filter out any invalid scores
 
-              // Add speech hours
-              fetchedSpeeches.forEach((item) => {
-                const d = new Date(item.created_at);
-                if (d >= oneWeekAgo) {
-                  const dayName = days[d.getDay()];
-                  if (weeklyDataMap.has(dayName)) {
-                    // Use actual duration from database, no longer using hardcoded estimates
-                    const hours = item.duration_seconds ? item.duration_seconds / 3600 : 0;
-                    weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
-                  }
-                }
-              });
-              
-              // Add debate hours
-              fetchedDebates.forEach((item) => {
-                const d = new Date(item.created_at);
-                if (d >= oneWeekAgo) {
-                  const dayName = days[d.getDay()];
-                  if (weeklyDataMap.has(dayName)) {
-                    const hours = 10 / 60; // 10 minutes in hours
-                    weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
-                  }
-                }
-              });
-
-              // Weekly chart data removed - feature can be re-added if needed
-              // const finalWeeklyChartData = orderedDays.map((dayName) => ({
-              //   name: dayName,
-              //   hours: Math.round((weeklyDataMap.get(dayName) || 0) * 100) / 100,
-              // }));
+              setScoreTrendData(trendData);
             } else {
-              // No activity data available, set empty data
-              setHoursSpent(0);
+              // No scores available
               setAvgScores({ overall: 0, count: 0 });
               setHighestScore(null);
               setScoreTrendData([]);
             }
-        } catch {
-        }
+
+            // Calculate weekly activity for chart
+            const now = new Date();
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const weeklyDataMap = new Map<string, number>();
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const orderedDays: string[] = [];
+
+            // Initialize map for the last 7 days
+            for (let i = 6; i >= 0; i--) {
+              const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+              const dayName = days[d.getDay()];
+              orderedDays.push(dayName);
+              weeklyDataMap.set(dayName, 0);
+            }
+
+            // Add speech hours
+            fetchedSpeeches.forEach((item) => {
+              const d = new Date(item.created_at);
+              if (d >= oneWeekAgo) {
+                const dayName = days[d.getDay()];
+                if (weeklyDataMap.has(dayName)) {
+                  // Use actual duration from database, no longer using hardcoded estimates
+                  const hours = item.duration_seconds ? item.duration_seconds / 3600 : 0;
+                  weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
+                }
+              }
+            });
+
+            // Add debate hours
+            fetchedDebates.forEach((item) => {
+              const d = new Date(item.created_at);
+              if (d >= oneWeekAgo) {
+                const dayName = days[d.getDay()];
+                if (weeklyDataMap.has(dayName)) {
+                  const hours = 10 / 60; // 10 minutes in hours
+                  weeklyDataMap.set(dayName, weeklyDataMap.get(dayName)! + hours);
+                }
+              }
+            });
+
+            // Weekly chart data removed - feature can be re-added if needed
+            // const finalWeeklyChartData = orderedDays.map((dayName) => ({
+            //   name: dayName,
+            //   hours: Math.round((weeklyDataMap.get(dayName) || 0) * 100) / 100,
+            // }));
+          } else {
+            // No activity data available, set empty data
+            setHoursSpent(0);
+            setAvgScores({ overall: 0, count: 0 });
+            setHighestScore(null);
+            setScoreTrendData([]);
+          }
+        } catch {}
       } catch {
         setError('An unexpected error occurred. Please try again later.');
       } finally {
@@ -295,10 +306,10 @@ export default function Dashboard() {
   // Memoized function to filter score data based on date range
   const getFilteredScoreData = useMemo(() => {
     if (!scoreTrendData.length) return [];
-    
+
     const now = new Date();
     let cutoffDate: Date;
-    
+
     switch (dateRange) {
       case 'week':
         cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -313,22 +324,22 @@ export default function Dashboard() {
       default:
         return scoreTrendData;
     }
-    
+
     // Filter speeches by date and recalculate the displayed data
     const filteredSpeeches = speechHistory
-      .filter(s => {
+      .filter((s) => {
         const score = extractScore(s.feedback);
         return score !== null && new Date(s.created_at) >= cutoffDate;
       })
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    
-    return filteredSpeeches.map(speech => ({
-      date: new Date(speech.created_at).toLocaleDateString('en-US', { 
-        month: 'short', 
+
+    return filteredSpeeches.map((speech) => ({
+      date: new Date(speech.created_at).toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
-        year: filteredSpeeches.length > 10 ? '2-digit' : undefined
+        year: filteredSpeeches.length > 10 ? '2-digit' : undefined,
       }),
-      score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10
+      score: Math.round((extractScore(speech.feedback) || 0) * 10) / 10,
     }));
   }, [scoreTrendData, dateRange, speechHistory]);
 
@@ -336,7 +347,7 @@ export default function Dashboard() {
   const getWeeklyActivityData = useMemo(() => {
     const now = new Date();
     let daysToShow: number;
-    
+
     switch (chartDateRange) {
       case 'week':
         daysToShow = 7;
@@ -350,16 +361,16 @@ export default function Dashboard() {
       default:
         daysToShow = 7;
     }
-    
+
     const cutoffDate = new Date(now.getTime() - daysToShow * 24 * 60 * 60 * 1000);
     const dataMap = new Map<string, number>();
-    
+
     // Generate date labels based on range
     const dateLabels: string[] = [];
     for (let i = daysToShow - 1; i >= 0; i--) {
       const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       let label: string;
-      
+
       if (chartDateRange === 'week') {
         label = d.toLocaleDateString('en-US', { weekday: 'short' });
       } else if (chartDateRange === 'month') {
@@ -367,21 +378,21 @@ export default function Dashboard() {
       } else {
         label = d.toLocaleDateString('en-US', { month: 'short' });
       }
-      
+
       // Only show some labels to avoid crowding
       if (chartDateRange === 'month' && i % 5 !== 0) {
         label = '';
       } else if (chartDateRange === 'year' && i % 30 !== 0) {
         label = '';
       }
-      
+
       const key = d.toISOString().split('T')[0]; // Use ISO date as key
       dateLabels.push(label);
       dataMap.set(key, 0);
     }
-    
+
     // Calculate hours for each day
-    speechHistory.forEach(speech => {
+    speechHistory.forEach((speech) => {
       const d = new Date(speech.created_at);
       if (d >= cutoffDate) {
         const key = d.toISOString().split('T')[0];
@@ -392,8 +403,8 @@ export default function Dashboard() {
         }
       }
     });
-    
-    debateHistory.forEach(debate => {
+
+    debateHistory.forEach((debate) => {
       const d = new Date(debate.created_at);
       if (d >= cutoffDate) {
         const key = d.toISOString().split('T')[0];
@@ -403,13 +414,15 @@ export default function Dashboard() {
         }
       }
     });
-    
+
     // Convert to array format
     const keys = Array.from(dataMap.keys()).sort();
-    return keys.map((key, index) => ({
-      name: dateLabels[index],
-      hours: Math.round(dataMap.get(key)! * 100) / 100
-    })).filter(item => chartDateRange !== 'year' || item.name !== '');
+    return keys
+      .map((key, index) => ({
+        name: dateLabels[index],
+        hours: Math.round(dataMap.get(key)! * 100) / 100,
+      }))
+      .filter((item) => chartDateRange !== 'year' || item.name !== '');
   }, [chartDateRange, speechHistory, debateHistory]);
 
   // Format date for display in recent activity list
@@ -441,17 +454,12 @@ export default function Dashboard() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
             <div className="text-center">
-              <h2 className="mb-4">
-                Something went wrong
-              </h2>
+              <h2 className="mb-4">Something went wrong</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 We encountered an error while loading your dashboard. Please try refreshing the
                 page.
               </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="btn btn-primary"
-              >
+              <button onClick={() => window.location.reload()} className="btn btn-primary">
                 Try again
               </button>
             </div>
@@ -500,7 +508,10 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions Widget */}
-        <Widget title="Quick Actions" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-3">
+        <Widget
+          title="Quick Actions"
+          className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-3"
+        >
           <div className="space-y-3">
             <button
               onClick={() => router.push('/speech-feedback')}
@@ -521,7 +532,10 @@ export default function Dashboard() {
         </Widget>
 
         {/* Personal Bests & Stats Widget */}
-        <Widget title="Highlights & Milestones" className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-4">
+        <Widget
+          title="Highlights & Milestones"
+          className="col-span-4 md:col-span-2 xl:col-span-1 animate-fade-in stagger-4"
+        >
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/30 rounded-lg">
               <div>
@@ -551,7 +565,10 @@ export default function Dashboard() {
         </Widget>
 
         {/* Score Trend Widget */}
-        <Widget title="Overall Score Trend" className="col-span-4 md:col-span-2 animate-fade-in stagger-1">
+        <Widget
+          title="Overall Score Trend"
+          className="col-span-4 md:col-span-2 animate-fade-in stagger-1"
+        >
           <div className="space-y-4">
             {/* Date Range Selector */}
             <div className="flex justify-center">
@@ -598,7 +615,7 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            
+
             {scoreTrendData.length > 1 ? (
               <ScoreTrendChart data={getFilteredScoreData} />
             ) : (
@@ -610,7 +627,10 @@ export default function Dashboard() {
         </Widget>
 
         {/* Weekly Activity Widget */}
-        <Widget title="Weekly Activity" className="col-span-4 md:col-span-2 animate-fade-in stagger-2">
+        <Widget
+          title="Weekly Activity"
+          className="col-span-4 md:col-span-2 animate-fade-in stagger-2"
+        >
           <div className="space-y-4">
             {/* Date Range Selector */}
             <div className="flex justify-center">
@@ -647,7 +667,7 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
-            
+
             <WeeklyActivityChart data={getWeeklyActivityData} />
           </div>
         </Widget>
@@ -728,11 +748,14 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
   return (
     <div className="h-60 md:h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}>
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 30, left: 5, bottom: data.length > 10 ? 40 : 5 }}
+        >
           <defs>
             <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#87A96B" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#87A96B" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#87A96B" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#87A96B" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
@@ -784,19 +807,15 @@ const ScoreTrendChart = memo(({ data }: { data: { date: string; score: number }[
 ScoreTrendChart.displayName = 'ScoreTrendChart';
 
 // Memoized Weekly Activity Chart
-const WeeklyActivityChart = memo(({
-  data,
-}: {
-  data: { name: string; hours: number }[];
-}) => {
+const WeeklyActivityChart = memo(({ data }: { data: { name: string; hours: number }[] }) => {
   return (
     <div className="h-60 md:h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#87A96B" stopOpacity={1}/>
-              <stop offset="100%" stopColor="#6e8a57" stopOpacity={1}/>
+              <stop offset="0%" stopColor="#87A96B" stopOpacity={1} />
+              <stop offset="100%" stopColor="#6e8a57" stopOpacity={1} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="#e5e7eb" />
@@ -812,7 +831,7 @@ const WeeklyActivityChart = memo(({
             tickLine={false}
             axisLine={{ stroke: '#e5e7eb', strokeWidth: 1 }}
             tick={{ fill: '#6b7280' }}
-            tickFormatter={(value) => value === 0 ? '0' : `${value}h`}
+            tickFormatter={(value) => (value === 0 ? '0' : `${value}h`)}
           />
           <Tooltip
             contentStyle={{

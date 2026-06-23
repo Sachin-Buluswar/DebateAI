@@ -12,35 +12,35 @@ export default function FeedbackForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!feedback.trim()) {
       setError('Please enter your feedback');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
     setSuccess(false);
-    
+
     try {
       // Get authenticated user if available
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const userId = user?.id || null;
-      
-      const { error: submitError } = await supabase
-        .from('user_feedback')
-        .insert([
-          {
-            user_id: userId,
-            feedback_type: feedbackType,
-            feedback_text: feedback,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-      
+
+      const { error: submitError } = await supabase.from('user_feedback').insert([
+        {
+          user_id: userId,
+          feedback_type: feedbackType,
+          feedback_text: feedback,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
       if (submitError) {
         setError('Failed to submit feedback. Please try again.');
       } else {
@@ -56,7 +56,7 @@ export default function FeedbackForm() {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
       <div className="px-4 py-5 sm:p-6">
@@ -66,10 +66,13 @@ export default function FeedbackForm() {
         <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
           <p>We value your feedback to improve the Eris Debate platform.</p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="mt-5">
           <div className="mb-4">
-            <label htmlFor="feedback-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label
+              htmlFor="feedback-type"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Feedback Type
             </label>
             <select
@@ -85,7 +88,7 @@ export default function FeedbackForm() {
               <option value="content">Content Feedback</option>
             </select>
           </div>
-          
+
           <div className="mb-4">
             <EnhancedInput
               id="feedback"
@@ -97,15 +100,17 @@ export default function FeedbackForm() {
               placeholder="Share your thoughts, ideas, or report an issue..."
             />
           </div>
-          
-          {error && (
-            <AlertMessage type="error" message={error} className="mb-4" />
-          )}
-          
+
+          {error && <AlertMessage type="error" message={error} className="mb-4" />}
+
           {success && (
-            <AlertMessage type="success" message="Thank you for your feedback! We appreciate your help improving Eris Debate." className="mb-4" />
+            <AlertMessage
+              type="success"
+              message="Thank you for your feedback! We appreciate your help improving Eris Debate."
+              className="mb-4"
+            />
           )}
-          
+
           <button
             type="submit"
             disabled={loading}
@@ -124,4 +129,4 @@ export default function FeedbackForm() {
       </div>
     </div>
   );
-} 
+}
